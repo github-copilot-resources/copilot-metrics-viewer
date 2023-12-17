@@ -1,4 +1,4 @@
-<img width="807" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/84e64845-c17e-4a95-9245-b9b3852a4001">
+![image](https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/3865c1c1-f087-4f87-b3ad-8550b3cb355b)
 
 ## Charts and Data Visualizations
 
