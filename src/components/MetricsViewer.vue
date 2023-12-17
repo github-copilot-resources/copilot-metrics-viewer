@@ -1,68 +1,99 @@
 <template>
-    <div>
-        <h1>GitHub Copilot Metrics</h1>
-    </div>
-    <div>
-        <div v-if="loading">Loading...</div>
-        <div v-else-if="error">{{ error }}</div>
-        <div v-else>
-            <div v-for="metric in metrics" :key="metric.day">
-                <h2>{{ metric.day }}</h2>
-                <p>Total Suggestions: {{ metric.total_suggestions_count }}</p>
-                <p>Total Acceptances: {{ metric.total_acceptances_count }}</p>
-                <p>Total Lines Suggested: {{ metric.total_lines_suggested }}</p>
-                <p>Total Lines Accepted: {{ metric.total_lines_accepted }}</p>
-                <p>Total Active Users: {{ metric.total_active_users }}</p>
-                <h3>Breakdown</h3>
-                <div v-for="breakdown in metric.breakdown" :key="breakdown.language">
-                    <h4>{{ breakdown.language }}</h4>
-                    <p>Editor: {{ breakdown.editor }}</p>
-                    <p>Suggestions Count: {{ breakdown.suggestions_count }}</p>
-                    <p>Acceptances Count: {{ breakdown.acceptances_count }}</p>
-                    <p>Lines Suggested: {{ breakdown.lines_suggested }}</p>
-                    <p>Lines Accepted: {{ breakdown.lines_accepted }}</p>
-                    <p>Active Users: {{ breakdown.active_users }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-  </template>
-  
-  <script lang="ts">
-import { defineComponent } from 'vue';
+  <div>
+    <h1>GitHub Copilot Business Metrics Viewer</h1>
+    <h2>Total Lines Suggested | Total Lines Accepted</h2>
+    <Line :data="chartData" :options="chartOptions" />
+
+    <h2>Total Active Users</h2>
+    <Bar :data="totalActiveUsersChartData" :options="chartOptions" />
+
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
 import { getGitHubCopilotMetricsApi } from '../api/GitHubApi';
 import { Metrics } from '../model/MetricsData';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+import { Line } from 'vue-chartjs'
+import { Bar } from 'vue-chartjs'
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+)
 
 export default defineComponent({
   name: 'MetricsViewer',
-  data() {
-    return {
-      loading: false,
-      error: null,
-      metrics: [] as Metrics[]
-    };
+  components: {
+    Line,
+    Bar
   },
-  methods: {
-    async fetchMetrics(): Promise<void> {
-      console.log('fetchMetrics');
-      this.loading = true;
-      this.error = null;
-      try {
-        this.metrics = await getGitHubCopilotMetricsApi();
-      } catch (error) {
-        this.error = error as any;
-      } finally {
-        this.loading = false;
-      }
-    }
-  },
-  created() {
-      this.fetchMetrics();
-    },
-});
+  setup() {
+    console.log('MetricsViewer setup');
+    const metrics = ref<Metrics[]>([]);
+    //Total Lines Suggested | Total Lines Accepted
+    const chartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    //Total Active Users
+    const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
-  </script>
-  
-  <style scoped>
-  /* Your CSS goes here */
-  </style>
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: true
+    };
+
+    getGitHubCopilotMetricsApi().then(data => {
+      metrics.value = data;
+      chartData.value = {
+        labels: data.map(m => m.day),
+        datasets: [
+          {
+            label: 'Total Lines Suggested',
+            data: data.map(m => m.total_lines_suggested),
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)'
+
+          },
+          {
+            label: 'Total Lines Accepted',
+            data: data.map(m => m.total_lines_accepted),
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            borderColor: 'rgba(153, 102, 255, 1)'
+          }
+        ]
+      };
+
+      totalActiveUsersChartData.value = {
+        labels: data.map(m => m.day),
+        datasets: [
+          {
+            label: 'Total Active Users',
+            data: data.map(m => m.total_active_users),
+            backgroundColor: 'rgba(0, 0, 139, 0.2)', // dark blue with 20% opacity
+            borderColor: 'rgba(255, 99, 132, 1)'
+          }
+        ]
+      };
+    });
+
+    return { chartData, chartOptions, totalActiveUsersChartData };
+  }
+});
+</script>
