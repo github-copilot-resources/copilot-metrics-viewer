@@ -5,7 +5,7 @@
     <Line :data="chartData" :options="chartOptions" />
 
     <h2>Total Active Users</h2>
-    <Bar :data="totalActiveUsersChartData" :options="chartOptions" />
+    <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
 
   </div>
 </template>
@@ -59,6 +59,19 @@ export default defineComponent({
       maintainAspectRatio: true
     };
 
+    const totalActiveUsersChartOptions = {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    };
+
     getGitHubCopilotMetricsApi().then(data => {
       metrics.value = data;
       chartData.value = {
@@ -93,7 +106,7 @@ export default defineComponent({
       };
     });
 
-    return { chartData, chartOptions, totalActiveUsersChartData };
+    return { chartData, chartOptions, totalActiveUsersChartData, totalActiveUsersChartOptions };
   }
 });
 </script>
