@@ -2,7 +2,7 @@
   <img width="807" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/3865c1c1-f087-4f87-b3ad-8550b3cb355b">
 </p>
 
-## Charts and Data Visualizations 
+## Charts
 
 This includes a set of charts that visualize various metrics related to GitHub Copilot for your _GitHub Organization_. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and usage of GitHub Copilot. Here are the key metrics visualized in these charts:
 
@@ -33,6 +33,10 @@ This includes a set of charts that visualize various metrics related to GitHub C
 <p align="center">
   <img width="600" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/bd92918f-3a11-492b-8490-877aaa768ca3">
 </p>
+
+## Video
+
+https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/6d5b3ffd-ef4f-4c47-b0fe-177181fabd99
 
 ## Requirements
 
