@@ -3,7 +3,7 @@
     <h1>GitHub Copilot Business Metrics Viewer</h1>
 
     <h2>Acceptance rate (%)</h2>
-    <Bar :data="acceptanceRateChartData" :options="totalActiveUsersChartOptions" />
+    <Bar :data="acceptanceRateChartData" :options="chartOptions" />
 
     <h2>Total Suggestions Count | Total Acceptances Count</h2>
     <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
@@ -13,7 +13,6 @@
 
     <h2>Total Active Users</h2>
     <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
-
 
   </div>
 </template>
@@ -60,7 +59,6 @@ export default defineComponent({
     //Acceptance Rate
     const acceptanceRateChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
-
     //Total Suggestions Count | Total Acceptance Counts
     const totalSuggestionsAndAcceptanceChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
@@ -68,13 +66,19 @@ export default defineComponent({
     const chartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     
     //Total Active Users
-    const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-
-    
+    const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
 
     const chartOptions = {
       responsive: true,
-      maintainAspectRatio: true
+      maintainAspectRatio: true,
+      layout: {
+        padding: {
+          left: 40,
+          right: 40,
+          top: 20,
+          bottom: 40
+        }
+      },
     };
 
     const totalActiveUsersChartOptions = {
@@ -87,7 +91,15 @@ export default defineComponent({
             stepSize: 1
           }
         }
-      }
+      },
+      layout: {
+        padding: {
+          left: 50,
+          right: 50,
+          top: 50,
+          bottom: 50
+        }
+      },
     };
 
     getGitHubCopilotMetricsApi().then(data => {
