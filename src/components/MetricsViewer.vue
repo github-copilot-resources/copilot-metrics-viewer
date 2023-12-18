@@ -2,6 +2,9 @@
   <div>
     <h1>GitHub Copilot Business Metrics Viewer</h1>
 
+    <h2>Acceptance rate (%)</h2>
+    <Bar :data="acceptanceRateChartData" :options="totalActiveUsersChartOptions" />
+
     <h2>Total Suggestions Count | Total Acceptances Count</h2>
     <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
 
@@ -54,6 +57,10 @@ export default defineComponent({
   setup() {
     const metrics = ref<Metrics[]>([]);
 
+    //Acceptance Rate
+    const acceptanceRateChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+
     //Total Suggestions Count | Total Acceptance Counts
     const totalSuggestionsAndAcceptanceChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
@@ -63,6 +70,7 @@ export default defineComponent({
     //Total Active Users
     const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
+    
 
     const chartOptions = {
       responsive: true,
@@ -100,7 +108,8 @@ export default defineComponent({
             data: data.map(m => m.total_acceptances_count),
             backgroundColor: 'rgba(153, 102, 255, 0.2)',
             borderColor: 'rgba(153, 102, 255, 1)'
-          }
+          },
+          
         ]
       };
 
@@ -123,6 +132,24 @@ export default defineComponent({
         ]
       };
 
+      acceptanceRateChartData.value = {
+        labels: data
+        .map(m => m.day),
+        datasets: [
+          {
+            type: 'line', // This makes the dataset a line in the chart
+            label: 'Acceptance Rate',
+            data: data.map(m => m.total_lines_suggested !== 0 ? (m.total_lines_accepted / m.total_lines_suggested) * 100 : 0),
+            backgroundColor: 'rgba(173, 216, 230, 0.2)', // light blue
+            borderColor: 'rgba(173, 216, 230, 1)', // darker blue
+            fill: false // This makes the area under the line not filled
+          }
+        ]
+      };
+
+      console.log("AcceptanceRateChartData");
+      console.log(acceptanceRateChartData);
+
       totalActiveUsersChartData.value = {
         labels: data.map(m => m.day),
         datasets: [
@@ -136,7 +163,7 @@ export default defineComponent({
       };
     });
 
-    return { totalSuggestionsAndAcceptanceChartData, chartData, chartOptions, totalActiveUsersChartData, totalActiveUsersChartOptions };
+    return { totalSuggestionsAndAcceptanceChartData, chartData, chartOptions, totalActiveUsersChartData, totalActiveUsersChartOptions, acceptanceRateChartData };
   }
 });
 </script>
