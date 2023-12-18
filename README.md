@@ -45,9 +45,10 @@ Here are the key metrics visualized in these charts:
 
 Your organization must be enrolled in the GitHub Copilot API private alpha.
 
-## Project setup
+## Setup instructions
 
-Edit the .env file in the root directory of the project and add the following variables:
+- Instrucions on how to authenticate are provided in the API documentation - available if you have access to the private alpha.
+- Edit the .env file in the root directory of the project and add the following variables:
 
 ```
   VUE_APP_GITHUB_ORG=
