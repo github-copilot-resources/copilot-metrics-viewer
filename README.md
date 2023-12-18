@@ -2,9 +2,9 @@
   <img width="807" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/3865c1c1-f087-4f87-b3ad-8550b3cb355b">
 </p>
 
-## Charts and Data Visualizations (_Organization level only_)
+## Charts and Data Visualizations 
 
-This includes a set of charts that visualize various metrics related to GitHub Copilot for your organization. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and usage of GitHub Copilot. Here are the key metrics visualized in these charts:
+This includes a set of charts that visualize various metrics related to GitHub Copilot for your _GitHub Organization_. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and usage of GitHub Copilot. Here are the key metrics visualized in these charts:
 
 ### Key Metrics
 1. **Acceptance Rate:** This metric represents the ratio of accepted lines to the total lines suggested by GitHub Copilot. This rate is an indicator of the relevance and usefulness of Copilot's suggestions.
