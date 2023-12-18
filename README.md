@@ -14,21 +14,21 @@ This includes a set of charts that visualize various metrics related to GitHub C
 
 3. **Total Suggestions** This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.
 
-4. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users. This metric is crucial to understand the effectiveness and accuracy of GitHub Copilot's suggestions.
+4. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users. 
 
 <p align="center">
   <img width="600" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/b84220ae-fbdc-4503-b50b-4689362bf364">
 </p>
 
-4. **Total Lines Suggested:** A detailed chart showcasing the total number of lines of code suggested by GitHub Copilot. This gives an idea of the volume of code generation and assistance provided.
+4. **Total Lines Suggested:** Showcases the total number of lines of code suggested by GitHub Copilot. This gives an idea of the volume of code generation and assistance provided.
 
-5. **Total Lines Accepted:** This chart compares the total lines of code accepted by users, offering insights into how much of the suggested code is actually being utilized in real-world applications.
+5. **Total Lines Accepted:** As the name says, the total lines of code accepted by users (full acceptances) offering insights into how much of the suggested code is actually being utilized incorporated to the codebase.
 
 <p align="center">
   <img width="600" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/788c9b33-8e63-43a5-9ab9-98d8938dd9d9">
 </p>
 
-6. **Total Active Users:** An interactive graph representing the number of active users engaging with GitHub Copilot. This helps in understanding the tool's popularity and user base growth.
+6. **Total Active Users:** Represents the number of active users engaging with GitHub Copilot. This helps in understanding the user base growth and adoption rate.
 
 <p align="center">
   <img width="600" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/bd92918f-3a11-492b-8490-877aaa768ca3">
@@ -36,7 +36,7 @@ This includes a set of charts that visualize various metrics related to GitHub C
 
 ## Requirements
 
-Your organization must be enrolled in the [GitHub Copilot API private alpha]([url](https://docs.github.com/en/early-access/copilot/copilot-usage-api)).
+Your organization must be enrolled in the GitHub Copilot API private alpha.
 
 ## Project setup
 
