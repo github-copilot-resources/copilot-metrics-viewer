@@ -22,8 +22,5 @@ export const getGitHubCopilotMetricsApi = async (): Promise<Metrics[]> => {
   // Map the response data to an array of Metrics objects
   const metricsData = response.data.map((item: any) => new Metrics(item));
 
-  // Print the metrics data to the console
-  console.log(metricsData);
-
   return metricsData;
 };

@@ -1,6 +1,7 @@
 <template>
   <div>
     <h1>GitHub Copilot Business Metrics Viewer</h1>
+
     <h2>Total Suggestions Count | Total Acceptances Count</h2>
     <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
 
@@ -51,7 +52,6 @@ export default defineComponent({
     Bar
   },
   setup() {
-    console.log('MetricsViewer setup');
     const metrics = ref<Metrics[]>([]);
 
     //Total Suggestions Count | Total Acceptance Counts
