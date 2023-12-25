@@ -2,9 +2,9 @@
   <div>
     <h1>GitHub Copilot Business Metrics Viewer</h1>
 
-      <!-- API Error Message -->
+    <!-- API Error Message -->
     <div v-if="apiError" class="error-message" v-html="apiError"></div>
-      <div v-if="!apiError">
+    <div v-if="!apiError">
       <h2>Acceptance rate (%)</h2>
       <Bar :data="acceptanceRateChartData" :options="chartOptions" />
 
@@ -16,6 +16,27 @@
 
       <h2>Total Active Users</h2>
       <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
+
+      <h2>Languages Breakdown</h2>
+      <table class="center-table" style="border: 1px solid black;">
+        <thead>
+          <tr>
+            <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Language Name</th>
+            <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Prompts</th>
+            <th style="border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Lines of Code</th>
+            <th style="border-bottom: 1px solid black; padding-right: 10px;">Acceptance Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(language, languageName) in Array.from(languages)" :key="languageName">
+            <td style="text-align: left;">{{ language[0] }}</td>
+            <td style="text-align: left;">{{ language[1].acceptedPrompts }}</td>
+            <td style="text-align: left;">{{ language[1].acceptedLinesOfCode }}</td>
+            <td v-if="language[1].acceptanceRate !== undefined">{{ language[1].acceptanceRate.toFixed(2) }}%</td>
+          </tr>
+        </tbody>
+      </table>
+      
     </div>
   </div>
 </template>
@@ -24,6 +45,7 @@
 import { defineComponent, ref } from 'vue';
 import { getGitHubCopilotMetricsApi } from '../api/GitHubApi';
 import { Metrics } from '../model/MetricsData';
+import { Language } from '../model/Language';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -74,6 +96,8 @@ export default defineComponent({
     // API Error Message
     const apiError = ref<string | null>(null);
 
+    // Create an empty map to store the languages.
+    const languages = new Map<string, Language>();
 
     const chartOptions = {
       responsive: true,
@@ -180,6 +204,36 @@ export default defineComponent({
           }
         ]
       };
+      
+      // Process the language breakdown separately
+      data.forEach(m => m.breakdown.forEach(breakdown => 
+      {
+        const languageName = breakdown.language;
+        let language = languages.get(languageName);
+
+        if (!language) {
+          // Create a new Language object if it does not exist
+          language = new Language({
+            name: languageName,
+            acceptedPrompts: breakdown.acceptances_count,
+            suggestedLinesOfCode: breakdown.lines_suggested,
+            acceptedLinesOfCode: breakdown.lines_accepted,
+          });
+          languages.set(languageName, language);
+        } else {
+          // Update the existing Language object
+          language.acceptedPrompts += breakdown.acceptances_count;
+          language.suggestedLinesOfCode += breakdown.lines_suggested;
+          language.acceptedLinesOfCode += breakdown.lines_accepted;
+        }
+        // Recalculate the acceptance rate
+        language.acceptanceRate = language.suggestedLinesOfCode !== 0 ? (language.acceptedLinesOfCode / language.suggestedLinesOfCode) * 100 : 0;
+      }));
+
+      //Sort languages map by accepted lines of code
+      languages[Symbol.iterator] = function* () {
+        yield* [...this.entries()].sort((a, b) => b[1].acceptedLinesOfCode - a[1].acceptedLinesOfCode);
+      }
     }).catch(error => {
       console.log(error);
       // Check the status code of the error response
@@ -204,13 +258,23 @@ export default defineComponent({
         
     });
 
-    return { totalSuggestionsAndAcceptanceChartData, chartData, chartOptions, totalActiveUsersChartData, totalActiveUsersChartOptions, acceptanceRateChartData, apiError };
-  }
+    return { totalSuggestionsAndAcceptanceChartData, chartData, 
+      chartOptions, totalActiveUsersChartData, 
+      totalActiveUsersChartOptions, acceptanceRateChartData, apiError, 
+      languages };
+  },
+  
+
 });
 </script>
 
 <style scoped>
 .error-message {
   color: red;
+}
+
+.center-table {
+  margin-left: auto;
+  margin-right: auto;
 }
 </style>
