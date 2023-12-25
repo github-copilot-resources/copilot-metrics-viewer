@@ -4,7 +4,7 @@
 
 ## Charts and Data Visualizations
 
-This includes a set of charts that visualize various metrics related to GitHub Copilot for your organization. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and usage of GitHub Copilot. Here are the key metrics visualized in these charts:
+This application displays a set of charts to visualize various metrics related to GitHub Copilot for your organization leveraging the GitHub Copilot Metrics API, current distributed in private alpha. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and usage of GitHub Copilot. Here are the key metrics visualized in these charts:
 
 ### Key Metrics
 
@@ -31,9 +31,13 @@ This includes a set of charts that visualize various metrics related to GitHub C
 
 
 
-### Breakdown Analysis
+### Language Breakdown Analysis
 
-_Coming soon_
+The language breakdown analysis at the bottom of the page displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the full time period covered by a single API call.
+
+<p align="center">
+  <img width="697" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/c6163664-bb2c-4277-8d77-51a50f252df7">
+</p>
 
 ## Requirements
 
