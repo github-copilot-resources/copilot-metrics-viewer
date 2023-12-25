@@ -41,7 +41,7 @@ Here are the key metrics visualized in these charts:
 
 ## Languages Breakdown Analysis
 
-The language breakdown analysis at the bottom of the page displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the full time period covered by a single API call.
+The language breakdown analysis at the bottom of the page displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the full time period covered by a single API call. The entries are sorted by the number of _accepted lines of code descending_.
 
 <p align="center">
   <img width="697" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/c6163664-bb2c-4277-8d77-51a50f252df7">
