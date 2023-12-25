@@ -2,18 +2,21 @@
   <div>
     <h1>GitHub Copilot Business Metrics Viewer</h1>
 
-    <h2>Acceptance rate (%)</h2>
-    <Bar :data="acceptanceRateChartData" :options="chartOptions" />
+      <!-- API Error Message -->
+    <div v-if="apiError" class="error-message" v-html="apiError"></div>
+      <div v-if="!apiError">
+      <h2>Acceptance rate (%)</h2>
+      <Bar :data="acceptanceRateChartData" :options="chartOptions" />
 
-    <h2>Total Suggestions Count | Total Acceptances Count</h2>
-    <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
+      <h2>Total Suggestions Count | Total Acceptances Count</h2>
+      <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
 
-    <h2>Total Lines Suggested | Total Lines Accepted</h2>
-    <Line :data="chartData" :options="chartOptions" />
+      <h2>Total Lines Suggested | Total Lines Accepted</h2>
+      <Line :data="chartData" :options="chartOptions" />
 
-    <h2>Total Active Users</h2>
-    <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
-
+      <h2>Total Active Users</h2>
+      <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
+    </div>
   </div>
 </template>
 
@@ -68,13 +71,17 @@ export default defineComponent({
     //Total Active Users
     const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
 
+    // API Error Message
+    const apiError = ref<string | null>(null);
+
+
     const chartOptions = {
       responsive: true,
       maintainAspectRatio: true,
       layout: {
         padding: {
-          left: 40,
-          right: 40,
+          left: 150,
+          right: 150,
           top: 20,
           bottom: 40
         }
@@ -173,9 +180,37 @@ export default defineComponent({
           }
         ]
       };
+    }).catch(error => {
+      console.log(error);
+      // Check the status code of the error response
+      if (error.response && error.response.status) {
+        switch (error.response.status) {
+          case 401:
+            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            break;
+          case 404:
+            apiError.value = `404 Not Found - is the organization '${process.env.VUE_APP_GITHUB_ORG}' correct?`;
+            break;
+          default:
+            apiError.value = error.message;
+            break;
+        }
+      } else {
+        // Update apiError with the error message
+        apiError.value = error.message;
+      }
+       // Add a new line to the apiError message
+       apiError.value += ' <br> If .env file is modified, restart the changes to take effect.';
+        
     });
 
-    return { totalSuggestionsAndAcceptanceChartData, chartData, chartOptions, totalActiveUsersChartData, totalActiveUsersChartOptions, acceptanceRateChartData };
+    return { totalSuggestionsAndAcceptanceChartData, chartData, chartOptions, totalActiveUsersChartData, totalActiveUsersChartOptions, acceptanceRateChartData, apiError };
   }
 });
 </script>
+
+<style scoped>
+.error-message {
+  color: red;
+}
+</style>
