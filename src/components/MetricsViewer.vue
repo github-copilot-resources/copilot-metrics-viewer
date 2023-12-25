@@ -24,7 +24,7 @@
             <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Language Name</th>
             <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Prompts</th>
             <th style="border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Lines of Code</th>
-            <th style="border-bottom: 1px solid black; padding-right: 10px;">Acceptance Rate</th>
+            <th style="border-bottom: 1px solid black; padding-right: 10px;">Acceptance Rate (%)</th>
           </tr>
         </thead>
         <tbody>
