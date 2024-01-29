@@ -29,7 +29,7 @@
   </template>
   
   <script lang="ts">
-  import { defineComponent, ref } from 'vue';
+  import { defineComponent } from 'vue';
   import { getGitHubCopilotMetricsApi } from '../api/GitHubApi';
   import { Metrics } from '../model/MetricsData';
   
