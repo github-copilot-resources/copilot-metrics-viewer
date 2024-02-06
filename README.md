@@ -53,7 +53,7 @@ Your organization must be enrolled in the GitHub Copilot API private alpha.
 
 ## Setup instructions
 
-- Instrucions on how to authenticate are provided in the API documentation - available if you have access to the private alpha.
+- Instructions on how to authenticate are provided in the API documentation - available if you have access to the private alpha.
 - Edit the .env file in the root directory of the project and add the following variables:
 
 ```
