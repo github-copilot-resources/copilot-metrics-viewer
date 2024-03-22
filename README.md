@@ -61,7 +61,6 @@ Your organization must be enrolled in the GitHub Copilot API private alpha.
   VUE_APP_GITHUB_TOKEN=
 ```
 
-
 ## Running 
 ```
 npm install
@@ -81,6 +80,19 @@ npm run build
 ```
 npm run lint
 ```
+
+
+## License 
+
+This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE.txt) for the full terms.
+
+## Maintainers 
+
+@martedesco
+
+## Support
+
+I aim to provide support through GitHub Issues. While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention.
 
 ### Coming next 🔮
 - Enterprise level charts
