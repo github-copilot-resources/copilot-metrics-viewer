@@ -5,6 +5,34 @@
     <!-- API Error Message -->
     <div v-if="apiError" class="error-message" v-html="apiError"></div>
     <div v-if="!apiError">
+      <div class="tiles-container">
+        <!-- Acceptance Rate Tile -->
+      <div class="tile">
+        <h3>Acceptance Rate Average</h3>
+        <p>{{ acceptanceRateAverage.toFixed(2) }}%</p>
+        <p>On the last 28 days</p>
+      </div>
+
+      <div class="tile">
+        <h3>Cumulative Number of Suggestions</h3>
+        <p>{{ cumulativeNumberSuggestions }}</p>
+        <p>On the last 28 days</p>
+      </div>
+
+      <div class="tile">
+        <h3>Cumulative Number of Accepted Prompts</h3>
+        <p>{{ cumulativeNumberAcceptances }}</p>
+        <p>On the last 28 days</p>
+      </div>
+
+      <div class="tile">
+        <h3>Cumulative Number of Lines of Code Accepted</h3>
+        <p>{{ cumulativeNumberLOCAccepted }}</p>
+        <p>On the last 28 days</p>
+      </div>
+    </div>
+      
+
       <h2>Acceptance rate (%)</h2>
       <Bar :data="acceptanceRateChartData" :options="chartOptions" />
 
@@ -81,6 +109,12 @@ export default defineComponent({
   setup() {
     const metrics = ref<Metrics[]>([]);
 
+    //Tiles
+    let acceptanceRateAverage = ref(0);
+    let cumulativeNumberSuggestions = ref(0);
+    let cumulativeNumberAcceptances = ref(0);
+    let cumulativeNumberLOCAccepted = ref(0);
+
     //Acceptance Rate
     const acceptanceRateChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
@@ -136,25 +170,44 @@ export default defineComponent({
     getGitHubCopilotMetricsApi().then(data => {
       metrics.value = data;
 
+      cumulativeNumberSuggestions.value = 0;
+      const cumulativeSuggestionsData = data.map(m => {
+        cumulativeNumberSuggestions.value += m.total_suggestions_count;
+        return m.total_suggestions_count;
+      });
+
+      cumulativeNumberAcceptances.value = 0;
+      const cumulativeAcceptancesData = data.map(m => {
+        cumulativeNumberAcceptances.value += m.total_acceptances_count;
+        return m.total_acceptances_count;
+      });
+
       totalSuggestionsAndAcceptanceChartData.value = {
         labels: data.map(m => m.day),
         datasets: [
           {
             label: 'Total Suggestions',
-            data: data.map(m => m.total_suggestions_count),
+            data: cumulativeSuggestionsData,
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)'
 
           },
           {
             label: 'Total Acceptance',
-            data: data.map(m => m.total_acceptances_count),
+            data: cumulativeAcceptancesData,
             backgroundColor: 'rgba(153, 102, 255, 0.2)',
             borderColor: 'rgba(153, 102, 255, 1)'
           },
           
         ]
       };
+
+      cumulativeNumberLOCAccepted.value = 0;
+      const cumulativeLOCAcceptedData = data.map(m => {
+        const total_lines_accepted = m.total_lines_accepted;
+        cumulativeNumberLOCAccepted.value += total_lines_accepted;
+        return total_lines_accepted;
+      });
 
       chartData.value = {
         labels: data.map(m => m.day),
@@ -168,21 +221,28 @@ export default defineComponent({
           },
           {
             label: 'Total Lines Accepted',
-            data: data.map(m => m.total_lines_accepted),
+            data: cumulativeLOCAcceptedData,
             backgroundColor: 'rgba(153, 102, 255, 0.2)',
             borderColor: 'rgba(153, 102, 255, 1)'
           }
         ]
       };
 
+      let sum = 0;
+      const acceptanceRates = data.map(m => {
+        const rate = m.total_lines_suggested !== 0 ? (m.total_lines_accepted / m.total_lines_suggested) * 100 : 0;
+        sum += rate;
+        return rate;
+      });
+      acceptanceRateAverage.value = sum / data.length;
+
       acceptanceRateChartData.value = {
-        labels: data
-        .map(m => m.day),
+        labels: data.map(m => m.day),
         datasets: [
           {
             type: 'line', // This makes the dataset a line in the chart
             label: 'Acceptance Rate',
-            data: data.map(m => m.total_lines_suggested !== 0 ? (m.total_lines_accepted / m.total_lines_suggested) * 100 : 0),
+            data: acceptanceRates,
             backgroundColor: 'rgba(173, 216, 230, 0.2)', // light blue
             borderColor: 'rgba(173, 216, 230, 1)', // darker blue
             fill: false // This makes the area under the line not filled
@@ -260,8 +320,8 @@ export default defineComponent({
 
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
-      totalActiveUsersChartOptions, acceptanceRateChartData, apiError, 
-      languages };
+      totalActiveUsersChartOptions, acceptanceRateChartData, apiError, acceptanceRateAverage, cumulativeNumberSuggestions, 
+      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, languages };
   },
   
 
@@ -276,5 +336,21 @@ export default defineComponent({
 .center-table {
   margin-left: auto;
   margin-right: auto;
+}
+
+.tiles-container {
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.tile {
+  border: 1px solid #ccc;
+  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1), 
+              -3px -3px 5px rgba(255, 255, 255, 0.7);
+  padding: 20px;
+  border-radius: 10px;
+  width: 20%; 
+  margin: 1%;
 }
 </style>
