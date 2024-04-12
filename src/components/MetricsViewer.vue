@@ -10,7 +10,7 @@
       <div class="tile">
         <h3>Acceptance Rate Average</h3>
         <p>{{ acceptanceRateAverage.toFixed(2) }}%</p>
-        <p>On the last 28 days</p>
+        <p>Over the last 28 days</p>
       </div>
 
       <div class="tile">
