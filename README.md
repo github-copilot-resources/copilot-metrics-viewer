@@ -67,26 +67,15 @@ Your organization must be enrolled in the GitHub Copilot API private alpha.
   VUE_APP_GITHUB_TOKEN=
 ```
 
-## Running 
+## Install dependencies
 ```
 npm install
 ```
 
-### Compiles and hot-reloads for development
+### Compiles and runs the application
 ```
 npm run serve
 ```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
 
 ## License 
 
