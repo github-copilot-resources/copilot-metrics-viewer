@@ -54,7 +54,13 @@ Your organization must be enrolled in the GitHub Copilot API private alpha.
 ## Setup instructions
 
 - Instructions on how to authenticate are provided in the API documentation - available if you have access to the private alpha.
-- Edit the .env file in the root directory of the project and add the following variables:
+
+### .env file setup
+- To utilize mocked data stored in a JSON file, simply set the following boolean environment variable to true:
+```
+  VUE_APP_MOCKED_DATA=true
+```
+- To access Copilot metrics through the API, update your configuration by adding the following variables:
 
 ```
   VUE_APP_GITHUB_ORG=
