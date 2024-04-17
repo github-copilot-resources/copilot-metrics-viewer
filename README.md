@@ -4,7 +4,8 @@
 
 ## Video
 
-https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/6d5b3ffd-ef4f-4c47-b0fe-177181fabd99
+https://github.com/github-copilot-community/copilot-metrics-viewer/assets/3329307/bc7e2a16-cc73-43c4-887a-b50809c08533
+
 
 ## Charts
 
@@ -44,8 +45,18 @@ Here are the key metrics visualized in these charts:
 The language breakdown analysis at the bottom of the page displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the full time period covered by a single API call. The entries are sorted by the number of _accepted lines of code descending_.
 
 <p align="center">
-  <img width="697" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/c6163664-bb2c-4277-8d77-51a50f252df7">
+  <img width="1000" alt="image" src="https://github.com/github-copilot-community/copilot-metrics-viewer/assets/3329307/6ce22c04-3a4f-48e4-bb3a-db9f9fd7eb95">
 </p>
+
+## Copilot Chat Metrics
+
+1. **Cumulative Number of Turns:** This metric represents the total number of turns (interactions) with the Copilot over the past 28 days. A 'turn' includes both user inputs and Copilot's responses.
+
+2. **Cumulative Number of Acceptances:** This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the past 28 days.
+
+3. **Total Turns | Total Acceptances Count:** This is a chart that displays the total number of turns and acceptances
+
+4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
 ## Requirements
 
