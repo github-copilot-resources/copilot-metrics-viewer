@@ -158,22 +158,6 @@
           yield* [...this.entries()].sort((a, b) => b[1].acceptedLinesOfCode - a[1].acceptedLinesOfCode);
         }
 
-        // Convert the Map to an array
-        let languagesArray = Array.from(languages.value.entries());
-
-        // Sort the array
-        languagesArray.sort((a, b) => b[1].acceptedLinesOfCode - a[1].acceptedLinesOfCode);
-
-        // Convert the array back to a Map
-        //languages.value = new Map(languagesArray);
-        
-        console.log("Languages before: " + Array.from(languages.value.values()).map(language => language.languageName));
-        console.log("languages.value[0].languageName: " + Array.from(languages.value.values())[0].languageName);
-        console.log("languages.value[1].languageName: " + Array.from(languages.value.values())[1].languageName);
-        console.log("languages.value[2].languageName: " + Array.from(languages.value.values())[2].languageName);
-        console.log("languages.value[3].languageName: " + Array.from(languages.value.values())[3].languageName);
-        console.log("languages.value[4].languageName: " + Array.from(languages.value.values())[4].languageName);
-  
         languagesChartData.value = {
           labels: Array.from(languages.value.values()).map(language => language.languageName),
           datasets: [
@@ -184,8 +168,9 @@
           ],
         };
 
-        let top5Languages = Array.from(languages.value.values()).slice(110, 300);
-
+        // Get the top 5 languages by accepted prompts
+        const top5Languages = new Map([...languages.value].slice(0, 5));
+        
         languagesChartDataTop5.value = {
           labels: Array.from(top5Languages.values()).map(language => language.languageName),
           datasets: [
