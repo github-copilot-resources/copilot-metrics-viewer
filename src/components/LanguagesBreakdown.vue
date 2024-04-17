@@ -118,7 +118,6 @@
       };
     },
     setup() {
-      console.log('LanguagesBreakdown setup');
 
       const metrics = ref<Metrics[]>([]);
 
@@ -178,7 +177,6 @@
           yield* [...this.entries()].sort((a, b) => b[1].acceptanceRate - a[1].acceptanceRate);
         }
 
-
         // Get the top 5 languages by acceptance rate
         const top5LanguagesAcceptanceRate = new Map([...languages.value].slice(0, 5));
 
@@ -223,14 +221,7 @@
           ],
         };
 
-
-
         numberOfLanguages.value = languages.value.size;
-
-        console.log("Number of languages: " + numberOfLanguages.value);
-  
-        console.log("LanguagesChartData: " + JSON.stringify(languagesChartData));
-
         
       }).catch(error => {
         console.log(error);
