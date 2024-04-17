@@ -6,8 +6,8 @@
         "total_lines_suggested": 35290,
         "total_lines_accepted": 5038,
         "total_active_users": 97,
-        "total_chat_acceptances": 174,
-        "total_chat_turns": 119,
+        "total_chat_acceptances": 157,
+        "total_chat_turns": 190,
         "total_active_chat_users": 38,
         "breakdown": [
             {
@@ -957,7 +957,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 149,
+        "total_chat_acceptances": 151,
         "total_chat_turns": 168,
         "total_active_chat_users": 7
     },
@@ -1510,7 +1510,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 182,
+        "total_chat_acceptances": 12,
         "total_chat_turns": 43,
         "total_active_chat_users": 6
     },
@@ -2054,7 +2054,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 57,
+        "total_chat_acceptances": 27,
         "total_chat_turns": 43,
         "total_active_chat_users": 187
     },
@@ -2391,7 +2391,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 180,
+        "total_chat_acceptances": 93,
         "total_chat_turns": 196,
         "total_active_chat_users": 146
     },
@@ -2755,7 +2755,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 161,
+        "total_chat_acceptances": 21,
         "total_chat_turns": 88,
         "total_active_chat_users": 141
     },
@@ -3227,7 +3227,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 71,
+        "total_chat_acceptances": 142,
         "total_chat_turns": 159,
         "total_active_chat_users": 53
     },
@@ -3780,7 +3780,7 @@
                 "active_users": 1
             }
         ],
-        "total_chat_acceptances": 118,
+        "total_chat_acceptances": 53,
         "total_chat_turns": 192,
         "total_active_chat_users": 34
     },
@@ -4387,7 +4387,7 @@
                 "active_users": 1
             }
         ],
-        "total_chat_acceptances": 132,
+        "total_chat_acceptances": 16,
         "total_chat_turns": 36,
         "total_active_chat_users": 162
     },
@@ -4985,7 +4985,7 @@
                 "active_users": 3
             }
         ],
-        "total_chat_acceptances": 108,
+        "total_chat_acceptances": 68,
         "total_chat_turns": 118,
         "total_active_chat_users": 5
     },
@@ -5286,7 +5286,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 39,
+        "total_chat_acceptances": 46,
         "total_chat_turns": 96,
         "total_active_chat_users": 9
     },
@@ -5623,7 +5623,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 125,
+        "total_chat_acceptances": 14,
         "total_chat_turns": 19,
         "total_active_chat_users": 54
     },
@@ -6059,7 +6059,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 42,
+        "total_chat_acceptances": 142,
         "total_chat_turns": 194,
         "total_active_chat_users": 44
     },
@@ -6567,7 +6567,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 11,
+        "total_chat_acceptances": 23,
         "total_chat_turns": 37,
         "total_active_chat_users": 90
     },
@@ -7030,7 +7030,7 @@
                 "active_users": 1
             }
         ],
-        "total_chat_acceptances": 11,
+        "total_chat_acceptances": 27,
         "total_chat_turns": 160,
         "total_active_chat_users": 131
     },
@@ -7574,7 +7574,7 @@
                 "active_users": 1
             }
         ],
-        "total_chat_acceptances": 15,
+        "total_chat_acceptances": 1,
         "total_chat_turns": 16,
         "total_active_chat_users": 45
     },
@@ -7893,7 +7893,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 102,
+        "total_chat_acceptances": 4,
         "total_chat_turns": 22,
         "total_active_chat_users": 115
     },
@@ -8257,7 +8257,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 194,
+        "total_chat_acceptances": 123,
         "total_chat_turns": 140,
         "total_active_chat_users": 58
     },
@@ -8837,7 +8837,7 @@
                 "active_users": 1
             }
         ],
-        "total_chat_acceptances": 125,
+        "total_chat_acceptances": 52,
         "total_chat_turns": 178,
         "total_active_chat_users": 199
     },
@@ -9453,7 +9453,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 134,
+        "total_chat_acceptances": 104,
         "total_chat_turns": 146,
         "total_active_chat_users": 136
     },
@@ -9961,7 +9961,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 55,
+        "total_chat_acceptances": 24,
         "total_chat_turns": 108,
         "total_active_chat_users": 10
     },
@@ -10433,7 +10433,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 7,
+        "total_chat_acceptances": 39,
         "total_chat_turns": 43,
         "total_active_chat_users": 99
     },
@@ -10851,7 +10851,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 104,
+        "total_chat_acceptances": 130,
         "total_chat_turns": 132,
         "total_active_chat_users": 173
     },
@@ -11053,7 +11053,7 @@
                 "active_users": 2
             }
         ],
-        "total_chat_acceptances": 92,
+        "total_chat_acceptances": 102,
         "total_chat_turns": 143,
         "total_active_chat_users": 142
     }

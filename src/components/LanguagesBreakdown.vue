@@ -23,25 +23,31 @@
         <v-main class="p-1" style="min-height: 300px;">
   
         <v-container style="min-height: 300px;" class="px-4 elevation-2">
-            <v-card>
-                <v-card-item class="d-flex justify-center align-center">
-                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">Top 5 languages by accepted prompts</div>
-                    <div style="width: 300px; height: 300px;" >
-                        <Pie :data="languagesChartDataTop5AcceptedPrompts" :options="chartOptions" />
-                    </div>
-                </v-card-item>
-            </v-card>
+          <v-row>
+    <v-col cols="6">
+      <v-card>
+        <v-card-item class="d-flex justify-center align-center">
+          <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+          <div class="text-h6 mb-1">Top 5 languages by accepted prompts</div>
+          <div style="width: 300px; height: 300px;">
+            <Pie :data="languagesChartDataTop5AcceptedPrompts" :options="chartOptions" />
+          </div>
+        </v-card-item>
+      </v-card>
+    </v-col>
 
-            <v-card>
-                <v-card-item class="d-flex justify-center align-center">
-                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">Top 5 languages by acceptance rate</div>
-                    <div style="width: 300px; height: 300px;" >
-                        <Pie :data="languagesChartDataTop5AcceptanceRate" :options="chartOptions" />
-                    </div>
-                </v-card-item>
-            </v-card>
+    <v-col cols="6">
+      <v-card>
+        <v-card-item class="d-flex justify-center align-center">
+          <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+          <div class="text-h6 mb-1">Top 5 languages by acceptance rate</div>
+          <div style="width: 300px; height: 300px;">
+            <Pie :data="languagesChartDataTop5AcceptanceRate" :options="chartOptions" />
+          </div>
+        </v-card-item>
+      </v-card>
+    </v-col>
+  </v-row>
 
             <br>
             <h2>Languages Breakdown </h2>
@@ -112,7 +118,6 @@
       };
     },
     setup() {
-      console.log('LanguagesBreakdown setup');
 
       const metrics = ref<Metrics[]>([]);
 
@@ -172,7 +177,6 @@
           yield* [...this.entries()].sort((a, b) => b[1].acceptanceRate - a[1].acceptanceRate);
         }
 
-
         // Get the top 5 languages by acceptance rate
         const top5LanguagesAcceptanceRate = new Map([...languages.value].slice(0, 5));
 
@@ -184,7 +188,7 @@
           datasets: [
             {
               data: Array.from(top5LanguagesAcceptanceRate.values()).map(language => language.acceptanceRate.toFixed(2)),
-              backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
+              backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16', '#FFD700', '#FF69B4', '#D8BFD8', '#DDA0DD', '#EE82EE', '#DA70D6', '#BA55D3', '#9370DB', '#8A2BE2', '#9400D3'],
             },
           ],
         };
@@ -199,7 +203,7 @@
           datasets: [
             {
               data: Array.from(languages.value.values()).map(language => language.acceptedPrompts),
-              backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
+              backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16', '#FFD700', '#FF69B4', '#D8BFD8', '#DDA0DD', '#EE82EE', '#DA70D6', '#BA55D3', '#9370DB', '#8A2BE2', '#9400D3'],
             },
           ],
         };
@@ -212,19 +216,12 @@
           datasets: [
             {
               data: Array.from(top5LanguagesAcceptedPrompts.values()).map(language => language.acceptedPrompts),
-              backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
+              backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16', '#FFD700', '#FF69B4', '#D8BFD8', '#DDA0DD', '#EE82EE', '#DA70D6', '#BA55D3', '#9370DB', '#8A2BE2', '#9400D3'],
             },
           ],
         };
 
-
-
         numberOfLanguages.value = languages.value.size;
-
-        console.log("Number of languages: " + numberOfLanguages.value);
-  
-        console.log("LanguagesChartData: " + JSON.stringify(languagesChartData));
-
         
       }).catch(error => {
         console.log(error);
