@@ -28,13 +28,23 @@
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                     <div class="text-h6 mb-1">Top 5 languages by accepted prompts</div>
                     <div style="width: 300px; height: 300px;" >
-                        <Pie :data="languagesChartDataTop5" :options="chartOptions" />
+                        <Pie :data="languagesChartDataTop5AcceptedPrompts" :options="chartOptions" />
+                    </div>
+                </v-card-item>
+            </v-card>
+
+            <v-card>
+                <v-card-item class="d-flex justify-center align-center">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">Top 5 languages by acceptance rate</div>
+                    <div style="width: 300px; height: 300px;" >
+                        <Pie :data="languagesChartDataTop5AcceptanceRate" :options="chartOptions" />
                     </div>
                 </v-card-item>
             </v-card>
 
             <br>
-            <h2>Languages Breakdown | Sorted by Accepted Lines of Code</h2>
+            <h2>Languages Breakdown </h2>
             <br>
 
             <v-data-table :headers="headers" :items="Array.from(languages)" class="elevation-2">
@@ -118,7 +128,11 @@
       // Languages Chart Data for languages breakdown Pie Chart
       let languagesChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
-      let languagesChartDataTop5 = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+      //Top 5 by accepted prompts
+      let languagesChartDataTop5AcceptedPrompts = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+      //Top 5 by acceptance rate
+      let languagesChartDataTop5AcceptanceRate = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
   
       const chartOptions = {
         responsive: true,
@@ -152,10 +166,32 @@
           // Recalculate the acceptance rate
           language.acceptanceRate = language.suggestedLinesOfCode !== 0 ? (language.acceptedLinesOfCode / language.suggestedLinesOfCode) * 100 : 0;
         }));
-  
-        //Sort languages map by accepted lines of code
+
+        //Sort languages map by acceptance rate
         languages.value[Symbol.iterator] = function* () {
-          yield* [...this.entries()].sort((a, b) => b[1].acceptedLinesOfCode - a[1].acceptedLinesOfCode);
+          yield* [...this.entries()].sort((a, b) => b[1].acceptanceRate - a[1].acceptanceRate);
+        }
+
+
+        // Get the top 5 languages by acceptance rate
+        const top5LanguagesAcceptanceRate = new Map([...languages.value].slice(0, 5));
+
+        // Print the Map
+        console.log(Array.from(top5LanguagesAcceptanceRate.entries()));
+
+        languagesChartDataTop5AcceptanceRate.value = {
+          labels: Array.from(top5LanguagesAcceptanceRate.values()).map(language => language.languageName),
+          datasets: [
+            {
+              data: Array.from(top5LanguagesAcceptanceRate.values()).map(language => language.acceptanceRate.toFixed(2)),
+              backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
+            },
+          ],
+        };
+  
+        //Sort languages map by accepted prompts
+        languages.value[Symbol.iterator] = function* () {
+          yield* [...this.entries()].sort((a, b) => b[1].acceptedPrompts - a[1].acceptedPrompts);
         }
 
         languagesChartData.value = {
@@ -169,17 +205,19 @@
         };
 
         // Get the top 5 languages by accepted prompts
-        const top5Languages = new Map([...languages.value].slice(0, 5));
+        const top5LanguagesAcceptedPrompts = new Map([...languages.value].slice(0, 5));
         
-        languagesChartDataTop5.value = {
-          labels: Array.from(top5Languages.values()).map(language => language.languageName),
+        languagesChartDataTop5AcceptedPrompts.value = {
+          labels: Array.from(top5LanguagesAcceptedPrompts.values()).map(language => language.languageName),
           datasets: [
             {
-              data: Array.from(top5Languages.values()).map(language => language.acceptedPrompts),
+              data: Array.from(top5LanguagesAcceptedPrompts.values()).map(language => language.acceptedPrompts),
               backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
             },
           ],
         };
+
+
 
         numberOfLanguages.value = languages.value.size;
 
@@ -212,7 +250,8 @@
           
       });
   
-      return { apiError, chartOptions, languages, numberOfLanguages, languagesChartData, languagesChartDataTop5 };
+      return { apiError, chartOptions, languages, numberOfLanguages, 
+        languagesChartData, languagesChartDataTop5AcceptedPrompts, languagesChartDataTop5AcceptanceRate };
     },
     
   
@@ -234,14 +273,5 @@
     justify-content: flex-start;
     flex-wrap: wrap;
   }
-  
-  .tile {
-    border: 1px solid #ccc;
-    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1), 
-                -3px -3px 5px rgba(255, 255, 255, 0.7);
-    padding: 20px;
-    border-radius: 10px;
-    width: 20%; 
-    margin: 1%;
-  }
+
   </style>
