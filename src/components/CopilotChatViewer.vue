@@ -20,7 +20,7 @@
             <v-card-item>
                 <div>
                 <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">Cumulative Number of Lines of Code Accepted</div>
+                <div class="text-h6 mb-1">Cumulative Number of Acceptances</div>
                 <div class="text-caption">
                     Over the last 28 days
                 </div>
@@ -33,7 +33,7 @@
 
         <v-container style="min-height: 300px;" class="px-4 elevation-2">
 
-        <h2>Total Suggestions Count | Total Acceptances Count</h2>
+        <h2>Total Acceptances | Total Turns Count</h2>
         <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
 
         <h2>Total Active Copilot Chat Users</h2>
