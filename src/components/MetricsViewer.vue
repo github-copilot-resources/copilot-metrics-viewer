@@ -3,8 +3,7 @@
     <!-- API Error Message -->
     <div v-if="apiError" class="error-message" v-html="apiError"></div>
     <div v-if="!apiError">
-      <div class="tiles-container">
-      
+      <div class="tiles-container">      
         <!-- Acceptance Rate Tile -->  
         <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
             <v-card-item>
@@ -60,6 +59,7 @@
       </div>
 
       <v-main class="p-1" style="min-height: 300px;">
+
         <v-container style="min-height: 300px;" class="px-4 elevation-2">
           <h2>Acceptance rate (%)</h2>
         <Bar :data="acceptanceRateChartData" :options="chartOptions" />
@@ -73,25 +73,6 @@
         <h2>Total Active Users</h2>
         <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
 
-        <h2>Languages Breakdown</h2>
-        <table class="center-table" style="border: 1px solid black;">
-          <thead>
-            <tr>
-              <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Language Name</th>
-              <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Prompts</th>
-              <th style="border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Lines of Code</th>
-              <th style="border-bottom: 1px solid black; padding-right: 10px;">Acceptance Rate (%)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(language, languageName) in Array.from(languages)" :key="languageName">
-              <td style="text-align: left;">{{ language[0] }}</td>
-              <td style="text-align: left;">{{ language[1].acceptedPrompts }}</td>
-              <td style="text-align: left;">{{ language[1].acceptedLinesOfCode }}</td>
-              <td v-if="language[1].acceptanceRate !== undefined">{{ language[1].acceptanceRate.toFixed(2) }}%</td>
-            </tr>
-          </tbody>
-        </table>
         </v-container>
       </v-main>
     </div>
@@ -105,6 +86,7 @@ import { Metrics } from '../model/MetricsData';
 import { Language } from '../model/Language';
 import {
   Chart as ChartJS,
+  ArcElement,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -119,6 +101,7 @@ import { Line } from 'vue-chartjs'
 import { Bar } from 'vue-chartjs'
 
 ChartJS.register(
+  ArcElement, 
   CategoryScale,
   LinearScale,
   BarElement,
@@ -129,11 +112,30 @@ ChartJS.register(
   Legend
 )
 
+
 export default defineComponent({
   name: 'MetricsViewer',
   components: {
     Line,
     Bar
+  }
+  ,
+  data () {
+    return {
+      data : {
+        labels: ['VueJs', 'EmberJs', 'ReactJs', 'AngularJs'],
+        datasets: [
+          {
+        backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
+        data: [40, 20, 80, 10]
+        }
+        ]
+      },
+      options : {
+        responsive: true,
+      maintainAspectRatio: false
+      }
+    }
   },
   setup() {
     const metrics = ref<Metrics[]>([]);
@@ -348,7 +350,6 @@ export default defineComponent({
        apiError.value += ' <br> If .env file is modified, restart the changes to take effect.';
         
     });
-
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
       totalActiveUsersChartOptions, acceptanceRateChartData, apiError, acceptanceRateAverage, cumulativeNumberSuggestions, 
