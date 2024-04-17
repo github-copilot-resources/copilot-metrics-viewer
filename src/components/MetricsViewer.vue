@@ -1,70 +1,99 @@
 <template>
   <div>
-    <h1>GitHub Copilot Business Metrics Viewer</h1>
-
     <!-- API Error Message -->
     <div v-if="apiError" class="error-message" v-html="apiError"></div>
     <div v-if="!apiError">
       <div class="tiles-container">
-        <!-- Acceptance Rate Tile -->
-      <div class="tile">
-        <h3>Acceptance Rate Average</h3>
-        <p>{{ acceptanceRateAverage.toFixed(2) }}%</p>
-        <p>Over the last 28 days</p>
-      </div>
-
-      <div class="tile">
-        <h3>Cumulative Number of Suggestions</h3>
-        <p>{{ cumulativeNumberSuggestions }}</p>
-        <p>On the last 28 days</p>
-      </div>
-
-      <div class="tile">
-        <h3>Cumulative Number of Accepted Prompts</h3>
-        <p>{{ cumulativeNumberAcceptances }}</p>
-        <p>On the last 28 days</p>
-      </div>
-
-      <div class="tile">
-        <h3>Cumulative Number of Lines of Code Accepted</h3>
-        <p>{{ cumulativeNumberLOCAccepted }}</p>
-        <p>On the last 28 days</p>
-      </div>
-    </div>
       
+        <!-- Acceptance Rate Tile -->  
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+            <v-card-item>
+              <div>
+                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                <div class="text-h6 mb-1">Acceptance Rate Average</div>
+                <div class="text-caption">
+                  Over the last 28 days
+                </div>
+                <p>{{ acceptanceRateAverage.toFixed(2) }}%</p>
+            </div>
+          </v-card-item>
+        </v-card>
 
-      <h2>Acceptance rate (%)</h2>
-      <Bar :data="acceptanceRateChartData" :options="chartOptions" />
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+          <v-card-item>
+            <div>
+              <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+              <div class="text-h6 mb-1">Cumulative Number of Suggestions</div>
+              <div class="text-caption">
+                Over the last 28 days
+              </div>
+              <p>{{ cumulativeNumberSuggestions }}</p>
+            </div>
+          </v-card-item>
+        </v-card>
 
-      <h2>Total Suggestions Count | Total Acceptances Count</h2>
-      <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+          <v-card-item>
+            <div>
+              <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+              <div class="text-h6 mb-1">Cumulative Number of Accepted Prompts</div>
+              <div class="text-caption">
+                Over the last 28 days
+              </div>
+              <p>{{ cumulativeNumberAcceptances }}</p>
+            </div>
+          </v-card-item>
+        </v-card>
 
-      <h2>Total Lines Suggested | Total Lines Accepted</h2>
-      <Line :data="chartData" :options="chartOptions" />
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+          <v-card-item>
+            <div>
+              <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+              <div class="text-h6 mb-1">Cumulative Number of Lines of Code Accepted</div>
+              <div class="text-caption">
+                Over the last 28 days
+              </div>
+              <p>{{ cumulativeNumberLOCAccepted }}</p>
+            </div>
+          </v-card-item>
+        </v-card>
+      </div>
 
-      <h2>Total Active Users</h2>
-      <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
+      <v-main class="p-1" style="min-height: 300px;">
+        <v-container style="min-height: 300px;" class="px-4 elevation-2">
+          <h2>Acceptance rate (%)</h2>
+        <Bar :data="acceptanceRateChartData" :options="chartOptions" />
 
-      <h2>Languages Breakdown</h2>
-      <table class="center-table" style="border: 1px solid black;">
-        <thead>
-          <tr>
-            <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Language Name</th>
-            <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Prompts</th>
-            <th style="border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Lines of Code</th>
-            <th style="border-bottom: 1px solid black; padding-right: 10px;">Acceptance Rate (%)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(language, languageName) in Array.from(languages)" :key="languageName">
-            <td style="text-align: left;">{{ language[0] }}</td>
-            <td style="text-align: left;">{{ language[1].acceptedPrompts }}</td>
-            <td style="text-align: left;">{{ language[1].acceptedLinesOfCode }}</td>
-            <td v-if="language[1].acceptanceRate !== undefined">{{ language[1].acceptanceRate.toFixed(2) }}%</td>
-          </tr>
-        </tbody>
-      </table>
-      
+        <h2>Total Suggestions Count | Total Acceptances Count</h2>
+        <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
+
+        <h2>Total Lines Suggested | Total Lines Accepted</h2>
+        <Line :data="chartData" :options="chartOptions" />
+
+        <h2>Total Active Users</h2>
+        <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
+
+        <h2>Languages Breakdown</h2>
+        <table class="center-table" style="border: 1px solid black;">
+          <thead>
+            <tr>
+              <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Language Name</th>
+              <th style="text-align: left; border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Prompts</th>
+              <th style="border-right: 1px solid black; border-bottom: 1px solid black; padding-right: 10px;">Accepted Lines of Code</th>
+              <th style="border-bottom: 1px solid black; padding-right: 10px;">Acceptance Rate (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(language, languageName) in Array.from(languages)" :key="languageName">
+              <td style="text-align: left;">{{ language[0] }}</td>
+              <td style="text-align: left;">{{ language[1].acceptedPrompts }}</td>
+              <td style="text-align: left;">{{ language[1].acceptedLinesOfCode }}</td>
+              <td v-if="language[1].acceptanceRate !== undefined">{{ language[1].acceptanceRate.toFixed(2) }}%</td>
+            </tr>
+          </tbody>
+        </table>
+        </v-container>
+      </v-main>
     </div>
   </div>
 </template>
@@ -136,6 +165,8 @@ export default defineComponent({
     const chartOptions = {
       responsive: true,
       maintainAspectRatio: true,
+      height: 300,
+      width: 300,
       layout: {
         padding: {
           left: 150,
