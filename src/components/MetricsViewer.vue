@@ -375,14 +375,4 @@ export default defineComponent({
   justify-content: flex-start;
   flex-wrap: wrap;
 }
-
-.tile {
-  border: 1px solid #ccc;
-  box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.1), 
-              -3px -3px 5px rgba(255, 255, 255, 0.7);
-  padding: 20px;
-  border-radius: 10px;
-  width: 20%; 
-  margin: 1%;
-}
 </style>
