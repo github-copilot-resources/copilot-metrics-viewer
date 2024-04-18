@@ -1,6 +1,11 @@
+
+
+
+# GitHub Copilot Metrics Viewer
 <p align="center">
-  <img width="807" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/3865c1c1-f087-4f87-b3ad-8550b3cb355b">
+  <img width="150" alt="image" src="https://github.com/github-copilot-community/copilot-metrics-viewer/assets/3329307/8473a694-217e-4aa2-a3c7-2222a321c336">
 </p>
+This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. 
 
 ## Video
 
@@ -8,8 +13,6 @@ https://github.com/github-copilot-community/copilot-metrics-viewer/assets/332930
 
 
 ## Charts
-
-This application includes a set of charts to visualize various metrics related to GitHub Copilot for your _GitHub Organization_. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. 
 
 ## Key Metrics
 Here are the key metrics visualized in these charts:
