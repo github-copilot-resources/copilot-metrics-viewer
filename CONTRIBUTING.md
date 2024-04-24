@@ -1,8 +1,8 @@
 ## Contributing
 
-[fork]: https://github.com/github-copilot-community/copilot-metrics-viewer/fork
-[pr]: https://github.com/github-copilot-community/copilot-metrics-viewer/compare
-[style]: https://github.com/github-copilot-community/copilot-metrics-viewer/blob/main/.eslintrc.js
+[fork]: https://github.com/github-copilot-resources/copilot-metrics-viewer/fork
+[pr]: https://github.com/github-copilot-resources/copilot-metrics-viewer/compare
+[style]: https://github.com/github-copilot-resources/copilot-metrics-viewer/blob/main/.eslintrc.js
 [code-of-conduct]: CODE_OF_CONDUCT.md
 
 Hi there! We're thrilled that you'd like to contribute to this project. Your help is essential for keeping it great.
