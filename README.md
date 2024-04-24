@@ -70,20 +70,16 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
-## Requirements
-
-Your organization must be enrolled in the GitHub Copilot API private alpha.
-
 ## Setup instructions
 
-- Instructions on how to authenticate are provided in the API documentation - available if you have access to the private alpha.
+- Instructions on how to authenticate are provided in the [API documentation]([url](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28))
 
 ### .env file setup
-- To utilize mocked data stored in a JSON file, simply set the following boolean environment variable to true:
+- To retrieve Copilot metrics via the API and display your organization's data, configure the following boolean environment variable to false:
 ```
-  VUE_APP_MOCKED_DATA=true
+  VUE_APP_MOCKED_DATA=false
 ```
-- To access Copilot metrics through the API, update your configuration by adding the following variables:
+- Additionally, update the following environment variables:
 
 ```
   VUE_APP_GITHUB_ORG=
