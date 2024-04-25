@@ -5,7 +5,9 @@
         
         <v-container>
         <!-- Displaying the JSON object -->
-            <pre>{{ JSON.stringify(metrics, null, 2)}}</pre>
+            <v-card max-height="600px" class="overflow-y-auto">
+                <pre>{{ JSON.stringify(metrics, null, 2) }}</pre>
+            </v-card>
   </v-container>
     </div>
 </template>
