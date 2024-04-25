@@ -96,6 +96,17 @@ npm install
 npm run serve
 ```
 
+### Docker build
+```
+docker build -t copilot-metrics-viewer .
+```
+
+### Docker run
+```
+docker run -p 8080:80 copilot-metrics-viewer
+```
+The application is accessible at http://localhost:8080
+
 ## License 
 
 This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE.txt) for the full terms.
