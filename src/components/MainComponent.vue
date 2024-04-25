@@ -22,7 +22,8 @@
           <v-card flat>
             <MetricsViewer v-if="item === 'organization'" />
             <LanguagesBreakdown v-if="item === 'languages'" />   
-            <CopilotChatViewer v-if="item === 'Copilot chat'" />
+            <CopilotChatViewer v-if="item === 'copilot chat'" />
+            <ApiResponse v-if="item === 'api response'" />
           </v-card>
         </v-window-item>
       </v-window>
@@ -31,9 +32,10 @@
 
 <script lang='ts'>
 import { defineComponent } from 'vue'
-import MetricsViewer from './MetricsViewer.vue' // adjust the path as needed
-import LanguagesBreakdown from './LanguagesBreakdown.vue' // adjust the path as needed
-import CopilotChatViewer from './CopilotChatViewer.vue' // adjust the path as needed
+import MetricsViewer from './MetricsViewer.vue'
+import LanguagesBreakdown from './LanguagesBreakdown.vue' 
+import CopilotChatViewer from './CopilotChatViewer.vue' 
+import ApiResponse from './ApiResponse.vue' 
 
 
 export default defineComponent({
@@ -41,7 +43,8 @@ export default defineComponent({
   components: {
     MetricsViewer,
     LanguagesBreakdown,
-    CopilotChatViewer
+    CopilotChatViewer,
+    ApiResponse
   },
   computed: {
     GitHubOrgName() {
@@ -50,9 +53,8 @@ export default defineComponent({
   },
   data () {
     return {
-      items: ['organization', 'languages', 'Copilot chat'],
+      items: ['organization', 'languages', 'copilot chat', 'api response'],
       tab: null,
-
     }
   },
 })
