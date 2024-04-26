@@ -21,6 +21,7 @@
     <!-- API Error Message -->
     <div v-if="apiError" class="error-message" v-html="apiError"></div>
     <div v-if="!apiError">
+      <v-progress-linear v-if="!metricsReady" indeterminate color="indigo"></v-progress-linear>
       <v-window v-if="metricsReady" v-model="tab">
         <v-window-item v-for="item in items" :key="item" :value="item">
           <v-card flat>
