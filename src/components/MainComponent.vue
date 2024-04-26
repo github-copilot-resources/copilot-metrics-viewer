@@ -25,8 +25,8 @@
         <v-window-item v-for="item in items" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === 'organization'" :metrics="metrics" />
-            <LanguagesBreakdown v-if="item === 'languages'" />   
-            <CopilotChatViewer v-if="item === 'copilot chat'" />
+            <LanguagesBreakdown v-if="item === 'languages'" :metrics="metrics"/>   
+            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <ApiResponse v-if="item === 'api response'" :metrics="metrics" />
           </v-card>
         </v-window-item>
@@ -37,14 +37,16 @@
 </template>
 
 <script lang='ts'>
-import { defineComponent } from 'vue'
+import { defineComponent, ref } from 'vue'
+import { getGitHubCopilotMetricsApi } from '../api/GitHubApi';
+import { Metrics } from '../model/MetricsData';
+
+//Components
 import MetricsViewer from './MetricsViewer.vue'
 import LanguagesBreakdown from './LanguagesBreakdown.vue' 
 import CopilotChatViewer from './CopilotChatViewer.vue' 
 import ApiResponse from './ApiResponse.vue'
-import { ref } from 'vue';
-import { getGitHubCopilotMetricsApi } from '../api/GitHubApi';
-import { Metrics } from '../model/MetricsData';
+
 
 
 export default defineComponent({

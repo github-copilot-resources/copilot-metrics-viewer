@@ -158,9 +158,6 @@ export default defineComponent({
     //Total Active Users
     const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
 
-    // API Error Message
-    const apiError = ref<string | null>(null);
-
     // Create an empty map to store the languages.
     const languages = new Map<string, Language>();
 
@@ -199,12 +196,8 @@ export default defineComponent({
         }
       },
     };
-    console.log('props', props);
-    console.log('props metrics', props.metrics);
 
     const data = toRef(props, 'metrics').value;
-
-    console.log('data', data);
 
     cumulativeNumberSuggestions.value = 0;
     const cumulativeSuggestionsData = data.map((m: Metrics) => {
@@ -286,9 +279,6 @@ export default defineComponent({
       ]
     };
 
-    console.log("AcceptanceRateChartData");
-    console.log(acceptanceRateChartData);
-
     totalActiveUsersChartData.value = {
       labels: data.map((m: Metrics) => m.day),
       datasets: [
@@ -333,7 +323,7 @@ export default defineComponent({
 
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
-      totalActiveUsersChartOptions, acceptanceRateChartData, apiError, acceptanceRateAverage, cumulativeNumberSuggestions, 
+      totalActiveUsersChartOptions, acceptanceRateChartData, acceptanceRateAverage, cumulativeNumberSuggestions, 
       cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, languages };
   },
   
