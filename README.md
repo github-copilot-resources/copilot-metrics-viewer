@@ -72,7 +72,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 ## Setup instructions
 
-- Instructions on how to authenticate are provided in the [API documentation]([url](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28))
+- Instructions on how to authenticate are provided in the [API documentation](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28)
 
 ### .env file setup
 - To retrieve Copilot metrics via the API and display your organization's data, configure the following boolean environment variable to false:
