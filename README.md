@@ -47,13 +47,13 @@ Here are the key metrics visualized in these charts:
 
 Pie charts with the top 5 languages by accepted prompts and acceptance rate are displayed at the top.
 <p align="center">
-   <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/1415e6aa-87a4-4602-aac5-2525abfd9bef">
+  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/8ab0488a-89e6-486d-aa61-df3d178cd57c">
 </p>
 
 The language breakdown analysis tab also displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the past 28 days. The entries are sorted by the number of _accepted lines of code descending_.
 
 <p align="center">
-  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/6ce22c04-3a4f-48e4-bb3a-db9f9fd7eb95">
+  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/38a4ff57-4974-4f60-a154-91db17b03678">
 </p>
 
 ## Copilot Chat Metrics
@@ -72,7 +72,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 ## Setup instructions
 
-- Instructions on how to authenticate are provided in the [API documentation]([url](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28))
+- Instructions on how to authenticate are provided in the [API documentation](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28)
 
 ### .env file setup
 - To retrieve Copilot metrics via the API and display your organization's data, configure the following boolean environment variable to false:
