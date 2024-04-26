@@ -48,7 +48,7 @@
           <h2>Languages Breakdown </h2>
           <br>
 
-          <v-data-table :headers="headers" :items="Array.from(languages)" class="elevation-2">
+          <v-data-table :headers="headers" :items="Array.from(languages)" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
               <template v-slot:item="{item}">
                   <tr>
                       <td>{{ item[0] }}</td>
