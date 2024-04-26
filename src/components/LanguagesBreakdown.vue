@@ -137,6 +137,11 @@
         maintainAspectRatio: true,
       };
 
+      const pieChartColors = ref([
+      '#4B0082', '#41B883', '#483D8B', '#87CEFA', 
+      '#32CD32'
+    ]);
+
       const data = toRef(props, 'metrics').value;
  
       // Process the language breakdown separately
@@ -177,7 +182,7 @@
         datasets: [
           {
             data: Array.from(top5LanguagesAcceptanceRate.values()).map(language => language.acceptanceRate.toFixed(2)),
-            backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16', '#FFD700', '#FF69B4', '#D8BFD8', '#DDA0DD', '#EE82EE', '#DA70D6', '#BA55D3', '#9370DB', '#8A2BE2', '#9400D3'],
+            backgroundColor: pieChartColors.value,
           },
         ],
       };
@@ -192,7 +197,7 @@
         datasets: [
           {
             data: Array.from(languages.value.values()).map(language => language.acceptedPrompts),
-            backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16', '#FFD700', '#FF69B4', '#D8BFD8', '#DDA0DD', '#EE82EE', '#DA70D6', '#BA55D3', '#9370DB', '#8A2BE2', '#9400D3'],
+            backgroundColor: pieChartColors.value,
           },
         ],
       };
@@ -205,7 +210,7 @@
         datasets: [
           {
             data: Array.from(top5LanguagesAcceptedPrompts.values()).map(language => language.acceptedPrompts),
-            backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16', '#FFD700', '#FF69B4', '#D8BFD8', '#DDA0DD', '#EE82EE', '#DA70D6', '#BA55D3', '#9370DB', '#8A2BE2', '#9400D3'],
+            backgroundColor: pieChartColors.value,
           },
         ],
       };
