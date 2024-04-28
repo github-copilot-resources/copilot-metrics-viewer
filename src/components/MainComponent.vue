@@ -66,7 +66,6 @@ export default defineComponent({
     },
     itemName() {
       if (process.env.VUE_APP_SCOPE === 'enterprise' || process.env.VUE_APP_SCOPE === 'organization') {
-        console.log(process.env.VUE_APP_SCOPE);
         return process.env.VUE_APP_SCOPE;
       } else {
         console.log("invalid");
