@@ -7,27 +7,53 @@
 import axios from "axios";
 
 import { Metrics } from "../model/MetricsData";
-import data from '../assets/copilot_metrics_response_sample.json';
+import organizationMockedResponse from '../assets/organization_response_sample.json';
+import enterpriseMockedResponse from '../assets/enterprise_response_sample.json';
 
-export const getGitHubCopilotMetricsApi = async (): Promise<Metrics[]> => {
+
+export const getMetricsApi = async (): Promise<Metrics[]> => {
   
   let response;
   let metricsData;
 
   if (process.env.VUE_APP_MOCKED_DATA === "true") {
-    response = data;
+    
+    if (process.env.VUE_APP_SCOPE === "organization") {
+      response = organizationMockedResponse;
+    } else if (process.env.VUE_APP_SCOPE === "enterprise") {
+      response = enterpriseMockedResponse;
+    } else {
+      throw new Error(`Invalid VUE_APP_SCOPE value: ${process.env.VUE_APP_SCOPE}. Expected "organization" or "enterprise".`);
+    }
+
     metricsData = response.map((item: any) => new Metrics(item));
   } else {
-    response = await axios.get(
-      `https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/usage`,
-      {
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      }
-    );
+    if (process.env.VUE_APP_SCOPE === "organization") {
+      response = await axios.get(
+        `https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/usage`,
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+    } else if (process.env.VUE_APP_SCOPE === "enterprise") {
+
+      response = await axios.get(
+        `https://api.github.com/enterprises/${process.env.VUE_APP_GITHUB_ENT}/copilot/usage`,
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+    } else {
+      throw new Error(`Invalid VUE_APP_SCOPE value: ${process.env.VUE_APP_SCOPE}. Expected "organization" or "enterprise".`);
+    }
 
     metricsData = response.data.map((item: any) => new Metrics(item));
   }
