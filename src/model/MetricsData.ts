@@ -1,4 +1,4 @@
-class Breakdown {
+class BreakdownData {
     language: string;
     editor: string;
     suggestions_count: number;
@@ -34,7 +34,7 @@ class Breakdown {
     total_chat_turns: number;
     total_active_chat_users: number;
     day: string;
-    breakdown: Breakdown[];
+    breakdown: BreakdownData[];
   
     constructor(data: any) {
       this.total_suggestions_count = data.total_suggestions_count;
@@ -46,6 +46,6 @@ class Breakdown {
       this.total_chat_turns = data.total_chat_turns;
       this.total_active_chat_users = data.total_active_chat_users;
       this.day = data.day;
-      this.breakdown = data.breakdown.map((item: any) => new Breakdown(item));
+      this.breakdown = data.breakdown.map((item: any) => new BreakdownData(item));
     }
   }
