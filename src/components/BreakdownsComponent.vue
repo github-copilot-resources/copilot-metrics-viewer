@@ -65,7 +65,7 @@
   
   <script lang="ts">
   import { defineComponent, ref, toRef } from 'vue';
-  import { Metrics } from '../model/MetricsData';
+  import { Metrics } from '../model/Metrics';
   import { Breakdown } from '../model/Breakdown';
   import { Pie } from 'vue-chartjs'
 
