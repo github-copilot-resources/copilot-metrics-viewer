@@ -43,7 +43,7 @@
 <script lang='ts'>
 import { defineComponent, ref } from 'vue'
 import { getMetricsApi } from '../api/GitHubApi';
-import { Metrics } from '../model/MetricsData';
+import { Metrics } from '../model/Metrics';
 
 //Components
 import MetricsViewer from './MetricsViewer.vue'

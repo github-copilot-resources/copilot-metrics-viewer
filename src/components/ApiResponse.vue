@@ -1,7 +1,7 @@
 <template>
   <v-container>
       <!-- Displaying the JSON object -->
-      <v-card max-height="600px" class="overflow-y-auto">
+      <v-card max-height="575px" class="overflow-y-auto">
           <pre ref="jsonText">{{ JSON.stringify(metrics, null, 2) }}</pre>
       </v-card>
       <br>
