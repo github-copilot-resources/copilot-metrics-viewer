@@ -42,7 +42,7 @@
   
 <script lang="ts">
   import { defineComponent, ref, toRef } from 'vue';
-  import { Metrics } from '../model/MetricsData';
+  import { Metrics } from '../model/Metrics';
   import { Line, Bar } from 'vue-chartjs'
   import {
   Chart as ChartJS,

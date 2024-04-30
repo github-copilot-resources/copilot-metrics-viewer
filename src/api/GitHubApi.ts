@@ -6,7 +6,7 @@
 
 import axios from "axios";
 
-import { Metrics } from "../model/MetricsData";
+import { Metrics } from "../model/Metrics";
 import organizationMockedResponse from '../assets/organization_response_sample.json';
 import enterpriseMockedResponse from '../assets/enterprise_response_sample.json';
 
@@ -59,3 +59,16 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
   }
   return metricsData;
 };
+
+export const getTeams = async (): Promise<string[]> =>{
+  const response = await axios.get(`https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/teams`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  });
+
+  return response.data;
+}
+
