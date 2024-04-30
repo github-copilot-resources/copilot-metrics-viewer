@@ -78,7 +78,6 @@
 <script lang="ts">
 import { defineComponent, ref, toRef } from 'vue';
 import { Metrics } from '../model/Metrics';
-import { Language } from '../model/Language';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -157,9 +156,6 @@ export default defineComponent({
     
     //Total Active Users
     const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
-
-    // Create an empty map to store the languages.
-    const languages = new Map<string, Language>();
 
     const chartOptions = {
       responsive: true,
@@ -290,41 +286,11 @@ export default defineComponent({
         }
       ]
     };
-    
-    // Process the language breakdown separately
-    data.forEach((m: Metrics) => m.breakdown.forEach(breakdown => 
-    {
-      const languageName = breakdown.language;
-      let language = languages.get(languageName);
-
-      if (!language) {
-        // Create a new Language object if it does not exist
-        language = new Language({
-          name: languageName,
-          acceptedPrompts: breakdown.acceptances_count,
-          suggestedLinesOfCode: breakdown.lines_suggested,
-          acceptedLinesOfCode: breakdown.lines_accepted,
-        });
-        languages.set(languageName, language);
-      } else {
-        // Update the existing Language object
-        language.acceptedPrompts += breakdown.acceptances_count;
-        language.suggestedLinesOfCode += breakdown.lines_suggested;
-        language.acceptedLinesOfCode += breakdown.lines_accepted;
-      }
-      // Recalculate the acceptance rate
-      language.acceptanceRate = language.suggestedLinesOfCode !== 0 ? (language.acceptedLinesOfCode / language.suggestedLinesOfCode) * 100 : 0;
-    }));
-
-    //Sort languages map by accepted lines of code
-    languages[Symbol.iterator] = function* () {
-      yield* [...this.entries()].sort((a, b) => b[1].acceptedLinesOfCode - a[1].acceptedLinesOfCode);
-    }
 
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
       totalActiveUsersChartOptions, acceptanceRateChartData, acceptanceRateAverage, cumulativeNumberSuggestions, 
-      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, languages };
+      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted };
   },
   
 });
