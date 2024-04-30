@@ -72,17 +72,40 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 ## Setup instructions
 
-- Instructions on how to authenticate are provided in the [API documentation](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28)
+Instructions on how to authenticate are provided in the [API documentation](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28)
 
-### .env file setup
-- To retrieve Copilot metrics via the API and display your organization's data, configure the following boolean environment variable to false:
+In the `.env` file, you can configure several environment variables that control the behavior of the application.
+
+#### VUE_APP_SCOPE 
+
+The `VUE_APP_SCOPE` environment variable in the `.env` file determines the scope of the API calls made by the application. It can be set to either 'enterprise' or 'organization'.
+
+- If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `VUE_APP_GITHUB_ENT` variable.
+- If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `VUE_APP_GITHUB_ORG` variable.
+
+For example, if you want to target the API calls to an organization, you would set `VUE_APP_SCOPE=organization` in the `.env` file.
+
+````
+VUE_APP_SCOPE=organization
+
+VUE_APP_GITHUB_ORG= <YOUR-ORGANIZATION>
+
+VUE_APP_GITHUB_ENT=
+````
+
+
+#### VUE_APP_MOCKED_DATA
+
+To access Copilot metrics from the last 28 days via the API and display actual data, set the following boolean environment variable to `false`:
+
 ```
   VUE_APP_MOCKED_DATA=false
 ```
-- Additionally, update the following environment variables:
+
+#### VUE_APP_GITHUB_TOKEN
+Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _admin:org_.
 
 ```
-  VUE_APP_GITHUB_ORG=
   VUE_APP_GITHUB_TOKEN=
 ```
 
@@ -120,4 +143,5 @@ This project is licensed under the terms of the MIT open source license. Please 
 I aim to provide support through GitHub Issues. While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention.
 
 ### Coming next 🔮
-- Enterprise level charts
+- Team slicing
+- Persistence layer
