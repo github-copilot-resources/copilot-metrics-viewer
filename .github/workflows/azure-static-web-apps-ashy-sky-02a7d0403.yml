@@ -32,7 +32,9 @@ jobs:
           api_location: "" # Api source code path - optional
           output_location: "dist" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
-
+        # allows the workflow to continue without deploying the site's content
+        env:
+          SKIP_DEPLOY_ON_MISSING_SECRETS: true
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
