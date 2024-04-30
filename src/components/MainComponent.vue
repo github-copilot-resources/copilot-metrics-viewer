@@ -5,13 +5,13 @@
         <v-icon>mdi-github</v-icon>
       </v-btn>
 
-      <v-toolbar-title>Copilot Metrics Viewer | {{ GitHubOrgName }}</v-toolbar-title>
+      <v-toolbar-title>Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ gitHubOrgName }}</v-toolbar-title>
       <h2>  </h2>
       <v-spacer></v-spacer>
 
       <template v-slot:extension>
         <v-tabs v-model="tab" align-tabs="title">
-          <v-tab v-for="item in items" :key="item" :value="item">
+          <v-tab v-for="item in tabItems" :key="item" :value="item">
             {{ item }}
           </v-tab>
         </v-tabs>
@@ -21,17 +21,20 @@
     <!-- API Error Message -->
     <div v-if="apiError" class="error-message" v-html="apiError"></div>
     <div v-if="!apiError">
-      <v-progress-linear v-if="!metricsReady" indeterminate color="indigo"></v-progress-linear>
-      <v-window v-if="metricsReady" v-model="tab">
-        <v-window-item v-for="item in items" :key="item" :value="item">
-          <v-card flat>
-            <MetricsViewer v-if="item === 'organization'" :metrics="metrics" />
-            <LanguagesBreakdown v-if="item === 'languages'" :metrics="metrics"/>   
-            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" />
-          </v-card>
-        </v-window-item>
-      </v-window>
+      <div v-if="itemName === 'invalid'" class="error-message">Invalid Scope in .env file. Please check the value of VUE_APP_SCOPE.</div>
+      <div v-else>
+        <v-progress-linear v-if="!metricsReady" indeterminate color="indigo"></v-progress-linear>
+        <v-window v-if="metricsReady" v-model="tab">
+          <v-window-item v-for="item in tabItems" :key="item" :value="item">
+            <v-card flat>
+              <MetricsViewer v-if="item === itemName" :metrics="metrics" />
+              <LanguagesBreakdown v-if="item === 'languages'" :metrics="metrics"/>   
+              <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
+              <ApiResponse v-if="item === 'api response'" :metrics="metrics" />
+            </v-card>
+          </v-window-item>
+        </v-window>
+      </div>
     </div>
 
   </v-card>
@@ -39,16 +42,14 @@
 
 <script lang='ts'>
 import { defineComponent, ref } from 'vue'
-import { getGitHubCopilotMetricsApi } from '../api/GitHubApi';
-import { Metrics } from '../model/MetricsData';
+import { getMetricsApi } from '../api/GitHubApi';
+import { Metrics } from '../model/Metrics';
 
 //Components
 import MetricsViewer from './MetricsViewer.vue'
 import LanguagesBreakdown from './LanguagesBreakdown.vue' 
 import CopilotChatViewer from './CopilotChatViewer.vue' 
 import ApiResponse from './ApiResponse.vue'
-
-
 
 export default defineComponent({
   name: 'MainComponent',
@@ -59,14 +60,30 @@ export default defineComponent({
     ApiResponse
   },
   computed: {
-    GitHubOrgName() {
+    gitHubOrgName() {
       return process.env.VUE_APP_GITHUB_ORG;
+    },
+    itemName() {
+      if (process.env.VUE_APP_SCOPE === 'enterprise' || process.env.VUE_APP_SCOPE === 'organization') {
+        return process.env.VUE_APP_SCOPE;
+      } else {
+        console.log("invalid");
+        return 'invalid';
+      }
+    },
+    capitalizedItemName() {
+      return this.itemName.charAt(0).toUpperCase() + this.itemName.slice(1);
     }
   },
   data () {
     return {
-      items: ['organization', 'languages', 'copilot chat', 'api response'],
+      tabItems: ['languages', 'copilot chat', 'api response'],
       tab: null
+    }
+  },
+  created() {
+    if(this.itemName !== 'invalid'){
+      this.tabItems.unshift(this.itemName);
     }
   },
   setup() {
@@ -75,8 +92,8 @@ export default defineComponent({
 
       // API Error Message
       const apiError = ref<string | undefined>(undefined);
-  
-      getGitHubCopilotMetricsApi().then(data => {
+
+      getMetricsApi().then(data => {
         metrics.value = data;
 
         // Set metricsReady to true after the call completes.
@@ -102,7 +119,7 @@ export default defineComponent({
         apiError.value = error.message;
       }
        // Add a new line to the apiError message
-       apiError.value += ' <br> If .env file is modified, restart the changes to take effect.';
+       apiError.value += ' <br> If .env file is modified, restart the app for the changes to take effect.';
         
     });
       

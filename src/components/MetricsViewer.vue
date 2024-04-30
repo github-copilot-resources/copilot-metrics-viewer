@@ -77,7 +77,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, toRef } from 'vue';
-import { Metrics } from '../model/MetricsData';
+import { Metrics } from '../model/Metrics';
 import { Language } from '../model/Language';
 import {
   Chart as ChartJS,
