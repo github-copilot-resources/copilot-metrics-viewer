@@ -17,7 +17,7 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
   let metricsData;
 
   if (process.env.VUE_APP_MOCKED_DATA === "true") {
-    
+    console.log("Using mock data. Check VUE_APP_MOCKED_DATA variable.");
     if (process.env.VUE_APP_SCOPE === "organization") {
       response = organizationMockedResponse;
     } else if (process.env.VUE_APP_SCOPE === "enterprise") {
@@ -28,6 +28,10 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
 
     metricsData = response.map((item: any) => new Metrics(item));
   } else {
+    // if VUE_APP_GITHUB_TOKEN is not set, throw an error
+    if (!process.env.VUE_APP_GITHUB_TOKEN) {
+      throw new Error("VUE_APP_GITHUB_TOKEN environment variable is not set.");
+    }
     if (process.env.VUE_APP_SCOPE === "organization") {
       response = await axios.get(
         `https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/usage`,
