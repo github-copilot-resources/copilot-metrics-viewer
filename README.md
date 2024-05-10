@@ -1,4 +1,4 @@
-_NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/edit/main/README.md#support)._
+_NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
 # GitHub Copilot Metrics Viewer
 <p align="center">
