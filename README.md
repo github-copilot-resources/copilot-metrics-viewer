@@ -1,11 +1,11 @@
-
-
+_NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
 # GitHub Copilot Metrics Viewer
 <p align="center">
   <img width="150" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/8473a694-217e-4aa2-a3c7-2222a321c336">
 </p>
-This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. 
+
+This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28).
 
 ## Video
 
@@ -72,8 +72,6 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 ## Setup instructions
 
-Instructions on how to authenticate are provided in the [API documentation](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28)
-
 In the `.env` file, you can configure several environment variables that control the behavior of the application.
 
 #### VUE_APP_SCOPE 
@@ -128,7 +126,7 @@ docker build -t copilot-metrics-viewer .
 ```
 docker run -p 8080:80 copilot-metrics-viewer
 ```
-The application is accessible at http://localhost:8080
+The application will be accessible at http://localhost:8080
 
 ## License 
 
@@ -136,11 +134,13 @@ This project is licensed under the terms of the MIT open source license. Please 
 
 ## Maintainers 
 
-@martedesco
+[@martedesco](https://github.com/martedesco)
 
 ## Support
 
-I aim to provide support through GitHub Issues. While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention.
+This project is independently developed and maintained, and is not an official GitHub product. It thrives through the dedicated efforts of myself ([@martedesco](https://github.com/martedesco)) and our wonderful contributors. A heartfelt thanks to all our contributors! ✨ 
+
+I aim to provide support through [GitHub Issues](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues). While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention. 🙏🏼
 
 ### Coming next 🔮
 - Team slicing
