@@ -1,5 +1,4 @@
-
-
+_NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
 # GitHub Copilot Metrics Viewer
 <p align="center">
@@ -127,7 +126,7 @@ docker build -t copilot-metrics-viewer .
 ```
 docker run -p 8080:80 copilot-metrics-viewer
 ```
-The application is accessible at http://localhost:8080
+The application will be accessible at http://localhost:8080
 
 ## License 
 
@@ -135,11 +134,13 @@ This project is licensed under the terms of the MIT open source license. Please 
 
 ## Maintainers 
 
-@martedesco
+[@martedesco](https://github.com/martedesco)
 
 ## Support
 
-I aim to provide support through GitHub Issues. While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention.
+This project is independently developed and maintained, and is not an official GitHub product. It thrives through the dedicated efforts of myself ([@martedesco](https://github.com/martedesco)) and our wonderful contributors. A heartfelt thanks to all our contributors! ✨ 
+
+I aim to provide support through [GitHub Issues](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues). While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention. 🙏🏼
 
 ### Coming next 🔮
 - Team slicing
