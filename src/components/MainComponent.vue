@@ -28,8 +28,8 @@
           <v-window-item v-for="item in tabItems" :key="item" :value="item">
             <v-card flat>
               <MetricsViewer v-if="item === itemName" :metrics="metrics" />
-              <BreakdownsComponent v-if="item === 'languages'" :metrics="metrics" :breakdownKey="'language'"/>
-              <BreakdownsComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
+              <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdownKey="'language'"/>
+              <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
               <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
               <ApiResponse v-if="item === 'api response'" :metrics="metrics" />
             </v-card>
@@ -48,7 +48,7 @@ import { Metrics } from '../model/Metrics';
 
 //Components
 import MetricsViewer from './MetricsViewer.vue'
-import BreakdownsComponent from './BreakdownsComponent.vue' 
+import BreakdownComponent from './BreakdownComponent.vue' 
 import CopilotChatViewer from './CopilotChatViewer.vue' 
 import ApiResponse from './ApiResponse.vue'
 
@@ -56,7 +56,7 @@ export default defineComponent({
   name: 'MainComponent',
   components: {
     MetricsViewer,
-    BreakdownsComponent,
+    BreakdownComponent,
     CopilotChatViewer,
     ApiResponse
   },

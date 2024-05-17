@@ -95,7 +95,7 @@ ChartJS.register(
 )
 
 export default defineComponent({
-  name: 'BreakdownsComponent',
+  name: 'BreakdownComponent',
   props: {
       metrics: {
           type: Object,
