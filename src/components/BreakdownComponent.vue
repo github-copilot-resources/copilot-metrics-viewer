@@ -6,7 +6,7 @@
           <v-card-item>
             <div>
               <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-              <div class="text-h6 mb-1">Number of {{ breakdownKey }}s</div>
+              <div class="text-h6 mb-1">Number of {{ breakdownDisplayNamePlural }}</div>
               <div class="text-caption">
                 Over the last 28 days
               </div>
@@ -23,7 +23,7 @@
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownKey }}s by accepted prompts</div>
+                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted prompts</div>
                 <div style="width: 300px; height: 300px;">
                   <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
                 </div>
@@ -35,7 +35,7 @@
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownKey }}s by acceptance rate</div>
+                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by acceptance rate</div>
                 <div style="width: 300px; height: 300px;">
                   <Pie :data="breakdownsChartDataTop5AcceptanceRate" :options="chartOptions" />
                 </div>
@@ -45,7 +45,7 @@
         </v-row>
 
         <br>
-        <h2>{{ breakdownDisplayName }}s Breakdown </h2>
+        <h2>{{ breakdownDisplayNamePlural }} Breakdown </h2>
         <br>
 
         <v-data-table :headers="headers" :items="Array.from(breakdowns)" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
@@ -112,6 +112,9 @@ export default defineComponent({
   computed: {
     breakdownDisplayName() {
       return this.breakdownKey.charAt(0).toUpperCase() + this.breakdownKey.slice(1);
+    },
+    breakdownDisplayNamePlural() {
+      return `${this.breakdownDisplayName}s`;
     },
     headers() {
       return [
