@@ -18,7 +18,7 @@
       <div class="copy-container">
         <v-btn @click="showSeatCount">Show Assigned Seats count</v-btn>
         <transition name="fade">
-          <div v-if="showCopyMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
+          <div v-if="showSeatMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
         </transition>
       </div>
   </v-container>
@@ -42,6 +42,7 @@ export default defineComponent({
   data() {
     return {
       showCopyMessage: false,
+      showSeatMessage: false,
       isError: false,
       message : ''
       
@@ -69,12 +70,12 @@ export default defineComponent({
   
   showSeatCount() {
     const seatCount = this.seats.length;
-    console.log('Seat count:', seatCount);
+    //console.log('Seat count:', seatCount);
     this.message = `Seat count: ${seatCount}`;
 
-    this.showCopyMessage = true;
+    this.showSeatMessage = true;
     setTimeout(() => {
-      this.showCopyMessage = false;
+      this.showSeatMessage = false;
     }, 3000);
   }
 
