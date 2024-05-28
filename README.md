@@ -72,6 +72,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 ## Seat Analysis 
 
+![image](https://github.com/DevOps-zhuang/copilot-metrics-viewer/assets/54096296/d1fa9d1d-4fab-4e87-84ba-7be189dd4dd0)
 
 1. **Total Assigned:** This metric represents the total number of copilot assigned seats within current organization.
 
