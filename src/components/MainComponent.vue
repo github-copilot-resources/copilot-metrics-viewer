@@ -75,7 +75,7 @@ export default defineComponent({
       return this.itemName.charAt(0).toUpperCase() + this.itemName.slice(1);
     },
     mockedDataMessage() {
-      return process.env.VUE_APP_MOCKED_DATA === 'true' ? 'Using mock data. Check VUE_APP_MOCKED_DATA variable.' : '';
+      return process.env.VUE_APP_MOCKED_DATA === 'true' ? 'Using mock data - see README if unintended' : '';
     }
   },
   data () {
