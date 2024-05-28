@@ -31,7 +31,8 @@
               <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdownKey="'language'"/>
               <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
               <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-              <ApiResponse v-if="item === 'api response'" :metrics="metrics" />
+              <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
+              <ApiResponse v-if="item === 'api response'" :metrics="metrics" :seats="seats" />
             </v-card>
           </v-window-item>
         </v-window>
@@ -44,12 +45,15 @@
 <script lang='ts'>
 import { defineComponent, ref } from 'vue'
 import { getMetricsApi } from '../api/GitHubApi';
+import { getSeatsApi } from '../api/ExtractSeats';
 import { Metrics } from '../model/Metrics';
+import { Seat } from "../model/Seat";
 
 //Components
 import MetricsViewer from './MetricsViewer.vue'
 import BreakdownComponent from './BreakdownComponent.vue' 
 import CopilotChatViewer from './CopilotChatViewer.vue' 
+import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
 
 export default defineComponent({
@@ -58,6 +62,7 @@ export default defineComponent({
     MetricsViewer,
     BreakdownComponent,
     CopilotChatViewer,
+    SeatsAnalysisViewer,
     ApiResponse
   },
   computed: {
@@ -78,7 +83,7 @@ export default defineComponent({
   },
   data () {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat','seat analysis', 'api response'],
       tab: null
     }
   },
@@ -90,7 +95,8 @@ export default defineComponent({
   setup() {
       const metricsReady = ref(false);
       const metrics = ref<Metrics[]>([]);
-
+      const seatsReady = ref(false); // Add this line by zhuang to the setup function
+      const seats = ref<Seat[]>([]); // Add this line by zhuang to the setup function
       // API Error Message
       const apiError = ref<string | undefined>(undefined);
 
@@ -123,8 +129,38 @@ export default defineComponent({
        apiError.value += ' <br> If .env file is modified, restart the app for the changes to take effect.';
         
     });
-      
-    return { metricsReady, metrics, apiError };
+     
+    getSeatsApi().then(data => {
+        seats.value = data;
+
+        // Set seatsReady to true after the call completes.
+        seatsReady.value = true;
+          
+      }).catch(error => {
+      console.log(error);
+      // Check the status code of the error response
+      if (error.response && error.response.status) {
+        switch (error.response.status) {
+          case 401:
+            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            break;
+          case 404:
+            apiError.value = `404 Not Found - is the organization '${process.env.VUE_APP_GITHUB_ORG}' correct?`;
+            break;
+          default:
+            apiError.value = error.message;
+            break;
+        }
+      } else {
+        // Update apiError with the error message
+        apiError.value = error.message;
+      }
+       // Add a new line to the apiError message
+       apiError.value += ' <br> If .env file is modified, restart the app for the changes to take effect.';
+        
+    });
+
+    return { metricsReady, metrics, seatsReady,seats,apiError };
     }
 })
 </script>
