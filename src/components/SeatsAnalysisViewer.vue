@@ -29,7 +29,7 @@
             <v-card-item>
                 <div>
                 <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">No Activity in Last 7 days </div>
+                <div class="text-h6 mb-1">No Activity in the Last 7 days </div>
                 <div class="text-caption">
                     No use in the last 7 days
                 </div>
