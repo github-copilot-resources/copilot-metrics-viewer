@@ -78,7 +78,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 2. **Assigned But Never Used:** This metric shows the assigned but never used seats within current organization. the assigned time are also dispalyed in the below chart, recommend to check that date.
 
-3. **No Activity in Last 7 days:** never used seats. or seats used, but no activity in recent 7 days.
+3. **No Activity in the Last 7 days:** never used seats or seats used, but with no activity in the past 7 days.
 
 4. **No Activity in last 7 days (Inluding Never used seats):** A table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed more prominently at the front.
 
