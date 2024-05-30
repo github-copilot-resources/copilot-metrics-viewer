@@ -6,7 +6,7 @@
                 <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                 <div class="text-h6 mb-1">Total Assigned  </div>
                 <div class="text-caption">
-                    currently assigned seats
+                    Currently assigned seats
                 </div>
                 <p>{{ totalSeats.length }}</p>
                 </div>
