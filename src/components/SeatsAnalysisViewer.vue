@@ -110,7 +110,6 @@ data() {
             { title: 'Assigned to the Organization At', key: 'created_at' },
             { title: 'Last Activity At', key: 'last_activity_at' },
             { title: 'Last Activity Editor', key: 'last_activity_editor' },
-            // 添加其他需要显示的属性
         ],
     };
 },
