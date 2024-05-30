@@ -74,7 +74,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 ![image](https://github.com/DevOps-zhuang/copilot-metrics-viewer/assets/54096296/d1fa9d1d-4fab-4e87-84ba-7be189dd4dd0)
 
-1. **Total Assigned:** This metric represents the total number of copilot assigned seats within current organization.
+1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization.
 
 2. **Assigned But Never Used:** This metric shows the assigned but never used seats within current organization. the assigned time are also dispalyed in the below chart, recommend to check that date.
 
