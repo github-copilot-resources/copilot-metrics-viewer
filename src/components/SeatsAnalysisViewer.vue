@@ -53,9 +53,6 @@
                         <td>{{ item.created_at }}</td>
                         <td>{{ item.last_activity_at }}</td>
                         <td>{{ item.last_activity_editor }}</td>
-                    <!--
-                        <td>{{ item.last_activity_at }}</td>
-                    -->
                     </tr>
                 </template>
                 </v-data-table>
