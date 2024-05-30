@@ -31,7 +31,7 @@
                 <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                 <div class="text-h6 mb-1">No Activity in Last 7 days </div>
                 <div class="text-caption">
-                    no use in last 7 days
+                    No use in the last 7 days
                 </div>
                 <p>{{ unusedSeats.length }}</p>
                 </div>
