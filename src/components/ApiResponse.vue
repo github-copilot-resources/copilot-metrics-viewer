@@ -12,6 +12,7 @@
         </transition>
       </div>
       
+      <br><br>
       <v-card max-height="575px" class="overflow-y-auto">
           <pre ref="jsonText">{{ JSON.stringify(seats, null, 2) }}</pre>
       </v-card>
