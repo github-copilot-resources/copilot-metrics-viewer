@@ -6,7 +6,7 @@
       </v-btn>
 
       <v-toolbar-title>Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ gitHubOrgName }}</v-toolbar-title>
-      <h2>  </h2>
+      <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer></v-spacer>
 
       <template v-slot:extension>
@@ -74,6 +74,9 @@ export default defineComponent({
     },
     capitalizedItemName() {
       return this.itemName.charAt(0).toUpperCase() + this.itemName.slice(1);
+    },
+    mockedDataMessage() {
+      return process.env.VUE_APP_MOCKED_DATA === 'true' ? 'Using mock data - see README if unintended' : '';
     }
   },
   data () {
