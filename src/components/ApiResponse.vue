@@ -16,6 +16,7 @@
       <v-card max-height="575px" class="overflow-y-auto">
           <pre ref="jsonText">{{ JSON.stringify(seats, null, 2) }}</pre>
       </v-card>
+      <br>
       <div class="copy-container">
         <v-btn @click="showSeatCount">Show Assigned Seats count</v-btn>
         <transition name="fade">
