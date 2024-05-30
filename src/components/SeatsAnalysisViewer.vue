@@ -67,7 +67,6 @@
 <script lang="ts">
   import { defineComponent, ref, toRef , watchEffect } from 'vue';
   import { Seat } from '../model/Seat';
-  import { Line, Bar } from 'vue-chartjs'
   import {
     Chart as ChartJS,
     ArcElement,
