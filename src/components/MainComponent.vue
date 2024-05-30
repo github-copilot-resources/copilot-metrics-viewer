@@ -95,8 +95,8 @@ export default defineComponent({
   setup() {
       const metricsReady = ref(false);
       const metrics = ref<Metrics[]>([]);
-      const seatsReady = ref(false); // Add this line by zhuang to the setup function
-      const seats = ref<Seat[]>([]); // Add this line by zhuang to the setup function
+      const seatsReady = ref(false); 
+      const seats = ref<Seat[]>([]); 
       // API Error Message
       const apiError = ref<string | undefined>(undefined);
 
