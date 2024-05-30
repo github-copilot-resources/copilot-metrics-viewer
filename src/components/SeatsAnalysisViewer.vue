@@ -46,19 +46,6 @@
                 <h2>No Activity in last 7 days (Including Never used seats) </h2>
                 <br>
             <v-data-table :headers="headers" :items="unusedSeats" :items-per-page="10" class="elevation-2">
-                <!--<v-data-table
-                    :headers="[
-                        { title: 'Login', key: 'login' },
-                        { title: 'ID', key: 'id' },
-                        { title: 'Assigned Time', key: 'created_at' },
-                        { title: 'Last Activity At', key: 'last_activity_at' },
-                        { title: 'Last Activity Editor', key: 'last_activity_editor' },
-                    ]"
-                    :items="unusedSeats"
-                    :items-per-page="10"
-                    class="elevation-2"
-                >      
-                -->         
                 <template v-slot:item="{ item }">
                     <tr>
                         <td>{{ item.login }}</td>
