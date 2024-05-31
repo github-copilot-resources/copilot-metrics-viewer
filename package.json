@@ -9,9 +9,12 @@
   },
   "dependencies": {
     "@mdi/font": "5.9.55",
+    "@octokit/auth-app": "^7.1.0",
+    "@octokit/rest": "^20.1.1",
     "axios": "^1.6.2",
     "chart.js": "^4.4.1",
     "core-js": "^3.8.3",
+    "fs": "^0.0.1-security",
     "postcss": "^8.4.31",
     "roboto-fontface": "*",
     "vue": "^3.2.13",
@@ -20,6 +23,8 @@
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {
+    "@babel/plugin-transform-class-static-block": "^7.24.6",
+    "@babel/plugin-transform-private-methods": "^7.24.6",
     "@types/webfontloader": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",

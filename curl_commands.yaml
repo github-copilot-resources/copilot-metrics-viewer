@@ -1,0 +1,21 @@
+curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOiAxNzE2NTg2NTgxLCAiZXhwIjogMTcxNjU4NzE4MSwgImlzcyI6ICJJdjIzY3RmN0RPRjBUdzd1SElzSCJ9.zqvfpi4NfY4w0Me1z6e3B-umtcjWjzQ2UuB-2XdmOGNNhOyrkb5CK-ucOjwAtbk6ObPnYJOKhoMluMwe965uq46X74eZdDlnvxNkNa-qDTmleN5GzHAWDT_lVjp13doSjVALKsMovbdtA6pKdQn0KlOj2u--_dVSz203ug4vSk7GvBIuigyfc-UCHs-DtPLGmzFmp2KxztaE1bgXAgtfkRhj75MpQuNii3-FICa9GhgpF2Q_1-TOr-ZtQV2GVLHEhhjuwh6EKcgQiBg9ne7Vn84NtZnzmSpb-3FIOAh2FR7YwBLo5u4jYFRY06LY53j087JdCRYbrFeuqj33o_bwEg" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/orgs/octodemo/installation
+
+  "app_id": 905900,
+
+curl --request POST \
+--url "https://api.github.com/app/installations/51143585/access_tokens" \
+--header "Accept: application/vnd.github+json" \
+--header "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpYXQiOiAxNzE2NTg2NTgxLCAiZXhwIjogMTcxNjU4NzE4MSwgImlzcyI6ICJJdjIzY3RmN0RPRjBUdzd1SElzSCJ9.zqvfpi4NfY4w0Me1z6e3B-umtcjWjzQ2UuB-2XdmOGNNhOyrkb5CK-ucOjwAtbk6ObPnYJOKhoMluMwe965uq46X74eZdDlnvxNkNa-qDTmleN5GzHAWDT_lVjp13doSjVALKsMovbdtA6pKdQn0KlOj2u--_dVSz203ug4vSk7GvBIuigyfc-UCHs-DtPLGmzFmp2KxztaE1bgXAgtfkRhj75MpQuNii3-FICa9GhgpF2Q_1-TOr-ZtQV2GVLHEhhjuwh6EKcgQiBg9ne7Vn84NtZnzmSpb-3FIOAh2FR7YwBLo5u4jYFRY06LY53j087JdCRYbrFeuqj33o_bwEg" \
+--header "X-GitHub-Api-Version: 2022-11-28"
+
+token: ghs_wXB4HEK5C0mwptAqXgFJf5TiNIbHJl2dXMPS
+
+curl -L \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer ghs_wXB4HEK5C0mwptAqXgFJf5TiNIbHJl2dXMPS" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/orgs/octodemo/copilot/usage
