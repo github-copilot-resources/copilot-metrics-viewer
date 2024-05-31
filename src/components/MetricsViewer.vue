@@ -259,7 +259,7 @@ export default defineComponent({
       sum += rate;
       return rate;
     });
-    acceptanceRateAverage.value = sum / data.length;
+    
 
     acceptanceRateChartData.value = {
       labels: data.map((m: Metrics) => m.day),
@@ -274,6 +274,8 @@ export default defineComponent({
         }
       ]
     };
+
+    acceptanceRateAverage.value = cumulativeNumberAcceptances.value / cumulativeNumberSuggestions.value * 100;
 
     totalActiveUsersChartData.value = {
       labels: data.map((m: Metrics) => m.day),
