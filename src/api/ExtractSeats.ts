@@ -34,11 +34,7 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
       }
     });
 
- 
-
     seatsData = seatsData.concat(response.data.seats.map((item: any) => new Seat(item)));
-
-
 
     // Calculate the total pages
     const totalSeats = response.data.total_seats;
