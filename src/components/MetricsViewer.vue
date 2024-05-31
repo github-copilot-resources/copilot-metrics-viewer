@@ -252,11 +252,9 @@ export default defineComponent({
         }
       ]
     };
-
-    let sum = 0;
+    
     const acceptanceRates = data.map((m: Metrics) => {
       const rate = m.total_lines_suggested !== 0 ? (m.total_lines_accepted / m.total_lines_suggested) * 100 : 0;
-      sum += rate;
       return rate;
     });
     
@@ -274,8 +272,12 @@ export default defineComponent({
         }
       ]
     };
-
-    acceptanceRateAverage.value = cumulativeNumberAcceptances.value / cumulativeNumberSuggestions.value * 100;
+    
+    if(cumulativeNumberSuggestions.value === 0){
+      acceptanceRateAverage.value = 0;
+    } else {
+      acceptanceRateAverage.value = cumulativeNumberAcceptances.value / cumulativeNumberSuggestions.value * 100;
+    }
 
     totalActiveUsersChartData.value = {
       labels: data.map((m: Metrics) => m.day),
