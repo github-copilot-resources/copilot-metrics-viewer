@@ -5,7 +5,7 @@
         <v-icon>mdi-github</v-icon>
       </v-btn>
 
-      <v-toolbar-title>Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ gitHubOrgName }}</v-toolbar-title>
+      <v-toolbar-title class="toolbar-title">Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ dispalyedViewName }}</v-toolbar-title>
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer></v-spacer>
 
@@ -79,8 +79,11 @@ export default defineComponent({
         return 'invalid';
       }
     },
-    capitalizedItemName() {
+    capitalizedItemName():string {
       return this.itemName.charAt(0).toUpperCase() + this.itemName.slice(1);
+    },
+    dispalyedViewName(): string {
+      return this.capitalizedItemName === 'Enterprise' ? process.env.VUE_APP_GITHUB_ENT: process.env.VUE_APP_GITHUB_ORG;
     },
     isScopeOrganization() {
       return process.env.VUE_APP_SCOPE === 'organization';
@@ -100,7 +103,13 @@ export default defineComponent({
       this.tabItems.unshift(this.itemName);
     }
     if (process.env.VUE_APP_SCOPE === 'organization') {
+      // get the last item in the array,which is 'api response' 
+      //and add 'seat analysis' before it
+      let lastItem = this.tabItems.pop();
       this.tabItems.push('seat analysis');
+      if (lastItem) {
+        this.tabItems.push(lastItem);
+      }
     }
   },
   setup() {
@@ -177,6 +186,12 @@ export default defineComponent({
 </script>
 
 <style scoped>
+.toolbar-title {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+
+}
 .error-message {
   color: red;
 }
