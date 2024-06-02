@@ -5,7 +5,7 @@
         <v-icon>mdi-github</v-icon>
       </v-btn>
 
-      <v-toolbar-title class="toolbar-title">Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ dispalyedViewName }}</v-toolbar-title>
+      <v-toolbar-title class="toolbar-title">Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ displayedViewName }}</v-toolbar-title>
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer></v-spacer>
 
@@ -82,7 +82,7 @@ export default defineComponent({
     capitalizedItemName():string {
       return this.itemName.charAt(0).toUpperCase() + this.itemName.slice(1);
     },
-    dispalyedViewName(): string {
+    displayedViewName(): string {
       return this.capitalizedItemName === 'Enterprise' ? process.env.VUE_APP_GITHUB_ENT: process.env.VUE_APP_GITHUB_ORG;
     },
     isScopeOrganization() {
