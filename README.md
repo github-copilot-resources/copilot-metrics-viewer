@@ -70,6 +70,20 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
+## Seat Analysis 
+
+![image](https://github.com/DevOps-zhuang/copilot-metrics-viewer/assets/54096296/d1fa9d1d-4fab-4e87-84ba-7be189dd4dd0)
+
+1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization.
+
+2. **Assigned But Never Used:** This metric shows seats that were assigned but never within the current organization. The assigned timestamp is also displayed in the below chart.
+
+3. **No Activity in the Last 7 days:** never used seats or seats used, but with no activity in the past 7 days.
+
+4. **No Activity in the last 7 days (including never used seats):**a table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
+
+
+
 ## Setup instructions
 
 In the `.env` file, you can configure several environment variables that control the behavior of the application.

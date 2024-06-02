@@ -11,6 +11,20 @@
           <div v-if="showCopyMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
         </transition>
       </div>
+      
+      <br><br>
+    <div v-if="vueAppScope === 'organization'">
+      <v-card max-height="575px" class="overflow-y-auto">
+          <pre ref="jsonText">{{ JSON.stringify(seats, null, 2) }}</pre>
+      </v-card>
+      <br>
+      <div class="copy-container">
+        <v-btn @click="showSeatCount">Show Assigned Seats count</v-btn>
+        <transition name="fade">
+          <div v-if="showSeatMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
+        </transition>
+      </div>
+    </div>
   </v-container>
 </template>
 
@@ -23,11 +37,17 @@ export default defineComponent({
       metrics: {
           type: Object,
           required: true
+      },
+      seats: {
+          type: Array,
+          required: true
       }
   },
   data() {
     return {
+      vueAppScope: process.env.VUE_APP_SCOPE,
       showCopyMessage: false,
+      showSeatMessage: false,
       isError: false,
       message : ''
       
@@ -51,7 +71,19 @@ export default defineComponent({
       setTimeout(() => {
         this.showCopyMessage = false;
       }, 3000);
+  },
+  
+  showSeatCount() {
+    const seatCount = this.seats.length;
+    //console.log('Seat count:', seatCount);
+    this.message = `Seat count: ${seatCount}`;
+
+    this.showSeatMessage = true;
+    setTimeout(() => {
+      this.showSeatMessage = false;
+    }, 3000);
   }
+
   }
 
 });
