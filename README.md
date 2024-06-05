@@ -80,7 +80,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 3. **No Activity in the Last 7 days:** never used seats or seats used, but with no activity in the past 7 days.
 
-4. **No Activity in the last 7 days (including never used seats):**a table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
+4. **No Activity in the last 7 days (including never used seats):** a table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
 
 
 
