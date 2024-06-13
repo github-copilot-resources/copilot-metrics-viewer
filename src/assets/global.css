@@ -1,0 +1,14 @@
+.tiles-container {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .tiles-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .error-message {
+    color: red;
+  }

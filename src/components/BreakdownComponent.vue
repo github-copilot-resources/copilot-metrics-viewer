@@ -4,13 +4,13 @@
       <!-- Acceptance Rate Tile -->  
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
           <v-card-item>
-            <div>
+            <div class="tiles-text">
               <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
               <div class="text-h6 mb-1">Number of {{ breakdownDisplayNamePlural }}</div>
               <div class="text-caption">
                 Over the last 28 days
               </div>
-              <p>{{ numberOfBreakdowns }}</p> 
+              <p class="text-h4">{{ numberOfBreakdowns }}</p> 
           </div>
         </v-card-item>
       </v-card>
@@ -234,13 +234,3 @@ export default defineComponent({
 
 });
 </script>
-
-<style scoped>
-
-.tiles-container {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-
-</style>
