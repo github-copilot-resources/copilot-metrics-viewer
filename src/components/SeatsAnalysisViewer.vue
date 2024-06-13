@@ -43,9 +43,9 @@
         <v-main class="p-1" style="min-height: 300px;">
             <v-container style="min-height: 300px;" class="px-4 elevation-2">
                 <br>
-                <h2>No Activity in last 7 days (Including Never used seats) </h2>
+                <h2>All assigned seats </h2>
                 <br>
-            <v-data-table :headers="headers" :items="unusedSeats" :items-per-page="10" class="elevation-2">
+            <v-data-table :headers="headers" :items="totalSeats" :items-per-page="10" class="elevation-2">
                 <template v-slot:item="{ item }">
                     <tr>
                         <td>{{ item.login }}</td>
