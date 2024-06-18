@@ -27,5 +27,5 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/copilot-metrics-viewer:latest .
-          docker push ghcr.io/${{ github.repository }}/copilot-metrics-viewer:latest
+          docker build -t ghcr.io/${{ github.repository }}:latest .
+          docker push ghcr.io/${{ github.repository }}:latest
