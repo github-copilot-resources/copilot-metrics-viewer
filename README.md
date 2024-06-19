@@ -1,5 +1,7 @@
 # Rover README
 
+This is a fork of GitHub's recommended Copilot Metrics Viewer with Rover-specific configurations applied and added Codespaces support.
+
 **You must have elevated GitHub permissions in order to run this reporter.**
 Before getting started, this app requires the following scopes:
 
