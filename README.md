@@ -3,6 +3,7 @@
 This is a fork of GitHub's recommended Copilot Metrics Viewer with Rover-specific configurations applied and added Codespaces support.
 
 **You must have elevated GitHub permissions in order to run this reporter.**
+
 Before getting started, this app requires the following scopes:
 
 ```
@@ -15,17 +16,20 @@ If you are certain you have those scopes for the `roverdotcom` organization, you
 ./start-server.sh
 ```
 
-The app should become available via the Ports tab in the Codespace after a few moments.
+Once the server starts, you will need to manually adjust port settings in VS Code:
+1. Open the Ports panel (Cmd + Shift + P > Ports: Focus on Ports View)
+2. Find the port the app is running on, and:
+    1. Right-click > Change Port Protocol > HTTPS
+    2. Right-click > Port Visibility > Private to Organization
+3. View the running app by clicking the 🌐 globe icon next to the Forwarded Address in the Ports panel
 
-**We try to manage port forwarding for you in the startup script, but if you have trouble, just make sure the app's current port is forwarded and that the port visibility is set to "Private to Organization."**
+Press Ctrl+C to stop the server.
 
 If you have any issues, please reach out to the team in the #tech-development channel in Slack.
 
 Original readme preserved below:
 
 ---
-
-_NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
 # GitHub Copilot Metrics Viewer
 <p align="center">
