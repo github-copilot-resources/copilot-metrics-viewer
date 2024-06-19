@@ -1,3 +1,28 @@
+# Rover README
+
+**You must have elevated GitHub permissions in order to run this reporter.**
+Before getting started, this app requires the following scopes:
+
+```
+copilot,manage_billing:copilot,manage_billing:enterprise,read:enterprise,admin:org,codespace,repo
+```
+
+If you are certain you have those scopes for the `roverdotcom` organization, you can start the app by running the startup script via terminal in a Codespace in this repo:
+
+```shell
+./start-server.sh
+```
+
+The app should become available via the Ports tab in the Codespace after a few moments.
+
+**We try to manage port forwarding for you in the startup script, but if you have trouble, just make sure the app's current port is forwarded and that the port visibility is set to "Private to Organization."**
+
+If you have any issues, please reach out to the team in the #tech-development channel in Slack.
+
+Original readme preserved below:
+
+---
+
 _NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
 # GitHub Copilot Metrics Viewer
@@ -23,7 +48,7 @@ Here are the key metrics visualized in these charts:
 
 3. **Total Suggestions** This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.
 
-4. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users. 
+4. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users.
 
 <p align="center">
   <img width="800" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/b84220ae-fbdc-4503-b50b-4689362bf364">
@@ -70,7 +95,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
-## Seat Analysis 
+## Seat Analysis
 
 ![image](https://github.com/DevOps-zhuang/copilot-metrics-viewer/assets/54096296/d1fa9d1d-4fab-4e87-84ba-7be189dd4dd0)
 
@@ -88,7 +113,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 In the `.env` file, you can configure several environment variables that control the behavior of the application.
 
-#### VUE_APP_SCOPE 
+#### VUE_APP_SCOPE
 
 The `VUE_APP_SCOPE` environment variable in the `.env` file determines the scope of the API calls made by the application. It can be set to either 'enterprise' or 'organization'.
 
@@ -142,17 +167,17 @@ docker run -p 8080:80 copilot-metrics-viewer
 ```
 The application will be accessible at http://localhost:8080
 
-## License 
+## License
 
 This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE.txt) for the full terms.
 
-## Maintainers 
+## Maintainers
 
 [@martedesco](https://github.com/martedesco)
 
 ## Support
 
-This project is independently developed and maintained, and is not an official GitHub product. It thrives through the dedicated efforts of myself ([@martedesco](https://github.com/martedesco)) and our wonderful contributors. A heartfelt thanks to all our contributors! ✨ 
+This project is independently developed and maintained, and is not an official GitHub product. It thrives through the dedicated efforts of myself ([@martedesco](https://github.com/martedesco)) and our wonderful contributors. A heartfelt thanks to all our contributors! ✨
 
 I aim to provide support through [GitHub Issues](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues). While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention. 🙏🏼
 
