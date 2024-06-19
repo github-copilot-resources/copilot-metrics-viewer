@@ -12,7 +12,7 @@ copilot,manage_billing:copilot,manage_billing:enterprise,read:enterprise,admin:o
 
 **1. Start the server**
 
-If you are certain you have those scopes for the `roverdotcom` organization, you can start the app by running the startup script via terminal in a Codespace in this repo. This script will provision your GitHub token with the necessary scopes, set the token a the necessary environment variable, and start the web server.
+If you are certain you have those scopes for the `roverdotcom` organization, you can start the app by running the startup script via terminal in a Codespace in this repo. This script will provision your GitHub token with the necessary scopes, set the token in the necessary environment variable, and start the web server.
 
 ```shell
 ./start-server.sh
