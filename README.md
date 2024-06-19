@@ -10,26 +10,36 @@ Before getting started, this app requires the following scopes:
 copilot,manage_billing:copilot,manage_billing:enterprise,read:enterprise,admin:org,codespace,repo
 ```
 
-**1. Start the server**
+## How to run this reporter
 
-If you are certain you have those scopes for the `roverdotcom` organization, you can start the app by running the startup script via terminal in a Codespace in this repo. This script will provision your GitHub token with the necessary scopes, set the token in the necessary environment variable, and start the web server.
+### 1. Create a Codespace
+
+This repository is configured with a basic Codespace configuration that automatically installs dependencies and configures port 8080. Any size Codespace should be sufficient.
+
+### 2. Start the server
+
+If you have the correct permissions in the `roverdotcom` organization, you can start the app by running the startup script via terminal in a Codespace in this repo. This script will provision your GitHub token with the necessary scopes, set the token in the necessary environment variable, and start the web server.
 
 ```shell
 ./start-server.sh
 ```
 
-**2. Forward and update Port Visibility**
+### 3. Forward and update Port Visibility
 
 Once the server starts, manually adjust port settings in VS Code:
 1. Open the Ports panel (Cmd + Shift + P > Ports: Focus on Ports View)
 2. Find the port the app is running on, and:
     1. Right-click > Change Port Protocol > HTTPS
     2. Right-click > Port Visibility > Private to Organization
-3. View the running app by clicking the 🌐 globe icon next to the Forwarded Address in the Ports panel
+3. View the running app by hovering over the Forwarded Address in the Ports panel and clicking the 🌐 globe icon that appears
+
+### Other notes on running the reporter
 
 Press Ctrl+C to stop the server.
 
-If you have any issues, please reach out to the team in the #tech-development channel in Slack.
+If you have any issues, please reach out to the DevEx team in the #tech-development channel on Slack.
+
+--- 
 
 Original readme preserved below:
 
