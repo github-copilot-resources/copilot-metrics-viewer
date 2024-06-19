@@ -24,14 +24,17 @@ If you have the correct permissions in the `roverdotcom` organization, you can s
 ./start-server.sh
 ```
 
-### 3. Forward and update Port Visibility
+### 3. Forward Ports and update Port Visibility
 
 Once the server starts, manually adjust port settings in VS Code:
-1. Open the Ports panel (Cmd + Shift + P > Ports: Focus on Ports View)
+1. Open the Ports panel (`Cmd + Shift + P` > `Ports: Focus on Ports View`)
 2. Find the port the app is running on, and:
     1. Right-click > Change Port Protocol > HTTPS
     2. Right-click > Port Visibility > Private to Organization
-3. View the running app by hovering over the Forwarded Address in the Ports panel and clicking the 🌐 globe icon that appears
+  
+### 4. View the reporter
+
+View the running app by hovering over the Forwarded Address in the Ports panel and clicking the 🌐 globe icon that appears
 
 ### Other notes on running the reporter
 
