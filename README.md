@@ -10,13 +10,15 @@ Before getting started, this app requires the following scopes:
 copilot,manage_billing:copilot,manage_billing:enterprise,read:enterprise,admin:org,codespace,repo
 ```
 
-If you are certain you have those scopes for the `roverdotcom` organization, you can start the app by running the startup script via terminal in a Codespace in this repo:
+**1. Start the server**
+If you are certain you have those scopes for the `roverdotcom` organization, you can start the app by running the startup script via terminal in a Codespace in this repo. This script will provision your GitHub token with the necessary scopes, set the token a the necessary environment variable, and start the web server.
 
 ```shell
 ./start-server.sh
 ```
 
-Once the server starts, you will need to manually adjust port settings in VS Code:
+**2. Forward and update Port Visibility**
+Once the server starts, manually adjust port settings in VS Code:
 1. Open the Ports panel (Cmd + Shift + P > Ports: Focus on Ports View)
 2. Find the port the app is running on, and:
     1. Right-click > Change Port Protocol > HTTPS
