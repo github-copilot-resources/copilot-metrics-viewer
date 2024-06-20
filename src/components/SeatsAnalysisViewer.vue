@@ -1,39 +1,39 @@
 <template>
     <div class="tiles-container">      
         <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-            <v-card-item>
-                <div>
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">Total Assigned  </div>
-                <div class="text-caption">
-                    Currently assigned seats
-                </div>
-                <p>{{ totalSeats.length }}</p>
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">Total Assigned  </div>
+                    <div class="text-caption">
+                        Currently assigned seats
+                    </div>
+                    <p class="text-h4">{{ totalSeats.length }}</p>
                 </div>
             </v-card-item>
         </v-card>
 
         <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-            <v-card-item>
-                <div>
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">Assigned But Never Used</div>
-                <div class="text-caption">
-                    No show seats
-                </div>
-                <p>{{ NoshowSeats.length }}</p>
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">Assigned But Never Used</div>
+                    <div class="text-caption">
+                        No show seats
+                    </div>
+                    <p class="text-h4">{{ NoshowSeats.length }}</p>
                 </div>
             </v-card-item>
         </v-card>
         <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-            <v-card-item>
-                <div>
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">No Activity in the Last 7 days </div>
-                <div class="text-caption">
-                    No use in the last 7 days
-                </div>
-                <p>{{ unusedSeats.length }}</p>
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">No Activity in the Last 7 days </div>
+                    <div class="text-caption">
+                        No use in the last 7 days
+                    </div>
+                    <p class="text-h4">{{ unusedSeats.length }}</p>
                 </div>
             </v-card-item>
         </v-card>
@@ -156,13 +156,3 @@ setup(props) {
   
 });
 </script>
-  
-<style scoped>
-
-.tiles-container {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-
-</style>

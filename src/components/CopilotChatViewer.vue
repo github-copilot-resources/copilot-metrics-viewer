@@ -2,26 +2,22 @@
     <div class="tiles-container">      
         <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
             <v-card-item>
-                <div>
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">Cumulative Number of Turns</div>
-                <div class="text-caption">
-                    Over the last 28 days
-                </div>
-                <p>{{ cumulativeNumberTurns }}</p>
+                <div class="tiles-text">
+                    <div class="spacing-25"></div>
+                    <div class="text-h6 mb-1">Cumulative Number of Turns</div>
+                    <div class="text-caption">Over the last 28 days</div>
+                    <p class="text-h4">{{ cumulativeNumberTurns }}</p>
                 </div>
             </v-card-item>
         </v-card>
 
         <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
             <v-card-item>
-                <div>
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                <div class="text-h6 mb-1">Cumulative Number of Acceptances</div>
-                <div class="text-caption">
-                    Over the last 28 days
-                </div>
-                <p>{{ cumulativeNumberAcceptances }}</p>
+                <div class="tiles-text">
+                    <div class="spacing-10"></div>
+                    <div class="text-h6 mb-1">Cumulative Number of Acceptances</div>
+                    <div class="text-caption">Over the last 28 days</div>
+                    <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
                 </div>
             </v-card-item>
         </v-card>
@@ -177,13 +173,3 @@ setup(props) {
 });
 
 </script>
-  
-<style scoped>
-
-.tiles-container {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-
-</style>

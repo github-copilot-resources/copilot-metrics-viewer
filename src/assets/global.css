@@ -1,0 +1,23 @@
+.tiles-container {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .tiles-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .error-message {
+    color: red;
+  }
+
+  .spacing-10 {
+    margin-bottom: 10px;
+  }
+
+  .spacing-25 {
+    margin-bottom: 25px;
+  }

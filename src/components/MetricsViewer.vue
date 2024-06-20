@@ -4,52 +4,52 @@
       <!-- Acceptance Rate Tile -->  
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
           <v-card-item>
-            <div>
-              <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-25"></div>
+            <div class="tiles-text">
               <div class="text-h6 mb-1">Acceptance Rate Average</div>
               <div class="text-caption">
                 Over the last 28 days
               </div>
-              <p>{{ acceptanceRateAverage.toFixed(2) }}%</p>
+              <p class="text-h4">{{ acceptanceRateAverage.toFixed(2) }}%</p>
           </div>
         </v-card-item>
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
-          <div>
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+          <div class="tiles-text">
+            <div class="spacing-10"></div>
             <div class="text-h6 mb-1">Cumulative Number of Suggestions</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
-            <p>{{ cumulativeNumberSuggestions }}</p>
+            <p class="text-h4">{{ cumulativeNumberSuggestions }}</p>
           </div>
         </v-card-item>
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
-          <div>
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+          <div class="tiles-text">
+            <div class="spacing-10"></div>
             <div class="text-h6 mb-1">Cumulative Number of Accepted Prompts</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
-            <p>{{ cumulativeNumberAcceptances }}</p>
+            <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
           </div>
         </v-card-item>
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
-          <div>
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+          <div class="tiles-text">
+            <div class="spacing-10"></div>
             <div class="text-h6 mb-1">Cumulative Number of Lines of Code Accepted</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
-            <p>{{ cumulativeNumberLOCAccepted }}</p>
+            <p class="text-h4">{{ cumulativeNumberLOCAccepted }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -299,11 +299,3 @@ export default defineComponent({
   
 });
 </script>
-
-<style scoped>
-.tiles-container {
-  display: flex;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-}
-</style>
