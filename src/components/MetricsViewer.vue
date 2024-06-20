@@ -4,8 +4,8 @@
       <!-- Acceptance Rate Tile -->  
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
           <v-card-item>
+            <div class="spacing-25"></div>
             <div class="tiles-text">
-              <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
               <div class="text-h6 mb-1">Acceptance Rate Average</div>
               <div class="text-caption">
                 Over the last 28 days
@@ -18,7 +18,7 @@
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
           <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-10"></div>
             <div class="text-h6 mb-1">Cumulative Number of Suggestions</div>
             <div class="text-caption">
               Over the last 28 days
@@ -31,7 +31,7 @@
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
           <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-10"></div>
             <div class="text-h6 mb-1">Cumulative Number of Accepted Prompts</div>
             <div class="text-caption">
               Over the last 28 days
@@ -44,7 +44,7 @@
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
           <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-10"></div>
             <div class="text-h6 mb-1">Cumulative Number of Lines of Code Accepted</div>
             <div class="text-caption">
               Over the last 28 days

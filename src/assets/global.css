@@ -13,3 +13,11 @@
   .error-message {
     color: red;
   }
+
+  .spacing-10 {
+    margin-bottom: 10px;
+  }
+
+  .spacing-25 {
+    margin-bottom: 25px;
+  }
