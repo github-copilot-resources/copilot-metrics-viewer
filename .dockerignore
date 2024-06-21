@@ -1,0 +1,10 @@
+.env
+.dockerignore
+.git
+.gitignore
+node_modules/
+dist/
+.history/
+.github/
+Dockerfile
+*.md
