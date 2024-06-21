@@ -27,5 +27,9 @@ jobs:
 
       - name: Build and Push Docker Image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}:latest .
-          docker push ghcr.io/${{ github.repository }}:latest
+          GITHUB_REPO="${GITHUB_REPO,,}"  # convert repo name to lowercase as required by docker
+          echo "building docker image in repository '$GITHUB_REPO' ..."
+          docker build --label "org.opencontainers.image.title=copilot-metrics-viewer" --label "org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage" --label "org.opencontainers.image.source=$GITHUB_REPO" -t ghcr.io/$GITHUB_REPO:latest .
+          docker push ghcr.io/$GITHUB_REPO:latest
+        env:
+          GITHUB_REPO: ${{ github.repository }}
