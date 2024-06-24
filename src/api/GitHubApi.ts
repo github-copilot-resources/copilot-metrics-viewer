@@ -1,4 +1,4 @@
-//Make a call to the GitHub API to get Copilot Metrics, the API is https://api.github.com/orgs/toussaintt/copilot/usage
+//Make a call to the GitHub API to get Copilot Metrics, the API is /api/github/orgs/toussaintt/copilot/usage
 //Add the header Accept: application/vnd.github+json to the request
 //Add also the Authorization: Bearer <token> header where <token> is hardcoded for now
 //Also add X-GitHub-Api-Version: 2022-11-28 header
@@ -29,28 +29,19 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
     metricsData = response.map((item: any) => new Metrics(item));
   } else {
     // if VUE_APP_GITHUB_TOKEN is not set, throw an error
-    if (!process.env.VUE_APP_GITHUB_TOKEN) {
-      throw new Error("VUE_APP_GITHUB_TOKEN environment variable is not set.");
-    }
+    // if (!process.env.VUE_APP_GITHUB_TOKEN) {
+    //   throw new Error("VUE_APP_GITHUB_TOKEN environment variable is not set.");
+    // }
     if (process.env.VUE_APP_SCOPE === "organization") {
       response = await axios.get(
-        `https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/usage`,
-        {
-          headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-        }
-      );
+        `/api/github/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/usage`);
     } else if (process.env.VUE_APP_SCOPE === "enterprise") {
 
       response = await axios.get(
-        `https://api.github.com/enterprises/${process.env.VUE_APP_GITHUB_ENT}/copilot/usage`,
+        `/api/github/enterprises/${process.env.VUE_APP_GITHUB_ENT}/copilot/usage`,
         {
           headers: {
             Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
             "X-GitHub-Api-Version": "2022-11-28",
           },
         }
@@ -65,10 +56,9 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
 };
 
 export const getTeams = async (): Promise<string[]> =>{
-  const response = await axios.get(`https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/teams`, {
+  const response = await axios.get(`/api/github/orgs/${process.env.VUE_APP_GITHUB_ORG}/teams`, {
     headers: {
       Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
       'X-GitHub-Api-Version': '2022-11-28',
     },
   });

@@ -132,7 +132,7 @@ export default defineComponent({
       if (error.response && error.response.status) {
         switch (error.response.status) {
           case 401:
-            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            apiError.value = '401 Unauthorized access Login to GitHub using this link <a href="/login">Login</a>.';
             break;
           case 404:
             apiError.value = `404 Not Found - is the organization '${process.env.VUE_APP_GITHUB_ORG}' correct?`;
@@ -162,7 +162,7 @@ export default defineComponent({
       if (error.response && error.response.status) {
         switch (error.response.status) {
           case 401:
-            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            apiError.value = '401 Unauthorized access Login to GitHub using this link <a href="/login">Login</a>.';
             break;
           case 404:
             apiError.value = `404 Not Found - is the organization '${process.env.VUE_APP_GITHUB_ORG}' correct?`;

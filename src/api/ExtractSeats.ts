@@ -22,10 +22,9 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
     } 
     else if (process.env.VUE_APP_MOCKED_DATA === "false") {
     // Fetch the first page to get the total number of seats
-      response = await axios.get(`https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/billing/seats`, {
+      response = await axios.get(`/api/github/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/billing/seats`, {
         headers: {
           Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
           "X-GitHub-Api-Version": "2022-11-28",
         },
         params: {
@@ -41,10 +40,9 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
 
       // Fetch the remaining pages
       for (page = 2; page <= totalPages; page++) {
-        response = await axios.get(`https://api.github.com/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/billing/seats`, {
+        response = await axios.get(`/api/github/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/billing/seats`, {
           headers: {
             Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
             "X-GitHub-Api-Version": "2022-11-28",
           },
           params: {
