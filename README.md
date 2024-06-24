@@ -71,17 +71,16 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
 ## Seat Analysis 
-
-![image](https://private-user-images.githubusercontent.com/54096296/334353713-d1fa9d1d-4fab-4e87-84ba-7be189dd4dd0.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTg5ODc0MTYsIm5iZiI6MTcxODk4NzExNiwicGF0aCI6Ii81NDA5NjI5Ni8zMzQzNTM3MTMtZDFmYTlkMWQtNGZhYi00ZTg3LTg0YmEtN2JlMTg5ZGQ0ZGQwLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDA2MjElMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwNjIxVDE2MjUxNlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTE1MWE2YmEwYThkODU5MGVmZDc1MDZjNWY5M2MzNzQzNzFjNTZjNjA1Njk0ZDdhZjc1ZjQ5YWJhYjcxMmRiYmEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.rjuRIhggtvKfIXZxCnQQSsDqrhOt1_jK3jdbbDvn2_A)
-
+<p align="center">
+  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/54096296/51747194-df30-4bfb-8849-54a0510fffcb">
+</p>
 1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization/enterprise.
 
-2. **Assigned But Never Used:** This metric shows seats that were assigned but never within the current organization/enterprise. The assigned timestamp is also displayed in the below chart.
+2. **Assigned But Never Used:** This metric shows seats that were assigned but never within the current organization/enterprise. The assigned timestamp is also displayed in the chart.
 
 3. **No Activity in the Last 7 days:** never used seats or seats used, but with no activity in the past 7 days.
 
 4. **No Activity in the last 7 days (including never used seats):** a table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
-
 
 
 ## Setup instructions
