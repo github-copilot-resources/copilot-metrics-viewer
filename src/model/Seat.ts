@@ -1,6 +1,7 @@
 export class Seat {
     login: string;
     id: number;
+    team: string;
     created_at: string;
     last_activity_at: string;
     last_activity_editor: string;
@@ -8,7 +9,8 @@ export class Seat {
     constructor(data: any) {
         this.login = data.assignee.login;
         this.id = data.assignee.id;
-         this.created_at = data.created_at;
+        this.team = data.assigning_team ? data.assigning_team.name : '';
+        this.created_at = data.created_at;
         this.last_activity_at = data.last_activity_at;
         this.last_activity_editor = data.last_activity_editor;
     }

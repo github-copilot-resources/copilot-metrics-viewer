@@ -50,6 +50,7 @@
                     <tr>
                         <td>{{ item.login }}</td>
                         <td>{{ item.id }}</td>
+                        <td>{{ item.team }}</td>
                         <td>{{ item.created_at }}</td>
                         <td>{{ item.last_activity_at }}</td>
                         <td>{{ item.last_activity_editor }}</td>
@@ -103,7 +104,8 @@ data() {
         headers: [
             { title: 'Login', key: 'login' },
             { title: 'GitHub ID', key: 'id' },
-            { title: 'Assigned to the Organization At', key: 'created_at' },
+            { title: 'Assigning_team', key: 'team' },
+            { title: 'Assigned time', key: 'created_at' },
             { title: 'Last Activity At', key: 'last_activity_at' },
             { title: 'Last Activity Editor', key: 'last_activity_editor' },
         ],
