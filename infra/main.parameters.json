@@ -11,32 +11,17 @@
       "copilotMetricsViewerExists": {
         "value": "${SERVICE_COPILOT_METRICS_VIEWER_RESOURCE_EXISTS=false}"
       },
-      "gitHubClientId" : {
-        "value": "${GITHUB_CLIENT_ID}"
-      },
-      "gitHubClientSecret" : {
-        "value": "${GITHUB_CLIENT_SECRET}"
-      },
-      "appScope" : {
-        "value": "${APP_SCOPE}"
-      },
-      "gitHubOrg" : {
-        "value": "${GITHUB_ORG}"
-      },
-      "gitHubEnt" : {
-        "value": "${GITHUB_ENT}"
-      },
       "copilotMetricsViewerDefinition": {
         "value": {
           "settings": [
             {
-              "name": "CLIENT_ID",
+              "name": "GITHUB_CLIENT_ID",
               "value": "${GITHUB_CLIENT_ID}",
               "secret": true,
               "_comment_name": "GitHub App Client id - The name of the environment variable when running in Azure."
             },
             {
-              "name": "CLIENT_SECRET",
+              "name": "GITHUB_CLIENT_SECRET",
               "value": "${GITHUB_CLIENT_SECRET}",
               "secret": true,
               "_comment_name": "GitHub App Client Secret - The name of the environment variable when running in Azure."

@@ -142,6 +142,49 @@ docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
 ```
 The application will be accessible at http://localhost:8080
 
+## Running with API Proxy
+
+Project can run with an API proxy which hides GitHub tokens and is secure enough to be deployed.
+Api Proxy project is in `\api` directory. Vue app makes the calls to `/api/github` which then are proxied to `https://api.github.com` with appropriate bearer token.
+
+Proxy can authenticate user using GitHub App. In order to do that, following environment variables are required:
+
+* `GITHUB_CLIENT_ID` - client Id of the GitHub App registered and installed in the enterprise/org with permissions listed above.
+* `GITHUB_CLIENT_SECRET` - client secret of the GitHub App
+* `SESSION_SECRET` - random string for securing session state
+
+For local development register `http://localhost:3000/callback` as GH App callback Uri.
+For deployed version use the Uri of your app.
+
+To build and run the app with API proxy:
+
+```
+docker build -t copilot-metrics-viewer-with-api -f api.Dockerfile .
+```
+
+To run:
+
+```
+docker run -p 8080:3000 --env-file ./.env copilot-metrics-viewer-api
+```
+
+## Azure Deployment 
+
+Application can be deployed using [Azure Developer CLI](https://aka.ms/azd) (azd).
+
+Before running `azd up` configure GitHub variables:
+
+```bash
+azd env set VUE_APP_SCOPE <organization/enterprise>
+# when using organization
+azd env set VUE_APP_GITHUB_ORG <org name>
+# when using enterprise
+azd env set VUE_APP_GITHUB_ENT <ent name>
+azd env set VUE_APP_GITHUB_API_URL /api/github
+azd env set GITHUB_CLIENT_ID <client id>
+azd env set GITHUB_CLIENT_SECRET <client secret>
+```
+
 ## License 
 
 This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE.txt) for the full terms.
