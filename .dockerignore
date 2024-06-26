@@ -1,3 +1,10 @@
-dist
-node_modules
-.github
+.env
+.dockerignore
+.git
+.gitignore
+node_modules/
+dist/
+.history/
+.github/
+Dockerfile
+*.md
