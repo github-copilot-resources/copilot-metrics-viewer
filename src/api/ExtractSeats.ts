@@ -6,6 +6,12 @@ import config from '../config';
 import organizationMockedResponse_seats from '../assets/organization_response_sample_seats.json';
 import enterpriseMockedResponse_seats from '../assets/enterprise_response_sample_seats.json';
 
+const headers = {
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28",
+  ...(config.github.token ? { Authorization: `token ${config.github.token}` } : {})
+};
+
 export const getSeatsApi = async (): Promise<Seat[]> => {
   const perPage = 50;
   let page = 1;
@@ -24,10 +30,7 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
     else {
     // Fetch the first page to get the total number of seats
       response = await axios.get(`${config.github.apiUrl}/copilot/billing/seats`, {
-        headers: {
-          Accept: "application/vnd.github+json",
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
+        headers,
         params: {
           per_page: perPage,
           page: page
@@ -42,10 +45,7 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
       // Fetch the remaining pages
       for (page = 2; page <= totalPages; page++) {
         response = await axios.get(`${config.github.apiUrl}/copilot/billing/seats`, {
-          headers: {
-            Accept: "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
+          headers,
           params: {
             per_page: perPage,
             page: page

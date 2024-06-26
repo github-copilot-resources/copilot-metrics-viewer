@@ -11,6 +11,12 @@ import organizationMockedResponse from '../assets/organization_response_sample.j
 import enterpriseMockedResponse from '../assets/enterprise_response_sample.json';
 import config from '../config';
 
+const headers = {
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28",
+  ...(config.github.token ? { Authorization: `token ${config.github.token}` } : {})
+};
+
 export const getMetricsApi = async (): Promise<Metrics[]> => {
 
   let response;
@@ -24,11 +30,7 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
     response = await axios.get(
       `${config.github.apiUrl}/copilot/usage`,
       {
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${config.github.token}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
+       headers
       }
     );
 
@@ -40,11 +42,7 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
 
 export const getTeams = async (): Promise<string[]> => {
   const response = await axios.get(`${config.github.apiUrl}/teams`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${config.github.token}`,
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+    headers
   });
 
   return response.data;

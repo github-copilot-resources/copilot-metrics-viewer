@@ -6,10 +6,10 @@ import { fileURLToPath } from 'url';
 import session from 'express-session';
 import {createProxyMiddleware} from 'http-proxy-middleware';
 
-dotenv.config({ path: path.join(__dirname, '.env.local') });
-
 // Construct __dirname equivalent in ES module scope
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+//dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '.env.local') });
 
 const app = express();
 
@@ -27,6 +27,7 @@ const authMiddleware = (req, res, next) => {
     return;
   }
   req.headers['Authorization'] = `Bearer ${req.session.token}`;
+  console.log('Added Authorization to:', req.url);
   next();
 };
 
@@ -73,11 +74,24 @@ const exchangeCode = async (code) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/login', (req, res) => {
-  res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.CLIENT_ID}`);
+  // build the URL to redirect to GitHub using host and scheme
+  const redirectUrl = `${req.protocol}://${req.get('host')}/callback`;
+  // generate random state
+  // store the state in the session
+  req.session.state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+  res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.CLIENT_ID}&redirect_uri=${redirectUrl}&state=${req.session.state}`);
 });
 
 app.get('/callback', async (req, res) => {
   const code = req.query.code;
+  const state = req.query.state;
+
+  // check the state against the session
+  if (state !== req.session.state) {
+    res.send('Invalid state');
+    return;
+  }
 
   const tokenData = await exchangeCode(code);
 

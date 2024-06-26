@@ -1,8 +1,11 @@
-.env
+**/.env
+**/.env.local
+.env*
 .dockerignore
 .git
 .gitignore
-node_modules/
+**/node_modules/
+api/public
 dist/
 .history/
 .github/

@@ -1,4 +1,4 @@
-const PROPS = ["MOCKED_DATA", "SCOPE", "GITHUB_ORG", "GITHUB_ENT", "GITHUB_TOKEN"];
+const PROPS = ["MOCKED_DATA", "SCOPE", "GITHUB_ORG", "GITHUB_ENT", "GITHUB_TOKEN", "GITHUB_API"];
 
 const env: any = {};
 PROPS.forEach(prop => {
@@ -21,15 +21,16 @@ if (VALID_SCOPE.includes(env.VUE_APP_SCOPE)) {
 let apiUrl: string;
 const githubOrgName = env.VUE_APP_GITHUB_ORG;
 const githubEntName = env.VUE_APP_GITHUB_ENT;
+const baseApi = env.VUE_APP_GITHUB_API;
 
 let scopeName: string;
 if (scopeType === 'organization') {
 	scopeName = githubOrgName;
-	apiUrl = `https://api.github.com/orgs/${githubOrgName}`;
+	apiUrl = `${baseApi ?? 'https://api.github.com'}/orgs/${githubOrgName}`;
 }
 else if (scopeType === 'enterprise') {
 	scopeName = githubEntName;
-	apiUrl = `https://api.github.com/enterprises/${githubEntName}`;
+	apiUrl = `${baseApi ?? 'https://api.github.com'}/enterprises/${githubEntName}`;
 }
 else {
 	throw new Error(`Invalid VUE_APP_SCOPE value: ${env.VUE_APP_SCOPE}. Valid values: ${VALID_SCOPE.join(', ')}`)
@@ -46,11 +47,12 @@ const config: Config = {
 		org: githubOrgName,
 		ent: githubEntName,
 		token: env.VUE_APP_GITHUB_TOKEN,
-		apiUrl
+		apiUrl,
+		baseApi
 	}
 }
-if (!config.mockedData && !config.github.token) {
-	throw new Error("VUE_APP_GITHUB_TOKEN environment variable must be set.");
+if (!config.mockedData && !config.github.token && !config.github.baseApi) {
+	throw new Error("VUE_APP_GITHUB_TOKEN environment variable must be set or calls have to be proxied by the api layer.");
 }
 
 export default config;
@@ -66,5 +68,6 @@ interface Config {
 		ent: string;
 		token: string;
 		apiUrl: string;
+		baseApi: string;
 	}
 }

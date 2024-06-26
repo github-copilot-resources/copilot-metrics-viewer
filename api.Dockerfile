@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+# this will tokenize the app
 RUN npm run build
 
 # Stage 2: Prepare the Node.js API
@@ -17,9 +18,14 @@ COPY api/ .
 
 # Copy the built Vue.js app from the previous stage
 COPY --from=build-stage /app/dist /api/public
+COPY --from=build-stage /app/dist/assets/app-config.js /api/app-config.template.js
+
+# install gettext-base for envsubst
+RUN apt-get update && apt-get install -y gettext-base
 
 # Expose the port your API will run on
 EXPOSE 3000
 
 # Command to run your API (and serve your Vue.js app)
-CMD ["node", "server.mjs"]
+RUN chmod +x /api/docker-entrypoint.api/entrypoint.sh
+ENTRYPOINT ["/api/docker-entrypoint.api/entrypoint.sh"]
