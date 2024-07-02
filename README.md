@@ -114,7 +114,7 @@ To access Copilot metrics from the last 28 days via the API and display actual d
 ```
 
 #### VUE_APP_GITHUB_TOKEN
-Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _admin:org_.
+Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _read:org_.
 
 ```
   VUE_APP_GITHUB_TOKEN=
