@@ -31,9 +31,7 @@
               <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdownKey="'language'"/>
               <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
               <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-              <div v-if="isScopeOrganization">
                 <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-              </div>
               <ApiResponse v-if="item === 'api response'" :metrics="metrics" :seats="seats" />
             </v-card>
           </v-window-item>
@@ -94,22 +92,13 @@ export default defineComponent({
   },
   data () {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat','seat analysis' , 'api response'],
       tab: null
     }
   },
   created() {
     if(this.itemName !== 'invalid'){
       this.tabItems.unshift(this.itemName);
-    }
-    if (process.env.VUE_APP_SCOPE === 'organization') {
-      // get the last item in the array,which is 'api response' 
-      //and add 'seat analysis' before it
-      let lastItem = this.tabItems.pop();
-      this.tabItems.push('seat analysis');
-      if (lastItem) {
-        this.tabItems.push(lastItem);
-      }
     }
   },
   setup() {

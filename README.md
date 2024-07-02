@@ -71,17 +71,16 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
 ## Seat Analysis 
+<p align="center">
+  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/54096296/51747194-df30-4bfb-8849-54a0510fffcb">
+</p>
+1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization/enterprise.
 
-![image](https://github.com/DevOps-zhuang/copilot-metrics-viewer/assets/54096296/d1fa9d1d-4fab-4e87-84ba-7be189dd4dd0)
-
-1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization.
-
-2. **Assigned But Never Used:** This metric shows seats that were assigned but never within the current organization. The assigned timestamp is also displayed in the below chart.
+2. **Assigned But Not Used (in the last 28 days):** This metric shows seats that were assigned but not used during the last 28 days within the current organization/enterprise. The assigned timestamp is also displayed in the chart.”
 
 3. **No Activity in the Last 7 days:** never used seats or seats used, but with no activity in the past 7 days.
 
 4. **No Activity in the last 7 days (including never used seats):** a table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
-
 
 
 ## Setup instructions

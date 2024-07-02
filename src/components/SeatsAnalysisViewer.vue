@@ -17,9 +17,9 @@
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">Assigned But Never Used</div>
+                    <div class="text-h6 mb-1">Assigned But Not Used</div>
                     <div class="text-caption">
-                        No show seats
+                        No show seats in the past 28 days
                     </div>
                     <p class="text-h4">{{ NoshowSeats.length }}</p>
                 </div>
@@ -50,6 +50,7 @@
                     <tr>
                         <td>{{ item.login }}</td>
                         <td>{{ item.id }}</td>
+                        <td>{{ item.team }}</td>
                         <td>{{ item.created_at }}</td>
                         <td>{{ item.last_activity_at }}</td>
                         <td>{{ item.last_activity_editor }}</td>
@@ -103,7 +104,8 @@ data() {
         headers: [
             { title: 'Login', key: 'login' },
             { title: 'GitHub ID', key: 'id' },
-            { title: 'Assigned to the Organization At', key: 'created_at' },
+            { title: 'Assigning team', key: 'team' },
+            { title: 'Assigned time', key: 'created_at' },
             { title: 'Last Activity At', key: 'last_activity_at' },
             { title: 'Last Activity Editor', key: 'last_activity_editor' },
         ],
