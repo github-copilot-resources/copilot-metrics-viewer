@@ -108,7 +108,6 @@ export default defineComponent({
       if (lastItem) {
         this.tabItems.push(lastItem);
       }
-    } */
   },
   setup() {
       const metricsReady = ref(false);
