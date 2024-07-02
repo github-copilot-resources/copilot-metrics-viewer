@@ -32,7 +32,6 @@
               <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
               <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
                 <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-              <!--</div>-->
               <ApiResponse v-if="item === 'api response'" :metrics="metrics" :seats="seats" />
             </v-card>
           </v-window-item>
