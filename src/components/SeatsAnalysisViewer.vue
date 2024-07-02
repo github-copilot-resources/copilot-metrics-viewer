@@ -104,7 +104,7 @@ data() {
         headers: [
             { title: 'Login', key: 'login' },
             { title: 'GitHub ID', key: 'id' },
-            { title: 'Assigning_team', key: 'team' },
+            { title: 'Assigning team', key: 'team' },
             { title: 'Assigned time', key: 'created_at' },
             { title: 'Last Activity At', key: 'last_activity_at' },
             { title: 'Last Activity Editor', key: 'last_activity_editor' },
