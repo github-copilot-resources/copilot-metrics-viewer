@@ -76,7 +76,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 </p>
 1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization/enterprise.
 
-2. **Assigned But Never Used:** This metric shows seats that were assigned but never within the current organization/enterprise. The assigned timestamp is also displayed in the chart.
+2. **Assigned But Not Used (in the last 28 days):** This metric shows seats that were assigned but not used during the last 28 days within the current organization/enterprise. The assigned timestamp is also displayed in the chart.”
 
 3. **No Activity in the Last 7 days:** never used seats or seats used, but with no activity in the past 7 days.
 
