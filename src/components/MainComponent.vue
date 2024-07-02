@@ -31,7 +31,6 @@
               <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdownKey="'language'"/>
               <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
               <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-              <!--<div v-if="isScopeOrganization">-->
                 <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
               <!--</div>-->
               <ApiResponse v-if="item === 'api response'" :metrics="metrics" :seats="seats" />
