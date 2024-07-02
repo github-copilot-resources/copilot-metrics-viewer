@@ -17,9 +17,9 @@
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">Assigned But Never Used</div>
+                    <div class="text-h6 mb-1">Assigned But Not Used</div>
                     <div class="text-caption">
-                        No show seats
+                        No show seats in the past 28 days
                     </div>
                     <p class="text-h4">{{ NoshowSeats.length }}</p>
                 </div>
