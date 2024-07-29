@@ -13,7 +13,7 @@
       </div>
       
       <br><br>
-    <div v-if="vueAppScope === 'organization'">
+  
       <v-card max-height="575px" class="overflow-y-auto">
           <pre ref="jsonText">{{ JSON.stringify(seats, null, 2) }}</pre>
       </v-card>
@@ -24,7 +24,6 @@
           <div v-if="showSeatMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
         </transition>
       </div>
-    </div>
   </v-container>
 </template>
 
