@@ -58,6 +58,7 @@ if (!config.mockedData && !config.github.token && !config.github.baseApi) {
 export default config;
 
 interface Config {
+	/** Flag to use mocked data only */
 	mockedData: boolean;
 	scope: {
 		type: 'organization' | 'enterprise';

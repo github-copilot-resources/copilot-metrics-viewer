@@ -8,8 +8,8 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 
 // Construct __dirname equivalent in ES module scope
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-//dotenv.config({ path: path.join(__dirname, '.env') });
-dotenv.config({ path: path.join(__dirname, '.env.local') });
+dotenv.config({ path: path.join(__dirname, '.env') });
+//dotenv.config();
 
 const app = express();
 

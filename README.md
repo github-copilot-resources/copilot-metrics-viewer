@@ -164,7 +164,7 @@ docker build -t copilot-metrics-viewer-with-api -f api.Dockerfile .
 To run:
 
 ```
-docker run -p 8080:3000 --env-file ./.env copilot-metrics-viewer-api
+docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-api
 ```
 
 ## Azure Deployment 

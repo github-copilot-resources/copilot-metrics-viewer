@@ -15,50 +15,23 @@ const headers = {
 export const getSeatsApi = async (): Promise<Seat[]> => {
   const perPage = 50;
   let page = 1;
-  let seatUrl = config.github.apiUrl;
+  const seatUrl = `${config.github.apiUrl}/copilot/billing/seats`;
   let seatsData: Seat[] = [];
 
   let response;
-  
 
-  if (process.env.VUE_APP_MOCKED_DATA === "true") {
+
+  if (config.mockedData) {
     console.log("Using mock data. Check VUE_APP_MOCKED_DATA variable.");
-      if (process.env.VUE_APP_SCOPE === "organization") {
-        response = organizationMockedResponse_seats;
-      } 
-      else if (process.env.VUE_APP_SCOPE === "enterprise") {
-        response = enterpriseMockedResponse_seats;
-      }
-      else {
-        throw new Error(`Invalid VUE_APP_SCOPE value: ${process.env.VUE_APP_SCOPE}. Expected "organization" or "enterprise".`);
-      }
-      seatsData = seatsData.concat(response.seats.map((item: any) => new Seat(item)));
-      return seatsData;
+    response = config.scope.type === "organization" ? organizationMockedResponse_seats : enterpriseMockedResponse_seats;
+    seatsData = seatsData.concat(response.seats.map((item: any) => new Seat(item)));
+    return seatsData;
   }
   else {
-    // if VUE_APP_GITHUB_TOKEN is not set, throw an error
-    if (!process.env.VUE_APP_GITHUB_TOKEN) {
-      throw new Error("VUE_APP_GITHUB_TOKEN environment variable is not set.");
-      return seatsData;
-    }
-    else if (process.env.VUE_APP_SCOPE === "organization") {
-      seatUrl=seatUrl+`orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/billing/seats`;
-    }
-    else if (process.env.VUE_APP_SCOPE === "enterprise") {
-      seatUrl=seatUrl+`enterprises/${process.env.VUE_APP_GITHUB_ENT}/copilot/billing/seats`;
-    }
-    else {
-      throw new Error(`Invalid VUE_APP_SCOPE value: ${process.env.VUE_APP_SCOPE}. Expected "organization" or "enterprise".`);
-      return seatsData;
-    }
 
     // Fetch the first page to get the total number of seats
     response = await axios.get(seatUrl, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
+      headers,
       params: {
         per_page: perPage,
         page: page
@@ -73,11 +46,7 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
     // Fetch the remaining pages
     for (page = 2; page <= totalPages; page++) {
       response = await axios.get(seatUrl, {
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${process.env.VUE_APP_GITHUB_TOKEN}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
+        headers,
         params: {
           per_page: perPage,
           page: page
@@ -86,5 +55,5 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
       seatsData = seatsData.concat(response.data.seats.map((item: any) => new Seat(item)));
     }
     return seatsData;
-    } 
   }
+}
