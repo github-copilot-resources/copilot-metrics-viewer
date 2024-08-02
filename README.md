@@ -167,7 +167,24 @@ To run:
 docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-api
 ```
 
-## Azure Deployment 
+### Github App Registration
+
+Go to Organization -> Settings -> Developer Settings section -> GitHub Apps -> New GitHub App
+
+Replace <your org> with your organization name in the link:
+`https://github.com/organizations/<your org>/settings/apps`
+
+1. Set a unique name
+2. Provide a home page URL: your company URL or just `http://localhost`
+3. Add Callback URL for `http://localhost:3000`
+4. Uncheck Webhook -> Active checkbox.
+5. Set the scopes -> select **Organization permissions** -> **GitHub Copilot Business** -> select **Access: Read-only**
+6. Create a private key - it will get downloaded to your machine.
+7. Install the app in the org -> Install App -> select your org
+
+Note the `application ID` and `Private Key`.
+
+### Azure Deployment 
 
 Application can be deployed using [Azure Developer CLI](https://aka.ms/azd) (azd).
 
@@ -179,10 +196,26 @@ azd env set VUE_APP_SCOPE <organization/enterprise>
 azd env set VUE_APP_GITHUB_ORG <org name>
 # when using enterprise
 azd env set VUE_APP_GITHUB_ENT <ent name>
-azd env set VUE_APP_GITHUB_API_URL /api/github
+azd env set VUE_APP_GITHUB_API /api/github
 azd env set GITHUB_CLIENT_ID <client id>
-azd env set GITHUB_CLIENT_SECRET <client secret>
+azd env set GITHUB_CLIENT_SECRET <client secret for the GH App>
 ```
+
+### Running the docker image
+
+Dashboard with proxy is just a docker image that can be deployed and run anywhere.
+
+```bash
+docker run -it --rm -p 3000:3000 \
+-e VUE_APP_SCOPE=organization \
+-e VUE_APP_GITHUB_API=/api/github  \
+-e VUE_APP_GITHUB_ORG=<org name> \
+-e GITHUB_CLIENT_ID=<client id> \
+-e GITHUB_CLIENT_SECRET=<client secret for the GH App> \
+-e SESSION_SECRET=<random string>  \
+ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy
+```
+
 
 ## License 
 
