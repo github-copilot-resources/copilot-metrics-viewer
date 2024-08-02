@@ -7,3 +7,7 @@ window._ENV_ = {
   VUE_APP_GITHUB_TOKEN: "${VUE_APP_GITHUB_TOKEN}",
   VUE_APP_GITHUB_API: "${VUE_APP_GITHUB_API}",
 };
+
+if(window._ENV_.VUE_APP_GITHUB_TOKEN) {
+  console.warn('Using hardcoded token. This is not recommended for production.');
+}
