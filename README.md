@@ -71,17 +71,16 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
 ## Seat Analysis 
+<p align="center">
+  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/54096296/51747194-df30-4bfb-8849-54a0510fffcb">
+</p>
+1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization/enterprise.
 
-![image](https://github.com/DevOps-zhuang/copilot-metrics-viewer/assets/54096296/d1fa9d1d-4fab-4e87-84ba-7be189dd4dd0)
-
-1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization.
-
-2. **Assigned But Never Used:** This metric shows seats that were assigned but never within the current organization. The assigned timestamp is also displayed in the below chart.
+2. **Assigned But Never Used:** This metric shows seats that were assigned but never used within the current organization/enterprise. The assigned timestamp is also displayed in the chart.
 
 3. **No Activity in the Last 7 days:** never used seats or seats used, but with no activity in the past 7 days.
 
 4. **No Activity in the last 7 days (including never used seats):** a table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
-
 
 
 ## Setup instructions
@@ -115,7 +114,7 @@ To access Copilot metrics from the last 28 days via the API and display actual d
 ```
 
 #### VUE_APP_GITHUB_TOKEN
-Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _admin:org_.
+Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _read:org_.
 
 ```
   VUE_APP_GITHUB_TOKEN=
@@ -138,9 +137,52 @@ docker build -t copilot-metrics-viewer .
 
 ### Docker run
 ```
-docker run -p 8080:80 copilot-metrics-viewer
+docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
 ```
 The application will be accessible at http://localhost:8080
+
+## Running with API Proxy
+
+Project can run with an API proxy which hides GitHub tokens and is secure enough to be deployed.
+Api Proxy project is in `\api` directory. Vue app makes the calls to `/api/github` which then are proxied to `https://api.github.com` with appropriate bearer token.
+
+Proxy can authenticate user using GitHub App. In order to do that, following environment variables are required:
+
+* `GITHUB_CLIENT_ID` - client Id of the GitHub App registered and installed in the enterprise/org with permissions listed above.
+* `GITHUB_CLIENT_SECRET` - client secret of the GitHub App
+* `SESSION_SECRET` - random string for securing session state
+
+For local development register `http://localhost:3000/callback` as GH App callback Uri.
+For deployed version use the Uri of your app.
+
+To build and run the app with API proxy:
+
+```
+docker build -t copilot-metrics-viewer-with-api -f api.Dockerfile .
+```
+
+To run:
+
+```
+docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-api
+```
+
+## Azure Deployment 
+
+Application can be deployed using [Azure Developer CLI](https://aka.ms/azd) (azd).
+
+Before running `azd up` configure GitHub variables:
+
+```bash
+azd env set VUE_APP_SCOPE <organization/enterprise>
+# when using organization
+azd env set VUE_APP_GITHUB_ORG <org name>
+# when using enterprise
+azd env set VUE_APP_GITHUB_ENT <ent name>
+azd env set VUE_APP_GITHUB_API_URL /api/github
+azd env set GITHUB_CLIENT_ID <client id>
+azd env set GITHUB_CLIENT_SECRET <client secret>
+```
 
 ## License 
 

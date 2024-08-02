@@ -9,58 +9,40 @@ import axios from "axios";
 import { Metrics } from "../model/Metrics";
 import organizationMockedResponse from '../assets/organization_response_sample.json';
 import enterpriseMockedResponse from '../assets/enterprise_response_sample.json';
+import config from '../config';
 
+const headers = {
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28",
+  ...(config.github.token ? { Authorization: `token ${config.github.token}` } : {})
+};
 
 export const getMetricsApi = async (): Promise<Metrics[]> => {
-  
+
   let response;
   let metricsData;
 
-  if (process.env.VUE_APP_MOCKED_DATA === "true") {
+  if (config.mockedData) {
     console.log("Using mock data. Check VUE_APP_MOCKED_DATA variable.");
-    if (process.env.VUE_APP_SCOPE === "organization") {
-      response = organizationMockedResponse;
-    } else if (process.env.VUE_APP_SCOPE === "enterprise") {
-      response = enterpriseMockedResponse;
-    } else {
-      throw new Error(`Invalid VUE_APP_SCOPE value: ${process.env.VUE_APP_SCOPE}. Expected "organization" or "enterprise".`);
-    }
-
+    response = config.scope.type === "organization" ? organizationMockedResponse : enterpriseMockedResponse;
     metricsData = response.map((item: any) => new Metrics(item));
   } else {
-    // if VUE_APP_GITHUB_TOKEN is not set, throw an error
-    // if (!process.env.VUE_APP_GITHUB_TOKEN) {
-    //   throw new Error("VUE_APP_GITHUB_TOKEN environment variable is not set.");
-    // }
-    if (process.env.VUE_APP_SCOPE === "organization") {
-      response = await axios.get(
-        `/api/github/orgs/${process.env.VUE_APP_GITHUB_ORG}/copilot/usage`);
-    } else if (process.env.VUE_APP_SCOPE === "enterprise") {
+    response = await axios.get(
+      `${config.github.apiUrl}/copilot/usage`,
+      {
+       headers
+      }
+    );
 
-      response = await axios.get(
-        `/api/github/enterprises/${process.env.VUE_APP_GITHUB_ENT}/copilot/usage`,
-        {
-          headers: {
-            Accept: "application/vnd.github+json",
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-        }
-      );
-    } else {
-      throw new Error(`Invalid VUE_APP_SCOPE value: ${process.env.VUE_APP_SCOPE}. Expected "organization" or "enterprise".`);
-    }
 
     metricsData = response.data.map((item: any) => new Metrics(item));
   }
   return metricsData;
 };
 
-export const getTeams = async (): Promise<string[]> =>{
-  const response = await axios.get(`/api/github/orgs/${process.env.VUE_APP_GITHUB_ORG}/teams`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+export const getTeams = async (): Promise<string[]> => {
+  const response = await axios.get(`${config.github.apiUrl}/teams`, {
+    headers
   });
 
   return response.data;

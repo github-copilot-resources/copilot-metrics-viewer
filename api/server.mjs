@@ -4,12 +4,12 @@ import path from 'path';
 import axios from 'axios';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
-import {createProxyMiddleware} from 'http-proxy-middleware';
-
-dotenv.config({ path: path.join(__dirname, '.env.local') });
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 // Construct __dirname equivalent in ES module scope
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, '.env') });
+//dotenv.config();
 
 const app = express();
 
@@ -22,11 +22,19 @@ app.use(session({
 
 // Middleware to add Authorization header
 const authMiddleware = (req, res, next) => {
-  if (!req.session.token) {
+  // not ideal but if someone wanted to use hardcoded token on the backend
+  if (!req.session.token && !process.env.VUE_APP_GITHUB_TOKEN) {
     res.status(401).send('Unauthorized');
     return;
   }
+
+  if (process.env.VUE_APP_GITHUB_TOKEN) {
+    // Use the hardcoded token if it's available
+    req.session.token = process.env.VUE_APP_GITHUB_TOKEN;
+  }
+
   req.headers['Authorization'] = `Bearer ${req.session.token}`;
+  console.log('Added Authorization to:', req.url);
   next();
 };
 
@@ -47,8 +55,8 @@ app.use('/api/github', authMiddleware, githubProxy);
 
 const exchangeCode = async (code) => {
   const params = new URLSearchParams({
-    client_id: process.env.CLIENT_ID,
-    client_secret: process.env.CLIENT_SECRET,
+    client_id: process.env.GITHUB_CLIENT_ID,
+    client_secret: process.env.GITHUB_CLIENT_SECRET,
     code: code,
   });
 
@@ -73,11 +81,24 @@ const exchangeCode = async (code) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/login', (req, res) => {
-  res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.CLIENT_ID}`);
+  // build the URL to redirect to GitHub using host and scheme
+  const redirectUrl = `${req.protocol}://${req.get('host')}/callback`;
+  // generate random state
+  // store the state in the session
+  req.session.state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
+  res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUrl}&state=${req.session.state}`);
 });
 
 app.get('/callback', async (req, res) => {
   const code = req.query.code;
+  const state = req.query.state;
+
+  // check the state against the session
+  if (state !== req.session.state) {
+    res.send('Invalid state');
+    return;
+  }
 
   const tokenData = await exchangeCode(code);
 
