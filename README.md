@@ -179,12 +179,26 @@ Replace <your org> with your organization name in the link:
 3. Add Callback URL for `http://localhost:3000`
 4. Uncheck Webhook -> Active checkbox.
 5. Set the scopes -> select **Organization permissions** -> **GitHub Copilot Business** -> select **Access: Read-only**
-6. Create a private key - it will get downloaded to your machine.
+6. Create a client secret.
 7. Install the app in the org -> Install App -> select your org
 
-Note the `application ID` and `Private Key`.
+Note the `Client ID` and `Private Key`.
 
-### Azure Deployment 
+### Azure Deployment
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Ffeature%2Fdeployment%2Fazure-deploy%2Fazuredeploy.json)
+
+**Important**
+After deployment redirect URI needs to be updated with the URL of the deployed container app.
+
+Go to: `https://github.com/organizations/<your-org>/settings/apps/<your app>` or in the UI to settings of the registered application and add following redirect URLs:
+
+```
+http://<YOUR Container APP URL>.azurecontainerapps.io/callback
+https://<YOUR Container APP URL>.azurecontainerapps.io/callback
+```
+
+### Azure Deployment with azd
 
 Application can be deployed using [Azure Developer CLI](https://aka.ms/azd) (azd).
 
