@@ -31,7 +31,7 @@
               <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdownKey="'language'"/>
               <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
               <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-                <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
+              <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
               <ApiResponse v-if="item === 'api response'" :metrics="metrics" :seats="seats" />
             </v-card>
           </v-window-item>
@@ -55,6 +55,7 @@ import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue' 
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
+import config from '../config';
 
 export default defineComponent({
   name: 'MainComponent',
@@ -67,27 +68,22 @@ export default defineComponent({
   },
   computed: {
     gitHubOrgName() {
-      return process.env.VUE_APP_GITHUB_ORG;
+      return config.github.org;
     },
     itemName() {
-      if (process.env.VUE_APP_SCOPE === 'enterprise' || process.env.VUE_APP_SCOPE === 'organization') {
-        return process.env.VUE_APP_SCOPE;
-      } else {
-        console.log("invalid");
-        return 'invalid';
-      }
+      return config.scope.type;
     },
     capitalizedItemName():string {
       return this.itemName.charAt(0).toUpperCase() + this.itemName.slice(1);
     },
     displayedViewName(): string {
-      return this.capitalizedItemName === 'Enterprise' ? process.env.VUE_APP_GITHUB_ENT: process.env.VUE_APP_GITHUB_ORG;
+      return config.scope.name;
     },
     isScopeOrganization() {
-      return process.env.VUE_APP_SCOPE === 'organization';
+      return config.scope.type === 'organization';
     },
     mockedDataMessage() {
-      return process.env.VUE_APP_MOCKED_DATA === 'true' ? 'Using mock data - see README if unintended' : '';
+      return config.mockedData ? 'Using mock data - see README if unintended' : '';
     }
   },
   data () {
@@ -97,9 +93,7 @@ export default defineComponent({
     }
   },
   created() {
-    if(this.itemName !== 'invalid'){
-      this.tabItems.unshift(this.itemName);
-    }
+    this.tabItems.unshift(this.itemName);
   },
   setup() {
       const metricsReady = ref(false);
@@ -121,10 +115,10 @@ export default defineComponent({
       if (error.response && error.response.status) {
         switch (error.response.status) {
           case 401:
-            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            apiError.value = '401 Unauthorized access Login to GitHub using this link <a href="/login">Login</a>.';
             break;
           case 404:
-            apiError.value = `404 Not Found - is the organization '${process.env.VUE_APP_GITHUB_ORG}' correct?`;
+            apiError.value = `404 Not Found - is the ${config.scope.type} '${config.scope.name}' correct?`;
             break;
           default:
             apiError.value = error.message;
@@ -151,10 +145,10 @@ export default defineComponent({
       if (error.response && error.response.status) {
         switch (error.response.status) {
           case 401:
-            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            apiError.value = '401 Unauthorized access Login to GitHub using this link <a href="/login">Login</a>.';
             break;
           case 404:
-            apiError.value = `404 Not Found - is the organization '${process.env.VUE_APP_GITHUB_ORG}' correct?`;
+            apiError.value = `404 Not Found - is the ${config.scope.type} '${config.scope.name}' correct?`;
             break;
           default:
             apiError.value = error.message;

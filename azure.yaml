@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: copilot-metrics-viewer
+metadata:
+    template: azd-init@1.9.3
+services:
+    copilot-metrics-viewer:
+        project: .
+        host: containerapp
+        language: js
+        docker:
+            path: api.Dockerfile
