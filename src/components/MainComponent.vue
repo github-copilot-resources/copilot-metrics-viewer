@@ -88,7 +88,7 @@ export default defineComponent({
   },
   data () {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat','seat analysis' , 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'api response'],
       tab: null
     }
   },
