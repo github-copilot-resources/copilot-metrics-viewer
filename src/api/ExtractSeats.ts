@@ -12,6 +12,7 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
   let seatsData: Seat[] = [];
 
   let response;
+  
   if (config.scope.type !== "organization") {
     // when the scope is not organization, return seatsData,by default it will return empty array
     return seatsData;
@@ -34,8 +35,9 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
           page: page
         }
       });
-
+      
       seatsData = seatsData.concat(response.data.seats.map((item: any) => new Seat(item)));
+
       // Calculate the total pages
       const totalSeats = response.data.total_seats;
       const totalPages = Math.ceil(totalSeats / perPage);
