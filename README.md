@@ -157,17 +157,43 @@ For deployed version use the Uri of your app.
 
 To build and run the app with API proxy:
 
-```
-docker build -t copilot-metrics-viewer-with-api -f api.Dockerfile .
+```bash
+docker build -t copilot-metrics-viewer-with-proxy -f api.Dockerfile .
 ```
 
 To run:
 
+```bash
+docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-proxy
 ```
-docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-api
+
+Proxy can also run with token hardcoded on the backend (which hides it from frontend calls), here's a sample:
+
+```bash
+docker run -it --rm -p 3000:3000 \
+-e VUE_APP_SCOPE=enterprise \
+-e VUE_APP_GITHUB_API=/api/github  \
+-e VUE_APP_GITHUB_ENT=<enterprise name> \
+-e VUE_APP_GITHUB_TOKEN=<github PAT> \
+-e SESSION_SECRET=<random string>  \
+copilot-metrics-viewer-with-proxy
+```
+
+or
+
+```bash
+docker run -it --rm -p 3000:3000 \
+-e VUE_APP_SCOPE=organization \
+-e VUE_APP_GITHUB_API=/api/github  \
+-e VUE_APP_GITHUB_ORG=<org name> \
+-e VUE_APP_GITHUB_TOKEN=<github PAT> \
+-e SESSION_SECRET=<random string>   \
+copilot-metrics-viewer-with-api
 ```
 
 ### Github App Registration
+
+While it is possible to run API Proxy without GitHub app registration and with hardcoded token, it's the recommended way.
 
 Go to Organization -> Settings -> Developer Settings section -> GitHub Apps -> New GitHub App
 
@@ -229,7 +255,6 @@ docker run -it --rm -p 3000:3000 \
 -e SESSION_SECRET=<random string>  \
 ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy
 ```
-
 
 ## License 
 

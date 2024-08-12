@@ -27,11 +27,11 @@ const baseApi = env.VUE_APP_GITHUB_API;
 let scopeName: string;
 if (scopeType === 'organization') {
 	scopeName = githubOrgName;
-	apiUrl = `${baseApi ?? 'https://api.github.com'}/orgs/${githubOrgName}`;
+	apiUrl = `${baseApi || 'https://api.github.com'}/orgs/${githubOrgName}`;
 }
 else if (scopeType === 'enterprise') {
 	scopeName = githubEntName;
-	apiUrl = `${baseApi ?? 'https://api.github.com'}/enterprises/${githubEntName}`;
+	apiUrl = `${baseApi || 'https://api.github.com'}/enterprises/${githubEntName}`;
 }
 else {
 	throw new Error(`Invalid VUE_APP_SCOPE value: ${env.VUE_APP_SCOPE}. Valid values: ${VALID_SCOPE.join(', ')}`)
