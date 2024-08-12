@@ -8,6 +8,7 @@ RUN npm run build
 
 # Stage 2: Serve the application with Nginx
 FROM nginx:1.27 as production-stage
+
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 COPY --from=build-stage /app/dist/assets/app-config.js /usr/share/nginx/html-template/app-config.template.js
 COPY ./docker-entrypoint.d/*.sh /docker-entrypoint.d/

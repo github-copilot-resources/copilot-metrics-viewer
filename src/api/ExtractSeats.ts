@@ -52,7 +52,29 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
           page: page
         }
       });
+      
       seatsData = seatsData.concat(response.data.seats.map((item: any) => new Seat(item)));
+
+      // Calculate the total pages
+      const totalSeats = response.data.total_seats;
+      const totalPages = Math.ceil(totalSeats / perPage);
+
+      // Fetch the remaining pages
+      for (page = 2; page <= totalPages; page++) {
+        response = await axios.get(`${config.github.apiUrl}/copilot/billing/seats`, {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${config.github.token}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+          params: {
+            per_page: perPage,
+            page: page
+          }
+        });
+
+        seatsData = seatsData.concat(response.data.seats.map((item: any) => new Seat(item)));
+      }
     }
     return seatsData;
   }

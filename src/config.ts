@@ -23,6 +23,7 @@ const githubOrgName = env.VUE_APP_GITHUB_ORG;
 const githubEntName = env.VUE_APP_GITHUB_ENT;
 const baseApi = env.VUE_APP_GITHUB_API;
 
+
 let scopeName: string;
 if (scopeType === 'organization') {
 	scopeName = githubOrgName;
@@ -58,7 +59,6 @@ if (!config.mockedData && !config.github.token && !config.github.baseApi) {
 export default config;
 
 interface Config {
-	/** Flag to use mocked data only */
 	mockedData: boolean;
 	scope: {
 		type: 'organization' | 'enterprise';
