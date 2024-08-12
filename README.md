@@ -212,10 +212,16 @@ Note the `Client ID` and `Private Key`.
 
 ### Azure Deployment
 
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fazuredeploy.json)
+1. Option 1 - with Personal Access Token used in the backend:
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fazuredeploy.json)
+
+2. Option 2 - with GitHub app registration and GitHub authentication:
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-token%2Fazuredeploy.json)
 
 **Important**
-After deployment redirect URI needs to be updated with the URL of the deployed container app.
+After deployment of Option 2 redirect URI needs to be updated with the URL of the deployed container app.
 
 Go to: `https://github.com/organizations/<your-org>/settings/apps/<your app>` or in the UI to settings of the registered application and add following redirect URLs:
 

@@ -25,35 +25,32 @@
                 "description": "GitHub Client Secret (key)from App Registration"
             }
         },
-        "application-scope": {
-            "type": "string",
-            "defaultValue": "organization",
-            "allowedValues": [
-                "organization",
-                "enterprise"
-            ],
-            "metadata": {
-                "description": "Scope for the application"
-            }
-        },
         "github-organization": {
             "type": "string",
             "defaultValue":"",
             "metadata": {
-                "description": "GitHub Organization or Enterprise"
+                "description": "GitHub Organization - provide only if application-scope is organization"
             }
         },
         "github-enterprise": {
             "type": "string",
             "defaultValue":"",
             "metadata": {
-                "description": "GitHub Enterprise"
+                "description": "GitHub Enterprise - provide only if application-scope is enterprise"
+            }
+        },
+        "metrics-viewer-docker-image": {
+            "type": "string",
+            "defaultValue": "ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy:latest",
+            "metadata": {
+                "description": "Docker image for metrics viewer - use default or replace with your own"
             }
         }
     },
     "variables": {
         "environmentName": "[concat(parameters('name'),'-env')]",
-        "workspaceName": "[concat(parameters('name'),'-ai')]"
+        "workspaceName": "[concat(parameters('name'),'-ai')]",
+        "app-scope": "[if(not(empty(parameters('github-organization'))), 'organization', if(not(empty(parameters('github-enterprise'))), 'enterprise', ''))]"
     },
     "resources": [
         {
@@ -84,7 +81,7 @@
                     "containers": [
                         {
                             "name": "copilot-metrics",
-                            "image": "ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy:latest",
+                            "image": "[parameters('metrics-viewer-docker-image')]",
                             "command": [],
                             "resources": {
                                 "cpu": 0.25,
@@ -93,7 +90,7 @@
                             "env": [
                                 {
                                     "name": "VUE_APP_SCOPE",
-                                    "value": "[parameters('application-scope')]"
+                                    "value": "[variables('app-scope')]"
                                 },
                                 {
                                     "name": "VUE_APP_GITHUB_API",
