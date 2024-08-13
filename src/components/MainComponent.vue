@@ -36,7 +36,7 @@
               <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdownKey="'language'"/>
               <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'"/>
               <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-                <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
+              <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
               <ApiResponse v-if="item === 'api response'" :metrics="metrics" :seats="seats" />
             </v-card>
           </v-window-item>
@@ -109,7 +109,7 @@ export default defineComponent({
   },
   created() {
     this.tabItems.unshift(this.itemName);
-    if (config.scope.type === 'organization') {
+    //if (config.scope.type === 'organization') {
       // get the last item in the array,which is 'api response' 
       //and add 'seat analysis' before it
       let lastItem = this.tabItems.pop();
@@ -117,7 +117,7 @@ export default defineComponent({
       if (lastItem) {
         this.tabItems.push(lastItem);
       }
-    }
+    //}
   },
   setup() {
       const metricsReady = ref(false);
