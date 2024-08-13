@@ -109,15 +109,13 @@ export default defineComponent({
   },
   created() {
     this.tabItems.unshift(this.itemName);
-    //if (config.scope.type === 'organization') {
-      // get the last item in the array,which is 'api response' 
-      //and add 'seat analysis' before it
-      let lastItem = this.tabItems.pop();
-      this.tabItems.push('seat analysis');
-      if (lastItem) {
-        this.tabItems.push(lastItem);
-      }
-    //}
+    // get the last item in the array,which is 'api response' 
+    //and add 'seat analysis' before it
+    let lastItem = this.tabItems.pop();
+    this.tabItems.push('seat analysis');
+    if (lastItem) {
+      this.tabItems.push(lastItem);
+    }
   },
   setup() {
       const metricsReady = ref(false);
