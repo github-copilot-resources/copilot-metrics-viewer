@@ -18,7 +18,10 @@ jobs:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          fetch-depth: 0  # Fetch all history for all tags and branches
+
+      - name: Checkout specific tag
+        run: git checkout tags/v${{ github.event.inputs.tag }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
