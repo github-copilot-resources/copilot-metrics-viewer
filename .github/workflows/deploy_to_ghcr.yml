@@ -49,4 +49,4 @@ jobs:
         app-name: 'copilot-metrics-viewer'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_e94dfd38811a421eafe5ce4eee13b68b }}
-        images: 'ghcr.io/${{ secrets.AzureAppService_ContainerUsername_6e6399ab4c2848209c95dce8fff002f0 }}/github-copilot-resources/copilot-metrics-viewer:latest'
+        images: 'ghcr.io//${{ secrets.AzureAppService_ContainerUsername_6e6399ab4c2848209c95dce8fff002f0 }}/github-copilot-resources/copilot-metrics-viewer:latest'
