@@ -4,9 +4,7 @@
 name: Build and deploy container app to Azure Web App - copilot-metrics-viewer
 
 on:
-  push:
-    branches:
-      - main
+
   workflow_dispatch:
 
 jobs:
