@@ -1,4 +1,4 @@
-const PROPS = ["MOCKED_DATA", "SCOPE", "GITHUB_ORG", "GITHUB_ENT", "GITHUB_TOKEN", "GITHUB_API"];
+const PROPS = ["MOCKED_DATA", "SCOPE", "GITHUB_ORG", "GITHUB_ENT", "GITHUB_TEAM", "GITHUB_TOKEN", "GITHUB_API"];
 
 const env: any = {};
 PROPS.forEach(prop => {
@@ -42,11 +42,11 @@ const config: Config = {
 	scope: {
 		type: scopeType,
 		name: scopeName
-
 	},
 	github: {
 		org: githubOrgName,
 		ent: githubEntName,
+		team: env.VUE_APP_GITHUB_TEAM,
 		token: env.VUE_APP_GITHUB_TOKEN,
 		apiUrl,
 		baseApi
@@ -69,6 +69,8 @@ interface Config {
 		org: string; 
 		/** The GitHub enterprise name. */
 		ent: string;
+		/** The GitHub team name. */
+		team: string;
 		/** 
 		 * The GitHub token to authenticate requests. 
 		 * 

@@ -48,3 +48,24 @@ export const getTeams = async (): Promise<string[]> => {
   return response.data;
 }
 
+export const getTeamMetricsApi = async (): Promise<Metrics[]> => {
+  console.log("config.github.team: " + config.github.team);
+
+  if (config.github.team && config.github.team.trim() !== '') {
+    const response = await axios.get(
+      `${config.github.apiUrl}/team/${config.github.team}/copilot/usage`,
+      {
+        headers: {
+          Accept: "application/vnd.github+json",
+          Authorization: `Bearer ${config.github.token}`,
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      }
+    );
+
+    return response.data.map((item: any) => new Metrics(item));
+  }
+  
+  return [];
+
+}

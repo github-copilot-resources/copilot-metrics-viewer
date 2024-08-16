@@ -74,6 +74,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 <p align="center">
   <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/54096296/51747194-df30-4bfb-8849-54a0510fffcb">
 </p>
+
 1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within current organization/enterprise.
 
 2. **Assigned But Never Used:** This metric shows seats that were assigned but never used within the current organization/enterprise. The assigned timestamp is also displayed in the chart.
@@ -103,7 +104,15 @@ VUE_APP_GITHUB_ORG= <YOUR-ORGANIZATION>
 
 VUE_APP_GITHUB_ENT=
 ````
+#### VUE_APP_GITHUB_TEAM
 
+The `VUE_APP_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Enterprise or Organization account.
+‼️ Important ‼️ When this variable is set, all displayed metrics will pertain exclusively to the specified team. To view metrics for the entire Organization or Enterprise, remove this environment variable.
+
+````
+VUE_APP_GITHUB_TEAM=
+
+````
 
 #### VUE_APP_MOCKED_DATA
 

@@ -1,0 +1,41 @@
+name: Build and push Docker image with custom tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag for the Docker image'
+        required: true
+        default: 'latest'
+
+permissions:
+  packages: write
+
+jobs:
+  push_to_ghcr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub Action
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all tags and branches
+
+      - name: Checkout specific tag
+        run: git checkout tags/v${{ github.event.inputs.tag }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        run: |
+          GITHUB_REPO="${GITHUB_REPO,,}"  # convert repo name to lowercase as required by docker
+          TAG=${{ github.event.inputs.tag }}
+          echo "building docker image in repository '$GITHUB_REPO' with tag '$TAG' ..."
+          docker build --label "org.opencontainers.image.title=copilot-metrics-viewer" --label "org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage" --label "org.opencontainers.image.source=$GITHUB_REPO" -t ghcr.io/$GITHUB_REPO:$TAG .
+          docker push ghcr.io/$GITHUB_REPO:$TAG
+        env:
+          GITHUB_REPO: ${{ github.repository }}
