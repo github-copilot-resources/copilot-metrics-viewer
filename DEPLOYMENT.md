@@ -10,12 +10,18 @@ The Metrics Viewer can be integrated with GitHub application authentication, whi
 
 With a Personal Access Token, user credentials are not verified, and the application simply renders Copilot metrics fetched using the PAT stored in the backend.
 
-## One-click Azure Deployment
+## Scenario 1: One-click Azure Deployment
 
-By far the simplest way is to use the "one-click" option that creates resources in Azure. The deployment creates:
+The simplest way to deploy is to use the "one-click" option that creates resources in Azure. The deployment includes:
 
 * Azure Container App with a consumption environment
 * Azure Log Analytics Workspace
+
+Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy`.
+
+**Prerequisites:** Contributor permission to a resource group in Azure and a subscription with the `Microsoft.App` resource provider enabled.
+
+**Estimated cost** for running this in Azure is about $1 per month, as Container Apps have the first 2 million requests each month free.
 
 1. **Option 1 - Using a Personal Access Token in the Backend**:
 
@@ -31,15 +37,23 @@ By far the simplest way is to use the "one-click" option that creates resources 
 
     Go to: `https://github.com/organizations/<your-org>/settings/apps/<your-app>` or in the UI to the settings of the registered application and add the following redirect URLs:
 
-
     ```
     http://<YOUR Container APP URL>.azurecontainerapps.io/callback
     https://<YOUR Container APP URL>.azurecontainerapps.io/callback
     ```
 
-## Azure Deployment with azd
+## Scenario 2: Azure Deployment with azd
 
 If more control over the deployed container image is needed, an infrastructure-as-code option has been provided using Azure Bicep. The application can be deployed using the [Azure Developer CLI](https://aka.ms/azd) (azd).
+
+In this scenario, the container is built from the source code locally, which provides additional opportunities to modify, scan, etc.
+
+**Prerequisites:** 
+- Contributor permission to a subscription in Azure with the `Microsoft.App` resource provider enabled.
+- Permissions for creating role assignments.
+- Azure CLI (az), Azure Developer CLI  (azd) and Docker installed locally.
+
+**Estimated cost** for running this in Azure is about $10 per month, Container Apps have the first 2 million requests each month free and Container Registry costs about $5.
 
 The deployment creates:
 
@@ -63,9 +77,9 @@ azd env set GITHUB_CLIENT_ID <client id>
 azd env set GITHUB_CLIENT_SECRET <client secret for the GH App>
 ```
 
-## Deploying the container
+## Scenario 3: Deploying the container
 
-When using other deployment methods, the application can run as a Docker container with the required environment variables:
+Application can be deployed anywhere where containers can run and configured via environment variables:
 
 For GitHub App:
 
