@@ -14,7 +14,7 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
   let response;
  
   if (config.mockedData) {
-    response = organizationMockedResponse_seats;
+    response = config.scope.type === "organization" ? organizationMockedResponse_seats: enterpriseMockedResponse_seats;
     seatsData = seatsData.concat(response.seats.map((item: any) => new Seat(item)));
   }
   else {
