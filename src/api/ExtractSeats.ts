@@ -13,13 +13,12 @@ const headers = {
 };
 
 export const getSeatsApi = async (): Promise<Seat[]> => {
-  const perPage = 50;
+  const perPage = 100;
   let page = 1;
   const seatUrl = `${config.github.apiUrl}/copilot/billing/seats`;
   let seatsData: Seat[] = [];
 
   let response;
-
 
   if (config.mockedData) {
     console.log("Using mock data. Check VUE_APP_MOCKED_DATA variable.");
@@ -52,30 +51,9 @@ export const getSeatsApi = async (): Promise<Seat[]> => {
           page: page
         }
       });
-      
+
       seatsData = seatsData.concat(response.data.seats.map((item: any) => new Seat(item)));
-
-      // Calculate the total pages
-      const totalSeats = response.data.total_seats;
-      const totalPages = Math.ceil(totalSeats / perPage);
-
-      // Fetch the remaining pages
-      for (page = 2; page <= totalPages; page++) {
-        response = await axios.get(`${config.github.apiUrl}/copilot/billing/seats`, {
-          headers: {
-            Accept: "application/vnd.github+json",
-            Authorization: `Bearer ${config.github.token}`,
-            "X-GitHub-Api-Version": "2022-11-28",
-          },
-          params: {
-            per_page: perPage,
-            page: page
-          }
-        });
-
-        seatsData = seatsData.concat(response.data.seats.map((item: any) => new Seat(item)));
-      }
     }
-    return seatsData;
   }
+  return seatsData;
 }

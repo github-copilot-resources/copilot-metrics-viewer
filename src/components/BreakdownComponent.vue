@@ -48,13 +48,13 @@
         <h2>{{ breakdownDisplayNamePlural }} Breakdown </h2>
         <br>
 
-        <v-data-table :headers="headers" :items="Array.from(breakdowns)" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
+        <v-data-table :headers="headers" :items="breakdownList" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
             <template v-slot:item="{item}">
                 <tr>
-                    <td>{{ item[0] }}</td>
-                    <td>{{ item[1].acceptedPrompts }}</td>
-                    <td>{{ item[1].acceptedLinesOfCode }}</td>
-                    <td v-if="item[1].acceptanceRate !== undefined">{{ item[1].acceptanceRate.toFixed(2) }}%</td>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.acceptedPrompts }}</td>
+                    <td>{{ item.acceptedLinesOfCode }}</td>
+                    <td v-if="item.acceptanceRate !== undefined">{{ item.acceptanceRate.toFixed(2) }}%</td>
                 </tr>
             </template>
         </v-data-table>
@@ -118,7 +118,7 @@ export default defineComponent({
     },
     headers() {
       return [
-        { title: `${this.breakdownDisplayName} Name`, key: 'breakdownName' },
+        { title: `${this.breakdownDisplayName} Name`, key: 'name' },
         { title: 'Accepted Prompts', key: 'acceptedPrompts' },
         { title: 'Accepted Lines of Code', key: 'acceptedLinesOfCode' },
         { title: 'Acceptance Rate (%)', key: 'acceptanceRate' },
@@ -127,8 +127,8 @@ export default defineComponent({
   },
   setup(props) {
 
-    // Create an empty map to store the breakdowns.
-    const breakdowns = ref(new Map<string, Breakdown>());
+    // Create a reactive reference to store the breakdowns.
+    const breakdownList = ref<Breakdown[]>([]);
 
     // Number of breakdowns
     const numberOfBreakdowns = ref(0);
@@ -158,7 +158,7 @@ export default defineComponent({
     data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
     {
       const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
-      let breakdown = breakdowns.value.get(breakdownName);
+      let breakdown = breakdownList.value.find(b => b.name === breakdownName);
 
       if (!breakdown) {
         // Create a new breakdown object if it does not exist
@@ -168,7 +168,7 @@ export default defineComponent({
           suggestedLinesOfCode: breakdownData.lines_suggested,
           acceptedLinesOfCode: breakdownData.lines_accepted,
         });
-        breakdowns.value.set(breakdownName, breakdown);
+        breakdownList.value.push(breakdown);
       } else {
         // Update the existing breakdown object
         breakdown.acceptedPrompts += breakdownData.acceptances_count;
@@ -180,54 +180,40 @@ export default defineComponent({
     }));
 
     //Sort breakdowns map by acceptance rate
-    breakdowns.value[Symbol.iterator] = function* () {
-      yield* [...this.entries()].sort((a, b) => b[1].acceptanceRate - a[1].acceptanceRate);
-    }
+    breakdownList.value.sort((a, b) => b.acceptanceRate - a.acceptanceRate);
 
     // Get the top 5 breakdowns by acceptance rate
-    const top5BreakdownsAcceptanceRate = new Map([...breakdowns.value].slice(0, 5));
+    const top5BreakdownsAcceptanceRate = breakdownList.value.slice(0, 5);
 
     breakdownsChartDataTop5AcceptanceRate.value = {
-      labels: Array.from(top5BreakdownsAcceptanceRate.values()).map(breakdown => breakdown.name),
+      labels: top5BreakdownsAcceptanceRate.map(breakdown => breakdown.name),
       datasets: [
         {
-          data: Array.from(top5BreakdownsAcceptanceRate.values()).map(breakdown => breakdown.acceptanceRate.toFixed(2)),
+          data: top5BreakdownsAcceptanceRate.map(breakdown => breakdown.acceptanceRate.toFixed(2)),
           backgroundColor: pieChartColors.value,
         },
       ],
     };
 
     //Sort breakdowns map by accepted prompts
-    breakdowns.value[Symbol.iterator] = function* () {
-      yield* [...this.entries()].sort((a, b) => b[1].acceptedPrompts - a[1].acceptedPrompts);
-    }
-
-    breakdownsChartData.value = {
-      labels: Array.from(breakdowns.value.values()).map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: Array.from(breakdowns.value.values()).map(breakdown => breakdown.acceptedPrompts),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
+    breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
 
     // Get the top 5 breakdowns by accepted prompts
-    const top5BreakdownsAcceptedPrompts = new Map([...breakdowns.value].slice(0, 5));
+    const top5BreakdownsAcceptedPrompts = breakdownList.value.slice(0, 5);
     
     breakdownsChartDataTop5AcceptedPrompts.value = {
-      labels: Array.from(top5BreakdownsAcceptedPrompts.values()).map(breakdown => breakdown.name),
+      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
       datasets: [
         {
-          data: Array.from(top5BreakdownsAcceptedPrompts.values()).map(breakdown => breakdown.acceptedPrompts),
+          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptedPrompts),
           backgroundColor: pieChartColors.value,
         },
       ],
     };
 
-    numberOfBreakdowns.value = breakdowns.value.size;
+    numberOfBreakdowns.value = breakdownList.value.length;
 
-    return { chartOptions, breakdowns, numberOfBreakdowns, 
+    return { chartOptions, breakdownList, numberOfBreakdowns, 
       breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptanceRate };
   },
   
