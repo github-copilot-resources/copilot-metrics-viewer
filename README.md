@@ -161,6 +161,8 @@ Proxy can authenticate user using GitHub App. In order to do that, following env
 * `GITHUB_CLIENT_SECRET` - client secret of the GitHub App
 * `SESSION_SECRET` - random string for securing session state
 
+It's also possible to run with **PAT Token**, see examples below for required variables.
+
 For local development register `http://localhost:3000/callback` as GH App callback Uri.
 For deployed version use the Uri of your app.
 
