@@ -1,5 +1,5 @@
 name: Azure Static Web Apps CI/CD
-
+#for test purpose
 on:
   workflow_dispatch:
       
