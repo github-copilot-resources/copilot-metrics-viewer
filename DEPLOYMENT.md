@@ -25,6 +25,8 @@ The simplest way to deploy is to use the "one-click" option that creates resourc
 * Azure Container App with a consumption environment
 * Azure Log Analytics Workspace
 
+![Azure ARM Deployment](./azure-deploy/arm-deployment.png)
+
 Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy`.
 
 **Prerequisites:** Contributor permission to a resource group in Azure and a subscription with the `Microsoft.App` resource provider enabled.
@@ -71,6 +73,8 @@ The deployment creates:
 * Azure Log Analytics Workspace
 * Azure Application Insights
 * Azure Key Vault
+
+![AZD Deployment](./azure-deploy/azd-deployment.png)
 
 Before running `azd up`, configure GitHub variables:
 
