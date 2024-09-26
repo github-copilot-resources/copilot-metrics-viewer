@@ -4,11 +4,19 @@ There are a few ways to deploy the Copilot Metrics Viewer, depending on the type
 
 The app runs in a Docker container, so it can be deployed anywhere containers are hosted (AWS, GCP, Azure, Kubernetes, etc.).
 
-## Authentication
+## Authentication to GitHub
 
 The Metrics Viewer can be integrated with GitHub application authentication, which authenticates the user and verifies their permissions to view the metrics. This option is recommended since it doesn't use Personal Access Tokens. The downside of using a GitHub application is that it can only authorize users to view metrics at the organization level (no support for Enterprise).
 
 With a Personal Access Token, user credentials are not verified, and the application simply renders Copilot metrics fetched using the PAT stored in the backend.
+
+## Authentication for Copilot Metrics Viewer
+
+By default Azure Deployments deploy a web app available on the public Internet without authentication (unless GitHub app is used).
+
+Application can be easily secured in azure using built-in features like Authentication settings on ACA/AppService (EasyAuth on Azure). Azure Container Apps and App Services allow for adding IP restrictions on ingress. Both can also be deployed using private networking architectures. 
+
+Options below provide most basic and cost effective ways of hosting copilot-metrics-viewer.
 
 ## Scenario 1: One-click Azure Deployment
 
