@@ -1,4 +1,9 @@
-.env
+**/.env
+**/.env.local
+.env*
+.dockerignore
+**/node_modules/
+api/public
 .dockerignore
 .git
 .gitignore

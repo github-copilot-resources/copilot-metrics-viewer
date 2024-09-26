@@ -1,4 +1,4 @@
-//Make a call to the GitHub API to get Copilot Metrics, the API is https://api.github.com/orgs/toussaintt/copilot/usage
+//Make a call to the GitHub API to get Copilot Metrics, the API is /api/github/orgs/toussaintt/copilot/usage
 //Add the header Accept: application/vnd.github+json to the request
 //Add also the Authorization: Bearer <token> header where <token> is hardcoded for now
 //Also add X-GitHub-Api-Version: 2022-11-28 header
@@ -10,6 +10,12 @@ import { Metrics } from "../model/Metrics";
 import organizationMockedResponse from '../assets/organization_response_sample.json';
 import enterpriseMockedResponse from '../assets/enterprise_response_sample.json';
 import config from '../config';
+
+const headers = {
+  Accept: "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28",
+  ...(config.github.token ? { Authorization: `token ${config.github.token}` } : {})
+};
 
 export const getMetricsApi = async (): Promise<Metrics[]> => {
 
@@ -24,11 +30,7 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
     response = await axios.get(
       `${config.github.apiUrl}/copilot/usage`,
       {
-        headers: {
-          Accept: "application/vnd.github+json",
-          Authorization: `Bearer ${config.github.token}`,
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
+       headers
       }
     );
 
@@ -40,11 +42,7 @@ export const getMetricsApi = async (): Promise<Metrics[]> => {
 
 export const getTeams = async (): Promise<string[]> => {
   const response = await axios.get(`${config.github.apiUrl}/teams`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${config.github.token}`,
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
+    headers
   });
 
   return response.data;

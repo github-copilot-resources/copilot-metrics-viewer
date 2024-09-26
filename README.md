@@ -150,6 +150,58 @@ docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
 ```
 The application will be accessible at http://localhost:8080
 
+## Running with API Proxy
+
+Project can run with an API proxy which hides GitHub tokens and is secure enough to be deployed.
+Api Proxy project is in `\api` directory. Vue app makes the calls to `/api/github` which then are proxied to `https://api.github.com` with appropriate bearer token.
+
+Proxy can authenticate user using GitHub App. In order to do that, following environment variables are required:
+
+* `GITHUB_CLIENT_ID` - client Id of the GitHub App registered and installed in the enterprise/org with permissions listed above.
+* `GITHUB_CLIENT_SECRET` - client secret of the GitHub App
+* `SESSION_SECRET` - random string for securing session state
+
+It's also possible to run with **PAT Token**, see examples below for required variables.
+
+For local development register `http://localhost:3000/callback` as GH App callback Uri.
+For deployed version use the Uri of your app.
+
+To build and run the app with API proxy:
+
+```bash
+docker build -t copilot-metrics-viewer-with-proxy -f api.Dockerfile .
+```
+
+To run:
+
+```bash
+docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-proxy
+```
+
+Proxy can also run with token hardcoded on the backend (which hides it from frontend calls), here's a sample:
+
+```bash
+docker run -it --rm -p 3000:3000 \
+-e VUE_APP_SCOPE=enterprise \
+-e VUE_APP_GITHUB_API=/api/github  \
+-e VUE_APP_GITHUB_ENT=<enterprise name> \
+-e VUE_APP_GITHUB_TOKEN=<github PAT> \
+-e SESSION_SECRET=<random string>  \
+copilot-metrics-viewer-with-proxy
+```
+
+or
+
+```bash
+docker run -it --rm -p 3000:3000 \
+-e VUE_APP_SCOPE=organization \
+-e VUE_APP_GITHUB_API=/api/github  \
+-e VUE_APP_GITHUB_ORG=<org name> \
+-e VUE_APP_GITHUB_TOKEN=<github PAT> \
+-e SESSION_SECRET=<random string>   \
+copilot-metrics-viewer-with-proxy
+```
+
 ## License 
 
 This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE.txt) for the full terms.

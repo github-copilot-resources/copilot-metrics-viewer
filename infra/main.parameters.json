@@ -1,0 +1,61 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "environmentName": {
+        "value": "${AZURE_ENV_NAME}"
+      },
+      "location": {
+        "value": "${AZURE_LOCATION}"
+      },
+      "copilotMetricsViewerExists": {
+        "value": "${SERVICE_COPILOT_METRICS_VIEWER_RESOURCE_EXISTS=false}"
+      },
+      "copilotMetricsViewerDefinition": {
+        "value": {
+          "settings": [
+            {
+              "name": "GITHUB_CLIENT_ID",
+              "value": "${GITHUB_CLIENT_ID}",
+              "secret": true,
+              "_comment_name": "GitHub App Client id - The name of the environment variable when running in Azure."
+            },
+            {
+              "name": "GITHUB_CLIENT_SECRET",
+              "value": "${GITHUB_CLIENT_SECRET}",
+              "secret": true,
+              "_comment_name": "GitHub App Client Secret - The name of the environment variable when running in Azure."
+            },
+            {
+              "name": "SESSION_SECRET",
+              "value": "$(secretOrRandomPassword)",
+              "secret": true,
+              "_comment_name": "Session Secret - The name of the environment variable when running in Azure."
+            },
+            {
+              "name": "VUE_APP_SCOPE",
+              "value": "${VUE_APP_SCOPE}",
+              "_comment_name": "GitHub App Scope - The name of the environment variable when running in Azure."
+            },
+            {
+              "name": "VUE_APP_GITHUB_ORG",
+              "value": "${VUE_APP_GITHUB_ORG}",
+              "_comment_name": "GitHub Organization - The name of the environment variable when running in Azure."
+            },
+            {
+              "name": "VUE_APP_GITHUB_ENT",
+              "value": "${VUE_APP_GITHUB_ENT}",
+              "_comment_name": "GitHub Enterprise - The name of the environment variable when running in Azure."
+            },
+            {
+              "name": "VUE_APP_GITHUB_API",
+              "value": "/api/github"
+            }
+          ]
+        }
+      },
+      "principalId": {
+        "value": "${AZURE_PRINCIPAL_ID}"
+      }
+    }
+}
