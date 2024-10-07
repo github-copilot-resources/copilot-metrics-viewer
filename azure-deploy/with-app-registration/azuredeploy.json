@@ -45,6 +45,13 @@
             "metadata": {
                 "description": "Docker image for metrics viewer - use default or replace with your own"
             }
+        },
+        "subnetId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Subnet ID (at least /23) for the managed environment when deploying app without public access"
+            }
         }
     },
     "variables": {
@@ -140,6 +147,10 @@
                         "customerId": "[reference(concat('Microsoft.OperationalInsights/workspaces/', variables('workspaceName')), '2020-08-01').customerId]",
                         "sharedKey": "[listKeys(concat('Microsoft.OperationalInsights/workspaces/', variables('workspaceName')), '2020-08-01').primarySharedKey]"
                     }
+                },
+                "vnetConfiguration": {
+                    "infrastructureSubnetId" : "[parameters('subnetId')]",
+                    "internal": "[if(equals(parameters('subnetId'), ''), json('false'), json('true'))]"
                 }
             }
         },

@@ -24,3 +24,4 @@ pnpm-debug.log*
 .azure
 
 api/public
+test.http
