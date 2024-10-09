@@ -135,10 +135,11 @@ setup(props) {
         if (props.seats && Array.isArray(props.seats)) {
             totalSeats.value = props.seats;
 
+            const dateNow = new Date();
             const oneWeekAgo = new Date();
             const thirtyDaysAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-            thirtyDaysAgo.setDate(oneWeekAgo.getDate() - 30);
+            oneWeekAgo.setDate(dateNow.getDate() - 7);
+            thirtyDaysAgo.setDate(dateNow.getDate() - 30);
 
             NoshowSeats.value = props.seats.filter(seat => seat.last_activity_at == null);
 
