@@ -21,9 +21,9 @@ Here are the key metrics visualized in these charts:
   <img width="800" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/875a5f5f-5d8a-44bd-a4e9-0f663f2b2628">
 </p>
 
-3. **Total Suggestions** This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.
+2. **Total Suggestions** This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.
 
-4. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users. 
+3. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users. 
 
 <p align="center">
   <img width="800" alt="image" src="https://github.com/martedesco/copilot-metrics-viewer/assets/3329307/b84220ae-fbdc-4503-b50b-4689362bf364">
