@@ -35,7 +35,7 @@
         },
         "metrics-viewer-docker-image": {
             "type": "string",
-            "defaultValue": "ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy:latest",
+            "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy:latest",
             "metadata": {
                 "description": "Docker image for metrics viewer - use default or replace with your own"
             }
