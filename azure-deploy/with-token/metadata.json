@@ -3,8 +3,8 @@
     "itemDisplayName": "Create a Azure Container App",
     "description": "This template creates a Azure Container App showing GitHub copilot metrics",
     "summary": "Create Azure Container App showing GitHub copilot metrics",
-    "githubUsername": "karpikpl",
-    "docOwner": "karpikpl",
+    "githubUsername": "github-copilot-resources",
+    "docOwner": "github-copilot-resources",
     "dateUpdated": "2024-08-02",
     "type": "Application",
     "tags": {

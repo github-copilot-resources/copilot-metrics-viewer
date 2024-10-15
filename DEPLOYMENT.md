@@ -27,7 +27,7 @@ The simplest way to deploy is to use the "one-click" option that creates resourc
 
 ![Azure ARM Deployment](./azure-deploy/arm-deployment.png)
 
-Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy`.
+Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy`.
 
 **Prerequisites:** Contributor permission to a resource group in Azure and a subscription with the `Microsoft.App` resource provider enabled.
 
@@ -36,13 +36,13 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
 
 1. **Option 1 - Using a Personal Access Token in the Backend**:
 
-    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-token%2Fazuredeploy.json)
+    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-token%2Fazuredeploy.json)
 
 2. **Option 2 - Using GitHub App Registration and GitHub Authentication**:
 
     When using this method, [register your app in Github first](#github-app-registration).
 
-    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fazuredeploy.json)
+    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fazuredeploy.json)
 
     **Important**: After deploying Option 2, the redirect URI needs to be updated with the URL of the deployed container app.
 
@@ -59,7 +59,7 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
 > When deploying to a private network, specify a subnet (at least /23) for the Azure Container Apps Environment.
 App deployment does not create any DNS entries for the application, in order to create a private DNS Zone linked to provided Virtual Network, follow up the deployment with DNS deployment targeting same resource group:
 >
->[![DNS Zone deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fdns%2Fazuredeploy.json)
+>[![DNS Zone deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fdns%2Fazuredeploy.json)
 
 ## Scenario 2: Azure Deployment with azd
 
@@ -113,7 +113,7 @@ docker run -it --rm -p 3000:3000 \
 -e GITHUB_CLIENT_ID=<client id> \
 -e GITHUB_CLIENT_SECRET=<client secret for the GH App> \
 -e SESSION_SECRET=<random string>  \
-ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy
+ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
 ```
 
 or with PAT token and enterprise:
@@ -125,7 +125,7 @@ docker run -it --rm -p 3000:3000 \
 -e VUE_APP_GITHUB_ENT=<enterprise name> \
 -e VUE_APP_GITHUB_TOKEN=<github PAT> \
 -e SESSION_SECRET=<random string>  \
-ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy
+ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
 ```
 
 or with PAT token and organization:
@@ -137,7 +137,7 @@ docker run -it --rm -p 3000:3000 \
 -e VUE_APP_GITHUB_ORG=<org name> \
 -e VUE_APP_GITHUB_TOKEN=<github PAT> \
 -e SESSION_SECRET=<random string>   \
-ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy
+ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
 ```
 
 ## Github App Registration
