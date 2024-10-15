@@ -31,7 +31,8 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
 
 **Prerequisites:** Contributor permission to a resource group in Azure and a subscription with the `Microsoft.App` resource provider enabled.
 
-**Estimated cost** for running this in Azure is about $1 per month, as Container Apps have the first 2 million requests each month free.
+> [!IMPORTANT]
+> **Estimated cost** for running this in Azure is about $1 per month, as Container Apps have the first 2 million requests each month free.
 
 1. **Option 1 - Using a Personal Access Token in the Backend**:
 
@@ -52,12 +53,13 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
     https://<YOUR Container APP URL>.azurecontainerapps.io/callback
     ```
 
-### Deploying with private networking
+### Deployment with private networking
 
-When deploying to a private network, specify a subnet (at least /23) for the Azure Container Apps Environment.
+> [!CAUTION]
+> When deploying to a private network, specify a subnet (at least /23) for the Azure Container Apps Environment.
 App deployment does not create any DNS entries for the application, in order to create a private DNS Zone linked to provided Virtual Network, follow up the deployment with DNS deployment targeting same resource group:
-
-[![DNS Zone deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fdns%2Fazuredeploy.json)
+>
+>[![DNS Zone deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fdns%2Fazuredeploy.json)
 
 ## Scenario 2: Azure Deployment with azd
 
@@ -70,7 +72,8 @@ In this scenario, the container is built from the source code locally, which pro
 - Permissions for creating role assignments.
 - Azure CLI (az), Azure Developer CLI  (azd) and Docker installed locally.
 
-**Estimated cost** for running this in Azure is about $10 per month, Container Apps have the first 2 million requests each month free and Container Registry costs about $5.
+> [!IMPORTANT]
+> **Estimated cost** for running this in Azure is about $10 per month, Container Apps have the first 2 million requests each month free and Container Registry costs about $5.
 
 The deployment creates:
 
@@ -142,17 +145,20 @@ ghcr.io/karpikpl/copilot-metrics-viewer-with-proxy
 While it is possible to run the API Proxy without GitHub app registration and with a hardcoded token, it is not the recommended way.
 
 To register a new GitHub App, follow these steps:
+
+> [!TIP]
+> Navigate using link: replace `<your_org>` with your organization name and open this link:
+[https://github.com/organizations/<your_org>/settings/apps](https://github.com/organizations/<your_org>/settings/apps)
+
+or navigate using UI:
 1. Go to your organization's settings.
 2. Navigate to "Developer settings".
 3. Select "GitHub Apps".
 4. Click "New GitHub App".
 
-Replace `<your org>` with your organization name in the link:
-`https://github.com/organizations/<your org>/settings/apps`
-
 1. Set a unique name.
 2. Provide a home page URL: your company URL or just `http://localhost`.
-3. Add a callback URL for `http://localhost:3000`. (We'll add the real redirect URL after the application is deployed.)
+3. Add a callback URL for `http://localhost:3000/callback`. (We'll add the real redirect URL after the application is deployed.)
 4. Uncheck the "Webhook -> Active" checkbox.
 5. Set the scopes:
    - Select **Organization permissions**.
