@@ -52,6 +52,13 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
     https://<YOUR Container APP URL>.azurecontainerapps.io/callback
     ```
 
+### Deploying with private networking
+
+When deploying to a private network, specify a subnet (at least /23) for the Azure Container Apps Environment.
+App deployment does not create any DNS entries for the application, in order to create a private DNS Zone linked to provided Virtual Network, follow up the deployment with DNS deployment targeting same resource group:
+
+[![DNS Zone deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fkarpikpl%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fdns%2Fazuredeploy.json)
+
 ## Scenario 2: Azure Deployment with azd
 
 If more control over the deployed container image is needed, an infrastructure-as-code option has been provided using Azure Bicep. The application can be deployed using the [Azure Developer CLI](https://aka.ms/azd) (azd).

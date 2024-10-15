@@ -149,7 +149,7 @@
                     }
                 },
                 "vnetConfiguration": {
-                    "infrastructureSubnetId" : "[parameters('subnetId')]",
+                    "infrastructureSubnetId": "[parameters('subnetId')]",
                     "internal": "[if(equals(parameters('subnetId'), ''), json('false'), json('true'))]"
                 }
             }
@@ -168,5 +168,19 @@
                 "workspaceCapping": {}
             }
         }
-    ]
+    ],
+    "outputs": {
+        "metrics-viewer-url": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/containerapps/', parameters('name')), '2024-02-02-preview').latestRevisionFqdn]"
+        },
+        "managed-environment-ip": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').staticIp]"
+        },
+        "managed-environment-domain": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').defaultDomain]"
+        }
+    }
 }

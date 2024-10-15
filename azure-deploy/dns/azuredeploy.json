@@ -1,0 +1,70 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "type": "String",
+            "defaultValue": "copilot-metrics"
+        },
+        "dns-zone-name": {
+            "type": "string",
+            "defaultValue": "xxx.eastus.azurecontainerapps.io",
+            "metadata": {
+                "description": "The unique DNS zone name for the managed environment in format of <random name>.<region>.azurecontainerapps.io"
+            }
+        }
+    },
+    "variables": {
+        "environmentName": "[concat(parameters('name'),'-env')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/privateDnsZones",
+            "apiVersion": "2020-06-01",
+            "name": "[parameters('dns-zone-name')]",
+            "location": "global",
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/A",
+            "apiVersion": "2020-06-01",
+            "name": "[concat(parameters('dns-zone-name'), '/*')]",
+            "properties": {
+                "ttl": 3600,
+                "aRecords": [
+                    {
+                        "ipv4Address": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').staticIp]"
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones', parameters('dns-zone-name'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+            "apiVersion": "2020-06-01",
+            "name": "[concat( parameters('dns-zone-name'), '/', variables('environmentName'), '-vnet-link')]",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/privateDnsZones',  parameters('dns-zone-name'))]"
+            ],
+            "properties": {
+                "virtualNetwork": {
+                    "id": "[split(reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').vnetConfiguration.infrastructureSubnetId, '/subnets/')[0]]"
+                },
+                "registrationEnabled": false
+            }
+        }
+    ],
+    "outputs": {
+        "managed-environment-ip": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').staticIp]"
+        },
+        "managed-environment-domain": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').defaultDomain]"
+        }
+    }
+}

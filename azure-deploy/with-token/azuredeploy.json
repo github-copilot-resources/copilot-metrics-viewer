@@ -51,9 +51,7 @@
     "variables": {
         "environmentName": "[concat(parameters('name'),'-env')]",
         "workspaceName": "[concat(parameters('name'),'-ai')]",
-        "app-scope": "[if(not(empty(parameters('github-organization'))), 'organization', if(not(empty(parameters('github-enterprise'))), 'enterprise', ''))]",
-        "vnetId": "[concat(split(parameters('subnetId'), '/subnets/')[0])]",
-        "dnsZoneName": "azurecontainerapps.io"
+        "app-scope": "[if(not(empty(parameters('github-organization'))), 'organization', if(not(empty(parameters('github-enterprise'))), 'enterprise', ''))]"
     },
     "resources": [
         {
@@ -144,51 +142,6 @@
                     "infrastructureSubnetId": "[parameters('subnetId')]",
                     "internal": "[if(equals(parameters('subnetId'), ''), json('false'), json('true'))]"
                 }
-            }
-        },
-        {
-            "type": "Microsoft.Network/privateDnsZones",
-            "apiVersion": "2020-06-01",
-            "name": "[variables('dnsZoneName')]",
-            "location": "global",
-            "condition": "[not(equals(parameters('subnetId'), ''))]",
-            "properties": {},
-            "dependsOn": [
-                "[concat('Microsoft.App/managedEnvironments/', variables('environmentName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.Network/privateDnsZones/A",
-            "apiVersion": "2020-06-01",
-            "name": "[concat(variables('dnsZoneName'), '/*')]",
-            "properties": {
-                "TTL": 3600,
-                "ARecords": [
-                    {
-                        "ipv4Address": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').staticIp]"
-
-                    }
-                ]
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]",
-                "[concat('Microsoft.App/managedEnvironments/', variables('environmentName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
-            "apiVersion": "2020-06-01",
-            "name": "[concat(variables('dnsZoneName'), '/', variables('environmentName'), '-vnet-link')]",
-            "location": "global",
-            "dependsOn": [
-                "[resourceId('Microsoft.Network/privateDnsZones', variables('dnsZoneName'))]"
-            ],
-            "condition": "[not(equals(parameters('subnetId'), ''))]",
-            "properties": {
-                "virtualNetwork": {
-                    "id": "[variables('vnetId')]"
-                },
-                "registrationEnabled": false
             }
         },
         {
