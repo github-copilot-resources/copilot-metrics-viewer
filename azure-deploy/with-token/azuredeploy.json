@@ -1,0 +1,176 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "type": "String",
+            "defaultValue": "copilot-metrics"
+        },
+        "location": {
+            "type": "String",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "The Azure Container App Location"
+            }
+        },
+        "github-pat-token": {
+            "type": "SecureString",
+            "metadata": {
+                "description": "GitHub PAT token with manage_billing:copilot for ORGs or PAT (classic) with manage_billing:copilot or read:enterprise scopes for Enterprise"
+            }
+        },
+        "github-organization": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "GitHub Organization - provide only if application-scope is organization"
+            }
+        },
+        "github-enterprise": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "GitHub Enterprise - provide only if application-scope is enterprise"
+            }
+        },
+        "metrics-viewer-docker-image": {
+            "type": "string",
+            "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy:latest",
+            "metadata": {
+                "description": "Docker image for metrics viewer - use default or replace with your own"
+            }
+        },
+        "subnetId": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "Subnet ID (at least /23) for the managed environment when deploying app without public access"
+            }
+        }
+    },
+    "variables": {
+        "environmentName": "[concat(parameters('name'),'-env')]",
+        "workspaceName": "[concat(parameters('name'),'-ai')]",
+        "app-scope": "[if(not(empty(parameters('github-organization'))), 'organization', if(not(empty(parameters('github-enterprise'))), 'enterprise', ''))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.App/containerapps",
+            "apiVersion": "2024-02-02-preview",
+            "name": "[parameters('name')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.App/managedEnvironments/', variables('environmentName'))]"
+            ],
+            "kind": "containerapps",
+            "properties": {
+                "environmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('environmentName'))]",
+                "configuration": {
+                    "activeRevisionsMode": "Single",
+                    "ingress": {
+                        "external": true,
+                        "transport": "Auto",
+                        "allowInsecure": false,
+                        "targetPort": 3000,
+                        "stickySessions": {
+                            "affinity": "none"
+                        },
+                        "additionalPortMappings": []
+                    }
+                },
+                "template": {
+                    "containers": [
+                        {
+                            "name": "copilot-metrics",
+                            "image": "[parameters('metrics-viewer-docker-image')]",
+                            "command": [],
+                            "resources": {
+                                "cpu": 0.25,
+                                "memory": ".5Gi"
+                            },
+                            "env": [
+                                {
+                                    "name": "VUE_APP_SCOPE",
+                                    "value": "[variables('app-scope')]"
+                                },
+                                {
+                                    "name": "VUE_APP_GITHUB_API",
+                                    "value": "/api/github"
+                                },
+                                {
+                                    "name": "VUE_APP_GITHUB_ORG",
+                                    "value": "[parameters('github-organization')]"
+                                },
+                                {
+                                    "name": "VUE_APP_GITHUB_ENT",
+                                    "value": "[parameters('github-enterprise')]"
+                                },
+                                {
+                                    "name": "VUE_APP_GITHUB_TOKEN",
+                                    "value": "[parameters('github-pat-token')]"
+                                },
+                                {
+                                    "name": "SESSION_SECRET",
+                                    "value": "[uniqueString(resourceGroup().id)]"
+                                }
+                            ]
+                        }
+                    ],
+                    "scale": {
+                        "minReplicas": 0
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "2024-02-02-preview",
+            "name": "[variables('environmentName')]",
+            "type": "Microsoft.App/managedEnvironments",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.OperationalInsights/workspaces/', variables('workspaceName'))]"
+            ],
+            "properties": {
+                "appLogsConfiguration": {
+                    "destination": "log-analytics",
+                    "logAnalyticsConfiguration": {
+                        "customerId": "[reference(concat('Microsoft.OperationalInsights/workspaces/', variables('workspaceName')), '2020-08-01').customerId]",
+                        "sharedKey": "[listKeys(concat('Microsoft.OperationalInsights/workspaces/', variables('workspaceName')), '2020-08-01').primarySharedKey]"
+                    }
+                },
+                "vnetConfiguration": {
+                    "infrastructureSubnetId": "[parameters('subnetId')]",
+                    "internal": "[if(equals(parameters('subnetId'), ''), json('false'), json('true'))]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2020-08-01",
+            "name": "[variables('workspaceName')]",
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "location": "[parameters('location')]",
+            "dependsOn": [],
+            "properties": {
+                "sku": {
+                    "name": "PerGB2018"
+                },
+                "retentionInDays": 30,
+                "workspaceCapping": {}
+            }
+        }
+    ],
+    "outputs": {
+        "metrics-viewer-url": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/containerapps/', parameters('name')), '2024-02-02-preview').latestRevisionFqdn]"
+        },
+        "managed-environment-ip": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').staticIp]"
+        },
+        "managed-environment-domain": {
+            "type": "string",
+            "value": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').defaultDomain]"
+        }
+    }
+}

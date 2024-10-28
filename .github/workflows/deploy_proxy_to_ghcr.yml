@@ -1,0 +1,35 @@
+name: Build and push Docker image for Proxy
+
+on:
+  push:
+    branches:
+      - main
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  packages: write
+
+jobs:
+  push_to_ghcr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub Action
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        run: |
+          GITHUB_REPO="${GITHUB_REPO,,}-with-proxy"  # convert repo name to lowercase as required by docker
+          echo "building docker image in repository '$GITHUB_REPO' ..."
+          docker build -f api.Dockerfile --label "org.opencontainers.image.title=copilot-metrics-viewer-with-proxy" --label "org.opencontainers.image.description=Metrics viewer with proxy for GitHub Copilot usage" --label "org.opencontainers.image.source=$GITHUB_REPO" -t ghcr.io/$GITHUB_REPO:latest .
+          docker push ghcr.io/$GITHUB_REPO:latest
+        env:
+          GITHUB_REPO: ${{ github.repository }}
