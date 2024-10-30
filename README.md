@@ -208,14 +208,10 @@ This project is licensed under the terms of the MIT open source license. Please 
 
 ## Maintainers 
 
-[@martedesco](https://github.com/martedesco) & ([@karpikpl](https://github.com/karpikpl))
+[@martedesco](https://github.com/martedesco) & [@karpikpl](https://github.com/karpikpl)
 
 ## Support
 
 This project is independently developed and maintained, and is not an official GitHub product. It thrives through the dedicated efforts of ([@martedesco](https://github.com/martedesco)), ([@karpikpl](https://github.com/karpikpl)) our wonderful contributors. A heartfelt thanks to all our contributors! ✨ 
 
 I aim to provide support through [GitHub Issues](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues). While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention. 🙏🏼
-
-### Coming next 🔮
-- Team slicing
-- Persistence layer
