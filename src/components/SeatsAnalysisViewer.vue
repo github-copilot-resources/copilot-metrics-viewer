@@ -1,6 +1,6 @@
 <template>
     <div class="tiles-container">      
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -13,7 +13,7 @@
             </v-card-item>
         </v-card>
 
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -25,7 +25,7 @@
                 </div>
             </v-card-item>
         </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -33,7 +33,19 @@
                     <div class="text-caption">
                         No use in the last 7 days
                     </div>
-                    <p class="text-h4">{{ unusedSeats.length }}</p>
+                    <p class="text-h4">{{ unusedSeatsInSevenDays.length }}</p>
+                </div>
+            </v-card-item>
+        </v-card>
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">No Activity in the Last 30 days </div>
+                    <div class="text-caption">
+                        No use in the last 30 days
+                    </div>
+                    <p class="text-h4">{{ unusedSeatsInThirtyDays.length }}</p>
                 </div>
             </v-card-item>
         </v-card>
@@ -116,18 +128,22 @@ data() {
 setup(props) {
     let totalSeats = ref<Seat[]>([]);
     let NoshowSeats = ref<Seat[]>([]);
-    const unusedSeats = ref<Seat[]>([]);
+    const unusedSeatsInSevenDays = ref<Seat[]>([]);
+    const unusedSeatsInThirtyDays = ref<Seat[]>([]);
 
     watchEffect(() => {
         if (props.seats && Array.isArray(props.seats)) {
             totalSeats.value = props.seats;
 
+            const dateNow = new Date();
             const oneWeekAgo = new Date();
-            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const thirtyDaysAgo = new Date();
+            oneWeekAgo.setDate(dateNow.getDate() - 7);
+            thirtyDaysAgo.setDate(dateNow.getDate() - 30);
 
             NoshowSeats.value = props.seats.filter(seat => seat.last_activity_at == null);
 
-            unusedSeats.value = totalSeats.value.filter(seat => {
+            unusedSeatsInSevenDays.value = totalSeats.value.filter(seat => {
                 if (seat.last_activity_at === null) {
                     return true; // consider to include the last activity date is null to the unused seats
                 }
@@ -135,8 +151,16 @@ setup(props) {
                 const lastActivityDate = new Date(seat.last_activity_at);
                 return lastActivityDate < oneWeekAgo;
             });
-            // to sort  unusedSeats by last_activity_at
-            unusedSeats.value.sort((a, b) => {
+            unusedSeatsInThirtyDays.value = totalSeats.value.filter(seat => {
+                if (seat.last_activity_at === null) {
+                    return true; // consider to include the last activity date is null to the unused seats
+                }
+
+                const lastActivityDate = new Date(seat.last_activity_at);
+                return lastActivityDate < thirtyDaysAgo;
+            });
+            // to sort  unusedSeatsInSevenDays by last_activity_at
+            unusedSeatsInSevenDays.value.sort((a, b) => {
                 if (a.last_activity_at === null) {
                     return -1;
                 }
@@ -154,7 +178,8 @@ setup(props) {
     return {
         totalSeats,
         NoshowSeats,
-        unusedSeats
+        unusedSeatsInSevenDays,
+        unusedSeatsInThirtyDays        
     }
 }   
   
