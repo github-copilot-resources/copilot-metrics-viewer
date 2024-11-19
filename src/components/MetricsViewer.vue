@@ -19,7 +19,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-25"></div>
-            <div class="text-h6 mb-1">Acceptance Rate Average (by count)</div>
+            <div class="text-h6 mb-1">Acceptance Rate Average (by counts)</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
@@ -45,24 +45,11 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Cumulative Number of Accepted Prompts</div>
+            <div class="text-h6 mb-1">Total Lines Suggested</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
-            <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
-          </div>
-        </v-card-item>
-      </v-card>
-
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-        <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Cumulative Number of Lines of Code Accepted</div>
-            <div class="text-caption">
-              Over the last 28 days
-            </div>
-            <p class="text-h4">{{ cumulativeNumberLOCAccepted }}</p>
+            <p class="text-h4">{{ totalLinesSuggested }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -161,6 +148,7 @@ export default defineComponent({
     let cumulativeNumberSuggestions = ref(0);
     let cumulativeNumberAcceptances = ref(0);
     let cumulativeNumberLOCAccepted = ref(0);
+    let totalLinesSuggested = ref(0);
 
     //Acceptance Rate by lines
     const acceptanceRateByLinesChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -311,11 +299,18 @@ export default defineComponent({
       ]
     };
     
-    if(cumulativeNumberSuggestions.value === 0){
+    totalLinesSuggested.value = data.reduce((sum: number, m: Metrics) => sum + m.total_lines_suggested, 0);
+
+    if(totalLinesSuggested.value === 0){
       acceptanceRateAverageByLines.value = 0;
+    } else {
+      acceptanceRateAverageByLines.value = cumulativeNumberLOCAccepted.value / totalLinesSuggested.value * 100;
+    }
+
+    // Calculate acceptanceRateAverageByCount
+    if (cumulativeNumberSuggestions.value === 0) {
       acceptanceRateAverageByCount.value = 0;
     } else {
-      acceptanceRateAverageByLines.value = cumulativeNumberLOCAccepted.value / cumulativeNumberSuggestions.value * 100;
       acceptanceRateAverageByCount.value = cumulativeNumberAcceptances.value / cumulativeNumberSuggestions.value * 100;
     }
 
@@ -334,7 +329,7 @@ export default defineComponent({
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
       totalActiveUsersChartOptions, acceptanceRateByLinesChartData, acceptanceRateByCountChartData, acceptanceRateAverageByLines, acceptanceRateAverageByCount, cumulativeNumberSuggestions, 
-      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted };
+      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, totalLinesSuggested };
   },
   
 });
