@@ -138,10 +138,7 @@
                         "sharedKey": "[listKeys(concat('Microsoft.OperationalInsights/workspaces/', variables('workspaceName')), '2020-08-01').primarySharedKey]"
                     }
                 },
-                "vnetConfiguration": {
-                    "infrastructureSubnetId": "[parameters('subnetId')]",
-                    "internal": "[if(equals(parameters('subnetId'), ''), json('false'), json('true'))]"
-                }
+                "vnetConfiguration": "[if(equals(parameters('subnetId'), ''), json('{}'), json(concat('{ \"infrastructureSubnetId\": \"', parameters('subnetId'), '\", \"internal\": true }')) )]"
             }
         },
         {
