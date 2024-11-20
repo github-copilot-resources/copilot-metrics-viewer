@@ -14,11 +14,11 @@ WORKDIR /api
 COPY api/package*.json ./
 RUN npm install
 # Copy the rest of your API source code
-COPY api/ .
+COPY --chown=1000:1000 api/ .
 
 # Copy the built Vue.js app from the previous stage
-COPY --from=build-stage /app/dist /api/public
-COPY --from=build-stage /app/dist/assets/app-config.js /api/app-config.template.js
+COPY --chown=1000:1000 --from=build-stage /app/dist /api/public
+COPY --chown=1000:1000 --from=build-stage /app/dist/assets/app-config.js /api/app-config.template.js
 
 # install gettext-base for envsubst
 RUN apt-get update && apt-get install -y gettext-base
