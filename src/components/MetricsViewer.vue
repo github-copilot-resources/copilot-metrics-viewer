@@ -61,6 +61,9 @@
         <h2>Acceptance rate (%)</h2>
       <Bar :data="acceptanceRateChartData" :options="chartOptions" />
 
+      <h2>Acceptance rate by count (%)</h2>
+      <Bar :data="acceptanceRateByCountChartData" :options="chartOptions" />
+
       <h2>Total Suggestions Count | Total Acceptances Count</h2>
       <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
 
@@ -147,6 +150,9 @@ export default defineComponent({
 
     //Acceptance Rate
     const acceptanceRateChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+    //Acceptance Rate by Count
+    const acceptanceRateByCountChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
     //Total Suggestions Count | Total Acceptance Counts
     const totalSuggestionsAndAcceptanceChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -272,6 +278,25 @@ export default defineComponent({
         }
       ]
     };
+
+    const acceptanceRatesByCount = data.map((m: Metrics) => {
+      const rate = m.total_suggestions_count !== 0 ? (m.total_acceptances_count / m.total_suggestions_count) * 100 : 0;
+      return rate;
+    });
+
+    acceptanceRateByCountChartData.value = {
+      labels: data.map((m: Metrics) => m.day),
+      datasets: [
+        {
+          type: 'line', // This makes the dataset a line in the chart
+          label: 'Acceptance Rate by Count',
+          data: acceptanceRatesByCount,
+          backgroundColor: 'rgba(173, 216, 230, 0.2)', // light blue
+          borderColor: 'rgba(173, 216, 230, 1)', // darker blue
+          fill: false // This makes the area under the line not filled
+        }
+      ]
+    };
     
     if(cumulativeNumberSuggestions.value === 0){
       acceptanceRateAverage.value = 0;
@@ -293,7 +318,7 @@ export default defineComponent({
 
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
-      totalActiveUsersChartOptions, acceptanceRateChartData, acceptanceRateAverage, cumulativeNumberSuggestions, 
+      totalActiveUsersChartOptions, acceptanceRateChartData, acceptanceRateByCountChartData, acceptanceRateAverage, cumulativeNumberSuggestions, 
       cumulativeNumberAcceptances, cumulativeNumberLOCAccepted };
   },
   

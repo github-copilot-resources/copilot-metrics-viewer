@@ -53,7 +53,10 @@
                 <tr>
                     <td>{{ item.name }}</td>
                     <td>{{ item.acceptedPrompts }}</td>
+                    <td>{{ item.suggestedPrompts }}</td>
                     <td>{{ item.acceptedLinesOfCode }}</td>
+                    <td>{{ item.suggestedLinesOfCode }}</td>
+                    <td v-if="item.acceptanceRateByCount !== undefined">{{ item.acceptanceRateByCount.toFixed(2) }}%</td>
                     <td v-if="item.acceptanceRate !== undefined">{{ item.acceptanceRate.toFixed(2) }}%</td>
                 </tr>
             </template>
@@ -120,8 +123,11 @@ export default defineComponent({
       return [
         { title: `${this.breakdownDisplayName} Name`, key: 'name' },
         { title: 'Accepted Prompts', key: 'acceptedPrompts' },
+        { title: 'Suggested Prompts', key: 'suggestedPrompts' },
         { title: 'Accepted Lines of Code', key: 'acceptedLinesOfCode' },
-        { title: 'Acceptance Rate (%)', key: 'acceptanceRate' },
+        { title: 'Suggested Lines of Code', key: 'suggestedLinesOfCode' },
+        { title: 'Acceptance Rate by Count (%)', key: 'acceptanceRateByCount' },
+        { title: 'Acceptance Rate by Lines (%)', key: 'acceptanceRate' },
       ];
     },
   },
@@ -165,6 +171,7 @@ export default defineComponent({
         breakdown = new Breakdown({
           name: breakdownName,
           acceptedPrompts: breakdownData.acceptances_count,
+          suggestedPrompts: breakdownData.suggestions_count,
           suggestedLinesOfCode: breakdownData.lines_suggested,
           acceptedLinesOfCode: breakdownData.lines_accepted,
         });
@@ -172,11 +179,13 @@ export default defineComponent({
       } else {
         // Update the existing breakdown object
         breakdown.acceptedPrompts += breakdownData.acceptances_count;
+        breakdown.suggestedPrompts += breakdownData.suggestions_count;
         breakdown.suggestedLinesOfCode += breakdownData.lines_suggested;
         breakdown.acceptedLinesOfCode += breakdownData.lines_accepted;
       }
       // Recalculate the acceptance rate
       breakdown.acceptanceRate = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
+      breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
     }));
 
     //Sort breakdowns map by acceptance rate
