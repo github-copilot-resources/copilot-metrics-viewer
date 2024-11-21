@@ -6,7 +6,15 @@
           <v-card-item>
             <div class="spacing-25"></div>
             <div class="tiles-text">
-              <div class="text-h6 mb-1">Acceptance Rate Average</div>
+              <div class="text-h6 mb-1">
+                <v-tooltip text="The total number of code completion suggestions accepted by users divided by the total number of code completion suggestions shown" location="top">
+                  <template v-slot:activator="{ props }">
+                    <div class="text-h6 mb-1">
+                      Acceptance Rate Average<v-icon v-bind="props" color="primary">mdi-information</v-icon>
+                    </div>
+                  </template>
+                </v-tooltip>
+              </div>
               <div class="text-caption">
                 Over the last 28 days
               </div>
@@ -58,7 +66,11 @@
     <v-main class="p-1" style="min-height: 300px;">
 
       <v-container style="min-height: 300px;" class="px-4 elevation-2">
-        <h2>Acceptance rate (%)</h2>
+        <v-tooltip text="The total number of lines of code completions accepted by users divided by the total number of lines of code completions suggested each day" location="top">
+          <template v-slot:activator="{ props }">
+            <h2>Acceptance rate by lines (%) <v-icon v-bind="props" color="primary">mdi-information</v-icon></h2>
+          </template>
+        </v-tooltip>
       <Bar :data="acceptanceRateChartData" :options="chartOptions" />
 
       <h2>Total Suggestions Count | Total Acceptances Count</h2>
