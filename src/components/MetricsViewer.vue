@@ -2,24 +2,12 @@
   <div>
     <div class="tiles-container">      
       <!-- Acceptance Rate Tile -->  
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-          <v-card-item>
-            <div class="spacing-25"></div>
-            <div class="tiles-text">
-              <div class="text-h6 mb-1">Acceptance Rate Average (by lines)</div>
-              <div class="text-caption">
-                Over the last 28 days
-              </div>
-              <p class="text-h4">{{ acceptanceRateAverageByLines.toFixed(2) }}%</p>
-          </div>
-        </v-card-item>
-      </v-card>
-
+      <!--changed on 2024/11/22 to reorder cards, so the accepance rate by counts are be more focused-->
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-25"></div>
-            <div class="text-h6 mb-1">Acceptance Rate Average (by counts)</div>
+            <div class="text-h6 mb-1">Acceptance Rate (by count)</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
@@ -32,7 +20,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Cumulative Number of Suggestions</div>
+            <div class="text-h6 mb-1">Total counts of Suggestions(Prompts)</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
@@ -42,10 +30,23 @@
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+          <v-card-item>
+            <div class="spacing-25"></div>
+            <div class="tiles-text">
+              <div class="text-h6 mb-1">Acceptance Rate (by lines)</div>
+              <div class="text-caption">
+                Over the last 28 days
+              </div>
+              <p class="text-h4">{{ acceptanceRateAverageByLines.toFixed(2) }}%</p>
+          </div>
+        </v-card-item>
+      </v-card>
+
+      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Total Lines Suggested</div>
+            <div class="text-h6 mb-1">Total Lines of code Suggested</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
@@ -57,15 +58,15 @@
 
     <v-main class="p-1" style="min-height: 300px;">
 
-      <v-container style="min-height: 300px;" class="px-4 elevation-2">
-        <h2>Acceptance rate by lines (%)</h2>
-      <Bar :data="acceptanceRateByLinesChartData" :options="chartOptions" />
-
       <h2>Acceptance rate by count (%)</h2>
       <Bar :data="acceptanceRateByCountChartData" :options="chartOptions" />
 
       <h2>Total Suggestions Count | Total Acceptances Count</h2>
       <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
+
+      <v-container style="min-height: 300px;" class="px-4 elevation-2">
+        <h2>Acceptance rate by lines (%)</h2>
+      <Bar :data="acceptanceRateByLinesChartData" :options="chartOptions" />
 
       <h2>Total Lines Suggested | Total Lines Accepted</h2>
       <Line :data="chartData" :options="chartOptions" />

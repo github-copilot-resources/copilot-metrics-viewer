@@ -23,7 +23,7 @@
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="spacing-25"></div>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted prompts</div>
+                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted suggestions(prompts)</div>
                 <div style="width: 300px; height: 300px;">
                   <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
                 </div>
@@ -35,9 +35,9 @@
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="spacing-25"></div>
-                <div class="text-h6 mb-1">Acceptance Rate (by lines) for Top 5 {{ breakdownDisplayNamePlural }}</div>
+                <div class="text-h6 mb-1">Acceptance Rate (by count) for Top 5 {{ breakdownDisplayNamePlural }}</div>
                 <div style="width: 300px; height: 300px;">
-                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByLines" :options="chartOptions" />
+                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByCounts" :options="chartOptions" />
                 </div>
               </v-card-item>
             </v-card>
@@ -47,9 +47,9 @@
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="spacing-25"></div>
-                <div class="text-h6 mb-1">Acceptance Rate (by counts) for Top 5 {{ breakdownDisplayNamePlural }}</div>
+                <div class="text-h6 mb-1">Acceptance Rate (by code lines) for Top 5 {{ breakdownDisplayNamePlural }}</div>
                 <div style="width: 300px; height: 300px;">
-                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByCounts" :options="chartOptions" />
+                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByLines" :options="chartOptions" />
                 </div>
               </v-card-item>
             </v-card>
@@ -178,6 +178,7 @@ export default defineComponent({
     // Process the breakdown separately
     data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
     {
+      //console.log('Processing breakdown data:', breakdownData);
       const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
       let breakdown = breakdownList.value.find(b => b.name === breakdownName);
 
@@ -201,8 +202,14 @@ export default defineComponent({
       // Recalculate the acceptance rates
       breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
       breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
+
+      // Log each breakdown for debugging
+     // console.log('Breakdown:', breakdown);
     }));
 
+    // for test, it seems there is an issue in data, so need to get the data in console
+    console.log('Breakdown List:', JSON.stringify(breakdownList.value, null, 2));
+    
     //Sort breakdowns map by accepted prompts
     breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
 
