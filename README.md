@@ -27,7 +27,7 @@ Here are the key metrics visualized in these charts,will introduce them one by o
 
 2. **Total Suggestions** This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.
 
-3. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users. 
+3. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users.
 
 <p align="center">
   <img width="800" alt="image" src="./images/Total_suggestions_count.png">
@@ -74,7 +74,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 4. **Total Active Copilot Chat Users:** a bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
-## Seat Analysis 
+## Seat Analysis
 <p align="center">
   <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/54096296/51747194-df30-4bfb-8849-54a0510fffcb">
 </p>
@@ -92,7 +92,7 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 In the `.env` file, you can configure several environment variables that control the behavior of the application.
 
-#### VUE_APP_SCOPE 
+#### VUE_APP_SCOPE
 
 The `VUE_APP_SCOPE` environment variable in the `.env` file determines the scope of the API calls made by the application. It can be set to either 'enterprise' or 'organization'.
 
@@ -165,6 +165,8 @@ Proxy can authenticate user using GitHub App. In order to do that, following env
 * `GITHUB_CLIENT_SECRET` - client secret of the GitHub App
 * `SESSION_SECRET` - random string for securing session state
 
+If you want use a custom path for your `.env` file you can set the environment variable `DOTENV_CONFIG_PATH`.
+
 https://github.com/user-attachments/assets/e5596067-da9c-409d-9b9f-0a688cc1f2c4
 
 It's also possible to run with **PAT Token**, see examples below for required variables.
@@ -182,6 +184,15 @@ To run:
 
 ```bash
 docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-proxy
+```
+
+Or with custom path for your `.env` file:
+
+```bash
+docker run -it --rm -p 8080:3000 \
+-e DOTENV_CONFIG_PATH=/custom/.env \
+-v /path/to/your/.env:/custom/.env \
+copilot-metrics-viewer-with-proxy
 ```
 
 Proxy can also run with token hardcoded on the backend (which hides it from frontend calls), here's a sample:
@@ -208,16 +219,16 @@ docker run -it --rm -p 3000:3000 \
 copilot-metrics-viewer-with-proxy
 ```
 
-## License 
+## License
 
 This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE.txt) for the full terms.
 
-## Maintainers 
+## Maintainers
 
 [@martedesco](https://github.com/martedesco) & [@karpikpl](https://github.com/karpikpl)
 
 ## Support
 
-This project is independently developed and maintained, and is not an official GitHub product. It thrives through the dedicated efforts of ([@martedesco](https://github.com/martedesco)), ([@karpikpl](https://github.com/karpikpl)) our wonderful contributors. A heartfelt thanks to all our contributors! ✨ 
+This project is independently developed and maintained, and is not an official GitHub product. It thrives through the dedicated efforts of ([@martedesco](https://github.com/martedesco)), ([@karpikpl](https://github.com/karpikpl)) our wonderful contributors. A heartfelt thanks to all our contributors! ✨
 
 I aim to provide support through [GitHub Issues](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues). While I strive to stay responsive, I can't guarantee immediate responses. For critical issues, please include "CRITICAL" in the title for quicker attention. 🙏🏼
