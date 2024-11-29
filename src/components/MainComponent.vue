@@ -5,9 +5,7 @@
         <v-icon>mdi-github</v-icon>
       </v-btn>
 
-      <v-toolbar-title class="toolbar-title">Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ displayedViewName }}  {{ teamName }}
-         
-      </v-toolbar-title>
+      <v-toolbar-title class="toolbar-title">Copilot Metrics Viewer | {{ capitalizedItemName }} : {{ displayedViewName }}  {{ teamName }}</v-toolbar-title>
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer></v-spacer>
 
@@ -15,15 +13,12 @@
       <v-btn v-if="showLogoutButton" href="/logout" class="logout-button">Logout</v-btn>
 
       <template v-slot:extension>
-
         <v-tabs v-model="tab" align-tabs="title">
           <v-tab v-for="item in tabItems" :key="item" :value="item">
             {{ item }}
           </v-tab>
         </v-tabs>
-
       </template>
-
     </v-toolbar>
 
     <!-- API Error Message -->
@@ -44,24 +39,23 @@
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :seats="seats" />
+            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :originalMetrics="originalMetrics" :seats="seats" />
           </v-card>
         </v-window-item>
       </v-window>
     </div>
-
   </v-card>
 </template>
 
 <script lang='ts'>
 import { defineComponent, ref } from 'vue'
-import { getMetricsApi } from '../api/GitHubApi';
-import { getTeamMetricsApi } from '../api/GitHubApi';
+import { getMetricsApi, getTeamMetricsApi } from '../api/GitHubApi';
 import { getSeatsApi } from '../api/ExtractSeats';
 import { Metrics } from '../model/Metrics';
+import { CopilotMetrics } from '../model/Copilot_Metrics';
 import { Seat } from "../model/Seat";
 
-//Components
+// Components
 import MetricsViewer from './MetricsViewer.vue'
 import BreakdownComponent from './BreakdownComponent.vue' 
 import CopilotChatViewer from './CopilotChatViewer.vue' 
@@ -85,7 +79,7 @@ export default defineComponent({
     itemName() {
       return config.scope.type;
     },
-    capitalizedItemName():string {
+    capitalizedItemName(): string {
       return this.itemName.charAt(0).toUpperCase() + this.itemName.slice(1);
     },
     displayedViewName(): string {
@@ -110,7 +104,7 @@ export default defineComponent({
       return config.github.baseApi === '/api/github';
     }
   },
-  data () {
+  data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
       tab: null
@@ -120,74 +114,69 @@ export default defineComponent({
     this.tabItems.unshift(this.itemName);
   },
   setup() {
-      const metricsReady = ref(false);
-      const metrics = ref<Metrics[]>([]);
-      const seatsReady = ref(false); 
-      const seats = ref<Seat[]>([]); 
-      // API Error Message
-      const apiError = ref<string | undefined>(undefined);
-      const signInRequired = ref(false);
-      
+    const metricsReady = ref(false);
+    const metrics = ref<Metrics[]>([]);
+    const originalMetrics = ref<CopilotMetrics[]>([]);
+    const seatsReady = ref(false); 
+    const seats = ref<Seat[]>([]); 
+    // API Error Message
+    const apiError = ref<string | undefined>(undefined);
+    const signInRequired = ref(false);
+
     /**
      * Handles API errors by setting appropriate error messages.
      * @param {any} error - The error object returned from the API call.
      */
     function processError(error: any) {
-        console.log(error);
-        // Check the status code of the error response
-        if (error.response && error.response.status) {
-          switch (error.response.status) {
-            case 401:
-              apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
-              if (config.github.baseApi === '/api/github') {
-                // show sign in button only when using the Proxy
-                signInRequired.value = true;
-              }
-              break;
-            case 404:
-              apiError.value = `404 Not Found - is the ${config.scope.type} '${config.scope.name}' correct?`;
-              // Update apiError with the error message
-              apiError.value = error.message;
-          }
-          // Add a new line to the apiError message
-          apiError.value += ' <br> If .env file is modified, restart the app for the changes to take effect.';
+      console.log(error);
+      // Check the status code of the error response
+      if (error.response && error.response.status) {
+        switch (error.response.status) {
+          case 401:
+            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            if (config.github.baseApi === '/api/github') {
+              // show sign in button only when using the Proxy
+              signInRequired.value = true;
+            }
+            break;
+          case 404:
+            apiError.value = `404 Not Found - is the ${config.scope.type} '${config.scope.name}' correct?`;
+            // Update apiError with the error message
+            apiError.value = error.message;
         }
+        // Add a new line to the apiError message
+        apiError.value += ' <br> If .env file is modified, restart the app for the changes to take effect.';
       }
+    }
 
-      if(config.github.team && config.github.team.trim() !== '') {
-          getTeamMetricsApi().then(data => {
-          metrics.value = data;
-          //console.log("Metrics data in getTeamMetricsApi: ", metrics.value);
-
+    if (config.github.team && config.github.team.trim() !== '') {
+      getTeamMetricsApi().then(data => {
+        metrics.value = data.metrics;
+        originalMetrics.value = data.original;
+        //console.log("Metrics data in getTeamMetricsApi: ", metrics.value);    
+        metricsReady.value = true;  
+      }).catch(processError);
+    } else {
+      if (metricsReady.value === false) {
+        getMetricsApi().then(data => {
+          metrics.value = data.metrics;
+          originalMetrics.value = data.original;
+          //console.log("Metrics data in getMetricsApi: ", metrics.value);  
           // Set metricsReady to true after the call completes.
           metricsReady.value = true;
         }).catch(processError);
       }
-      else {
-        if (metricsReady.value === false) {
-          getMetricsApi().then(data => {
-            metrics.value = data;
-            //console.log("Metrics data in getMetricsApi: ", metrics.value);
-
-            // Set metricsReady to true after the call completes.
-            metricsReady.value = true;
-              
-          }).catch(processError);
-      }
     }
-     
+
     getSeatsApi().then(data => {
-          seats.value = data;
+      seats.value = data;
+      // Set seatsReady to true after the call completes.
+      seatsReady.value = true;
+    }).catch(processError);
 
-          // Set seatsReady to true after the call completes.
-          seatsReady.value = true;
-            
-        }).catch(processError);
-
-      return { metricsReady, metrics, seatsReady, seats, apiError, signInRequired };
-    }
+    return { metricsReady, metrics, originalMetrics, seatsReady, seats, apiError, signInRequired };
   }
-)
+});
 </script>
 
 <style scoped>
@@ -195,7 +184,6 @@ export default defineComponent({
   white-space: nowrap;
   overflow: visible;
   text-overflow: clip;
-
 }
 .error-message {
   color: red;
