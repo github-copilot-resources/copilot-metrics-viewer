@@ -1,4 +1,4 @@
-class BreakdownData {
+export class BreakdownData {
     language: string;
     editor: string;
     suggestions_count: number;
