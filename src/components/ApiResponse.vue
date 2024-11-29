@@ -1,24 +1,20 @@
 <template>
   <v-container>
+    <div class="copy-container">
+      <v-btn @click="checkMetricsDataQuality">Check Metric data quality</v-btn>
+      <v-spacer></v-spacer>
+      <v-btn @click="copyToClipboard('metricsJsonText')">Copy Metrics to Clipboard</v-btn>
+    </div>
+    <transition name="fade">
+      <div v-if="showQualityMessage || showCopyMessage || showSeatMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
+    </transition>
+      <br><br>
+
       <!-- Displaying the JSON object -->
       <v-card max-height="575px" class="overflow-y-auto">
           <pre ref="metricsJsonText">{{ JSON.stringify(originalMetrics, null, 2) }}</pre>
       </v-card>
       <br>
-
-      <div >
-        <v-btn @click="checkMetricsDataQuality">Check Metric data quality</v-btn>
-        <transition name="fade">
-          <div v-if="showQualityMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
-        </transition>
-      </div>
-
-      <div class="copy-container">
-        <v-btn @click="copyToClipboard('metricsJsonText')">Copy Metrics to Clipboard</v-btn>
-        <transition name="fade">
-          <div v-if="showCopyMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
-        </transition>
-      </div>
       
       <div class="copy-container">
         <v-btn @click="showSeatCount">Show Assigned Seats count</v-btn>
@@ -26,8 +22,7 @@
           <div v-if="showSeatMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
         </transition>
       </div>
-      <br><br>
-  
+
       <v-card max-height="575px" class="overflow-y-auto">
           <pre ref="seatJsonText">{{ JSON.stringify(seats, null, 2) }}</pre>
       </v-card>
