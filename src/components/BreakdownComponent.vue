@@ -169,9 +169,12 @@ export default defineComponent({
     };
 
     const pieChartColors = ref([
-    '#4B0082', '#41B883', '#483D8B', '#87CEFA', 
-    '#32CD32'
-  ]);
+    '#4B0082', // Indigo
+    '#41B883', // Vue Green
+    '#6495ED', // Cornflower Blue
+    '#87CEFA', // Light Sky Blue
+    '#7CFC00'  // Lawn Green
+]);
 
     const data = toRef(props, 'metrics').value;
 
