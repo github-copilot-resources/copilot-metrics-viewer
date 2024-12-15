@@ -1,4 +1,4 @@
-class BreakdownData {
+export class BreakdownData {
     language: string;
     editor: string;
     suggestions_count: number;
@@ -33,6 +33,8 @@ class BreakdownData {
     total_chat_acceptances: number;
     total_chat_turns: number;
     total_active_chat_users: number;
+    acceptance_rate_by_count: number;
+    acceptance_rate_by_lines: number;
     day: string;
     breakdown: BreakdownData[];
   
@@ -47,5 +49,7 @@ class BreakdownData {
       this.total_active_chat_users = data.total_active_chat_users;
       this.day = data.day;
       this.breakdown = data.breakdown.map((item: any) => new BreakdownData(item));
+      this.acceptance_rate_by_count = this.total_suggestions_count !== 0 ? (this.total_acceptances_count / this.total_suggestions_count) * 100 : 0;
+      this.acceptance_rate_by_lines = this.total_lines_suggested !== 0 ? (this.total_lines_accepted / this.total_lines_suggested) * 100 : 0;
     }
   }

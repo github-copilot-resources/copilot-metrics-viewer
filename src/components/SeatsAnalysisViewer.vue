@@ -64,7 +64,7 @@
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, toRef , watchEffect } from 'vue';
+  import { defineComponent, ref , watchEffect } from 'vue';
   import { Seat } from '../model/Seat';
   import {
     Chart as ChartJS,
