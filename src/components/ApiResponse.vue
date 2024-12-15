@@ -109,11 +109,13 @@ export default defineComponent({
         this.message = 'All metrics are valid!';
         this.isError = false;
       } else {
-        this.message = 'Some metrics are invalid!\n';
+        this.message = 'Some metrics maybe are invalid, pls double check!\n';
         this.isError = true;
+        let typeCounter = 1;
         for (const [key, value] of Object.entries(results)) {
           if (value.length > 0) {
-            this.message += `${key}: ${JSON.stringify(value, null, 2)}\n`;
+            this.message += `\n${typeCounter}).  ${key}:\n${JSON.stringify(value, null, 2)}\n`;
+            typeCounter++;
           }
         }
       }
