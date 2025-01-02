@@ -10,7 +10,7 @@ COPY --chown=1000:1000 . .
 RUN npm run build
 
 # Stage 2: Prepare the Node.js API
-FROM node:22 AS api-stage
+FROM node:23 AS api-stage
 
 WORKDIR /api
 
