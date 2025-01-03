@@ -11,4 +11,4 @@ services:
       - VUE_APP_GITHUB_ENT=octodemo
 
   playwright:
-    command: npx playwright test --output test-results-docker --grep @ent
+    command: npx playwright test --output test-results-docker-ent --grep @ent

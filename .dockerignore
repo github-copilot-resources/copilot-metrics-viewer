@@ -18,3 +18,5 @@ infra/
 playwright-report/
 test-results/
 test-results-docker/
+test-results-docker-ent/
+test-results-docker-org/

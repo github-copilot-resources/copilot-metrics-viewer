@@ -30,3 +30,5 @@ test.http
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+test-results-docker-ent/
+test-results-docker-org/

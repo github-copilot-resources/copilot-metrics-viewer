@@ -33,7 +33,7 @@ services:
     volumes:
       - .:/workspace
     working_dir: /workspace
-    command: npx playwright test --output test-results-docker --grep @org
+    command: npx playwright test --output test-results-docker-org --grep @org
     ipc: host
     profiles: [tests]
     depends_on:
