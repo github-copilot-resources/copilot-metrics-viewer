@@ -128,7 +128,11 @@ export default defineComponent({
       const apiError = ref<string | undefined>(undefined);
       const signInRequired = ref(false);
       
-      function processError(error: any) {
+    /**
+     * Handles API errors by setting appropriate error messages.
+     * @param {any} error - The error object returned from the API call.
+     */
+    function processError(error: any) {
         console.log(error);
         // Check the status code of the error response
         if (error.response && error.response.status) {
@@ -153,20 +157,23 @@ export default defineComponent({
       if(config.github.team && config.github.team.trim() !== '') {
           getTeamMetricsApi().then(data => {
           metrics.value = data;
+          //console.log("Metrics data in getTeamMetricsApi: ", metrics.value);
 
           // Set metricsReady to true after the call completes.
           metricsReady.value = true;
         }).catch(processError);
       }
+      else {
+        if (metricsReady.value === false) {
+          getMetricsApi().then(data => {
+            metrics.value = data;
+            //console.log("Metrics data in getMetricsApi: ", metrics.value);
 
-      if (metricsReady.value === false) {
-        getMetricsApi().then(data => {
-          metrics.value = data;
-
-          // Set metricsReady to true after the call completes.
-          metricsReady.value = true;
-            
-        }).catch(processError);
+            // Set metricsReady to true after the call completes.
+            metricsReady.value = true;
+              
+          }).catch(processError);
+      }
     }
      
     getSeatsApi().then(data => {
@@ -179,7 +186,8 @@ export default defineComponent({
 
       return { metricsReady, metrics, seatsReady, seats, apiError, signInRequired };
     }
-})
+  }
+)
 </script>
 
 <style scoped>
