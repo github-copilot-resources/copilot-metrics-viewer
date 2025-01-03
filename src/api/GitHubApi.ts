@@ -7,8 +7,8 @@
 import axios from "axios";
 
 import { Metrics } from "../model/Metrics";
-import organizationMockedResponse from '../assets/organization_response_sample.json';
-import enterpriseMockedResponse from '../assets/enterprise_response_sample.json';
+import organizationMockedResponse from '../../mock-data/organization_response_sample.json';
+import enterpriseMockedResponse from '../../mock-data/enterprise_response_sample.json';
 import config from '../config';
 
 const headers = {
