@@ -1,17 +1,19 @@
-// Breakdown model with name, accepted prompts, accepted lines of code and acceptance rate
-
 export class Breakdown {
   name: string;
   acceptedPrompts: number;
+  suggestedPrompts: number;
   suggestedLinesOfCode: number;
   acceptedLinesOfCode: number;
-  acceptanceRate: number; // Percentage
+  acceptanceRateByCount: number;
+  acceptanceRateByLines: number;
 
   constructor(data: any) {
     this.name = data.name;
     this.acceptedPrompts = data.acceptedPrompts;
+    this.suggestedPrompts = data.suggestedPrompts;
     this.suggestedLinesOfCode = data.suggestedLinesOfCode;
     this.acceptedLinesOfCode = data.acceptedLinesOfCode;
-    this.acceptanceRate = data.acceptanceRate; // Convert to percentage
+    this.acceptanceRateByCount = data.acceptanceRateByCount;
+    this.acceptanceRateByLines = data.acceptanceRateByLines;
   }
 }
