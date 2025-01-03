@@ -29,6 +29,7 @@ COPY --chown=1000:1000 api/ .
 # Copy the built Vue.js app from the previous stage
 COPY --chown=1000:1000 --from=build-stage /app/dist /api/public
 COPY --chown=1000:1000 --from=build-stage /app/dist/assets/app-config.js /api/app-config.template.js
+COPY --chown=1000:1000 --from=build-stage /app/mock-data /mock-data
 
 # Expose the port your API will run on
 EXPOSE 3000

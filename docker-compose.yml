@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api.Dockerfile
+    ports: 
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Determines if mocked data should be used instead of making API calls.
+      - VUE_APP_MOCKED_DATA=false
+      # Mock requests in the API not UI
+      - APP_MOCKED_DATA=true
+      # Determines the scope of the API calls. 
+      # Can be 'enterprise' or 'organization' to target API calls to an enterprise or an organization respectively.
+      - VUE_APP_SCOPE=organization
+      # Determines the enterprise or organization name to target API calls.
+      - VUE_APP_GITHUB_ORG=octodemo
+      - VUE_APP_GITHUB_ENT=
+      - VUE_APP_GITHUB_TOKEN=dummy
+      # GitHub Api Url
+      # for proxy api - set to /api/github defaults to https://api.github.com
+      - VUE_APP_GITHUB_API=/api/github
+      - SESSION_SECRET=secret
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.49.1
+    environment:
+      - TEST_URL=http://api:3000
+      - CI=true
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: npx playwright test --output test-results-docker --grep @org
+    ipc: host
+    profiles: [tests]
+    depends_on:
+      - api

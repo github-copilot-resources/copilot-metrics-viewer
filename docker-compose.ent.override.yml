@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  api:
+    environment:
+      # Determines the scope of the API calls. 
+      # Can be 'enterprise' or 'organization' to target API calls to an enterprise or an organization respectively.
+      - VUE_APP_SCOPE=enterprise
+      # Determines the enterprise or organization name to target API calls.
+      - VUE_APP_GITHUB_ORG=
+      - VUE_APP_GITHUB_ENT=octodemo
+
+  playwright:
+    command: npx playwright test --output test-results-docker --grep @ent

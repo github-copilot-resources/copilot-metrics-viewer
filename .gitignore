@@ -25,3 +25,8 @@ pnpm-debug.log*
 
 api/public
 test.http
+/test-results/
+/test-results-docker/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
