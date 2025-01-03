@@ -30,6 +30,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - name: Run Playwright tests
       run: docker compose --profile tests run playwright
     - uses: actions/upload-artifact@v4
@@ -43,6 +44,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4
     - name: Run Playwright tests
       run: docker compose -f docker-compose.yml -f docker-compose.ent.override.yml --profile tests run playwright
     - uses: actions/upload-artifact@v4
