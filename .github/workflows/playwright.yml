@@ -44,7 +44,7 @@ jobs:
         build-args: mode=playwright
     - name: Run Playwright tests
       run: |
-          docker run --rm --name playwright -v $(pwd)/test-results-docker-org:/test-results -e VUE_APP_SCOPE=organization -e VUE_APP_GITHUB_ORG=octodemo -e VUE_APP_GITHUB_API=/api/github -e APP_MOCKED_DATA=true api:test "@org"
+          docker run --rm --name playwright -v $(pwd)/test-results-docker-org:/test-results -e VUE_APP_SCOPE=organization -e VUE_APP_GITHUB_ORG=octodemo -e VUE_APP_GITHUB_API=/api/github -e APP_MOCKED_DATA=true -e SESSION_SECRET=dummy api:test "@org"
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -67,7 +67,7 @@ jobs:
         build-args: mode=playwright
     - name: Run Playwright tests
       run: |
-          docker run --rm --name playwright -v $(pwd)/test-results-docker-ent:/test-results -e VUE_APP_SCOPE=enterprise -e VUE_APP_GITHUB_ENT=octodemo -e VUE_APP_GITHUB_API=/api/github -e APP_MOCKED_DATA=true api:test "@ent"
+          docker run --rm --name playwright -v $(pwd)/test-results-docker-ent:/test-results -e VUE_APP_SCOPE=enterprise -e VUE_APP_GITHUB_ENT=octodemo -e VUE_APP_GITHUB_API=/api/github -e APP_MOCKED_DATA=true -e SESSION_SECRET=dummy api:test "@ent"
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
