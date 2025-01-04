@@ -50,7 +50,7 @@ jobs:
           -e VUE_APP_GITHUB_ORG=octodemo \
           -e VUE_APP_GITHUB_API=/api/github \
           -e APP_MOCKED_DATA=true \
-          api:test @org
+          api:test "@org"
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -79,7 +79,7 @@ jobs:
           -e VUE_APP_GITHUB_ENT=octodemo \
           -e VUE_APP_GITHUB_API=/api/github \
           -e APP_MOCKED_DATA=true \
-          api:test @ent
+          api:test "@ent"
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
