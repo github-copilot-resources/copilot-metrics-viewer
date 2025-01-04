@@ -3,6 +3,12 @@ import baseConfig from './playwright.config';
 
 export default defineConfig({
   ...baseConfig,
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: '/test-results/html' }],
+    ['github'],
+    ['junit', { outputFile: '/test-results/junit/results.xml' }]
+  ],
   use: {
     baseURL: 'http://127.0.0.1:3000',
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
