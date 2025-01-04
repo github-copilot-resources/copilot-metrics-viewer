@@ -43,7 +43,8 @@ jobs:
         tags: api:test
         build-args: mode=playwright
     - name: Run Playwright tests
-      run: docker run --rm --name playwright \
+      run: |
+          docker run --rm --name playwright \
           -v $(pwd)/test-results-docker-org:/test-results \
           -e VUE_APP_SCOPE=organization \
           -e VUE_APP_GITHUB_ORG=octodemo \
@@ -71,7 +72,8 @@ jobs:
         tags: api:test
         build-args: mode=playwright
     - name: Run Playwright tests
-      run: docker run --rm --name playwright \
+      run: |
+          docker run --rm --name playwright \
           -v $(pwd)/test-results-docker-ent:/test-results \
           -e VUE_APP_SCOPE=enterprise \
           -e VUE_APP_GITHUB_ENT=octodemo \
