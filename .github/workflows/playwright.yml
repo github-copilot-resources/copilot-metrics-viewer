@@ -39,6 +39,7 @@ jobs:
     - name: Build and export to Docker
       uses: docker/build-push-action@v6
       with:
+        file: api.Dockerfile
         load: true
         tags: api:test
         build-args: mode=playwright
@@ -62,6 +63,7 @@ jobs:
     - name: Build and export to Docker
       uses: docker/build-push-action@v6
       with:
+        file: api.Dockerfile
         load: true
         tags: api:test
         build-args: mode=playwright
