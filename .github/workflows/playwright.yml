@@ -34,13 +34,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build and export to Docker
+      uses: docker/build-push-action@v6
       with:
-        node-version: lts/*
-    - name: Install Playwright
-      run: npm install -g @playwright/test
+        load: true
+        tags: api:test
     - name: Run Playwright tests
-      run: docker compose --profile tests run playwright
+      run: docker run -it --rm --name playwright \
+          -v $(pwd)/test-results-docker-org:/test-results \
+          -e VUE_APP_SCOPE=organization \
+          -e VUE_APP_GITHUB_ORG=octodemo \
+          -e VUE_APP_GITHUB_API=/api/github \
+          -e APP_MOCKED_DATA=true \
+          api:test @org
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -53,13 +61,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build and export to Docker
+      uses: docker/build-push-action@v6
       with:
-        node-version: lts/*
-    - name: Install Playwright
-      run: npm install -g @playwright/test
+        load: true
+        tags: api:test
     - name: Run Playwright tests
-      run: docker compose -f docker-compose.yml -f docker-compose.ent.override.yml --profile tests run playwright
+      run: docker run -it --rm --name playwright \
+          -v $(pwd)/test-results-docker-ent:/test-results \
+          -e VUE_APP_SCOPE=enterprise \
+          -e VUE_APP_GITHUB_ENT=octodemo \
+          -e VUE_APP_GITHUB_API=/api/github \
+          -e APP_MOCKED_DATA=true \
+          api:test @ent
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

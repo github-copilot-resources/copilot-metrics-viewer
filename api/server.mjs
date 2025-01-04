@@ -5,6 +5,7 @@ import axios from 'axios';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { readFileSync } from 'fs';
 
 // Construct __dirname equivalent in ES module scope
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
