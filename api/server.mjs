@@ -5,11 +5,18 @@ import axios from 'axios';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import MemoryStoreFactory from 'memorystore';
+import RateLimit from 'express-rate-limit';
 
 // Construct __dirname equivalent in ES module scope
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DOTENV_CONFIG_PATH = process.env.DOTENV_CONFIG_PATH;
+const MemoryStore = MemoryStoreFactory(session);
+const limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
 
 if (DOTENV_CONFIG_PATH) {
   console.log("DOTENV_CONFIG_PATH is set to: ", DOTENV_CONFIG_PATH)
@@ -20,11 +27,17 @@ if (DOTENV_CONFIG_PATH) {
 
 const app = express();
 
+// apply rate limiter to all requests
+app.use(limiter);
+
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false }
+  store: new MemoryStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  }),
+  cookie: { secure: process.env.IS_PROD ? true : false, maxAge: 86400000 }
 }));
 
 // Middleware to add Authorization header
@@ -118,7 +131,7 @@ app.get('/callback', async (req, res) => {
     // redirect to the Vue app with the user's information
     res.redirect(`/`);
   } else {
-    res.send(`Authorized, but unable to exchange code ${code} for token.`);
+    res.send(`Authorized, but unable to exchange code for token.`);
   }
 });
 
