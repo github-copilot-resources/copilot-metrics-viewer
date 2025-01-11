@@ -3,6 +3,7 @@ import baseConfig from './playwright.config';
 
 export default defineConfig({
   ...baseConfig,
+  timeout: 5 * 1000,
   reporter: [
     ['list'],
     ['html', { open: 'never', outputFolder: '/test-results/html' }],

@@ -17,6 +17,10 @@ const MemoryStore = MemoryStoreFactory(session);
 const limiter = RateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // max 100 requests per windowMs
+  skip: (req) => {
+    // Skip rate limiting for localhost
+    return isLocalhost(req);
+  }
 });
 
 if (DOTENV_CONFIG_PATH) {
@@ -27,8 +31,13 @@ if (DOTENV_CONFIG_PATH) {
 }
 
 const app = express();
+console.log('ENVIRONMENT: ', app.get('env'));
 
-// apply rate limiter to all requests
+// Disable rate limiter and secure cookies for localhost
+const isLocalhost = (req) => {
+  return req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+};
+
 app.use(limiter);
 
 app.use(session({
@@ -38,7 +47,8 @@ app.use(session({
   store: new MemoryStore({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
-  cookie: { secure: process.env.IS_PROD ? true : false, maxAge: 86400000 }
+  // may need to use secure: false if using http during local development
+  cookie: { secure: app.get('env') === 'production', maxAge: 86400000 }
 }));
 
 // Middleware to add Authorization header
