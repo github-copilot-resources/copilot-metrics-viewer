@@ -5,6 +5,20 @@ on:
   pull_request:
     branches: [ main, master ]
 jobs:
+  test-docker:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build and export to Docker
+      uses: docker/build-push-action@v6
+      with:
+        file: Dockerfile
+        load: true
+        tags: ui:test
+
   test:
     timeout-minutes: 10
     permissions:
