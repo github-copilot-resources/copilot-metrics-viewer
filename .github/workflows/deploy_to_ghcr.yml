@@ -31,7 +31,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           labels: |
-            org.opencontainers.image.title=copilot-metrics-viewer-with-proxy
+            org.opencontainers.image.title=copilot-metrics-viewer
             org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
             org.opencontainers.image.source=${{ github.repository }}
           tags: |
