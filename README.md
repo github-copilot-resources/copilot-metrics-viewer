@@ -15,12 +15,16 @@ https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/332930
 ## Charts
 
 ## Key Metrics
-Here are the key metrics visualized in these charts,will introduce them one by one as below
+>[!NOTE]
+> Metrics details are described in detail in [GitHub API response schema](https://docs.github.com/en/rest/copilot/copilot-metrics?apiVersion=2022-11-28#get-copilot-metrics-for-an-organization)
+
+Here are the key metrics visualized in these charts:
 <p align="center">
   <img width="800" alt="image" src="./images/KeyMetrics.png">
 </p>
 
-1. **Acceptance Rate:** This metric represents the ratio of accepted numbers to the total numbers suggested by GitHub Copilot. This rate is an indicator of the relevance and usefulness of Copilot's suggestions.
+1. **Acceptance Rate:** This metric represents the ratio of accepted lines and suggestions to the total suggested by GitHub Copilot. This rate is an indicator of the relevance and usefulness of Copilot's suggestions.
+However, as any metric, should be used with caution as developers use Copilot in many different ways (research, confirm, verify etc. not always "inject").
 <p align="center">
   <img width="800" alt="image" src="./images/Acceptance_rate_bycount.png">
 </p>
