@@ -13,3 +13,14 @@ dist/
 .github/
 Dockerfile
 *.md
+azure-deploy/
+infra/
+
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+/test-results/
+/test-results-docker/
+test-results-docker-ent/
+test-results-docker-org/
