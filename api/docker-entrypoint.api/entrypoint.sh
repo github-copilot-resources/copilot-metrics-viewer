@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 configTemplateFile=/api/app-config.template.js
 configTargetFile=/api/public/assets/app-config.js

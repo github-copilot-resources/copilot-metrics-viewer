@@ -2,8 +2,8 @@ import axios from "axios";
 import { Metrics } from "../model/Metrics";
 import { CopilotMetrics } from '../model/Copilot_Metrics';
 import { convertToMetrics } from './MetricsToUsageConverter';
-import organizationMockedMetricsResponse from '../assets/organization_metrics_response_sample.json';
-import enterpriseMockedMetricsResponse from '../assets/enterprise_metrics_response_sample.json';
+import organizationMockedMetricsResponse from '../../mock-data/organization_metrics_response_sample.json';
+import enterpriseMockedMetricsResponse from '../../mock-data/enterprise_metrics_response_sample.json';
 import config from '../config';
 
 const headers = {
