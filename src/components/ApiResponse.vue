@@ -35,6 +35,7 @@ import { defineComponent } from 'vue';
 import config from '../config';
 import { MetricsValidator } from '../api/MetricsValidator';
 import { CopilotMetrics } from '../model/Copilot_Metrics';
+import { Metrics } from '@/model/Metrics';
 
 export default defineComponent({
   name: 'ApiResponse',
@@ -44,7 +45,7 @@ export default defineComponent({
       required: true
     },
     metrics: {
-      type: Array as () => CopilotMetrics[],
+      type: Array as () => Metrics[],
       required: true
     },
     seats: {
@@ -109,7 +110,7 @@ export default defineComponent({
         this.message = 'All metrics are valid!';
         this.isError = false;
       } else {
-        this.message = 'Some metrics maybe are invalid, pls double check!\n';
+        this.message = 'Some metrics might be inconsistent, please double check the API response.\n';
         this.isError = true;
         let typeCounter = 1;
         for (const [key, value] of Object.entries(results)) {

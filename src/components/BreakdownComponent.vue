@@ -210,9 +210,6 @@ export default defineComponent({
      // console.log('Breakdown:', breakdown);
     }));
 
-    // for test, it seems there is an issue in data, so need to get the data in console
-    console.log('Breakdown List:', JSON.stringify(breakdownList.value, null, 2));
-    
     //Sort breakdowns map by accepted prompts
     breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
 
