@@ -20,7 +20,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Total counts of Suggestions(Prompts)</div>
+            <div class="text-h6 mb-1">Total count of Suggestions(Prompts)</div>
             <div class="text-caption">
               Over the last 28 days
             </div>

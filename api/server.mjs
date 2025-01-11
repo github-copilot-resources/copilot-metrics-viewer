@@ -70,16 +70,24 @@ const mockResponses = (proxyServer, options) => {
     // Do not send to GitHub when mocked
     switch (req.path) {
       case "/orgs/octodemo/copilot/usage":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_response_sample.json'), 'utf8')));
+      case "/orgs/octodemo/team/the-a-team/copilot/usage":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_usage_response_sample.json'), 'utf8')));
+        break;
+      case "/orgs/octodemo/copilot/metrics":
+      case "/orgs/octodemo/team/the-a-team/copilot/metrics":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_metrics_response_sample.json'), 'utf8')));
         break;
       case "/orgs/octodemo/copilot/billing/seats":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_response_sample_seats.json'), 'utf8')));
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_seats_response_sample.json'), 'utf8')));
         break;
       case "/enterprises/octodemo/copilot/usage":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_response_sample.json'), 'utf8')));
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_usage_response_sample.json'), 'utf8')));
+        break;
+      case "/enterprises/octodemo/copilot/metrics":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_metrics_response_sample.json'), 'utf8')));
         break;
       case "/enterprises/octodemo/copilot/billing/seats":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_response_sample_seats.json'), 'utf8')));
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_seats_response_sample.json'), 'utf8')));
         break;
       default:
         res.status(418).send('🫖Request Not Mocked');

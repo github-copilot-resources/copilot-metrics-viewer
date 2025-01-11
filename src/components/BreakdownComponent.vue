@@ -23,7 +23,7 @@
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="spacing-25"></div>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted suggestions(prompts)</div>
+                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted suggestions (prompts)</div>
                 <div style="width: 300px; height: 300px;">
                   <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
                 </div>
