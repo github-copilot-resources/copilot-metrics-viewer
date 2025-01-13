@@ -19,11 +19,11 @@
     <v-main class="p-1" style="min-height: 300px;">
       <v-container style="min-height: 300px;" class="px-4 elevation-2">
         <v-row>
-          <v-col cols="6">
+          <v-col cols="4">
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="spacing-25"></div>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted prompts</div>
+                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted suggestions (prompts)</div>
                 <div style="width: 300px; height: 300px;">
                   <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
                 </div>
@@ -31,13 +31,25 @@
             </v-card>
           </v-col>
 
-          <v-col cols="6">
+          <v-col cols="4">
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="spacing-25"></div>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by acceptance rate</div>
+                <div class="text-h6 mb-1">Acceptance Rate (by count) for Top 5 {{ breakdownDisplayNamePlural }}</div>
                 <div style="width: 300px; height: 300px;">
-                  <Pie :data="breakdownsChartDataTop5AcceptanceRate" :options="chartOptions" />
+                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByCounts" :options="chartOptions" />
+                </div>
+              </v-card-item>
+            </v-card>
+          </v-col>
+
+          <v-col cols="4">
+            <v-card>
+              <v-card-item class="d-flex justify-center align-center">
+                <div class="spacing-25"></div>
+                <div class="text-h6 mb-1">Acceptance Rate (by code lines) for Top 5 {{ breakdownDisplayNamePlural }}</div>
+                <div style="width: 300px; height: 300px;">
+                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByLines" :options="chartOptions" />
                 </div>
               </v-card-item>
             </v-card>
@@ -53,8 +65,11 @@
                 <tr>
                     <td>{{ item.name }}</td>
                     <td>{{ item.acceptedPrompts }}</td>
+                    <td>{{ item.suggestedPrompts }}</td>
                     <td>{{ item.acceptedLinesOfCode }}</td>
-                    <td v-if="item.acceptanceRate !== undefined">{{ item.acceptanceRate.toFixed(2) }}%</td>
+                    <td>{{ item.suggestedLinesOfCode }}</td>
+                    <td v-if="item.acceptanceRateByCount !== undefined">{{ item.acceptanceRateByCount.toFixed(2) }}%</td>
+                    <td v-if="item.acceptanceRateByLines !== undefined">{{ item.acceptanceRateByLines.toFixed(2) }}%</td>
                 </tr>
             </template>
         </v-data-table>
@@ -74,9 +89,9 @@ import {
   ArcElement,
   CategoryScale,
   LinearScale,
+  BarElement,
   PointElement,
   LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend
@@ -120,8 +135,11 @@ export default defineComponent({
       return [
         { title: `${this.breakdownDisplayName} Name`, key: 'name' },
         { title: 'Accepted Prompts', key: 'acceptedPrompts' },
+        { title: 'Suggested Prompts', key: 'suggestedPrompts' },
         { title: 'Accepted Lines of Code', key: 'acceptedLinesOfCode' },
-        { title: 'Acceptance Rate (%)', key: 'acceptanceRate' },
+        { title: 'Suggested Lines of Code', key: 'suggestedLinesOfCode' },
+        { title: 'Acceptance Rate by Count (%)', key: 'acceptanceRateByCount' },
+        { title: 'Acceptance Rate by Lines (%)', key: 'acceptanceRateByLines' },
       ];
     },
   },
@@ -139,8 +157,11 @@ export default defineComponent({
     //Top 5 by accepted prompts
     let breakdownsChartDataTop5AcceptedPrompts = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
-    //Top 5 by acceptance rate
-    let breakdownsChartDataTop5AcceptanceRate = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    //Acceptance Rate by lines for top 5 by accepted prompts
+    let breakdownsChartDataTop5AcceptedPromptsByLines = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+    //Acceptance Rate by counts for top 5 by accepted prompts
+    let breakdownsChartDataTop5AcceptedPromptsByCounts = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
     const chartOptions = {
       responsive: true,
@@ -148,15 +169,19 @@ export default defineComponent({
     };
 
     const pieChartColors = ref([
-    '#4B0082', '#41B883', '#483D8B', '#87CEFA', 
-    '#32CD32'
-  ]);
+    '#4B0082', // Indigo
+    '#41B883', // Vue Green
+    '#6495ED', // Cornflower Blue
+    '#87CEFA', // Light Sky Blue
+    '#7CFC00'  // Lawn Green
+]);
 
     const data = toRef(props, 'metrics').value;
 
     // Process the breakdown separately
     data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
     {
+      //console.log('Processing breakdown data:', breakdownData);
       const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
       let breakdown = breakdownList.value.find(b => b.name === breakdownName);
 
@@ -165,6 +190,7 @@ export default defineComponent({
         breakdown = new Breakdown({
           name: breakdownName,
           acceptedPrompts: breakdownData.acceptances_count,
+          suggestedPrompts: breakdownData.suggestions_count,
           suggestedLinesOfCode: breakdownData.lines_suggested,
           acceptedLinesOfCode: breakdownData.lines_accepted,
         });
@@ -172,28 +198,17 @@ export default defineComponent({
       } else {
         // Update the existing breakdown object
         breakdown.acceptedPrompts += breakdownData.acceptances_count;
+        breakdown.suggestedPrompts += breakdownData.suggestions_count;
         breakdown.suggestedLinesOfCode += breakdownData.lines_suggested;
         breakdown.acceptedLinesOfCode += breakdownData.lines_accepted;
       }
-      // Recalculate the acceptance rate
-      breakdown.acceptanceRate = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
+      // Recalculate the acceptance rates
+      breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
+      breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
+
+      // Log each breakdown for debugging
+     // console.log('Breakdown:', breakdown);
     }));
-
-    //Sort breakdowns map by acceptance rate
-    breakdownList.value.sort((a, b) => b.acceptanceRate - a.acceptanceRate);
-
-    // Get the top 5 breakdowns by acceptance rate
-    const top5BreakdownsAcceptanceRate = breakdownList.value.slice(0, 5);
-
-    breakdownsChartDataTop5AcceptanceRate.value = {
-      labels: top5BreakdownsAcceptanceRate.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptanceRate.map(breakdown => breakdown.acceptanceRate.toFixed(2)),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
 
     //Sort breakdowns map by accepted prompts
     breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
@@ -211,10 +226,30 @@ export default defineComponent({
       ],
     };
 
+    breakdownsChartDataTop5AcceptedPromptsByLines.value = {
+      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+      datasets: [
+        {
+          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByLines.toFixed(2)),
+          backgroundColor: pieChartColors.value,
+        },
+      ],
+    };
+
+    breakdownsChartDataTop5AcceptedPromptsByCounts.value = {
+      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+      datasets: [
+        {
+          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByCount.toFixed(2)),
+          backgroundColor: pieChartColors.value,
+        },
+      ],
+    };
+
     numberOfBreakdowns.value = breakdownList.value.length;
 
     return { chartOptions, breakdownList, numberOfBreakdowns, 
-      breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptanceRate };
+      breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts };
   },
   
 
