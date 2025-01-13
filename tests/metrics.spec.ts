@@ -6,7 +6,7 @@ test('metrics visible', tag, async ({ page }) => {
     await page.goto('/');
 
     await expect(page.getByText('Acceptance Rate (by count)')).toBeVisible();
-    await expect(page.getByText('Total count of Suggestions(Prompts)')).toBeVisible();
+    await expect(page.getByText('Total count of Suggestions (Prompts)')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Total Lines Suggested | Total' })).toBeVisible();
 });
 
@@ -20,7 +20,7 @@ test('data returned', tag, async ({ page }) => {
     expect(parseInt(linesAccepted as string)).toBeGreaterThan(0);
 
     await expect(page.getByText('Acceptance Rate (by count)')).toBeVisible();
-    await expect(page.getByText('Total count of Suggestions(Prompts)')).toBeVisible();
+    await expect(page.getByText('Total count of Suggestions (Prompts)')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Total Lines Suggested | Total' })).toBeVisible();
 });
 
