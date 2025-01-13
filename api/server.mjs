@@ -17,6 +17,10 @@ const MemoryStore = MemoryStoreFactory(session);
 const limiter = RateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // max 100 requests per windowMs
+  skip: (req) => {
+    // Skip rate limiting for localhost
+    return isLocalhost(req);
+  }
 });
 
 if (DOTENV_CONFIG_PATH) {
@@ -27,8 +31,13 @@ if (DOTENV_CONFIG_PATH) {
 }
 
 const app = express();
+console.log('ENVIRONMENT: ', app.get('env'));
 
-// apply rate limiter to all requests
+// Disable rate limiter and secure cookies for localhost
+const isLocalhost = (req) => {
+  return req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+};
+
 app.use(limiter);
 
 app.use(session({
@@ -38,7 +47,8 @@ app.use(session({
   store: new MemoryStore({
     checkPeriod: 86400000 // prune expired entries every 24h
   }),
-  cookie: { secure: process.env.IS_PROD ? true : false, maxAge: 86400000 }
+  // may need to use secure: false if using http during local development
+  cookie: { secure: app.get('env') === 'production', maxAge: 86400000 }
 }));
 
 // Middleware to add Authorization header
@@ -70,16 +80,24 @@ const mockResponses = (proxyServer, options) => {
     // Do not send to GitHub when mocked
     switch (req.path) {
       case "/orgs/octodemo/copilot/usage":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_response_sample.json'), 'utf8')));
+      case "/orgs/octodemo/team/the-a-team/copilot/usage":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_usage_response_sample.json'), 'utf8')));
+        break;
+      case "/orgs/octodemo/copilot/metrics":
+      case "/orgs/octodemo/team/the-a-team/copilot/metrics":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_metrics_response_sample.json'), 'utf8')));
         break;
       case "/orgs/octodemo/copilot/billing/seats":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_response_sample_seats.json'), 'utf8')));
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_seats_response_sample.json'), 'utf8')));
         break;
       case "/enterprises/octodemo/copilot/usage":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_response_sample.json'), 'utf8')));
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_usage_response_sample.json'), 'utf8')));
+        break;
+      case "/enterprises/octodemo/copilot/metrics":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_metrics_response_sample.json'), 'utf8')));
         break;
       case "/enterprises/octodemo/copilot/billing/seats":
-        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_response_sample_seats.json'), 'utf8')));
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_seats_response_sample.json'), 'utf8')));
         break;
       default:
         res.status(418).send('🫖Request Not Mocked');

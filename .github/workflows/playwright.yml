@@ -56,7 +56,7 @@ jobs:
           -e SESSION_SECRET=dummy \
           api:test "@org"
     - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
+      if: always()
       with:
         name: playwright-report-docker-org
         path: test-results-docker-org/
@@ -89,7 +89,7 @@ jobs:
           -e SESSION_SECRET=dummy \
           api:test "@ent"
     - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
+      if: always()
       with:
         name: playwright-report-docker-ent
         path: test-results-docker-ent/
