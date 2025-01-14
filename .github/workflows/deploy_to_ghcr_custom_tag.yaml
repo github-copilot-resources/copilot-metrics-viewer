@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'git tag to be used as tag for the Docker image e.g. "custom-tag"'
+        description: 'existing git tag to be used as tag for the Docker image e.g. "custom-tag"'
         required: true
         default: 'my-tag'
 
