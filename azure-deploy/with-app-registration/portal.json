@@ -131,6 +131,7 @@
                                     "selectAll": false,
                                     "multiLine": false,
                                     "constraints": {
+                                        "required": true,
                                         "allowedValues": [
                                             {
                                                 "value": "org",
