@@ -78,7 +78,7 @@
                                     "name": "github-client-id",
                                     "type": "Microsoft.Common.PasswordBox",
                                     "label": {
-                                        "password": "github-client-id",
+                                        "password": "GitHub App Client Id",
                                         "confirmPassword": "Confirm client id"
                                     },
                                     "defaultValue": "",
@@ -98,7 +98,7 @@
                                     "name": "github-client-secret",
                                     "type": "Microsoft.Common.PasswordBox",
                                     "label": {
-                                        "password": "github-client-secret",
+                                        "password": "GitHub App Client Secret",
                                         "confirmPassword": "Confirm client secret"
                                     },
                                     "defaultValue": "",
