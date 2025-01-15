@@ -3,7 +3,7 @@
     "view": {
         "kind": "Form",
         "properties": {
-            "title": "Test Form View",
+            "title": "Copilot Metrics Viewer deployment",
             "steps": [
                 {
                     "name": "basics",
@@ -131,10 +131,10 @@
                                     "defaultValue": "",
                                     "toolTip": "GitHub Organization - provide only if application-scope is organization",
                                     "constraints": {
-                                        "required": "[equals(steps('basic').ghSection.scope, 'org')]"
+                                        "required": "[equals(steps('basics').ghSection.scope, 'org')]"
                                     },
                                     "infoMessages": [],
-                                    "visible": "[equals(steps('basic').ghSection.scope, 'org')]"
+                                    "visible": "[equals(steps('basics').ghSection.scope, 'org')]"
                                 },
                                 {
                                     "name": "github-enterprise",
@@ -144,9 +144,9 @@
                                     "defaultValue": "",
                                     "toolTip": "GitHub Enterprise - provide only if application-scope is enterprise",
                                     "constraints": {
-                                        "required": "[equals(steps('basic').ghSection.scope, 'ent')]"
+                                        "required": "[equals(steps('basics').ghSection.scope, 'ent')]"
                                     },
-                                    "visible": "[equals(steps('basic').ghSection.scope, 'ent')]"
+                                    "visible": "[equals(steps('basics').ghSection.scope, 'ent')]"
                                 }
                             ]
                         },
