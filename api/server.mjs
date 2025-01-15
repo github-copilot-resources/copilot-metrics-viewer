@@ -16,7 +16,7 @@ const DOTENV_CONFIG_PATH = process.env.DOTENV_CONFIG_PATH;
 const MemoryStore = MemoryStoreFactory(session);
 const limiter = RateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per windowMs
+  max: 1000, // max 1000 requests per windowMs
   skip: (req) => {
     // Skip rate limiting for localhost
     return isLocalhost(req);
@@ -158,6 +158,12 @@ app.get('/login', (req, res) => {
   req.session.state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 
   res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUrl}&state=${req.session.state}`);
+});
+
+app.get('/logout', (req, res) => {
+  // destroy the session
+  req.session.destroy();
+  res.redirect('/');
 });
 
 app.get('/callback', async (req, res) => {

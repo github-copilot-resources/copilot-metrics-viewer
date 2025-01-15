@@ -11,24 +11,39 @@ on:
 
 permissions:
   packages: write
+  contents: write
 
 jobs:
-  push_to_ghcr:
+  version_update:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
-
-      - name: Get Latest Release Tag
-        id: get_latest_release
-        uses: actions/github-script@v6
         with:
-          script: |
-            const latestRelease = await github.rest.repos.getLatestRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            core.setOutput('tag_name', latestRelease.data.tag_name);
+          fetch-depth: 0
+
+      - uses: actions4git/setup-git@v1
+
+      - name: Update version in package.json
+        id: version
+        run: |
+          git checkout -b temp-version-update
+          version=$(npm version from-git --no-git-tag-version)
+          cd api
+          npm version from-git --no-git-tag-version
+          git add package.json
+          git commit --signoff --message $version 
+          git checkout main
+          git merge temp-version-update
+          git tag --force $version
+          git push origin main -f --tags
+
+  push_to_ghcr:
+    runs-on: ubuntu-latest
+    needs: version_update
+    steps:
+      - name: Checkout GitHub Action
+        uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -37,12 +52,66 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
-        run: |
-          GITHUB_REPO="${GITHUB_REPO,,}"  # convert repo name to lowercase as required by docker
-          TAG=${{ steps.get_latest_release.outputs.result }}
-          echo "building docker image in repository '$GITHUB_REPO' with tag '$TAG' ..."
-          docker build --label "org.opencontainers.image.title=copilot-metrics-viewer" --label "org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage" --label "org.opencontainers.image.source=$GITHUB_REPO" -t ghcr.io/$GITHUB_REPO:$TAG .
-          docker push ghcr.io/$GITHUB_REPO:$TAG
-        env:
-          GITHUB_REPO: ${{ github.repository }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          labels: |
+            org.opencontainers.image.title=copilot-metrics-viewer
+            org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
+            org.opencontainers.image.source=${{ github.repository }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+
+  push_proxy_to_ghcr:
+    runs-on: ubuntu-latest
+    needs: version_update
+    steps:
+      - name: Checkout GitHub Action
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-with-proxy
+          labels: |
+            org.opencontainers.image.title=copilot-metrics-viewer-with-proxy
+            org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
+            org.opencontainers.image.source=${{ github.repository }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push api
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: api.Dockerfile
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+        

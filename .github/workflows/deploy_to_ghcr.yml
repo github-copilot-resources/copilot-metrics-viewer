@@ -25,14 +25,73 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
-        run: |
-          GITHUB_REPO="${GITHUB_REPO,,}"  # convert repo name to lowercase as required by docker
-          echo "building docker image in repository '$GITHUB_REPO' ..."
-          docker build --label "org.opencontainers.image.title=copilot-metrics-viewer" --label "org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage" --label "org.opencontainers.image.source=$GITHUB_REPO" -t ghcr.io/$GITHUB_REPO:latest .
-          docker push ghcr.io/$GITHUB_REPO:latest
-        env:
-          GITHUB_REPO: ${{ github.repository }}
+      # Adding below tag any push to main as "latest"
+      # To deploy latest, create a release with a semver tag
+      # type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          labels: |
+            org.opencontainers.image.title=copilot-metrics-viewer
+            org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
+            org.opencontainers.image.source=${{ github.repository }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+
+  push_proxy_to_ghcr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GitHub Action
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Adding below tag any push to main as "latest"
+      # To deploy latest, create a release with a semver tag
+      # type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-with-proxy
+          labels: |
+            org.opencontainers.image.title=copilot-metrics-viewer-with-proxy
+            org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
+            org.opencontainers.image.source=${{ github.repository }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push api
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: api.Dockerfile
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,4 +108,4 @@ jobs:
         app-name: 'copilot-metrics-viewer'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_e94dfd38811a421eafe5ce4eee13b68b }}
-        images: 'ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest'
+        images: 'ghcr.io/github-copilot-resources/copilot-metrics-viewer:main'
