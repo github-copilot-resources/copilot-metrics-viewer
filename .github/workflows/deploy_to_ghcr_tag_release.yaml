@@ -12,6 +12,7 @@ on:
 permissions:
   packages: write
   contents: write
+  pull-requests: write
 
 jobs:
   version_update:
@@ -23,20 +24,41 @@ jobs:
           fetch-depth: 0
 
       - uses: actions4git/setup-git@v1
-
+      
       - name: Update version in package.json
         id: version
         run: |
-          git checkout -b temp-version-update
+          git checkout main
           version=$(npm version from-git --no-git-tag-version)
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "NPM version is $version"
+
+          if [ "${{ github.event.release.tag_name }}" != "$version" ]; then
+            echo "Release tag does not match the expected version."
+            exit 1
+          fi
+
           cd api
           npm version from-git --no-git-tag-version
-          git add package.json
-          git commit --signoff --message $version 
-          git checkout main
-          git merge temp-version-update
+          cd ..
+          git add .
+          git commit --signoff --message $version
+
+          echo "moving tag $version"
           git tag --force $version
-          git push origin main -f --tags
+          git push origin $version --force
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          title: '🚀Update version to ${{ steps.version.outputs.version }}'
+          body: |
+            This PR updates the version to ${{ steps.version.outputs.version }}. 
+            Use **merge commit** strategy for this PR!
+          branch: 'version-update-${{ steps.version.outputs.version }}'
+          delete-branch: true
+          labels: 'version-update'
+          base: 'main'
 
   push_to_ghcr:
     runs-on: ubuntu-latest
@@ -44,6 +66,8 @@ jobs:
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -82,6 +106,8 @@ jobs:
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
