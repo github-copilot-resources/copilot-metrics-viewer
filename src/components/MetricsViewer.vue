@@ -2,15 +2,16 @@
   <div>
     <div class="tiles-container">      
       <!-- Acceptance Rate Tile -->  
+      <!--changed on 2024/11/22 to reorder cards, so the accepance rate by counts are be more focused-->
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-          <v-card-item>
+        <v-card-item>
+          <div class="tiles-text">
             <div class="spacing-25"></div>
-            <div class="tiles-text">
-              <div class="text-h6 mb-1">Acceptance Rate Average</div>
-              <div class="text-caption">
-                Over the last 28 days
-              </div>
-              <p class="text-h4">{{ acceptanceRateAverage.toFixed(2) }}%</p>
+            <div class="text-h6 mb-1">Acceptance Rate (by count)</div>
+            <div class="text-caption">
+              Over the last 28 days
+            </div>
+            <p class="text-h4">{{ acceptanceRateAverageByCount.toFixed(2) }}%</p>
           </div>
         </v-card-item>
       </v-card>
@@ -19,7 +20,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Cumulative Number of Suggestions</div>
+            <div class="text-h6 mb-1">Total count of Suggestions (Prompts)</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
@@ -29,14 +30,14 @@
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-        <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Cumulative Number of Accepted Prompts</div>
-            <div class="text-caption">
-              Over the last 28 days
-            </div>
-            <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
+          <v-card-item>
+            <div class="spacing-25"></div>
+            <div class="tiles-text">
+              <div class="text-h6 mb-1">Acceptance Rate (by lines)</div>
+              <div class="text-caption">
+                Over the last 28 days
+              </div>
+              <p class="text-h4">{{ acceptanceRateAverageByLines.toFixed(2) }}%</p>
           </div>
         </v-card-item>
       </v-card>
@@ -45,11 +46,11 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"></div>
-            <div class="text-h6 mb-1">Cumulative Number of Lines of Code Accepted</div>
+            <div class="text-h6 mb-1">Total Lines of code Suggested</div>
             <div class="text-caption">
               Over the last 28 days
             </div>
-            <p class="text-h4">{{ cumulativeNumberLOCAccepted }}</p>
+            <p class="text-h4">{{ totalLinesSuggested }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -58,11 +59,14 @@
     <v-main class="p-1" style="min-height: 300px;">
 
       <v-container style="min-height: 300px;" class="px-4 elevation-2">
-        <h2>Acceptance rate (%)</h2>
-      <Bar :data="acceptanceRateChartData" :options="chartOptions" />
+      <h2>Acceptance rate by count (%)</h2>
+      <Bar :data="acceptanceRateByCountChartData" :options="chartOptions" />
 
       <h2>Total Suggestions Count | Total Acceptances Count</h2>
       <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
+
+      <h2>Acceptance rate by lines (%)</h2>
+      <Bar :data="acceptanceRateByLinesChartData" :options="chartOptions" />
 
       <h2>Total Lines Suggested | Total Lines Accepted</h2>
       <Line :data="chartData" :options="chartOptions" />
@@ -140,13 +144,18 @@ export default defineComponent({
   setup(props) {
 
     //Tiles
-    let acceptanceRateAverage = ref(0);
+    let acceptanceRateAverageByLines = ref(0);
+    let acceptanceRateAverageByCount = ref(0);
     let cumulativeNumberSuggestions = ref(0);
     let cumulativeNumberAcceptances = ref(0);
     let cumulativeNumberLOCAccepted = ref(0);
+    let totalLinesSuggested = ref(0);
 
-    //Acceptance Rate
-    const acceptanceRateChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    //Acceptance Rate by lines
+    const acceptanceRateByLinesChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+    //Acceptance Rate by count
+    const acceptanceRateByCountChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
     //Total Suggestions Count | Total Acceptance Counts
     const totalSuggestionsAndAcceptanceChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -253,19 +262,37 @@ export default defineComponent({
       ]
     };
     
-    const acceptanceRates = data.map((m: Metrics) => {
+    const acceptanceRatesByLines = data.map((m: Metrics) => {
       const rate = m.total_lines_suggested !== 0 ? (m.total_lines_accepted / m.total_lines_suggested) * 100 : 0;
       return rate;
     });
-    
 
-    acceptanceRateChartData.value = {
+    const acceptanceRatesByCount = data.map((m: Metrics) => {
+      const rate = m.total_suggestions_count !== 0 ? (m.total_acceptances_count / m.total_suggestions_count) * 100 : 0;
+      return rate;
+    });
+
+    acceptanceRateByLinesChartData.value = {
       labels: data.map((m: Metrics) => m.day),
       datasets: [
         {
           type: 'line', // This makes the dataset a line in the chart
-          label: 'Acceptance Rate',
-          data: acceptanceRates,
+          label: 'Acceptance Rate by Lines',
+          data: acceptanceRatesByLines,
+          backgroundColor: 'rgba(173, 216, 230, 0.2)', // light blue
+          borderColor: 'rgba(173, 216, 230, 1)', // darker blue
+          fill: false // This makes the area under the line not filled
+        }
+      ]
+    };
+
+    acceptanceRateByCountChartData.value = {
+      labels: data.map((m: Metrics) => m.day),
+      datasets: [
+        {
+          type: 'line', // This makes the dataset a line in the chart
+          label: 'Acceptance Rate by Count',
+          data: acceptanceRatesByCount,
           backgroundColor: 'rgba(173, 216, 230, 0.2)', // light blue
           borderColor: 'rgba(173, 216, 230, 1)', // darker blue
           fill: false // This makes the area under the line not filled
@@ -273,10 +300,19 @@ export default defineComponent({
       ]
     };
     
-    if(cumulativeNumberSuggestions.value === 0){
-      acceptanceRateAverage.value = 0;
+    totalLinesSuggested.value = data.reduce((sum: number, m: Metrics) => sum + m.total_lines_suggested, 0);
+
+    if(totalLinesSuggested.value === 0){
+      acceptanceRateAverageByLines.value = 0;
     } else {
-      acceptanceRateAverage.value = cumulativeNumberAcceptances.value / cumulativeNumberSuggestions.value * 100;
+      acceptanceRateAverageByLines.value = cumulativeNumberLOCAccepted.value / totalLinesSuggested.value * 100;
+    }
+
+    // Calculate acceptanceRateAverageByCount
+    if (cumulativeNumberSuggestions.value === 0) {
+      acceptanceRateAverageByCount.value = 0;
+    } else {
+      acceptanceRateAverageByCount.value = cumulativeNumberAcceptances.value / cumulativeNumberSuggestions.value * 100;
     }
 
     totalActiveUsersChartData.value = {
@@ -293,8 +329,8 @@ export default defineComponent({
 
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
-      totalActiveUsersChartOptions, acceptanceRateChartData, acceptanceRateAverage, cumulativeNumberSuggestions, 
-      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted };
+      totalActiveUsersChartOptions, acceptanceRateByLinesChartData, acceptanceRateByCountChartData, acceptanceRateAverageByLines, acceptanceRateAverageByCount, cumulativeNumberSuggestions, 
+      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, totalLinesSuggested };
   },
   
 });

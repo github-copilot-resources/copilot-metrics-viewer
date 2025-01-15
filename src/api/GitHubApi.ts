@@ -1,14 +1,9 @@
-//Make a call to the GitHub API to get Copilot Metrics, the API is /api/github/orgs/toussaintt/copilot/usage
-//Add the header Accept: application/vnd.github+json to the request
-//Add also the Authorization: Bearer <token> header where <token> is hardcoded for now
-//Also add X-GitHub-Api-Version: 2022-11-28 header
-//Return the response from the API
-
 import axios from "axios";
-
 import { Metrics } from "../model/Metrics";
-import organizationMockedResponse from '../assets/organization_response_sample.json';
-import enterpriseMockedResponse from '../assets/enterprise_response_sample.json';
+import { CopilotMetrics } from '../model/Copilot_Metrics';
+import { convertToMetrics } from './MetricsToUsageConverter';
+import organizationMockedMetricsResponse from '../../mock-data/organization_metrics_response_sample.json';
+import enterpriseMockedMetricsResponse from '../../mock-data/enterprise_metrics_response_sample.json';
 import config from '../config';
 
 const headers = {
@@ -17,27 +12,43 @@ const headers = {
   ...(config.github.token ? { Authorization: `token ${config.github.token}` } : {})
 };
 
-export const getMetricsApi = async (): Promise<Metrics[]> => {
+const ensureCopilotMetrics = (data: any[]): CopilotMetrics[] => {
+  return data.map(item => {
+    if (!item.copilot_ide_code_completions) {
+      item.copilot_ide_code_completions = { editors: [] };
+    }
+    item.copilot_ide_code_completions.editors?.forEach((editor: any) => {
+      editor.models?.forEach((model: any) => {
+        if (!model.languages) {
+          model.languages = [];
+        }
+      });
+    });
+    return item as CopilotMetrics;
+  });
+};
 
+export const getMetricsApi = async (): Promise<{ metrics: Metrics[], original: CopilotMetrics[] }> => {
   let response;
-  let metricsData;
+  let metricsData: Metrics[];
+  let originalData: CopilotMetrics[];
 
   if (config.mockedData) {
     console.log("Using mock data. Check VUE_APP_MOCKED_DATA variable.");
-    response = config.scope.type === "organization" ? organizationMockedResponse : enterpriseMockedResponse;
-    metricsData = response.map((item: any) => new Metrics(item));
+    response = config.scope.type === "organization" ? organizationMockedMetricsResponse : enterpriseMockedMetricsResponse;
+    originalData = ensureCopilotMetrics(response);
+    metricsData = convertToMetrics(originalData);
   } else {
     response = await axios.get(
-      `${config.github.apiUrl}/copilot/usage`,
+      `${config.github.apiUrl}/copilot/metrics`,
       {
-       headers
+        headers
       }
     );
-
-
-    metricsData = response.data.map((item: any) => new Metrics(item));
+    originalData = ensureCopilotMetrics(response.data);
+    metricsData = convertToMetrics(originalData);
   }
-  return metricsData;
+  return { metrics: metricsData, original: originalData };
 };
 
 export const getTeams = async (): Promise<string[]> => {
@@ -48,12 +59,12 @@ export const getTeams = async (): Promise<string[]> => {
   return response.data;
 }
 
-export const getTeamMetricsApi = async (): Promise<Metrics[]> => {
+export const getTeamMetricsApi = async (): Promise<{ metrics: Metrics[], original: CopilotMetrics[] }> => {
   console.log("config.github.team: " + config.github.team);
 
   if (config.github.team && config.github.team.trim() !== '') {
     const response = await axios.get(
-      `${config.github.apiUrl}/team/${config.github.team}/copilot/usage`,
+      `${config.github.apiUrl}/team/${config.github.team}/copilot/metrics`,
       {
         headers: {
           Accept: "application/vnd.github+json",
@@ -63,9 +74,10 @@ export const getTeamMetricsApi = async (): Promise<Metrics[]> => {
       }
     );
 
-    return response.data.map((item: any) => new Metrics(item));
+    const originalData = ensureCopilotMetrics(response.data);
+    const metricsData = convertToMetrics(originalData);
+    return { metrics: metricsData, original: originalData };
   }
   
-  return [];
-
+  return { metrics: [], original: [] };
 }

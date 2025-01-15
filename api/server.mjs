@@ -5,11 +5,23 @@ import axios from 'axios';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import { readFileSync } from 'fs';
+import MemoryStoreFactory from 'memorystore';
+import RateLimit from 'express-rate-limit';
 
 // Construct __dirname equivalent in ES module scope
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DOTENV_CONFIG_PATH = process.env.DOTENV_CONFIG_PATH;
+const MemoryStore = MemoryStoreFactory(session);
+const limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // max 1000 requests per windowMs
+  skip: (req) => {
+    // Skip rate limiting for localhost
+    return isLocalhost(req);
+  }
+});
 
 if (DOTENV_CONFIG_PATH) {
   console.log("DOTENV_CONFIG_PATH is set to: ", DOTENV_CONFIG_PATH)
@@ -19,12 +31,24 @@ if (DOTENV_CONFIG_PATH) {
 }
 
 const app = express();
+console.log('ENVIRONMENT: ', app.get('env'));
+
+// Disable rate limiter and secure cookies for localhost
+const isLocalhost = (req) => {
+  return req.hostname === 'localhost' || req.hostname === '127.0.0.1';
+};
+
+app.use(limiter);
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
-  cookie: { secure: false }
+  store: new MemoryStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  }),
+  // may need to use secure: false if using http during local development
+  cookie: { secure: app.get('env') === 'production', maxAge: 86400000 }
 }));
 
 // Middleware to add Authorization header
@@ -45,16 +69,55 @@ const authMiddleware = (req, res, next) => {
   next();
 };
 
+const simpleRequestLogger = (proxyServer, options) => {
+  proxyServer.on('proxyReq', (proxyReq, req, res) => {
+    console.log(`[HPM] [${req.method}] ${req.url}`); // outputs: [HPM] GET /users
+  });
+}
+
+const mockResponses = (proxyServer, options) => {
+  proxyServer.on('proxyReq', (proxyReq, req, res) => {
+    // Do not send to GitHub when mocked
+    switch (req.path) {
+      case "/orgs/octodemo/copilot/usage":
+      case "/orgs/octodemo/team/the-a-team/copilot/usage":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_usage_response_sample.json'), 'utf8')));
+        break;
+      case "/orgs/octodemo/copilot/metrics":
+      case "/orgs/octodemo/team/the-a-team/copilot/metrics":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_metrics_response_sample.json'), 'utf8')));
+        break;
+      case "/orgs/octodemo/copilot/billing/seats":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/organization_seats_response_sample.json'), 'utf8')));
+        break;
+      case "/enterprises/octodemo/copilot/usage":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_usage_response_sample.json'), 'utf8')));
+        break;
+      case "/enterprises/octodemo/copilot/metrics":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_metrics_response_sample.json'), 'utf8')));
+        break;
+      case "/enterprises/octodemo/copilot/billing/seats":
+        res.json(JSON.parse(readFileSync(path.join(__dirname, '../mock-data/enterprise_seats_response_sample.json'), 'utf8')));
+        break;
+      default:
+        res.status(418).send('🫖Request Not Mocked');
+    }
+  });
+}
+
+const plugins = [simpleRequestLogger];
+
+if (process.env.APP_MOCKED_DATA === 'true') {
+  plugins.push(mockResponses);
+}
+
 const githubProxy = createProxyMiddleware({
   target: 'https://api.github.com',
   changeOrigin: true,
   pathRewrite: {
     '^/api/github': '', // Rewrite URL path (remove /api/github)
   },
-  onProxyReq: (proxyReq, req) => {
-    console.log('Proxying request to GitHub API:', req.url);
-    // Optional: Modify the proxy request here (e.g., headers)
-  },
+  plugins
 });
 
 // Apply middlewares to the app
@@ -97,6 +160,12 @@ app.get('/login', (req, res) => {
   res.redirect(`https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${redirectUrl}&state=${req.session.state}`);
 });
 
+app.get('/logout', (req, res) => {
+  // destroy the session
+  req.session.destroy();
+  res.redirect('/');
+});
+
 app.get('/callback', async (req, res) => {
   const code = req.query.code;
   const state = req.query.state;
@@ -118,7 +187,7 @@ app.get('/callback', async (req, res) => {
     // redirect to the Vue app with the user's information
     res.redirect(`/`);
   } else {
-    res.send(`Authorized, but unable to exchange code ${code} for token.`);
+    res.send(`Authorized, but unable to exchange code for token.`);
   }
 });
 

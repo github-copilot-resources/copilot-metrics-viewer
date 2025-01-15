@@ -3,8 +3,8 @@ import axios from "axios";
 import { Seat } from "../model/Seat";
 import config from '../config';
 
-import organizationMockedResponse_seats from '../assets/organization_response_sample_seats.json';
-import enterpriseMockedResponse_seats from '../assets/enterprise_response_sample_seats.json';
+import organizationMockedResponse_seats from '../../mock-data/organization_seats_response_sample.json';
+import enterpriseMockedResponse_seats from '../../mock-data/enterprise_seats_response_sample.json';
 
 const headers = {
   Accept: "application/vnd.github+json",

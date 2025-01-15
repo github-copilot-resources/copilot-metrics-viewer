@@ -5,11 +5,13 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "test": "npx playwright test --grep @org",
+    "test:ent": "npx playwright test --grep @ent"
   },
   "dependencies": {
     "@mdi/font": "5.9.55",
-    "axios": "^1.7.4",
+    "axios": "^1.7.9",
     "chart.js": "^4.4.1",
     "core-js": "^3.8.3",
     "postcss": "^8.4.31",
@@ -20,6 +22,8 @@
     "webfontloader": "^1.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.5",
     "@types/webfontloader": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
