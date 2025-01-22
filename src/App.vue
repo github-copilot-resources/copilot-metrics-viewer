@@ -3,7 +3,7 @@
     <v-main>
       <MainComponent />
     </v-main>
-    <v-footer class="bg-indigo-lighten-1 text-center d-flex flex-column">
+    <v-footer class="bg-indigo-lighten-1 text-center d-flex flex-column fixed-footer">
       <div class="px-4 py-2 text-center w-100">
         {{ new Date().getFullYear() }} — <strong>Copilot Metrics Viewer</strong> — {{ version }}
       </div>
@@ -29,3 +29,10 @@ export default defineComponent({
   },
 })
 </script>
+
+<style scoped>
+.fixed-footer {
+  height: 50px;
+  max-height: 50px;
+}
+</style>
