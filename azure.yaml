@@ -9,4 +9,4 @@ services:
         host: containerapp
         language: js
         docker:
-            path: api.Dockerfile
+            path: Dockerfile

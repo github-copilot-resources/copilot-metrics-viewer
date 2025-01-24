@@ -1,0 +1,78 @@
+import type { CopilotMetrics } from "@/model/Copilot_Metrics";
+import { convertToMetrics } from '@/model/MetricsToUsageConverter';
+import type { MetricsApiResponse } from "@/types/metricsApiResponse";
+
+// TODO: use for storage https://unstorage.unjs.io/drivers/azure
+
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+
+
+export default defineEventHandler(async (event) => {
+
+    const config = useRuntimeConfig(event);
+    let apiUrl = '';
+    let mockedDataPath: string;
+
+    switch (event.context.scope) {
+        case 'team':
+            apiUrl = `https://api.github.com/orgs/${event.context.org}/team/${event.context.team}/copilot/metrics`;
+            // no team test data available, using org data
+            // '../../app/mock-data/organization_metrics_response_sample.json'
+            mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
+            break;
+        case 'org':
+            apiUrl = `https://api.github.com/orgs/${event.context.org}/copilot/metrics`;
+            mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
+            break;
+        case 'ent':
+            apiUrl = `https://api.github.com/enterprises/${event.context.ent}/copilot/metrics`;
+            mockedDataPath = resolve('public/mock-data/enterprise_metrics_response_sample.json');
+            break;
+        default:
+            return new Response('Invalid configuration/parameters for the request', { status: 400 });
+    }
+
+    if (config.public.isDataMocked && mockedDataPath) {
+        // console.log('getting mocked metrics data from:', mockedDataPath);
+        const path = mockedDataPath;
+        const data = readFileSync(path, 'utf8');
+        const dataJson = JSON.parse(data);
+        // usage is the new API format
+        const usageData = ensureCopilotMetrics(dataJson);
+        // metrics is the old API format
+        const metricsData = convertToMetrics(usageData);
+        return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+    }
+
+    if (!event.context.headers.has('Authorization')) {
+        return new Response('No Authentication provided', { status: 401 });
+    }
+
+    // console.log('getting metrics data from:', apiUrl);
+    const response = await $fetch(apiUrl, {
+        headers: event.context.headers
+    }) as unknown[];
+
+    // usage is the new API format
+    const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
+    // metrics is the old API format
+    const metricsData = convertToMetrics(usageData);
+    return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+})
+
+function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
+    return data.map(item => {
+        if (!item.copilot_ide_code_completions) {
+            item.copilot_ide_code_completions = { editors: [], total_engaged_users: 0, languages: [] };
+        }
+        item.copilot_ide_code_completions.editors?.forEach((editor) => {
+            editor.models?.forEach((model) => {
+                if (!model.languages) {
+                    model.languages = [];
+                }
+            });
+        });
+        return item as CopilotMetrics;
+    });
+};
