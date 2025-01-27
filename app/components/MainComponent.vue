@@ -144,7 +144,7 @@ export default defineNuxtComponent({
       if (error.statusCode) {
         switch (error.statusCode) {
           case 401:
-            apiError.value = '401 Unauthorized access - check if your token in the .env file is correct.';
+            apiError.value = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
             break;
           case 404:
             apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:'${config.public.githubOrg || ''} ent:'${config.public.githubEnt || ''}' team:'${config.public.githubTeam}' correct? ${error.message}`;

@@ -10,8 +10,28 @@ param environmentName string
 param location string
 
 param copilotMetricsViewerExists bool
+
+// Settings
 @secure()
-param copilotMetricsViewerDefinition object
+@description('GitHub App Client Id - required for GitHub OAuth')
+param githubClientId string
+@secure()
+@description('GitHub App Client Secret - required for GitHub OAuth')
+param githubClientSecret string
+@secure()
+param sessionPassword string
+@secure()
+param githubPAT string
+
+@allowed(['enterprise', 'organization', 'team'])
+param githubScope string
+
+@description('The name of the GitHub organization, required when scope is "organization"')
+param githubOrg string
+@description('The name of the GitHub team, required when scope is "team"')
+param githubTeam string
+@description('The name of the GitHub enterprise, required when scope is "enterprise"')
+param githubEnt string
 
 @description('Id of the user or app to assign application roles')
 param principalId string
@@ -27,6 +47,111 @@ var tags = {
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
+
+// "settings": [
+//   {
+//     "name": "NUXT_OAUTH_GITHUB_CLIENT_ID",
+//     "value": "${NUXT_OAUTH_GITHUB_CLIENT_ID}",
+//     "secret": true,
+//     "_comment_name": "GitHub App Client id - The name of the environment variable when running in Azure."
+//   },
+//   {
+//     "name": "NUXT_OAUTH_GITHUB_CLIENT_SECRET",
+//     "value": "${NUXT_OAUTH_GITHUB_CLIENT_SECRET}",
+//     "secret": true,
+//     "_comment_name": "GitHub App Client Secret - The name of the environment variable when running in Azure."
+//   },
+//   {
+//     "name": "NUXT_SESSION_PASSWORD",
+//     "value": "$(secretOrRandomPassword)",
+//     "secret": true,
+//     "_comment_name": "Session Secret - The name of the environment variable when running in Azure."
+//   },
+//   {
+//     "name": "NUXT_PUBLIC_SCOPE",
+//     "value": "${NUXT_PUBLIC_SCOPE}",
+//     "_comment_name": "GitHub App Scope - The name of the environment variable when running in Azure."
+//   },
+//   {
+//     "name": "NUXT_PUBLIC_GITHUB_ORG",
+//     "value": "${NUXT_PUBLIC_GITHUB_ORG}",
+//     "_comment_name": "GitHub Organization - The name of the environment variable when running in Azure."
+//   },
+//   {
+//     "name": "NUXT_PUBLIC_GITHUB_ENT",
+//     "value": "${NUXT_PUBLIC_GITHUB_ENT}",
+//     "_comment_name": "GitHub Enterprise - The name of the environment variable when running in Azure."
+//   }
+// ]
+
+var settings = concat(
+  [
+    {
+      name: 'NUXT_SESSION_PASSWORD'
+      value: '${sessionPassword}-${guid(sessionPassword)}-${guid(sessionPassword)}'
+      secret: true
+    }
+    {
+      name: 'NUXT_PUBLIC_SCOPE'
+      value: githubScope
+    }
+  ],
+  !empty(githubPAT)
+    ? [
+        {
+          name: 'NUXT_GITHUB_TOKEN'
+          value: githubPAT
+          secret: true
+        }
+        {
+          name: 'NUXT_PUBLIC_USING_GITHUB_AUTH'
+          value: 'false'
+        }
+      ]
+    : [],
+  !empty(githubClientId) && !empty(githubClientSecret)
+    ? [
+        {
+          name: 'NUXT_OAUTH_GITHUB_CLIENT_ID'
+          value: githubClientId
+          secret: true
+        }
+        {
+          name: 'NUXT_OAUTH_GITHUB_CLIENT_SECRET'
+          value: githubClientSecret
+          secret: true
+        }
+        {
+          name: 'NUXT_PUBLIC_USING_GITHUB_AUTH'
+          value: 'true'
+        }
+      ]
+    : [],
+  !empty(githubOrg)
+    ? [
+        {
+          name: 'NUXT_PUBLIC_GITHUB_ORG'
+          value: githubOrg
+        }
+      ]
+    : [],
+  !empty(githubTeam)
+    ? [
+        {
+          name: 'NUXT_PUBLIC_GITHUB_TEAM'
+          value: githubTeam
+        }
+      ]
+    : [],
+  !empty(githubEnt)
+    ? [
+        {
+          name: 'NUXT_PUBLIC_GITHUB_ENT'
+          value: githubEnt
+        }
+      ]
+    : []
+)
 
 resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: 'rg-${environmentName}'
@@ -100,7 +225,9 @@ module copilotMetricsViewer './app/copilot-metrics-viewer.bicep' = {
     containerAppsEnvironmentName: appsEnv.outputs.name
     containerRegistryName: registry.outputs.name
     exists: copilotMetricsViewerExists
-    appDefinition: copilotMetricsViewerDefinition
+    appDefinition: {
+      settings: settings
+    }
   }
   scope: rg
 }

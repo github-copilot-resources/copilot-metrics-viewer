@@ -95,17 +95,7 @@ The deployment creates:
 
 ![AZD Deployment](./azure-deploy/azd-deployment.png)
 
-Before running `azd up`, configure GitHub variables:
-
-```bash
-azd env set NUXT_PUBLIC_SCOPE <organization/enterprise>
-# when using organization
-azd env set NUXT_PUBLIC_GITHUB_ORG <org name>
-# when using enterprise
-azd env set NUXT_PUBLIC_GITHUB_ENT <ent name>
-azd env set NUXT_OAUTH_GITHUB_CLIENT_ID <client id>
-azd env set NUXT_OAUTH_GITHUB_CLIENT_SECRET <client secret for the GH App>
-```
+Run `azd up` and follow the prompts.
 
 ## Scenario 3: Deploying the container
 
@@ -117,6 +107,7 @@ For GitHub App:
 docker run -it --rm -p 3000:3000 \
 -e NUXT_PUBLIC_SCOPE=organization \
 -e NUXT_PUBLIC_GITHUB_ORG=<org name> \
+-e NUXT_PUBLIC_USING_GITHUB_AUTH=true \
 -e NUXT_OAUTH_GITHUB_CLIENT_ID=<client id> \
 -e NUXT_OAUTH_GITHUB_CLIENT_SECRET=<client secret for the GH App> \
 -e NUXT_SESSION_PASSWORD=<random string - min 32 characters>  \

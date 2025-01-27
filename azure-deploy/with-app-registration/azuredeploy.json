@@ -108,6 +108,10 @@
                                     "value": "[parameters('github-enterprise')]"
                                 },
                                 {
+                                    "name": "NUXT_PUBLIC_USING_GITHUB_AUTH",
+                                    "value": "true"
+                                },
+                                {
                                     "name": "NUXT_OAUTH_GITHUB_CLIENT_ID",
                                     "value": "[parameters('github-client-id')]"
                                 },
@@ -117,7 +121,7 @@
                                 },
                                 {
                                     "name": "NUXT_SESSION_PASSWORD",
-                                    "value": "[uniqueString(resourceGroup().id)]"
+                                    "value": "[concat(uniqueString(resourceGroup().id),'-',uniqueString(resourceGroup().id),'-',uniqueString(resourceGroup().id))]"
                                 }
                             ]
                         }
