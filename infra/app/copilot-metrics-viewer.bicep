@@ -98,7 +98,7 @@ resource app 'Microsoft.App/containerApps@2023-05-02-preview' = {
               value: applicationInsights.properties.ConnectionString
             }
             {
-              name: 'PORT'
+              name: 'NITRO_PORT'
               value: '3000'
             }
           ],

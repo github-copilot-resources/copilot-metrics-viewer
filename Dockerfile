@@ -23,12 +23,29 @@ WORKDIR /app
 COPY --chown=1000:1000 --from=build-stage /app/.output /app
 
 # Expose the port your API will run on
-EXPOSE 3000
+EXPOSE 80
+
+# Set port to 80 for backwards compatibility
+ENV NITRO_PORT=80
+
+# Re-map the environment variables for the Vue.js app for backwards compatibility
+RUN echo '#!/bin/sh' > /entrypoint.sh && \
+    echo 'export NUXT_PUBLIC_IS_DATA_MOCKED=${NUXT_PUBLIC_IS_DATA_MOCKED:-$VUE_APP_MOCKED_DATA}' >> /entrypoint.sh && \
+    echo 'export NUXT_PUBLIC_SCOPE=${NUXT_PUBLIC_SCOPE:-$VUE_APP_SCOPE}' >> /entrypoint.sh && \
+    echo 'export NUXT_PUBLIC_GITHUB_ORG=${NUXT_PUBLIC_GITHUB_ORG:-$VUE_APP_GITHUB_ORG}' >> /entrypoint.sh && \
+    echo 'export NUXT_PUBLIC_GITHUB_ENT=${NUXT_PUBLIC_GITHUB_ENT:-$VUE_APP_GITHUB_ENT}' >> /entrypoint.sh && \
+    echo 'export NUXT_PUBLIC_GITHUB_TEAM=${NUXT_PUBLIC_GITHUB_TEAM:-$VUE_APP_GITHUB_TEAM}' >> /entrypoint.sh && \
+    echo 'export NUXT_GITHUB_TOKEN=${NUXT_GITHUB_TOKEN:-$VUE_APP_GITHUB_TOKEN}' >> /entrypoint.sh && \
+    echo 'export NUXT_SESSION_PASSWORD=${NUXT_SESSION_PASSWORD:-$SESSION_SECRET}' >> /entrypoint.sh && \
+    echo 'export NUXT_OAUTH_GITHUB_CLIENT_ID=${NUXT_OAUTH_GITHUB_CLIENT_ID:-$GITHUB_CLIENT_ID}' >> /entrypoint.sh && \
+    echo 'export NUXT_OAUTH_GITHUB_CLIENT_SECRET=${NUXT_OAUTH_GITHUB_CLIENT_SECRET:-$GITHUB_CLIENT_SECRET}' >> /entrypoint.sh && \
+    echo 'node /app/server/index.mjs' >> /entrypoint.sh && \
+    chmod +x /entrypoint.sh
 
 USER node
-CMD ["node", "/app/server/index.mjs"]
+ENTRYPOINT [ "/entrypoint.sh" ]
 
-#-----------------------------------
+#----------------------------------- PW layer - not used in production
 FROM mcr.microsoft.com/playwright:v1.49.1 AS base-playwright
 
 WORKDIR /pw
@@ -43,11 +60,6 @@ COPY --chown=1000:1000 e2e-tests ./e2e-tests
 COPY --chown=1000:1000 playwright.config.ts playwright.docker.config.ts tsconfig.json package*.json ./
 
 RUN npm install --only=dev
-
-# RUN npx playwright install --with-deps
-# this isn't a secret - it's only used in Playwright tests
-ENV NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo
-# ENV CI=true
 
 ENTRYPOINT [ "npx", "playwright", "test", "-c", "playwright.docker.config.ts" ]
 

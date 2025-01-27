@@ -4,9 +4,18 @@ There are a few ways to deploy the Copilot Metrics Viewer, depending on the type
 
 The app runs in a Docker container, so it can be deployed anywhere containers are hosted (AWS, GCP, Azure, Kubernetes, etc.).
 
-## Authentication to GitHub
+## Deployment options
+
+Review available [Nuxt Deployment Options](https://nuxt.com/deploy).
+
+>[!WARNING]
+> Copilot Metrics Viewer requires a backend, hence it cannot be deployed as a purely static web app.
+
+## Authentication with GitHub
 
 The Metrics Viewer can be integrated with GitHub application authentication, which authenticates the user and verifies their permissions to view the metrics. This option is recommended since it doesn't use Personal Access Tokens. The downside of using a GitHub application is that it can only authorize users to view metrics at the organization level (no support for Enterprise).
+
+For Enterprise level authentication review [Github OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps).
 
 With a Personal Access Token, user credentials are not verified, and the application simply renders Copilot metrics fetched using the PAT stored in the backend.
 
@@ -27,7 +36,7 @@ The simplest way to deploy is to use the "one-click" option that creates resourc
 
 ![Azure ARM Deployment](./azure-deploy/arm-deployment.png)
 
-Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy`.
+Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/github-copilot-resources/copilot-metrics-viewer`.
 
 **Prerequisites:** Contributor permission to a resource group in Azure and a subscription with the `Microsoft.App` resource provider enabled.
 
@@ -89,14 +98,13 @@ The deployment creates:
 Before running `azd up`, configure GitHub variables:
 
 ```bash
-azd env set VUE_APP_SCOPE <organization/enterprise>
+azd env set NUXT_PUBLIC_SCOPE <organization/enterprise>
 # when using organization
-azd env set VUE_APP_GITHUB_ORG <org name>
+azd env set NUXT_PUBLIC_GITHUB_ORG <org name>
 # when using enterprise
-azd env set VUE_APP_GITHUB_ENT <ent name>
-azd env set VUE_APP_GITHUB_API /api/github
-azd env set GITHUB_CLIENT_ID <client id>
-azd env set GITHUB_CLIENT_SECRET <client secret for the GH App>
+azd env set NUXT_PUBLIC_GITHUB_ENT <ent name>
+azd env set NUXT_OAUTH_GITHUB_CLIENT_ID <client id>
+azd env set NUXT_OAUTH_GITHUB_CLIENT_SECRET <client secret for the GH App>
 ```
 
 ## Scenario 3: Deploying the container
@@ -107,37 +115,34 @@ For GitHub App:
 
 ```bash
 docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=organization \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ORG=<org name> \
--e GITHUB_CLIENT_ID=<client id> \
--e GITHUB_CLIENT_SECRET=<client secret for the GH App> \
--e SESSION_SECRET=<random string>  \
-ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
+-e NUXT_PUBLIC_SCOPE=organization \
+-e NUXT_PUBLIC_GITHUB_ORG=<org name> \
+-e NUXT_OAUTH_GITHUB_CLIENT_ID=<client id> \
+-e NUXT_OAUTH_GITHUB_CLIENT_SECRET=<client secret for the GH App> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>  \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
 or with PAT token and enterprise:
 
 ```bash
 docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=enterprise \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ENT=<enterprise name> \
--e VUE_APP_GITHUB_TOKEN=<github PAT> \
--e SESSION_SECRET=<random string>  \
-ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
+-e NUXT_PUBLIC_SCOPE=enterprise \
+-e NUXT_PUBLIC_GITHUB_ENT=<enterprise name> \
+-e NUXT_GITHUB_TOKEN=<github PAT> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>  \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
 or with PAT token and organization:
 
 ```bash
 docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=organization \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ORG=<org name> \
--e VUE_APP_GITHUB_TOKEN=<github PAT> \
--e SESSION_SECRET=<random string>   \
-ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
+-e NUXT_PUBLIC_SCOPE=organization \
+-e NUXT_PUBLIC_GITHUB_ORG=<org name> \
+-e NUXT_GITHUB_TOKEN=<github PAT> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>   \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
 ## Github App Registration

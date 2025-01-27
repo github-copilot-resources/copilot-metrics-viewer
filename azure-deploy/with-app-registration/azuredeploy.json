@@ -41,7 +41,7 @@
         },
         "metrics-viewer-docker-image": {
             "type": "string",
-            "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy:latest",
+            "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest",
             "metadata": {
                 "description": "Docker image for metrics viewer - use default or replace with your own"
             }
@@ -96,31 +96,27 @@
                             },
                             "env": [
                                 {
-                                    "name": "VUE_APP_SCOPE",
+                                    "name": "NUXT_PUBLIC_SCOPE",
                                     "value": "[variables('app-scope')]"
                                 },
                                 {
-                                    "name": "VUE_APP_GITHUB_API",
-                                    "value": "/api/github"
-                                },
-                                {
-                                    "name": "VUE_APP_GITHUB_ORG",
+                                    "name": "NUXT_PUBLIC_GITHUB_ORG",
                                     "value": "[parameters('github-organization')]"
                                 },
                                 {
-                                    "name": "VUE_APP_GITHUB_ENT",
+                                    "name": "NUXT_PUBLIC_GITHUB_ENT",
                                     "value": "[parameters('github-enterprise')]"
                                 },
                                 {
-                                    "name": "GITHUB_CLIENT_ID",
+                                    "name": "NUXT_OAUTH_GITHUB_CLIENT_ID",
                                     "value": "[parameters('github-client-id')]"
                                 },
                                 {
-                                    "name": "GITHUB_CLIENT_SECRET",
+                                    "name": "NUXT_OAUTH_GITHUB_CLIENT_SECRET",
                                     "value": "[parameters('github-client-secret')]"
                                 },
                                 {
-                                    "name": "SESSION_SECRET",
+                                    "name": "NUXT_SESSION_PASSWORD",
                                     "value": "[uniqueString(resourceGroup().id)]"
                                 }
                             ]

@@ -15,41 +15,37 @@
         "value": {
           "settings": [
             {
-              "name": "GITHUB_CLIENT_ID",
-              "value": "${GITHUB_CLIENT_ID}",
+              "name": "NUXT_OAUTH_GITHUB_CLIENT_ID",
+              "value": "${NUXT_OAUTH_GITHUB_CLIENT_ID}",
               "secret": true,
               "_comment_name": "GitHub App Client id - The name of the environment variable when running in Azure."
             },
             {
-              "name": "GITHUB_CLIENT_SECRET",
-              "value": "${GITHUB_CLIENT_SECRET}",
+              "name": "NUXT_OAUTH_GITHUB_CLIENT_SECRET",
+              "value": "${NUXT_OAUTH_GITHUB_CLIENT_SECRET}",
               "secret": true,
               "_comment_name": "GitHub App Client Secret - The name of the environment variable when running in Azure."
             },
             {
-              "name": "SESSION_SECRET",
+              "name": "NUXT_SESSION_PASSWORD",
               "value": "$(secretOrRandomPassword)",
               "secret": true,
               "_comment_name": "Session Secret - The name of the environment variable when running in Azure."
             },
             {
-              "name": "VUE_APP_SCOPE",
-              "value": "${VUE_APP_SCOPE}",
+              "name": "NUXT_PUBLIC_SCOPE",
+              "value": "${NUXT_PUBLIC_SCOPE}",
               "_comment_name": "GitHub App Scope - The name of the environment variable when running in Azure."
             },
             {
-              "name": "VUE_APP_GITHUB_ORG",
-              "value": "${VUE_APP_GITHUB_ORG}",
+              "name": "NUXT_PUBLIC_GITHUB_ORG",
+              "value": "${NUXT_PUBLIC_GITHUB_ORG}",
               "_comment_name": "GitHub Organization - The name of the environment variable when running in Azure."
             },
             {
-              "name": "VUE_APP_GITHUB_ENT",
-              "value": "${VUE_APP_GITHUB_ENT}",
+              "name": "NUXT_PUBLIC_GITHUB_ENT",
+              "value": "${NUXT_PUBLIC_GITHUB_ENT}",
               "_comment_name": "GitHub Enterprise - The name of the environment variable when running in Azure."
-            },
-            {
-              "name": "VUE_APP_GITHUB_API",
-              "value": "/api/github"
             }
           ]
         }

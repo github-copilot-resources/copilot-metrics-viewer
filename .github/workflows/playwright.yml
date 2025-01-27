@@ -64,6 +64,7 @@ jobs:
       run: |
           docker run --rm --name playwright \
           -v $(pwd)/test-results-docker:/test-results \
+          -e NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
           app:pw
     - uses: actions/upload-artifact@v4
       if: always()

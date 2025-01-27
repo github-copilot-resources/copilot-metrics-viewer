@@ -64,9 +64,9 @@ export default defineNuxtConfig({
   auth: {
     github: {
       enabled: true,
-      clientId: process.env.NUXT_OAUTH_GITHUB_CLIENT_ID || '',
-      clientSecret: process.env.NUXT_OAUTH_GITHUB_CLIENT_SECRET || '',
-      scope: process.env.NUXT_OAUTH_GITHUB_SCOPE || ''
+      clientId: '',
+      clientSecret: '',
+      scope: ''
     }
   },
 
@@ -75,7 +75,7 @@ export default defineNuxtConfig({
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,
-      password: process.env.NUXT_SESSION_PASSWORD || '',
+      password: '',
     },
     oauth: {
       github: {
