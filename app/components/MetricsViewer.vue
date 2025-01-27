@@ -81,7 +81,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, toRef } from 'vue';
-import type { Metrics } from '@/model/Metrics.ts';
+import { Metrics } from '@/model/Metrics';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -114,7 +114,7 @@ export default defineComponent({
   name: 'MetricsViewer',
   props: {
         metrics: {
-            type: Object,
+            type: Array as PropType<Metrics[]>,
             required: true
         }
     },
