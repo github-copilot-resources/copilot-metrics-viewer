@@ -56,8 +56,8 @@ export default defineConfig<ConfigOptions>({
     ],
 
     webServer: {
-        command: 'npm run dev',
-        url: process.env.RUN_COMMAND ||'http://localhost:3000',
+        command: process.env.RUN_COMMAND || 'npm run dev',
+        url: 'http://localhost:3000',
         reuseExistingServer: true,
       },
 })
