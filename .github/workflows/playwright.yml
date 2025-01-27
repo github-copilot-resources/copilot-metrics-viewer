@@ -32,12 +32,14 @@ jobs:
         node-version: lts/*
     - name: Install dependencies
       run: npm ci
+    - name: Build the app
+      run: npm run build
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Vite tests
       run: CI=true npm test
     - name: Run Playwright tests
-      run: CI=true npm run test:e2e
+      run: CI=true RUN_COMMAND='npm run preview' npm run test:e2e
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
