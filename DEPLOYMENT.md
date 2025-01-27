@@ -53,7 +53,7 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
 
     [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fazuredeploy.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fportal.json)
 
-    >[!INFORMATION]
+    >[!INFO]
     >**Important**: After deploying Option 2, the redirect URI needs to be updated with the URL of the deployed container app.
     >
     >Go to: `https://github.com/organizations/<your-org>/settings/apps/<your-app>` or in the UI to the settings of the registered application and add the following redirect URL: `https://<your-container-app-name-and-region>.azurecontainerapps.io/auth/github`
