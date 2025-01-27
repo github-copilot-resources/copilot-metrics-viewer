@@ -60,10 +60,11 @@
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :originalMetrics="originalMetrics" :seats="seats" />
+            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics" :seats="seats" />
           </v-card>
         </v-window-item>
-        <v-alert v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
+        <v-alert
+v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
           title="No data" type="warning" />
       </v-window>
 

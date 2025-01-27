@@ -111,6 +111,9 @@ ChartJS.register(
 
 export default defineComponent({
   name: 'BreakdownComponent',
+  components: {
+    Pie
+  },
   props: {
       metrics: {
           type: Object,
@@ -120,28 +123,6 @@ export default defineComponent({
           type: String,
           required: true
       }
-  },
-  components: {
-    Pie
-  },
-  computed: {
-    breakdownDisplayName() {
-      return this.breakdownKey.charAt(0).toUpperCase() + this.breakdownKey.slice(1);
-    },
-    breakdownDisplayNamePlural() {
-      return `${this.breakdownDisplayName}s`;
-    },
-    headers() {
-      return [
-        { title: `${this.breakdownDisplayName} Name`, key: 'name' },
-        { title: 'Accepted Prompts', key: 'acceptedPrompts' },
-        { title: 'Suggested Prompts', key: 'suggestedPrompts' },
-        { title: 'Accepted Lines of Code', key: 'acceptedLinesOfCode' },
-        { title: 'Suggested Lines of Code', key: 'suggestedLinesOfCode' },
-        { title: 'Acceptance Rate by Count (%)', key: 'acceptanceRateByCount' },
-        { title: 'Acceptance Rate by Lines (%)', key: 'acceptanceRateByLines' },
-      ];
-    },
   },
   setup(props) {
 
@@ -249,6 +230,25 @@ export default defineComponent({
 
     return { chartOptions, breakdownList, numberOfBreakdowns, 
       breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts };
+  },
+  computed: {
+    breakdownDisplayName() {
+      return this.breakdownKey.charAt(0).toUpperCase() + this.breakdownKey.slice(1);
+    },
+    breakdownDisplayNamePlural() {
+      return `${this.breakdownDisplayName}s`;
+    },
+    headers() {
+      return [
+        { title: `${this.breakdownDisplayName} Name`, key: 'name' },
+        { title: 'Accepted Prompts', key: 'acceptedPrompts' },
+        { title: 'Suggested Prompts', key: 'suggestedPrompts' },
+        { title: 'Accepted Lines of Code', key: 'acceptedLinesOfCode' },
+        { title: 'Suggested Lines of Code', key: 'suggestedLinesOfCode' },
+        { title: 'Acceptance Rate by Count (%)', key: 'acceptanceRateByCount' },
+        { title: 'Acceptance Rate by Lines (%)', key: 'acceptanceRateByLines' },
+      ];
+    },
   },
   
 

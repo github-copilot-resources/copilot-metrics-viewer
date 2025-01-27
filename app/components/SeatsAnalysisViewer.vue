@@ -1,6 +1,7 @@
 <template>
     <div class="tiles-container">
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+        <v-card
+elevation="4" color="white" variant="elevated" class="mx-auto my-4"
             style="width: 330px; height: 175px;">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
@@ -14,7 +15,8 @@
             </v-card-item>
         </v-card>
 
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+        <v-card
+elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             style="width: 300px; height: 175px;">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">

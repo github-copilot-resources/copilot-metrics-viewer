@@ -37,7 +37,7 @@ jobs:
     - name: Run Vite tests
       run: CI=true npm test
     - name: Run Playwright tests
-      run: CI=true npm test:e2e
+      run: CI=true npm run test:e2e
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -45,7 +45,7 @@ jobs:
         path: playwright-report/
         retention-days: 30
 
-  test-api-org:
+  test-docker-playwright:
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
@@ -55,58 +55,17 @@ jobs:
     - name: Build and export to Docker
       uses: docker/build-push-action@v6
       with:
-        file: api.Dockerfile
         load: true
-        tags: api:test
+        tags: app:pw
         build-args: mode=playwright
     - name: Run Playwright tests
       run: |
           docker run --rm --name playwright \
-          -v $(pwd)/test-results-docker-org:/test-results \
-          -e CI=true \
-          -e VUE_APP_SCOPE=organization \
-          -e VUE_APP_GITHUB_ORG=octodemo \
-          -e VUE_APP_GITHUB_API=/api/github \
-          -e APP_MOCKED_DATA=true \
-          -e VUE_APP_GITHUB_TOKEN=dummy \
-          -e SESSION_SECRET=dummy \
-          api:test "@org"
+          -v $(pwd)/test-results-docker:/test-results \
+          app:pw
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report-docker-org
-        path: test-results-docker-org/
-        retention-days: 30
-
-  test-api-ent:
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: Build and export to Docker
-      uses: docker/build-push-action@v6
-      with:
-        file: api.Dockerfile
-        load: true
-        tags: api:test
-        build-args: mode=playwright
-    - name: Run Playwright tests
-      run: |
-          docker run --rm --name playwright \
-          -v $(pwd)/test-results-docker-ent:/test-results \
-          -e CI=true \
-          -e VUE_APP_SCOPE=enterprise \
-          -e VUE_APP_GITHUB_ENT=octodemo \
-          -e VUE_APP_GITHUB_API=/api/github \
-          -e APP_MOCKED_DATA=true \
-          -e VUE_APP_GITHUB_TOKEN=dummy \
-          -e SESSION_SECRET=dummy \
-          api:test "@ent"
-    - uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: playwright-report-docker-ent
-        path: test-results-docker-ent/
+        name: playwright-report-docker
+        path: test-results-docker/
         retention-days: 30

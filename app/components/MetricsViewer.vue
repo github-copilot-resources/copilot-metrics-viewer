@@ -81,7 +81,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, toRef } from 'vue';
-import { Metrics } from '@/model/Metrics';
+import type { Metrics } from '@/model/Metrics';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -112,34 +112,17 @@ ChartJS.register(
 
 export default defineComponent({
   name: 'MetricsViewer',
+  components: {
+    Line,
+    Bar
+  }
+  ,
   props: {
         metrics: {
             type: Array as PropType<Metrics[]>,
             required: true
         }
     },
-  components: {
-    Line,
-    Bar
-  }
-  ,
-  data () {
-    return {
-      data : {
-        labels: ['VueJs', 'EmberJs', 'ReactJs', 'AngularJs'],
-        datasets: [
-          {
-        backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
-        data: [40, 20, 80, 10]
-        }
-        ]
-      },
-      options : {
-        responsive: true,
-      maintainAspectRatio: false
-      }
-    }
-  },
   setup(props) {
 
     //Tiles
@@ -330,6 +313,23 @@ export default defineComponent({
       chartOptions, totalActiveUsersChartData, 
       totalActiveUsersChartOptions, acceptanceRateByLinesChartData, acceptanceRateByCountChartData, acceptanceRateAverageByLines, acceptanceRateAverageByCount, cumulativeNumberSuggestions, 
       cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, totalLinesSuggested };
+  },
+  data () {
+    return {
+      data : {
+        labels: ['VueJs', 'EmberJs', 'ReactJs', 'AngularJs'],
+        datasets: [
+          {
+        backgroundColor: ['#41B883', '#E46651', '#00D8FF', '#DD1B16'],
+        data: [40, 20, 80, 10]
+        }
+        ]
+      },
+      options : {
+        responsive: true,
+      maintainAspectRatio: false
+      }
+    }
   },
   
 });

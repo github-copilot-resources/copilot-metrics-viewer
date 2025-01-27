@@ -75,6 +75,7 @@ export default defineNuxtConfig({
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,
+      password: process.env.NUXT_SESSION_PASSWORD || '',
     },
     oauth: {
       github: {
