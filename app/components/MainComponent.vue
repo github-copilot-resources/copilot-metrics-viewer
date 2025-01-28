@@ -11,14 +11,14 @@
 
       <!-- Conditionally render the logout button -->
       <AuthState>
-        <template #default="{ loggedIn, user }" >
-        <div v-show="loggedIn" class="user-info">
-          Welcome,
-          <v-avatar class="user-avatar">
-            <v-img :alt="user?.name" :src="user?.avatarUrl" />
-          </v-avatar> {{ user?.name }}
-        </div>
-        <v-btn v-if="showLogoutButton && loggedIn" class="logout-button" @click="logout">Logout</v-btn>
+        <template #default="{ loggedIn, user }">
+          <div v-show="loggedIn" class="user-info">
+            Welcome,
+            <v-avatar class="user-avatar">
+              <v-img :alt="user?.name" :src="user?.avatarUrl" />
+            </v-avatar> {{ user?.name }}
+          </div>
+          <v-btn v-if="showLogoutButton && loggedIn" class="logout-button" @click="logout">Logout</v-btn>
         </template>
       </AuthState>
 
@@ -60,11 +60,11 @@
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics" :seats="seats" />
+            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
+              :seats="seats" />
           </v-card>
         </v-window-item>
-        <v-alert
-v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
+        <v-alert v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
           title="No data" type="warning" />
       </v-window>
 
@@ -126,20 +126,20 @@ export default defineNuxtComponent({
     const metricsReady = ref(false);
     const metrics = ref<Metrics[]>([]);
     const originalMetrics = ref<CopilotMetrics[]>([]);
-    const seatsReady = ref(false); 
-    const seats = ref<Seat[]>([]); 
+    const seatsReady = ref(false);
+    const seats = ref<Seat[]>([]);
     // API Error Message
     const apiError = ref<string | undefined>(undefined);
     const signInRequired = computed(() => {
       return config.public.usingGithubAuth && !loggedIn.value;
     });
-    
+
     /**
      * Handles API errors by setting appropriate error messages.
      * @param {H3Error} error - The error object returned from the API call.
      */
     function processError(error: H3Error) {
-      console.error(error);
+      console.error(error || 'No data returned from API');
       // Check the status code of the error response
       if (error.statusCode) {
         switch (error.statusCode) {
@@ -148,14 +148,13 @@ export default defineNuxtComponent({
             break;
           case 404:
             apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:'${config.public.githubOrg || ''} ent:'${config.public.githubEnt || ''}' team:'${config.public.githubTeam}' correct? ${error.message}`;
-	             // Update apiError with the error message
+            // Update apiError with the error message
             apiError.value = error.message;
             break;
           case 500:
             apiError.value = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
             break;
         }
-        // TODO: handle errors without status code?
       }
     }
 
@@ -170,6 +169,10 @@ export default defineNuxtComponent({
       metrics.value = apiResponse.metrics || [];
       originalMetrics.value = apiResponse.usage || [];
       metricsReady.value = true;
+    }
+
+    if (config.public.scope === 'team' && metrics.value.length === 0 && !apiError.value) {
+      apiError.value = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
     }
 
     const { data: seatsData, error: seatsError } = await seatsFetch;

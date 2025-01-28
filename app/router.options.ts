@@ -15,7 +15,7 @@ export default {
         },
         {
             name: 'team',
-            path: '/orgs/:org/team/:team',
+            path: '/orgs/:org/teams/:team',
             component: () => import('~/pages/index.vue')
         },
         {

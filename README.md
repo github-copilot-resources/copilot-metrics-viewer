@@ -99,7 +99,7 @@ Public variables:
 can be overriden by route parameters, e.g.
 - `http://localhost:3000/enterprises/octo-demo-ent`
 - `http://localhost:3000/orgs/octo-demo-org`
-- `http://localhost:3000/orgs/octo-demo-org/team/the-a-team`
+- `http://localhost:3000/orgs/octo-demo-org/teams/the-a-team`
 - `http://localhost:3000/orgs/mocked-org?mock=true`
 
 #### NUXT_PUBLIC_SCOPE

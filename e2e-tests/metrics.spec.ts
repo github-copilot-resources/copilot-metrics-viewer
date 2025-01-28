@@ -4,7 +4,7 @@ import { DashboardPage } from './pages/DashboardPage';
 const tag = { tag: ['@ent', '@org', '@team'] };
 
 [
-    { name: 'Teams', url: '/orgs/octodemo-org/team/the-a-team' },
+    { name: 'Teams', url: '/orgs/octodemo-org/teams/the-a-team' },
     { name: 'Orgs', url: '/orgs/octodemo-org' },
     { name: 'Enterprises', url: '/enterprises/octo-enterprise' },
 ].forEach(({ name, url }) => {

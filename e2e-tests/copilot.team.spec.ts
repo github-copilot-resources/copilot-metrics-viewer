@@ -7,7 +7,7 @@ let dashboard: DashboardPage;
 
 test.beforeAll(async ({ browser }) => {
   const page = await browser.newPage();
-  await page.goto('/orgs/octo-demo-org/team/the-a-team');
+  await page.goto('/orgs/octo-demo-org/teams/the-a-team');
 
   dashboard = new DashboardPage(page);
 

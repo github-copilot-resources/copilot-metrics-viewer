@@ -48,42 +48,6 @@ var tags = {
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 
-// "settings": [
-//   {
-//     "name": "NUXT_OAUTH_GITHUB_CLIENT_ID",
-//     "value": "${NUXT_OAUTH_GITHUB_CLIENT_ID}",
-//     "secret": true,
-//     "_comment_name": "GitHub App Client id - The name of the environment variable when running in Azure."
-//   },
-//   {
-//     "name": "NUXT_OAUTH_GITHUB_CLIENT_SECRET",
-//     "value": "${NUXT_OAUTH_GITHUB_CLIENT_SECRET}",
-//     "secret": true,
-//     "_comment_name": "GitHub App Client Secret - The name of the environment variable when running in Azure."
-//   },
-//   {
-//     "name": "NUXT_SESSION_PASSWORD",
-//     "value": "$(secretOrRandomPassword)",
-//     "secret": true,
-//     "_comment_name": "Session Secret - The name of the environment variable when running in Azure."
-//   },
-//   {
-//     "name": "NUXT_PUBLIC_SCOPE",
-//     "value": "${NUXT_PUBLIC_SCOPE}",
-//     "_comment_name": "GitHub App Scope - The name of the environment variable when running in Azure."
-//   },
-//   {
-//     "name": "NUXT_PUBLIC_GITHUB_ORG",
-//     "value": "${NUXT_PUBLIC_GITHUB_ORG}",
-//     "_comment_name": "GitHub Organization - The name of the environment variable when running in Azure."
-//   },
-//   {
-//     "name": "NUXT_PUBLIC_GITHUB_ENT",
-//     "value": "${NUXT_PUBLIC_GITHUB_ENT}",
-//     "_comment_name": "GitHub Enterprise - The name of the environment variable when running in Azure."
-//   }
-// ]
-
 var settings = concat(
   [
     {
