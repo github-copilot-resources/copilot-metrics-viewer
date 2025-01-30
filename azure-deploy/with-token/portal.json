@@ -161,7 +161,7 @@
                                     "type": "Microsoft.Common.TextBox",
                                     "label": "Metrics-viewer-docker-image",
                                     "subLabel": "",
-                                    "defaultValue": "FROM ghcr.io/github-copilot-resources/copilot-metrics-viewer:v2.0.0-preview",
+                                    "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer:v2.0.0-preview",
                                     "toolTip": "Docker image for metrics viewer - use default or replace with your own",
                                     "constraints": {
                                         "required": false,
