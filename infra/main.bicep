@@ -22,10 +22,8 @@ param githubClientSecret string
 param sessionPassword string
 @secure()
 param githubPAT string
-
 @allowed(['enterprise', 'organization', 'team'])
 param githubScope string
-
 @description('The name of the GitHub organization, required when scope is "organization"')
 param githubOrg string
 @description('The name of the GitHub team, required when scope is "team"')
