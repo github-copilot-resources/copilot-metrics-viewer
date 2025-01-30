@@ -35,7 +35,7 @@
         },
         "metrics-viewer-docker-image": {
             "type": "string",
-            "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest",
+            "defaultValue": "FROM ghcr.io/github-copilot-resources/copilot-metrics-viewer:v2.0.0-preview",
             "metadata": {
                 "description": "Docker image for metrics viewer - use default or replace with your own"
             }
