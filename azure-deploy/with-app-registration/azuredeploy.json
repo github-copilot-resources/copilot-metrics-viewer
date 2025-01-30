@@ -122,6 +122,10 @@
                                 {
                                     "name": "NUXT_SESSION_PASSWORD",
                                     "value": "[concat(uniqueString(resourceGroup().id),'-',uniqueString(resourceGroup().id),'-',uniqueString(resourceGroup().id))]"
+                                },
+                                {
+                                    "name": "NITRO_PORT",
+                                    "value": "3000"
                                 }
                             ]
                         }
