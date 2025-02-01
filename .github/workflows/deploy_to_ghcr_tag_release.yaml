@@ -86,6 +86,7 @@ jobs:
             org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
             org.opencontainers.image.source=${{ github.repository }}
           tags: |
+            type=raw,value=latest,enable=true
             type=sha
             type=ref,event=branch
             type=ref,event=pr
@@ -126,6 +127,7 @@ jobs:
             org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
             org.opencontainers.image.source=${{ github.repository }}
           tags: |
+            type=raw,value=latest,enable=true
             type=sha
             type=ref,event=branch
             type=ref,event=pr
