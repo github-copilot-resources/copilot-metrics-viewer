@@ -44,12 +44,9 @@ jobs:
           git add .
           git commit --signoff --message $version
 
-          echo "moving tag $version"
-          git tag --force $version
-          git push origin $version --force
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
+        continue-on-error: true
         with:
           title: '🚀Update version to ${{ steps.version.outputs.version }}'
           body: |
@@ -59,6 +56,12 @@ jobs:
           delete-branch: true
           labels: 'version-update'
           base: 'main'
+      
+      - name: Move tag ${{ steps.version.outputs.version }} to PR
+        run: |
+          echo "moving tag ${{ steps.version.outputs.version }}"
+          git tag --force ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }} --force
 
   push_to_ghcr:
     runs-on: ubuntu-latest
@@ -86,6 +89,7 @@ jobs:
             org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
             org.opencontainers.image.source=${{ github.repository }}
           tags: |
+            type=raw,value=latest,enable=true
             type=sha
             type=ref,event=branch
             type=ref,event=pr
@@ -126,6 +130,7 @@ jobs:
             org.opencontainers.image.description=Metrics viewer for GitHub Copilot usage
             org.opencontainers.image.source=${{ github.repository }}
           tags: |
+            type=raw,value=latest,enable=true
             type=sha
             type=ref,event=branch
             type=ref,event=pr
