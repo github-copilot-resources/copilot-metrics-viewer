@@ -8,6 +8,10 @@ on:
         description: 'existing git tag to be used as tag for the Docker image e.g. "custom-tag"'
         required: true
         default: 'my-tag'
+      include_latest:
+        description: 'should latest tag be included in the image tag'
+        required: true
+        default: 'true'
 
 permissions:
   packages: write
@@ -42,6 +46,7 @@ jobs:
             org.opencontainers.image.source=${{ github.repository }}
           tags: |
             type=raw,enable=true,priority=1,value=${{ github.event.inputs.tag }}
+            type=raw,enable=${{ github.event.inputs.include_latest }},priority=2,value=latest
             type=sha
             type=ref,event=branch
             type=ref,event=pr
