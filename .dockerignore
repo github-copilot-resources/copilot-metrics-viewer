@@ -24,3 +24,8 @@ infra/
 /test-results-docker/
 test-results-docker-ent/
 test-results-docker-org/
+
+.nuxt/
+.output/
+.vscode/
+dist/

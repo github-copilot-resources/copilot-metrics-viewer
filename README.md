@@ -89,47 +89,90 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 In the `.env` file, you can configure several environment variables that control the behavior of the application.
 
-#### VUE_APP_SCOPE
+Public variables:
+- `NUXT_PUBLIC_IS_DATA_MOCKED`
+- `NUXT_PUBLIC_SCOPE`
+- `NUXT_PUBLIC_GITHUB_ENT`
+- `NUXT_PUBLIC_GITHUB_ORG`
+- `NUXT_PUBLIC_GITHUB_TEAM`
 
-The `VUE_APP_SCOPE` environment variable in the `.env` file determines the scope of the API calls made by the application. It can be set to either 'enterprise' or 'organization'.
+can be overriden by route parameters, e.g.
+- `http://localhost:3000/enterprises/octo-demo-ent`
+- `http://localhost:3000/orgs/octo-demo-org`
+- `http://localhost:3000/orgs/octo-demo-org/teams/the-a-team`
+- `http://localhost:3000/orgs/mocked-org?mock=true`
 
-- If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `VUE_APP_GITHUB_ENT` variable.
-- If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `VUE_APP_GITHUB_ORG` variable.
+#### NUXT_PUBLIC_SCOPE
 
-For example, if you want to target the API calls to an organization, you would set `VUE_APP_SCOPE=organization` in the `.env` file.
+The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization' or 'team'.
+
+- If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
+- If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
+- If set to 'team', the application will target API calls to GitHub Team defined in the `NUXT_PUBLIC_GITHUB_TEAM` variable under `NUXT_PUBLIC_GITHUB_ORG` GitHub Organization.
+
+For example, if you want to target the API calls to an organization, you would set `NUXT_PUBLIC_SCOPE=organization` in the `.env` file.
+
+>[!INFO]
+> Environment variables with `NUXT_PUBLIC` scope are available in the browser (are public).
+> See [Nuxt Runtime Config](https://nuxt.com/docs/guide/going-further/runtime-config) for details.
 
 ````
-VUE_APP_SCOPE=organization
+NUXT_PUBLIC_SCOPE=organization
 
-VUE_APP_GITHUB_ORG=<YOUR-ORGANIZATION>
+NUXT_PUBLIC_GITHUB_ORG=<YOUR-ORGANIZATION>
 
-VUE_APP_GITHUB_ENT=
+NUXT_PUBLIC_GITHUB_ENT=
 ````
 
-#### VUE_APP_GITHUB_TEAM
+#### NUXT_PUBLIC_GITHUB_TEAM
 
-The `VUE_APP_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Enterprise or Organization account.
+The `NUXT_PUBLIC_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Enterprise or Organization account.
 ‼️ Important ‼️ When this variable is set, all displayed metrics will pertain exclusively to the specified team. To view metrics for the entire Organization or Enterprise, remove this environment variable.
 
-````
-VUE_APP_GITHUB_TEAM=
-````
-
-#### VUE_APP_MOCKED_DATA
-
-To access Copilot metrics from the last 28 days via the API and display actual data, set the following boolean environment variable to `false`:
+>[!WARNING]
+> GitHub provides Team metrics [for a given day if the team had five or more members with active Copilot licenses, as evaluated at the end of that day.](https://docs.github.com/en/rest/copilot/copilot-usage?apiVersion=2022-11-28#get-a-summary-of-copilot-usage-for-a-team).
 
 ````
-VUE_APP_MOCKED_DATA=false
+NUXT_PUBLIC_GITHUB_TEAM=
 ````
 
-#### VUE_APP_GITHUB_TOKEN
+#### NUXT_PUBLIC_IS_DATA_MOCKED
+
+Variable is false by default. To view mocked data switch it to true or use query parameter `?mock=true`.
+
+````
+NUXT_PUBLIC_IS_DATA_MOCKED=false
+````
+
+#### NUXT_GITHUB_TOKEN
 
 Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _read:org_.
 
+Token is not used in the frontend.
+
 ````
-VUE_APP_GITHUB_TOKEN=
+NUXT_GITHUB_TOKEN=
 ````
+
+#### NUXT_SESSION_PASSWORD (Required!)
+
+This variable is required to encrypt user sessions, it needs to be at least 32 characters long.
+For more information see [Nuxt Sessions and Authentication](https://nuxt.com/docs/guide/recipes/sessions-and-authentication#cookie-encryption-key).
+
+>[!WARNING]
+> This variable is required starting from version 2.0.0.
+
+#### NUXT_PUBLIC_USING_GITHUB_AUTH
+
+Default is `false`. When set to `true`, GitHub OAuth App Authentication will be performed to verify users' access to the dashboard.
+
+Variables required for GitHub Auth are:
+1. `NUXT_OAUTH_GITHUB_CLIENT_ID` - client ID of the GitHub App registered and installed in the enterprise/org with permissions listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN).
+2. `NUXT_OAUTH_GITHUB_CLIENT_SECRET` - client secret of the GitHub App.
+3. [Optional] `NUXT_OAUTH_GITHUB_CLIENT_SCOPE` for scope requests when using OAuth App instead of GitHub App. See [Github docs](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps) for details.
+
+>[!WARNING]
+> Only users with permissions (scopes listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN)) can view copilot metrics, GitHub uses the authenticated users permissions to make API calls for data.
 
 ## Install Dependencies
 
@@ -140,7 +183,7 @@ npm install
 ### Compiles and Runs the Application
 
 ```bash
-npm run serve
+npm run dev
 ```
 
 ### Docker Build
@@ -156,69 +199,6 @@ docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
 ```
 
 The application will be accessible at http://localhost:8080
-
-## Running with API Proxy
-
-The project can run with an API proxy which hides GitHub tokens and is secure enough to be deployed.
-The API Proxy project is in the `\api` directory. The Vue app makes the calls to `/api/github` which are then proxied to `https://api.github.com` with the appropriate bearer token.
-
-The proxy can authenticate the user using a GitHub App. In order to do that, the following environment variables are required:
-
-* `GITHUB_CLIENT_ID` - client ID of the GitHub App registered and installed in the enterprise/org with permissions listed above.
-* `GITHUB_CLIENT_SECRET` - client secret of the GitHub App.
-* `SESSION_SECRET` - random string for securing session state.
-
-If you want to use a custom path for your `.env` file, you can set the environment variable `DOTENV_CONFIG_PATH`.
-
-It's also possible to run with a **PAT Token**, see examples below for required variables.
-
-For local development, register `http://localhost:3000/callback` as the GitHub App callback URI.
-For the deployed version, use the URI of your app.
-
-To build and run the app with the API proxy:
-
-```bash
-docker build -t copilot-metrics-viewer-with-proxy -f api.Dockerfile .
-```
-
-To run:
-
-```bash
-docker run -it --rm -p 8080:3000 --env-file ./.env copilot-metrics-viewer-with-proxy
-```
-
-Or with a custom path for your `.env` file:
-
-```bash
-docker run -it --rm -p 8080:3000 \
--e DOTENV_CONFIG_PATH=/custom/.env \
--v /path/to/your/.env:/custom/.env \
-copilot-metrics-viewer-with-proxy
-```
-
-The proxy can also run with the token hardcoded on the backend (which hides it from frontend calls), here's a sample:
-
-```bash
-docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=enterprise \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ENT=<enterprise name> \
--e VUE_APP_GITHUB_TOKEN=<github PAT> \
--e SESSION_SECRET=<random string>  \
-copilot-metrics-viewer-with-proxy
-```
-
-or
-
-```bash
-docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=organization \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ORG=<org name> \
--e VUE_APP_GITHUB_TOKEN=<github PAT> \
--e SESSION_SECRET=<random string>   \
-copilot-metrics-viewer-with-proxy
-```
 
 ## License
 
