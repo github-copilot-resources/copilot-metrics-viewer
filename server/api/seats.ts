@@ -34,10 +34,34 @@ export default defineEventHandler(async (event) => {
     return new Response('No Authentication provided', { status: 401 });
   }
 
-  // console.log('getting seats data from:', apiUrl);
-  const response = await $fetch(apiUrl, {
-    headers: event.context.headers
-  }) as { seats: unknown[] };
-  const seatsData = response.seats.map((item: unknown) => new Seat(item));
+  const perPage = 100;
+  let page = 1;
+  let response = await $fetch(apiUrl, {
+    headers: event.context.headers,
+    params: {
+      per_page: perPage,
+      page: page
+    }
+  }) as { seats: unknown[], total_seats: number };
+
+  let seatsData = response.seats.map((item: unknown) => new Seat(item));
+
+  // Calculate the total pages
+  const totalSeats = response.total_seats;
+  const totalPages = Math.ceil(totalSeats / perPage);
+
+  // Fetch the remaining pages
+  for (page = 2; page <= totalPages; page++) {
+    response = await $fetch(apiUrl, {
+      headers: event.context.headers,
+      params: {
+        per_page: perPage,
+        page: page
+      }
+    }) as { seats: unknown[], total_seats: number };
+
+    seatsData = seatsData.concat(response.seats.map((item: unknown) => new Seat(item)));
+  }
+
   return seatsData;
 })
