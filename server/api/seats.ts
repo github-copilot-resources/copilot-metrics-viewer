@@ -4,6 +4,7 @@ import { resolve } from 'path';
 
 export default defineEventHandler(async (event) => {
 
+  const logger = console;
   const config = useRuntimeConfig(event);
   let apiUrl = '';
   let mockedDataPath: string;
@@ -27,22 +28,33 @@ export default defineEventHandler(async (event) => {
     const data = readFileSync(path, 'utf8');
     const dataJson = JSON.parse(data);
     const seatsData = dataJson.seats.map((item: unknown) => new Seat(item));
+
+    logger.info('Using mocked data');
     return seatsData;
   }
 
   if (!event.context.headers.has('Authorization')) {
+    logger.error('No Authentication provided');
     return new Response('No Authentication provided', { status: 401 });
   }
 
   const perPage = 100;
   let page = 1;
-  let response = await $fetch(apiUrl, {
-    headers: event.context.headers,
-    params: {
-      per_page: perPage,
-      page: page
-    }
-  }) as { seats: unknown[], total_seats: number };
+  let response;
+  logger.info(`Fetching 1st page of seats data from ${apiUrl}`);
+
+  try {
+    response = await $fetch(apiUrl, {
+      headers: event.context.headers,
+      params: {
+        per_page: perPage,
+        page: page
+      }
+    }) as { seats: unknown[], total_seats: number };
+  } catch (error) {
+    logger.error('Error fetching seats data:', error);
+    return new Response('Error fetching seats data. Error: ' + error, { status: 500 });
+  }
 
   let seatsData = response.seats.map((item: unknown) => new Seat(item));
 

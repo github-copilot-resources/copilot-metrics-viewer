@@ -7,9 +7,9 @@ import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-
 export default defineEventHandler(async (event) => {
 
+    const logger = console;
     const config = useRuntimeConfig(event);
     let apiUrl = '';
     let mockedDataPath: string;
@@ -34,7 +34,6 @@ export default defineEventHandler(async (event) => {
     }
 
     if (config.public.isDataMocked && mockedDataPath) {
-        // console.log('getting mocked metrics data from:', mockedDataPath);
         const path = mockedDataPath;
         const data = readFileSync(path, 'utf8');
         const dataJson = JSON.parse(data);
@@ -42,23 +41,32 @@ export default defineEventHandler(async (event) => {
         const usageData = ensureCopilotMetrics(dataJson);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
+
+        logger.info('Using mocked data');
         return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
     }
 
     if (!event.context.headers.has('Authorization')) {
+        logger.error('No Authentication provided');
         return new Response('No Authentication provided', { status: 401 });
     }
 
-    // console.log('getting metrics data from:', apiUrl);
-    const response = await $fetch(apiUrl, {
-        headers: event.context.headers
-    }) as unknown[];
+    logger.info(`Fetching metrics data from ${apiUrl}`);
 
-    // usage is the new API format
-    const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
-    // metrics is the old API format
-    const metricsData = convertToMetrics(usageData);
-    return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+    try {
+        const response = await $fetch(apiUrl, {
+            headers: event.context.headers
+        }) as unknown[];
+
+        // usage is the new API format
+        const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
+        // metrics is the old API format
+        const metricsData = convertToMetrics(usageData);
+        return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+    } catch (error) {
+        logger.error('Error fetching metrics data:', error);
+        return new Response('Error fetching metrics data: ' + error, { status: 500 });
+    }
 })
 
 function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
