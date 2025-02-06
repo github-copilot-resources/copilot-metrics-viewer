@@ -1,4 +1,5 @@
 import { Seat } from "@/model/Seat";
+import type FetchError from 'ofetch';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
@@ -51,9 +52,9 @@ export default defineEventHandler(async (event) => {
         page: page
       }
     }) as { seats: unknown[], total_seats: number };
-  } catch (error) {
+  } catch (error: FetchError) {
     logger.error('Error fetching seats data:', error);
-    return new Response('Error fetching seats data. Error: ' + error, { status: 500 });
+    return new Response('Error fetching seats data. Error: ' + error, { status: error.statusCode || 500 });
   }
 
   let seatsData = response.seats.map((item: unknown) => new Seat(item));

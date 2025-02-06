@@ -1,6 +1,7 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
+import type FetchError from 'ofetch';
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
@@ -63,9 +64,9 @@ export default defineEventHandler(async (event) => {
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
         return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
-    } catch (error) {
+    } catch (error: FetchError) {
         logger.error('Error fetching metrics data:', error);
-        return new Response('Error fetching metrics data: ' + error, { status: 500 });
+        return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
     }
 })
 

@@ -60,11 +60,13 @@
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
+            <ApiResponse
+v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
-        <v-alert v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
+        <v-alert
+v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
           title="No data" type="warning" />
       </v-window>
 
@@ -148,11 +150,12 @@ export default defineNuxtComponent({
             break;
           case 404:
             apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:'${config.public.githubOrg || ''} ent:'${config.public.githubEnt || ''}' team:'${config.public.githubTeam}' correct? ${error.message}`;
-            // Update apiError with the error message
-            apiError.value = error.message;
             break;
           case 500:
             apiError.value = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
+            break;
+          default:
+            apiError.value = `${error.statusCode} Error: ${error.message}`;
             break;
         }
       }
