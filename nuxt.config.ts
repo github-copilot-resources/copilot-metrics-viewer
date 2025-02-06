@@ -69,7 +69,11 @@ export default defineNuxtConfig({
       scope: ''
     }
   },
-
+  nitro: {
+    plugins: [
+      'plugins/http-agent',
+    ],
+  },
   runtimeConfig: {
     githubToken: '',
     session: {
