@@ -174,6 +174,10 @@ Variables required for GitHub Auth are:
 >[!WARNING]
 > Only users with permissions (scopes listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN)) can view copilot metrics, GitHub uses the authenticated users permissions to make API calls for data.
 
+#### Support for HTTP Proxy HTTP_PROXY
+
+Solution supports HTTP Proxy settings when running in corporate environment. Simple set `HTTP_PROXY` environment variable.
+
 ## Install Dependencies
 
 ```bash
