@@ -1,7 +1,5 @@
 import { expect, test } from '@playwright/test'
 import { DashboardPage } from './pages/DashboardPage';
-import { aw } from 'vitest/dist/chunks/reporters.D7Jzd9GS.js';
-import { a } from 'vitest/dist/chunks/suite.B2jumIFP.js';
 
 const tag = { tag: ['@ent'] }
 

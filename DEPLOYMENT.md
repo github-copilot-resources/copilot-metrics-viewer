@@ -150,7 +150,7 @@ or navigate using UI:
 
 1. Set a unique name.
 2. Provide a home page URL: your company URL or just `http://localhost`.
-3. Add a callback URL for `http://localhost:3000/github/auth`. (We'll add the real redirect URL after the application is deployed.)
+3. Add a callback URL for `http://localhost:3000/auth/github`. (We'll add the real redirect URL after the application is deployed.)
 4. Uncheck the "Webhook -> Active" checkbox.
 5. Set the scopes:
    - Select **Organization permissions**.
