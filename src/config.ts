@@ -1,4 +1,4 @@
-const PROPS = ["MOCKED_DATA", "SCOPE", "GITHUB_ORG", "GITHUB_ENT", "GITHUB_TEAM", "GITHUB_TOKEN", "GITHUB_API"];
+const PROPS = ["MOCKED_DATA", "SCOPE", "GITHUB_ORG", "GITHUB_ENT", "GITHUB_TEAM", "GITHUB_TOKEN", "GITHUB_API", "SHOW_MULTIPLE_TEAMS"];
 
 const env: any = {};
 PROPS.forEach(prop => {
@@ -50,7 +50,8 @@ const config: Config = {
 		token: env.VUE_APP_GITHUB_TOKEN,
 		apiUrl,
 		baseApi
-	}
+	},
+	showMultipleTeams: env.VUE_APP_SHOW_MULTIPLE_TEAMS === "true"
 }
 if (!config.mockedData && !config.github.token && !config.github.baseApi) {
 	throw new Error("VUE_APP_GITHUB_TOKEN environment variable must be set or calls have to be proxied by the api layer.");
@@ -91,5 +92,6 @@ interface Config {
 		 * default: https://api.github.com
 		 */
 		baseApi: string;
-	}
+	},
+	showMultipleTeams: boolean;
 }

@@ -56,15 +56,48 @@ export const getTeams = async (): Promise<string[]> => {
     headers
   });
 
-  return response.data;
+  return response.data.map((team: any) => team.name);
 }
 
 export const getTeamMetricsApi = async (): Promise<{ metrics: Metrics[], original: CopilotMetrics[] }> => {
   console.log("config.github.team: " + config.github.team);
 
   if (config.github.team && config.github.team.trim() !== '') {
+    const teams = config.github.team.split(',').map(team => team.trim());
+    const allMetrics: Metrics[] = [];
+    const allOriginalData: CopilotMetrics[] = [];
+
+    for (const team of teams) {
+      const response = await axios.get(
+        `${config.github.apiUrl}/team/${team}/copilot/metrics`,
+        {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${config.github.token}`,
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        }
+      );
+
+      const originalData = ensureCopilotMetrics(response.data);
+      const metricsData = convertToMetrics(originalData);
+      allMetrics.push(...metricsData);
+      allOriginalData.push(...originalData);
+    }
+
+    return { metrics: allMetrics, original: allOriginalData };
+  }
+  
+  return { metrics: [], original: [] };
+}
+
+export const getMultipleTeamsMetricsApi = async (teams: string[]): Promise<{ metrics: Metrics[], original: CopilotMetrics[] }> => {
+  const allMetrics: Metrics[] = [];
+  const allOriginalData: CopilotMetrics[] = [];
+
+  for (const team of teams) {
     const response = await axios.get(
-      `${config.github.apiUrl}/team/${config.github.team}/copilot/metrics`,
+      `${config.github.apiUrl}/team/${team}/copilot/metrics`,
       {
         headers: {
           Accept: "application/vnd.github+json",
@@ -76,8 +109,9 @@ export const getTeamMetricsApi = async (): Promise<{ metrics: Metrics[], origina
 
     const originalData = ensureCopilotMetrics(response.data);
     const metricsData = convertToMetrics(originalData);
-    return { metrics: metricsData, original: originalData };
+    allMetrics.push(...metricsData);
+    allOriginalData.push(...originalData);
   }
-  
-  return { metrics: [], original: [] };
+
+  return { metrics: allMetrics, original: allOriginalData };
 }

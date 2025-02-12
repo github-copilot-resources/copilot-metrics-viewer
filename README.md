@@ -115,6 +115,14 @@ The `VUE_APP_GITHUB_TEAM` environment variable filters metrics for a specific Gi
 VUE_APP_GITHUB_TEAM=
 ````
 
+#### VUE_APP_SHOW_MULTIPLE_TEAMS
+
+The `VUE_APP_SHOW_MULTIPLE_TEAMS` environment variable is a boolean parameter that controls whether the application should support multiple teams. The default value is `true`. When it is set to `true` and `VUE_APP_GITHUB_TEAM` is not set, the application will call the GitHub API to get the teams for the current organization or enterprise.
+
+````
+VUE_APP_SHOW_MULTIPLE_TEAMS=true
+````
+
 #### VUE_APP_MOCKED_DATA
 
 To access Copilot metrics from the last 28 days via the API and display actual data, set the following boolean environment variable to `false`:

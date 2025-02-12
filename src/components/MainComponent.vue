@@ -40,6 +40,7 @@
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse v-if="item === 'api response'" :metrics="metrics" :originalMetrics="originalMetrics" :seats="seats" />
+            <MultiTeamsMetricsViewer v-if="item === 'multi-teams metrics'" :metrics="metrics" />
           </v-card>
         </v-window-item>
       </v-window>
@@ -49,7 +50,7 @@
 
 <script lang='ts'>
 import { defineComponent, ref } from 'vue'
-import { getMetricsApi, getTeamMetricsApi } from '../api/GitHubApi';
+import { getMetricsApi, getTeamMetricsApi, getMultipleTeamsMetricsApi, getTeams } from '../api/GitHubApi';
 import { getSeatsApi } from '../api/ExtractSeats';
 import { Metrics } from '../model/Metrics';
 import { CopilotMetrics } from '../model/Copilot_Metrics';
@@ -61,6 +62,7 @@ import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue' 
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
+import MultiTeamsMetricsViewer from './MultiTeamsMetricsViewer.vue'
 import config from '../config';
 
 export default defineComponent({
@@ -70,7 +72,8 @@ export default defineComponent({
     BreakdownComponent,
     CopilotChatViewer,
     SeatsAnalysisViewer,
-    ApiResponse
+    ApiResponse,
+    MultiTeamsMetricsViewer
   },
   computed: {
     gitHubOrgName() {
@@ -107,11 +110,15 @@ export default defineComponent({
   data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
-      tab: null
+      tab: null,
+      selectedTeams: []
     }
   },
   created() {
     this.tabItems.unshift(this.itemName);
+    if (config.showMultipleTeams) {
+      this.tabItems.push('multi-teams metrics');
+    }
   },
   setup() {
     const metricsReady = ref(false);
@@ -119,6 +126,7 @@ export default defineComponent({
     const originalMetrics = ref<CopilotMetrics[]>([]);
     const seatsReady = ref(false); 
     const seats = ref<Seat[]>([]); 
+    const teams = ref<string[]>([]);
     // API Error Message
     const apiError = ref<string | undefined>(undefined);
     const signInRequired = ref(false);
@@ -174,7 +182,24 @@ export default defineComponent({
       seatsReady.value = true;
     }).catch(processError);
 
-    return { metricsReady, metrics, originalMetrics, seatsReady, seats, apiError, signInRequired };
+    if (config.showMultipleTeams && !config.github.team) {
+      getTeams().then(data => {
+        teams.value = data;
+      }).catch(processError);
+    }
+
+    return { metricsReady, metrics, originalMetrics, seatsReady, seats, apiError, signInRequired, teams };
+  },
+  methods: {
+    fetchMetricsForSelectedTeams() {
+      if (this.selectedTeams.length > 0) {
+        getMultipleTeamsMetricsApi(this.selectedTeams).then(data => {
+          this.metrics = data.metrics;
+          this.originalMetrics = data.original;
+          this.metricsReady = true;
+        }).catch(this.processError);
+      }
+    }
   }
 });
 </script>
