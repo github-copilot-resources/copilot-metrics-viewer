@@ -7,6 +7,20 @@
 
       <v-toolbar-title class="toolbar-title">{{ displayName }}</v-toolbar-title>
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
+
+      <!-- Add teams selector if teams are configured -->
+      <v-select
+        v-if="teams.length > 0"
+        v-model="selectedTeam"
+        :items="teams"
+        label="Select Team"
+        hide-details
+        class="mx-4"
+        style="max-width: 200px;"
+        density="compact"
+        @update:model-value="onTeamChange"
+      />
+
       <v-spacer />
 
       <!-- Conditionally render the logout button -->
@@ -104,17 +118,30 @@ export default defineNuxtComponent({
       this.metrics = [];
       this.seats = [];
       clear();
+    },
+    async onTeamChange(team: string) {
+      if (team === 'All Teams') {
+        // Remove team parameter from URL
+        await navigateTo({ query: { ...this.route.query, team: undefined }}, { replace: true });
+      } else {
+        // Add/update team parameter in URL
+        await navigateTo({ query: { ...this.route.query, team }}, { replace: true });
+      }
+      location.reload();
     }
   },
 
   data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
-      tab: null
+      tab: null,
+      selectedTeam: null as string | null
     }
   },
   created() {
     this.tabItems.unshift(this.itemName);
+    // Initialize selected team from URL
+    this.selectedTeam = this.route.query.team as string || null;
   },
   async setup() {
     const { loggedIn, user } = useUserSession()
@@ -123,8 +150,14 @@ export default defineNuxtComponent({
     const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
     const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
     const itemName = computed(() => config.public.scope);
-    const githubInfo = getDisplayName({ ...config.public, githubTeam: route.query.team || config.public.githubTeam });
+    const githubInfo = getDisplayName({ ...config.public, githubTeam: (route.query.team as string) || config.public.githubTeam });
     const displayName = computed(() => githubInfo);
+
+    // Get teams list from runtime config
+    const teams = computed(() => {
+      const envTeams = (config.public.githubTeams || '').split(',').filter(Boolean);
+      return ['All Teams', ...envTeams];
+    });
 
     const metricsReady = ref(false);
     const metrics = ref<Metrics[]>([]);
@@ -201,7 +234,9 @@ export default defineNuxtComponent({
       mockedDataMessage,
       itemName,
       displayName,
-      user
+      user,
+      teams,
+      route
     };
   },
 })

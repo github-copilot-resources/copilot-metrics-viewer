@@ -8,17 +8,15 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   future: {
-    compatibilityVersion: 4
+    compatibilityVersion: 4,
   },
 
   ssr: true,
 
   app: {
     head: {
-      link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/favicon.svg' }
-      ]
-    }
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.svg' }],
+    },
   },
 
   // when enabling ssr option you need to disable inlineStyles and maybe devLogs
@@ -38,7 +36,12 @@ export default defineNuxtConfig({
   },
 
   css: [],
-  modules: ['@nuxt/fonts', 'vuetify-nuxt-module', '@nuxt/eslint', 'nuxt-auth-utils'],
+  modules: [
+    '@nuxt/fonts',
+    'vuetify-nuxt-module',
+    '@nuxt/eslint',
+    'nuxt-auth-utils',
+  ],
 
   vuetify: {
     moduleOptions: {
@@ -62,17 +65,18 @@ export default defineNuxtConfig({
   },
 
   auth: {
+    session: {
+      name: 'nuxt-session',
+      maxAge: 60 * 60 * 6,
+    },
     github: {
-      enabled: true,
       clientId: '',
       clientSecret: '',
-      scope: ''
-    }
+    },
   },
+
   nitro: {
-    plugins: [
-      'plugins/http-agent',
-    ],
+    plugins: ['plugins/http-agent'],
   },
   runtimeConfig: {
     githubToken: '',
@@ -85,16 +89,17 @@ export default defineNuxtConfig({
       github: {
         clientId: '',
         clientSecret: '',
-      }
+      },
     },
     public: {
-      isDataMocked: false,  // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
-      scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
+      isDataMocked: false, // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
+      scope: 'organization', // can be overridden by NUXT_PUBLIC_SCOPE environment variable
       githubOrg: '',
       githubEnt: '',
       githubTeam: '',
+      githubTeams: '', // comma-separated list of teams, can be overridden by NUXT_PUBLIC_GITHUB_TEAMS
       usingGithubAuth: false,
-      version
-    }
-  }
-})
+      version,
+    },
+  },
+});

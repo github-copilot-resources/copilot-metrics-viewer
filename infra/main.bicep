@@ -35,7 +35,7 @@ param githubEnt string
 param principalId string
 
 // Tags that should be applied to all resources.
-// 
+//
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
 // Example usage:
 //   tags: union(tags, { 'azd-service-name': <service name in azure.yaml> })
@@ -102,6 +102,14 @@ var settings = concat(
         {
           name: 'NUXT_PUBLIC_GITHUB_TEAM'
           value: githubTeam
+        }
+      ]
+    : [],
+  !empty(githubTeams)
+    ? [
+        {
+          name: 'NUXT_PUBLIC_GITHUB_TEAMS'
+          value: githubTeams
         }
       ]
     : [],
