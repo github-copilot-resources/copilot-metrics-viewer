@@ -80,6 +80,7 @@ import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
 import type { H3Error } from 'h3'
+import { useRoute } from 'vue-router';
 
 //Components
 import MetricsViewer from './MetricsViewer.vue'
@@ -102,7 +103,6 @@ export default defineNuxtComponent({
       const { clear } = useUserSession()
       this.metrics = [];
       this.seats = [];
-      // console.log('metrics are now', this.metrics);
       clear();
     }
   },
@@ -119,10 +119,11 @@ export default defineNuxtComponent({
   async setup() {
     const { loggedIn, user } = useUserSession()
     const config = useRuntimeConfig();
+    const route = useRoute();
     const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
     const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
     const itemName = computed(() => config.public.scope);
-    const githubInfo = getDisplayName(config.public)
+    const githubInfo = getDisplayName({ ...config.public, githubTeam: route.query.team || config.public.githubTeam });
     const displayName = computed(() => githubInfo);
 
     const metricsReady = ref(false);
@@ -149,7 +150,7 @@ export default defineNuxtComponent({
             apiError.value = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
             break;
           case 404:
-            apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:'${config.public.githubOrg || ''} ent:'${config.public.githubEnt || ''}' team:'${config.public.githubTeam}' correct? ${error.message}`;
+            apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:'${config.public.githubOrg || ''} ent:'${config.public.githubEnt || ''}' team:'${route.query.team || config.public.githubTeam}' correct? ${error.message}`;
             break;
           case 500:
             apiError.value = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
@@ -161,8 +162,9 @@ export default defineNuxtComponent({
       }
     }
 
-    const metricsFetch = useFetch('/api/metrics');
-    const seatsFetch = useFetch('/api/seats');
+    const queryString = route.query.team ? `?team=${route.query.team}` : '';
+    const metricsFetch = useFetch(`/api/metrics${queryString}`);
+    const seatsFetch = useFetch(`/api/seats${queryString}`);
 
     const { data: metricsData, error: metricsError } = await metricsFetch;
     if (metricsError.value || !metricsData.value) {
