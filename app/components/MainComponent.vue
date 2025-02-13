@@ -154,10 +154,14 @@ export default defineNuxtComponent({
     const displayName = computed(() => githubInfo);
 
     // Get teams list from runtime config
-    const teams = computed(() => {
-      const envTeams = (config.public.githubTeams || '').split(',').filter(Boolean);
-      return ['All Teams', ...envTeams];
-    });
+    const teamsFetch = useFetch('/api/teams');
+    const teamsRaw = await teamsFetch;
+    // console.log()
+    const teams = ['All Teams', ...(teamsRaw.data.value.data)];
+    // const teams = computed(() => {
+    //   const envTeams = (config.public.githubTeams || '').split(',').sort().filter(Boolean);
+    //   return ['All Teams', ...envTeams];
+    // });
 
     const metricsReady = ref(false);
     const metrics = ref<Metrics[]>([]);
