@@ -28,9 +28,11 @@ export const convertToMetrics = (copilotMetrics: CopilotMetrics[]): Metrics[] =>
       const totalChatCopies = metric.copilot_ide_chat?.editors?.reduce((sum, editor) => 
         sum + editor.models?.reduce((sum, model) => sum + model.total_chat_copy_events, 0), 0) || 0;
 
+      /*
       console.log(`Date: ${metric.date}`);
       console.log(`Total Chat Insertions: ${totalChatInsertions}`);
       console.log(`Total Chat Copies: ${totalChatCopies}`);
+      */
 
       return new Metrics({
         day: metric.date,
