@@ -14,13 +14,13 @@ export default defineEventHandler(async (event) => {
     event.context.org = config.public.githubOrg
     event.context.team = config.public.githubTeam
 
-    if (event.context.team && event.context.org) {
+    if (event.context.ent) {
+        event.context.scope = 'ent' as Scope;
+    }
+    else if (event.context.team && event.context.org) {
         event.context.scope = 'team' as Scope;
     }
     else if (event.context.org) {
         event.context.scope = 'org' as Scope;
-    }
-    else if (event.context.ent) {
-        event.context.scope = 'ent' as Scope;
     }
 })

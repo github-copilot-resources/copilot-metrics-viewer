@@ -1,5 +1,5 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
-import { convertToMetrics } from '@/model/MetricsToUsageConverter';
+import { convertToUsageMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import type FetchError from 'ofetch';
 
@@ -41,10 +41,10 @@ export default defineEventHandler(async (event) => {
         // usage is the new API format
         const usageData = ensureCopilotMetrics(dataJson);
         // metrics is the old API format
-        const metricsData = convertToMetrics(usageData);
+        const metricsData = convertToUsageMetrics(usageData);
 
         logger.info('Using mocked data');
-        return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        return { usage: metricsData, metrics: usageData } as MetricsApiResponse;
     }
 
     if (!event.context.headers.has('Authorization')) {
@@ -62,8 +62,8 @@ export default defineEventHandler(async (event) => {
         // usage is the new API format
         const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
         // metrics is the old API format
-        const metricsData = convertToMetrics(usageData);
-        return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        const metricsData = convertToUsageMetrics(usageData);
+        return { usage: metricsData, metrics: usageData } as MetricsApiResponse;
     } catch (error: FetchError) {
         logger.error('Error fetching metrics data:', error);
         return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });

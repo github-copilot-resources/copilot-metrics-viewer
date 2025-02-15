@@ -1,6 +1,9 @@
+import type { ModelActivityData } from "./ModelActivityData";
+
 export class BreakdownData {
     language: string;
     editor: string;
+    model: string;
     suggestions_count: number;
     acceptances_count: number;
     lines_suggested: number;
@@ -13,6 +16,7 @@ export class BreakdownData {
     constructor(data: any) {
       this.language = data.language;
       this.editor = data.editor;
+      this.model = data.model;
       this.suggestions_count = data.suggestions_count;
       this.acceptances_count = data.acceptances_count;
       this.lines_suggested = data.lines_suggested;
@@ -24,6 +28,10 @@ export class BreakdownData {
     }
   }
   
+  /**
+   * Metrics class represents the metrics data.
+   * Application uses metrics for display purposes but it's the old (simpler) data format
+   */
   export class Metrics {
     total_suggestions_count: number;
     total_acceptances_count: number;
@@ -37,6 +45,7 @@ export class BreakdownData {
     acceptance_rate_by_lines: number;
     day: string;
     breakdown: BreakdownData[];
+    model_activity: ModelActivityData[];
   
     constructor(data: any) {
       this.total_suggestions_count = data.total_suggestions_count;
@@ -51,5 +60,7 @@ export class BreakdownData {
       this.breakdown = data.breakdown.map((item: any) => new BreakdownData(item));
       this.acceptance_rate_by_count = this.total_suggestions_count !== 0 ? (this.total_acceptances_count / this.total_suggestions_count) * 100 : 0;
       this.acceptance_rate_by_lines = this.total_lines_suggested !== 0 ? (this.total_lines_accepted / this.total_lines_suggested) * 100 : 0;
+
+      this.model_activity = data.model_activity;
     }
   }

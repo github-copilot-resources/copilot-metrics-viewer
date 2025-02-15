@@ -13,9 +13,17 @@
                             "total_engaged_users": 2,
                             "total_chat_copy_events": 1,
                             "total_chat_insertion_events": 0
+                        },
+                        {
+                            "name": "gemni",
+                            "total_chats": 14,
+                            "is_custom_model": false,
+                            "total_engaged_users": 4,
+                            "total_chat_copy_events": 8,
+                            "total_chat_insertion_events": 2
                         }
                     ],
-                    "total_engaged_users": 2
+                    "total_engaged_users": 4
                 },
                 {
                     "name": "JetBrains",

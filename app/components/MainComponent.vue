@@ -109,7 +109,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'models', 'seat analysis', 'api response'],
       tab: null
     }
   },
@@ -169,8 +169,8 @@ export default defineNuxtComponent({
       processError(metricsError.value as H3Error);
     } else {
       const apiResponse = metricsData.value as MetricsApiResponse;
-      metrics.value = apiResponse.metrics || [];
-      originalMetrics.value = apiResponse.usage || [];
+      metrics.value = apiResponse.usage || [];
+      originalMetrics.value = apiResponse.metrics || [];
       metricsReady.value = true;
     }
 
