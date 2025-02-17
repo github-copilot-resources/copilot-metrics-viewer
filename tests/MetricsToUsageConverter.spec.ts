@@ -143,12 +143,12 @@ describe('convertToUsageMetrics', () => {
         ];
 
         const result = convertToUsageMetrics(copilotMetrics);
-        expect(omitModelActivity(result)).toEqual(omitModelActivity(expectedMetrics));
+        expect(omitModelActivity(result.usage)).toEqual(omitModelActivity(expectedMetrics));
     });
 
     test('should handle empty input', () => {
         const result = convertToUsageMetrics([]);
-        expect(result).toEqual([]);
+        expect(result.usage).toEqual([]);
     });
 
     test('should handle missing optional fields', () => {
@@ -178,7 +178,7 @@ describe('convertToUsageMetrics', () => {
         ];
 
         const result = convertToUsageMetrics(copilotMetrics);
-        expect(omitModelActivity(result)).toEqual(omitModelActivity(expectedMetrics));
+        expect(omitModelActivity(result.usage)).toEqual(omitModelActivity(expectedMetrics));
     });
 
     test('should aggregate multiple languages in a single model', () => {
@@ -280,7 +280,7 @@ describe('convertToUsageMetrics', () => {
         ];
 
         const result = convertToUsageMetrics(copilotMetrics);
-        expect(omitModelActivity(result)).toEqual(omitModelActivity(expectedMetrics));
+        expect(omitModelActivity(result.usage)).toEqual(omitModelActivity(expectedMetrics));
     });
 
     test('should convert multiple CopilotMetrics objects', () => {
@@ -437,6 +437,6 @@ describe('convertToUsageMetrics', () => {
         ];
 
         const result = convertToUsageMetrics(copilotMetrics);
-        expect(omitModelActivity(result)).toEqual(omitModelActivity(expectedMetrics));
+        expect(omitModelActivity(result.usage)).toEqual(omitModelActivity(expectedMetrics));
     });
 });

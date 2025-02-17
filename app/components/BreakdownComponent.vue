@@ -1,5 +1,33 @@
 <template>
   <div>
+    <!-- Filter Controls -->
+    <v-row>
+      <v-col cols="4">
+        <v-select
+          v-model="selectedLanguage"
+          :items="languages"
+          label="Filter by Language"
+          clearable
+        ></v-select>
+      </v-col>
+      <v-col cols="4">
+        <v-select
+          v-model="selectedModel"
+          :items="models"
+          label="Filter by Model"
+          clearable
+        ></v-select>
+      </v-col>
+      <v-col cols="4">
+        <v-select
+          v-model="selectedEditor"
+          :items="editors"
+          label="Filter by Editor"
+          clearable
+        ></v-select>
+      </v-col>
+    </v-row>
+
     <div class="tiles-container">
       <!-- Acceptance Rate Tile -->  
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
@@ -60,7 +88,7 @@
         <h2>{{ breakdownDisplayNamePlural }} Breakdown </h2>
         <br>
 
-        <v-data-table :headers="headers" :items="breakdownList" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
+        <v-data-table :headers="headers" :items="filteredBreakdownList" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
             <template #item="{item}">
                 <tr>
                     <td>{{ item.name }}</td>
@@ -79,7 +107,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef } from 'vue';
+import { defineComponent, ref, toRef, computed, watch } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Breakdown } from '@/model/Breakdown';
 import { Pie } from 'vue-chartjs'
@@ -125,23 +153,19 @@ export default defineComponent({
       }
   },
   setup(props) {
+    const selectedLanguage = ref<string | null>(null);
+    const selectedModel = ref<string | null>(null);
+    const selectedEditor = ref<string | null>(null);
 
-    // Create a reactive reference to store the breakdowns.
+    const languages = ref<string[]>([]);
+    const models = ref<string[]>([]);
+    const editors = ref<string[]>([]);
+
     const breakdownList = ref<Breakdown[]>([]);
-
-    // Number of breakdowns
     const numberOfBreakdowns = ref(0);
 
-    // Breakdowns Chart Data for breakdowns breakdown Pie Chart
-    const breakdownsChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-
-    //Top 5 by accepted prompts
     const breakdownsChartDataTop5AcceptedPrompts = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-
-    //Acceptance Rate by lines for top 5 by accepted prompts
     const breakdownsChartDataTop5AcceptedPromptsByLines = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-
-    //Acceptance Rate by counts for top 5 by accepted prompts
     const breakdownsChartDataTop5AcceptedPromptsByCounts = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
     const chartOptions = {
@@ -150,25 +174,25 @@ export default defineComponent({
     };
 
     const pieChartColors = ref([
-    '#4B0082', // Indigo
-    '#41B883', // Vue Green
-    '#6495ED', // Cornflower Blue
-    '#87CEFA', // Light Sky Blue
-    '#7CFC00'  // Lawn Green
-]);
+      '#4B0082', // Indigo
+      '#41B883', // Vue Green
+      '#6495ED', // Cornflower Blue
+      '#87CEFA', // Light Sky Blue
+      '#7CFC00'  // Lawn Green
+    ]);
 
     const data = toRef(props, 'metrics').value;
 
-    // Process the breakdown separately
-    data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
-    {
+    data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData=> {
       const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
       let breakdown = breakdownList.value.find(b => b.name === breakdownName);
 
       if (!breakdown) {
-        // Create a new breakdown object if it does not exist
         breakdown = new Breakdown({
           name: breakdownName,
+          language: breakdownData.language,
+          model: breakdownData.model,
+          editor: breakdownData.editor,
           acceptedPrompts: breakdownData.acceptances_count,
           suggestedPrompts: breakdownData.suggestions_count,
           suggestedLinesOfCode: breakdownData.lines_suggested,
@@ -176,60 +200,82 @@ export default defineComponent({
         });
         breakdownList.value.push(breakdown);
       } else {
-        // Update the existing breakdown object
         breakdown.acceptedPrompts += breakdownData.acceptances_count;
         breakdown.suggestedPrompts += breakdownData.suggestions_count;
         breakdown.suggestedLinesOfCode += breakdownData.lines_suggested;
         breakdown.acceptedLinesOfCode += breakdownData.lines_accepted;
       }
-      // Recalculate the acceptance rates
+
       breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
       breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
-
-      // Log each breakdown for debugging
-     // console.log('Breakdown:', breakdown);
     }));
 
-    //Sort breakdowns map by accepted prompts
     breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
 
-    // Get the top 5 breakdowns by accepted prompts
-    const top5BreakdownsAcceptedPrompts = breakdownList.value.slice(0, 5);
-    
-    breakdownsChartDataTop5AcceptedPrompts.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptedPrompts),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
+    const top5BreakdownsAcceptedPrompts = computed(() => breakdownList.value.slice(0, 5));
+
+    const updateCharts = () => {
+      const filteredBreakdowns = filteredBreakdownList.value;
+
+      breakdownsChartDataTop5AcceptedPrompts.value = {
+        labels: filteredBreakdowns.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: filteredBreakdowns.map(breakdown => breakdown.acceptedPrompts),
+            backgroundColor: pieChartColors.value,
+          },
+        ],
+      };
+
+      breakdownsChartDataTop5AcceptedPromptsByLines.value = {
+        labels: filteredBreakdowns.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: filteredBreakdowns.map(breakdown => breakdown.acceptanceRateByLines.toFixed(2)),
+            backgroundColor: pieChartColors.value,
+          },
+        ],
+      };
+
+      breakdownsChartDataTop5AcceptedPromptsByCounts.value = {
+        labels: filteredBreakdowns.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: filteredBreakdowns.map(breakdown => breakdown.acceptanceRateByCount.toFixed(2)),
+            backgroundColor: pieChartColors.value,
+          },
+        ],
+      };
+
+      numberOfBreakdowns.value = filteredBreakdowns.length;
     };
 
-    breakdownsChartDataTop5AcceptedPromptsByLines.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByLines.toFixed(2)),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
+    const filteredBreakdownList = computed(() => {
+      return breakdownList.value.filter(breakdown => {
+        const matchesLanguage = !selectedLanguage.value || breakdown.name.includes(selectedLanguage.value);
+        const matchesModel = !selectedModel.value || breakdown.name.includes(selectedModel.value);
+        const matchesEditor = !selectedEditor.value || breakdown.name.includes(selectedEditor.value);
+        return matchesLanguage && matchesModel && matchesEditor;
+      });
+    });
+
+    watch([selectedLanguage, selectedModel, selectedEditor], updateCharts);
+
+    return {
+      chartOptions,
+      breakdownList,
+      numberOfBreakdowns,
+      breakdownsChartDataTop5AcceptedPrompts,
+      breakdownsChartDataTop5AcceptedPromptsByLines,
+      breakdownsChartDataTop5AcceptedPromptsByCounts,
+      selectedLanguage,
+      selectedModel,
+      selectedEditor,
+      languages,
+      models,
+      editors,
+      filteredBreakdownList
     };
-
-    breakdownsChartDataTop5AcceptedPromptsByCounts.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByCount.toFixed(2)),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
-
-    numberOfBreakdowns.value = breakdownList.value.length;
-
-    return { chartOptions, breakdownList, numberOfBreakdowns, 
-      breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts };
   },
   computed: {
     breakdownDisplayName() {
@@ -250,7 +296,5 @@ export default defineComponent({
       ];
     },
   },
-  
-
 });
 </script>

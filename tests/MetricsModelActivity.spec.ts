@@ -104,6 +104,6 @@ describe('Metrics modelActivity', () => {
         ];
 
         const result = convertToUsageMetrics(copilotMetrics);
-        expect(result[0]?.model_activity).toEqual(expectedModelActivity);
+        expect(result.usage[0]?.model_activity).toEqual(expectedModelActivity);
     });
 });

@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
         const metricsData = convertToUsageMetrics(usageData);
 
         logger.info('Using mocked data');
-        return { usage: metricsData, metrics: usageData } as MetricsApiResponse;
+        return { usage: metricsData.usage, metrics: usageData } as MetricsApiResponse;
     }
 
     if (!event.context.headers.has('Authorization')) {
@@ -63,7 +63,7 @@ export default defineEventHandler(async (event) => {
         const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
         // metrics is the old API format
         const metricsData = convertToUsageMetrics(usageData);
-        return { usage: metricsData, metrics: usageData } as MetricsApiResponse;
+        return { usage: metricsData.usage, metrics: usageData } as MetricsApiResponse;
     } catch (error: FetchError) {
         logger.error('Error fetching metrics data:', error);
         return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
