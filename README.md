@@ -178,6 +178,8 @@ Variables required for GitHub Auth are:
 
 Solution supports HTTP Proxy settings when running in corporate environment. Simple set `HTTP_PROXY` environment variable.
 
+For custom CA use environment variable `CUSTOM_CA_PATH` to load the certificate into proxy agent options.
+
 ## Install Dependencies
 
 ```bash
