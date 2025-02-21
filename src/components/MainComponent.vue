@@ -39,11 +39,11 @@
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :originalMetrics="originalMetrics" :seats="seats" />
             <MultiTeamsMetricsViewer 
               v-if="item === 'multi-teams metrics'" 
               :teams="teams"
             />
+            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :originalMetrics="originalMetrics" :seats="seats" />
           </v-card>
         </v-window-item>
       </v-window>
