@@ -55,13 +55,16 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
         </v-card>
     </div>
     
+    <v-date-picker v-model="dateRange" range></v-date-picker>
+    <br><br>
+
     <div>
         <v-main class="p-1" style="min-height: 300px;">
             <v-container style="min-height: 300px;" class="px-4 elevation-2">
                 <br>
                 <h2>All assigned seats </h2>
                 <br>
-            <v-data-table :headers="headers" :items="totalSeats" :items-per-page="10" class="elevation-2">
+            <v-data-table :headers="headers" :items="filteredSeats" :items-per-page="10" class="elevation-2">
                 <template #item="{ item, index }">
                     <tr>
                         <td>{{ index + 1 }}</td>
@@ -80,7 +83,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, watchEffect } from 'vue';
+  import { defineComponent, ref, watchEffect, computed } from 'vue';
   import type { Seat } from '@/model/Seat';
   import {
     Chart as ChartJS,
@@ -125,6 +128,19 @@ setup(props) {
         let noshowCount = 0;
         let unusedIn7Count = 0;
         let unusedIn30Count = 0;
+
+        const dateRange = ref([null, null]);
+
+        const filteredSeats = computed(() => {
+            if (!dateRange.value[0] || !dateRange.value[1]) {
+                return totalSeats.value;
+            }
+            const [startDate, endDate] = dateRange.value;
+            return totalSeats.value.filter(seat => {
+                const seatDate = new Date(seat.created_at);
+                return seatDate >= new Date(startDate) && seatDate <= new Date(endDate);
+            });
+        });
 
         watchEffect(() => {
             if (props.seats && Array.isArray(props.seats)) {
@@ -173,7 +189,9 @@ setup(props) {
             totalSeats,
             noshowSeats: noshowSeats,
             unusedSeatsInSevenDays: unusedSeatsInSevenDays,
-            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays
+            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays,
+            dateRange,
+            filteredSeats
         }
 },
 data() {

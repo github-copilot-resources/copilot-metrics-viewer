@@ -16,6 +16,9 @@
       </v-card>
     </div>
 
+    <v-date-picker v-model="dateRange" range></v-date-picker>
+    <br><br>
+
     <v-main class="p-1" style="min-height: 300px;">
       <v-container style="min-height: 300px;" class="px-4 elevation-2">
         <v-row>
@@ -159,8 +162,21 @@ export default defineComponent({
 
     const data = toRef(props, 'metrics').value;
 
+    const dateRange = ref([null, null]);
+
+    const filteredMetrics = computed(() => {
+      if (!dateRange.value[0] || !dateRange.value[1]) {
+        return data;
+      }
+      const [startDate, endDate] = dateRange.value;
+      return data.filter(metric => {
+        const metricDate = new Date(metric.day);
+        return metricDate >= new Date(startDate) && metricDate <= new Date(endDate);
+      });
+    });
+
     // Process the breakdown separately
-    data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
+    filteredMetrics.value.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
     {
       const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
       let breakdown = breakdownList.value.find(b => b.name === breakdownName);
@@ -229,7 +245,7 @@ export default defineComponent({
     numberOfBreakdowns.value = breakdownList.value.length;
 
     return { chartOptions, breakdownList, numberOfBreakdowns, 
-      breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts };
+      breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts, dateRange, filteredMetrics };
   },
   computed: {
     breakdownDisplayName() {

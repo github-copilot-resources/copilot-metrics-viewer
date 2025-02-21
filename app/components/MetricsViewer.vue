@@ -1,5 +1,7 @@
 <template>
   <div>
+    <v-date-picker v-model="dateRange" range></v-date-picker>
+    <br><br>
     <div class="tiles-container">      
       <!-- Acceptance Rate Tile -->  
       <!--changed on 2024/11/22 to reorder cards, so the accepance rate by counts are be more focused-->
@@ -80,7 +82,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef } from 'vue';
+import { defineComponent, ref, toRef, computed } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import {
   Chart as ChartJS,
@@ -184,7 +186,20 @@ export default defineComponent({
       },
     };
 
-    const data = toRef(props, 'metrics').value;
+    const dateRange = ref([null, null]);
+
+    const filteredMetrics = computed(() => {
+      if (!dateRange.value[0] || !dateRange.value[1]) {
+        return props.metrics;
+      }
+      const [startDate, endDate] = dateRange.value;
+      return props.metrics.filter(metric => {
+        const metricDate = new Date(metric.day);
+        return metricDate >= new Date(startDate) && metricDate <= new Date(endDate);
+      });
+    });
+
+    const data = filteredMetrics.value;
 
     cumulativeNumberSuggestions.value = 0;
     const cumulativeSuggestionsData = data.map((m: Metrics) => {
@@ -312,7 +327,7 @@ export default defineComponent({
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
       totalActiveUsersChartOptions, acceptanceRateByLinesChartData, acceptanceRateByCountChartData, acceptanceRateAverageByLines, acceptanceRateAverageByCount, cumulativeNumberSuggestions, 
-      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, totalLinesSuggested };
+      cumulativeNumberAcceptances, cumulativeNumberLOCAccepted, totalLinesSuggested, dateRange, filteredMetrics };
   },
   data () {
     return {

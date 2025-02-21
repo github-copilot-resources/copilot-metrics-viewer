@@ -10,9 +10,12 @@
     </transition>
       <br><br>
 
+      <v-date-picker v-model="dateRange" range></v-date-picker>
+      <br><br>
+
       <!-- Displaying the JSON object -->
       <v-card max-height="575px" class="overflow-y-auto">
-          <pre ref="metricsJsonText">{{ JSON.stringify(originalMetrics, null, 2) }}</pre>
+          <pre ref="metricsJsonText">{{ JSON.stringify(filteredMetrics, null, 2) }}</pre>
       </v-card>
       <br>
       
@@ -59,8 +62,21 @@ export default defineComponent({
       showQualityMessage: false,
       isError: false,
       message: '',
-      qualityMessage: ''
+      qualityMessage: '',
+      dateRange: [null, null]
     };
+  },
+  computed: {
+    filteredMetrics() {
+      if (!this.dateRange[0] || !this.dateRange[1]) {
+        return this.originalMetrics;
+      }
+      const [startDate, endDate] = this.dateRange;
+      return this.originalMetrics.filter(metric => {
+        const metricDate = new Date(metric.date);
+        return metricDate >= new Date(startDate) && metricDate <= new Date(endDate);
+      });
+    }
   },
   methods: {
     copyToClipboard(refName: string) {

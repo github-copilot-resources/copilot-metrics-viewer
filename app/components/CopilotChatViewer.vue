@@ -23,6 +23,9 @@
         </v-card>
     </div>
 
+    <v-date-picker v-model="dateRange" range></v-date-picker>
+    <br><br>
+
     <v-main class="p-1" style="min-height: 300px;">
         <v-container style="min-height: 300px;" class="px-4 elevation-2">
 
@@ -37,7 +40,7 @@
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, toRef } from 'vue';
+  import { defineComponent, ref, toRef, computed } from 'vue';
   import type { Metrics } from '@/model/Metrics';
   import { Line, Bar } from 'vue-chartjs'
   import {
@@ -127,20 +130,33 @@ setup(props) {
 
     const data = toRef(props, 'metrics').value;
 
+    const dateRange = ref([null, null]);
+
+    const filteredMetrics = computed(() => {
+      if (!dateRange.value[0] || !dateRange.value[1]) {
+        return data;
+      }
+      const [startDate, endDate] = dateRange.value;
+      return data.filter(metric => {
+        const metricDate = new Date(metric.day);
+        return metricDate >= new Date(startDate) && metricDate <= new Date(endDate);
+      });
+    });
+
     cumulativeNumberTurns.value = 0;
-    const cumulativeNumberTurnsData = data.map((m: Metrics)  => {        
+    const cumulativeNumberTurnsData = filteredMetrics.value.map((m: Metrics)  => {        
         cumulativeNumberTurns.value += m.total_chat_turns;
         return m.total_chat_turns;
     });
 
     cumulativeNumberAcceptances.value = 0;
-    const cumulativeNumberAcceptancesData = data.map((m: Metrics)  => {        
+    const cumulativeNumberAcceptancesData = filteredMetrics.value.map((m: Metrics)  => {        
         cumulativeNumberAcceptances.value += m.total_chat_acceptances;
         return m.total_chat_acceptances;
     });
 
     totalNumberAcceptancesAndTurnsChartData.value = {
-    labels: data.map((m: Metrics)  => m.day),
+    labels: filteredMetrics.value.map((m: Metrics)  => m.day),
         datasets: [
         {
             label: 'Total Acceptances',
@@ -158,17 +174,17 @@ setup(props) {
     };
 
     totalActiveCopilotChatUsersChartData.value = {
-        labels: data.map((m: Metrics) => m.day),
+        labels: filteredMetrics.value.map((m: Metrics) => m.day),
         datasets: [
         {
             label: 'Total Active Copilot Chat Users',
-            data: data.map((m: Metrics) => m.total_active_chat_users),
+            data: filteredMetrics.value.map((m: Metrics) => m.total_active_chat_users),
             backgroundColor: 'rgba(0, 0, 139, 0.2)', // dark blue with 20% opacity
             borderColor: 'rgba(255, 99, 132, 1)'
         }]
     };
     
-    return {  totalActiveCopilotChatUsersChartData, totalActiveChatUsersChartOptions,cumulativeNumberAcceptances, cumulativeNumberTurns, totalNumberAcceptancesAndTurnsChartData, chartOptions};
+    return {  totalActiveCopilotChatUsersChartData, totalActiveChatUsersChartOptions,cumulativeNumberAcceptances, cumulativeNumberTurns, totalNumberAcceptancesAndTurnsChartData, chartOptions, dateRange, filteredMetrics};
 }
 });
 

@@ -49,20 +49,22 @@
       </template>
     </AuthState>
 
+    <v-date-picker v-model="dateRange" range></v-date-picker>
+    <br><br>
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
       <v-window v-show="metricsReady && metrics.length" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
-            <MetricsViewer v-if="item === itemName" :metrics="metrics" />
-            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" />
-            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
-            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-            <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
+            <MetricsViewer v-if="item === itemName" :metrics="filteredMetrics" />
+            <BreakdownComponent v-if="item === 'languages'" :metrics="filteredMetrics" :breakdown-key="'language'" />
+            <BreakdownComponent v-if="item === 'editors'" :metrics="filteredMetrics" :breakdown-key="'editor'" />
+            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="filteredMetrics" />
+            <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="filteredSeats" />
             <ApiResponse
-v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
-              :seats="seats" />
+v-if="item === 'api response'" :metrics="filteredMetrics" :original-metrics="filteredOriginalMetrics"
+              :seats="filteredSeats" />
           </v-card>
         </v-window-item>
         <v-alert
@@ -110,7 +112,8 @@ export default defineNuxtComponent({
   data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
-      tab: null
+      tab: null,
+      dateRange: [null, null]
     }
   },
   created() {
@@ -134,6 +137,41 @@ export default defineNuxtComponent({
     const apiError = ref<string | undefined>(undefined);
     const signInRequired = computed(() => {
       return config.public.usingGithubAuth && !loggedIn.value;
+    });
+
+    const dateRange = ref([null, null]);
+
+    const filteredMetrics = computed(() => {
+      if (!dateRange.value[0] || !dateRange.value[1]) {
+        return metrics.value;
+      }
+      const [startDate, endDate] = dateRange.value;
+      return metrics.value.filter(metric => {
+        const metricDate = new Date(metric.day);
+        return metricDate >= new Date(startDate) && metricDate <= new Date(endDate);
+      });
+    });
+
+    const filteredOriginalMetrics = computed(() => {
+      if (!dateRange.value[0] || !dateRange.value[1]) {
+        return originalMetrics.value;
+      }
+      const [startDate, endDate] = dateRange.value;
+      return originalMetrics.value.filter(metric => {
+        const metricDate = new Date(metric.date);
+        return metricDate >= new Date(startDate) && metricDate <= new Date(endDate);
+      });
+    });
+
+    const filteredSeats = computed(() => {
+      if (!dateRange.value[0] || !dateRange.value[1]) {
+        return seats.value;
+      }
+      const [startDate, endDate] = dateRange.value;
+      return seats.value.filter(seat => {
+        const seatDate = new Date(seat.created_at);
+        return seatDate >= new Date(startDate) && seatDate <= new Date(endDate);
+      });
     });
 
     /**
@@ -199,7 +237,11 @@ export default defineNuxtComponent({
       mockedDataMessage,
       itemName,
       displayName,
-      user
+      user,
+      dateRange,
+      filteredMetrics,
+      filteredOriginalMetrics,
+      filteredSeats
     };
   },
 })
