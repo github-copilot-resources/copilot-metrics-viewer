@@ -39,11 +39,8 @@
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdownKey="'editor'" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <MultiTeamsMetricsViewer 
-              v-if="item === 'multi-teams metrics'" 
-              :teams="teams"
-            />
             <ApiResponse v-if="item === 'api response'" :metrics="metrics" :originalMetrics="originalMetrics" :seats="seats" />
+            <MultiTeamsMetricsViewer v-if="item === 'multi-teams metrics'" :metrics="metrics" :teams="teams" />
           </v-card>
         </v-window-item>
       </v-window>
@@ -113,6 +110,7 @@ export default defineComponent({
   data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
+      tab: null,
       selectedTeams: []
     }
   },
@@ -129,15 +127,6 @@ export default defineComponent({
     const seatsReady = ref(false); 
     const seats = ref<Seat[]>([]); 
     const teams = ref<string[]>([]);
-    const teamMetrics = ref<{ team: string, metrics: Metrics[] }[]>([]);
-    const currentTab = ref(null);
-
-    // Update metrics handler for MultiTeamsMetricsViewer
-    const updateMetrics = (newMetrics: Metrics[]) => {
-      metrics.value = newMetrics;
-      metricsReady.value = true;
-    };
-
     // API Error Message
     const apiError = ref<string | undefined>(undefined);
     const signInRequired = ref(false);
@@ -173,7 +162,6 @@ export default defineComponent({
       getTeamMetricsApi().then(data => {
         metrics.value = data.metrics;
         originalMetrics.value = data.original;
-        teamMetrics.value = data.teamMetrics;
         metricsReady.value = true;  
       }).catch(processError);
     } else {
@@ -191,27 +179,14 @@ export default defineComponent({
       seatsReady.value = true;
     }).catch(processError);
 
-    if (config.showMultipleTeams) {
+    if (config.showMultipleTeams && !config.github.team) {
       getTeams().then(data => {
         teams.value = data;
         console.log("Teams data in getTeams: ", teams.value);
       }).catch(processError);
     }
 
-    return { 
-      metricsReady, 
-      metrics, 
-      originalMetrics, 
-      seatsReady, 
-      seats, 
-      apiError, 
-      signInRequired, 
-      teams, 
-      teamMetrics, 
-      processError,
-      tab: currentTab,
-      updateMetrics
-    };
+    return { metricsReady, metrics, originalMetrics, seatsReady, seats, apiError, signInRequired, teams, processError };
   },
   methods: {
     fetchMetricsForSelectedTeams() {
@@ -219,7 +194,6 @@ export default defineComponent({
         getMultipleTeamsMetricsApi(this.selectedTeams).then(data => {
           this.metrics = data.metrics;
           this.originalMetrics = data.original;
-          this.teamMetrics = data.teamMetrics;
           this.metricsReady = true;
         }).catch(this.processError);
       }

@@ -32,8 +32,8 @@
                 <th class="text-center primary--text" style="width: 10%;">Total Acceptances</th>
                 <th class="text-center primary--text" style="width: 10%;">Lines Suggested</th>
                 <th class="text-center primary--text" style="width: 10%;">Lines Accepted</th>
-                <th class="text-center primary--text" style="width: 10%;">Chat Acceptances</th>
                 <th class="text-center primary--text" style="width: 10%;">Chat Turns</th>
+                <th class="text-center primary--text" style="width: 10%;">Chat Acceptances</th>
                 <th class="text-center primary--text" style="width: 12.5%;">Acceptance Rate (Count)</th>
                 <th class="text-center primary--text" style="width: 12.5%;">Acceptance Rate (Lines)</th>
               </tr>
@@ -45,8 +45,8 @@
                 <td class="text-center">{{ item.total_acceptances_count.toLocaleString() }}</td>
                 <td class="text-center">{{ item.total_lines_suggested.toLocaleString() }}</td>
                 <td class="text-center">{{ item.total_lines_accepted.toLocaleString() }}</td>
-                <td class="text-center">{{ item.total_chat_acceptances.toLocaleString() }}</td>
                 <td class="text-center">{{ item.total_chat_turns.toLocaleString() }}</td>
+                <td class="text-center">{{ item.total_chat_acceptances.toLocaleString() }}</td>
                 <td class="text-center">{{ (item.acceptance_rate_by_count * 100).toFixed(2) }}%</td>
                 <td class="text-center">{{ (item.acceptance_rate_by_lines * 100).toFixed(2) }}%</td>
               </tr>
