@@ -2,6 +2,7 @@ import type FetchError from 'ofetch';
 
 export default defineOAuthGitHubEventHandler({
   config: {
+    scope: process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE ? process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE.split(',') : undefined,
   },
   async onSuccess(event, { user, tokens }) {
     const config = useRuntimeConfig(event);
