@@ -181,7 +181,7 @@ export default defineComponent({
 
     if (config.showMultipleTeams && !config.github.team) {
       getTeams().then(data => {
-        teams.value = data;
+        teams.value = data.map(team => team.name); // Extract just the team names
         console.log("Teams data in getTeams: ", teams.value);
       }).catch(processError);
     }
