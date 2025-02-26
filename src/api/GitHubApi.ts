@@ -12,18 +12,13 @@ const headers = {
 };
 
 export const getMetricsApi = async (): Promise<{ metrics: Metrics[], original: CopilotMetrics[] }> => {
-  try {
-    const response = await axios.get(
-      `${config.github.apiUrl}/copilot/metrics`,
-      { headers }
-    );
-    const originalData = ensureCopilotMetrics(response.data);
-    const metricsData = convertToMetrics(originalData);
-    return { metrics: metricsData, original: originalData };
-  } catch (error) {
-    console.error('Error fetching metrics:', error);
-    throw error;
-  }
+  const response = await axios.get(
+    `${config.github.apiUrl}/copilot/metrics`,
+    { headers }
+  );
+  const originalData = ensureCopilotMetrics(response.data);
+  const metricsData = convertToMetrics(originalData);
+  return { metrics: metricsData, original: originalData };
 };
 
 export const getTeams = async (): Promise<{ name: string; slug: string }[]> => {
