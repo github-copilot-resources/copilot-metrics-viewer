@@ -1,0 +1,246 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2021-09-09/uiFormDefinition.schema.json",
+    "view": {
+        "kind": "Form",
+        "properties": {
+            "title": "Copilot Metrics Viewer deployment",
+            "steps": [
+                {
+                    "name": "basics",
+                    "label": "Basics",
+                    "elements": [
+                        {
+                            "name": "resourceScope",
+                            "type": "Microsoft.Common.ResourceScope",
+                            "location": {
+                                "resourceTypes": [
+                                    "microsoft.resources/resourcegroups"
+                                ]
+                            }
+                        },
+                        {
+                            "name": "basicsDescriptionTextBlock",
+                            "type": "Microsoft.Common.TextBlock",
+                            "options": {
+                                "text": "Copilot Metrics Viewer allows users to view usage metrics for GitHub copilot. The application is deployed without authentication, any user who can access the app can view the metrics.",
+                                "link": {
+                                    "label": "https://aka.ms/missionlz",
+                                    "uri": "https://aka.ms/missionlz"
+                                }
+                            }
+                        },
+                        {
+                            "name": "name",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Name",
+                            "subLabel": "",
+                            "defaultValue": "copilot-metrics",
+                            "toolTip": "",
+                            "constraints": {
+                                "required": false,
+                                "regex": "",
+                                "validationMessage": "",
+                                "validations": []
+                            },
+                            "infoMessages": [],
+                            "visible": true
+                        },
+                        {
+                            "name": "location",
+                            "type": "Microsoft.Common.TextBox",
+                            "label": "Location",
+                            "subLabel": "",
+                            "defaultValue": "[[resourceGroup().location]",
+                            "toolTip": "The Azure Container App Location",
+                            "constraints": {
+                                "required": false,
+                                "regex": "",
+                                "validationMessage": "",
+                                "validations": []
+                            },
+                            "infoMessages": [],
+                            "visible": true
+                        },
+                        {
+                            "name": "ghAppSection",
+                            "label": "GitHub Application details",
+                            "type": "Microsoft.Common.Section",
+                            "elements": [
+                                {
+                                    "name": "infoBoxLocation",
+                                    "type": "Microsoft.Common.InfoBox",
+                                    "options": {
+                                        "text": "Follow documentation to create GitHub App registration https://github.com/github-copilot-resources/copilot-metrics-viewer/blob/main/DEPLOYMENT.md#github-app-registration",
+                                        "style": "Info"
+                                    }
+                                },
+                                {
+                                    "name": "github-client-id",
+                                    "type": "Microsoft.Common.PasswordBox",
+                                    "label": {
+                                        "password": "GitHub App Client Id",
+                                        "confirmPassword": "Confirm client id"
+                                    },
+                                    "defaultValue": "",
+                                    "toolTip": "GitHub Client ID from App Installation",
+                                    "constraints": {
+                                        "required": true,
+                                        "regex": "",
+                                        "validationMessage": "",
+                                        "validations": []
+                                    },
+                                    "options": {
+                                        "hideConfirmation": true
+                                    },
+                                    "visible": true
+                                },
+                                {
+                                    "name": "github-client-secret",
+                                    "type": "Microsoft.Common.PasswordBox",
+                                    "label": {
+                                        "password": "GitHub App Client Secret",
+                                        "confirmPassword": "Confirm client secret"
+                                    },
+                                    "defaultValue": "",
+                                    "toolTip": "GitHub Client Secret (key) from App Registration",
+                                    "constraints": {
+                                        "required": true,
+                                        "regex": "",
+                                        "validationMessage": "",
+                                        "validations": []
+                                    },
+                                    "options": {
+                                        "hideConfirmation": true
+                                    },
+                                    "visible": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "ghSection",
+                            "label": "GitHub Configuration",
+                            "type": "Microsoft.Common.Section",
+                            "elements": [
+                                {
+                                    "name": "scope",
+                                    "type": "Microsoft.Common.DropDown",
+                                    "label": "Select the scope of the application",
+                                    "toolTip": "Organization or Enterprise.",
+                                    "placeholder": "",
+                                    "multiselect": false,
+                                    "selectAll": false,
+                                    "multiLine": false,
+                                    "constraints": {
+                                        "required": true,
+                                        "allowedValues": [
+                                            {
+                                                "value": "org",
+                                                "label": "Organization"
+                                            },
+                                            {
+                                                "value": "ent",
+                                                "label": "Enterprise"
+                                            }
+                                        ]
+                                    }
+                                },
+                                {
+                                    "name": "github-organization",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Github organization slug",
+                                    "subLabel": "",
+                                    "defaultValue": "",
+                                    "toolTip": "GitHub Organization - provide only if application-scope is organization",
+                                    "constraints": {
+                                        "required": "[equals(steps('basics').ghSection.scope, 'org')]"
+                                    },
+                                    "infoMessages": [],
+                                    "visible": "[equals(steps('basics').ghSection.scope, 'org')]"
+                                },
+                                {
+                                    "name": "github-enterprise",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Github enterprise slug",
+                                    "subLabel": "",
+                                    "defaultValue": "",
+                                    "toolTip": "GitHub Enterprise - provide only if application-scope is enterprise",
+                                    "constraints": {
+                                        "required": "[equals(steps('basics').ghSection.scope, 'ent')]"
+                                    },
+                                    "visible": "[equals(steps('basics').ghSection.scope, 'ent')]"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "dockerSection",
+                            "label": "Docker Image",
+                            "type": "Microsoft.Common.Section",
+                            "elements": [
+                                {
+                                    "name": "metrics-viewer-docker-image",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Metrics-viewer-docker-image",
+                                    "subLabel": "",
+                                    "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest",
+                                    "toolTip": "Docker image for metrics viewer - use default or replace with your own",
+                                    "constraints": {
+                                        "required": false,
+                                        "validations": []
+                                    },
+                                    "infoMessages": [],
+                                    "visible": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "networkSection",
+                            "label": "Networking",
+                            "type": "Microsoft.Common.Section",
+                            "elements": [
+                                {
+                                    "name": "infoBoxLocation",
+                                    "type": "Microsoft.Common.InfoBox",
+                                    "options": {
+                                        "text": "Without a subnet the application is going to be publicly available",
+                                        "style": "Warning"
+                                    }
+                                },
+                                {
+                                    "name": "subnetId",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Subnet Id",
+                                    "subLabel": "",
+                                    "defaultValue": "",
+                                    "toolTip": "Subnet ID (at least /23) for the managed environment when deploying app without public access",
+                                    "constraints": {
+                                        "required": false,
+                                        "regex": "",
+                                        "validationMessage": "",
+                                        "validations": []
+                                    },
+                                    "infoMessages": [],
+                                    "visible": true
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "outputs": {
+            "kind": "ResourceGroup",
+            "location": "[steps('basics').resourceScope.location.name]",
+            "resourceGroupId": "[steps('basics').resourceScope.resourceGroup.id]",
+            "parameters": {
+                "name": "[steps('basics').name]",
+                "location": "[steps('basics').location]",
+                "github-client-id": "[steps('basics').ghAppSection.github-client-id]",
+                "github-client-secret": "[steps('basics').ghAppSection.github-client-secret]",
+                "github-organization": "[steps('basics').ghSection.github-organization]",
+                "github-enterprise": "[steps('basics').ghSection.github-enterprise]",
+                "metrics-viewer-docker-image": "[steps('basics').dockerSection.metrics-viewer-docker-image]",
+                "subnetId": "[steps('basics').networkSection.subnetId]"
+            }
+        }
+    }
+}

@@ -17,10 +17,10 @@ export default defineConfig({
     screenshot: 'on',
   },
   webServer: {
-    command: '/api/docker-entrypoint.api/entrypoint.sh',
+    command: 'node /app/server/index.mjs',
     url: 'http://127.0.0.1:3000',
+    cwd: '/app',
     reuseExistingServer: false,
-    cwd: '/api',
     stderr: 'pipe',
     stdout: 'pipe'
   },

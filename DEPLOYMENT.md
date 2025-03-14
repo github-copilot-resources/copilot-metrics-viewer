@@ -4,9 +4,18 @@ There are a few ways to deploy the Copilot Metrics Viewer, depending on the type
 
 The app runs in a Docker container, so it can be deployed anywhere containers are hosted (AWS, GCP, Azure, Kubernetes, etc.).
 
-## Authentication to GitHub
+## Deployment options
+
+Review available [Nuxt Deployment Options](https://nuxt.com/deploy).
+
+>[!WARNING]
+> Copilot Metrics Viewer requires a backend, hence it cannot be deployed as a purely static web app.
+
+## Authentication with GitHub
 
 The Metrics Viewer can be integrated with GitHub application authentication, which authenticates the user and verifies their permissions to view the metrics. This option is recommended since it doesn't use Personal Access Tokens. The downside of using a GitHub application is that it can only authorize users to view metrics at the organization level (no support for Enterprise).
+
+For Enterprise level authentication review [Github OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps).
 
 With a Personal Access Token, user credentials are not verified, and the application simply renders Copilot metrics fetched using the PAT stored in the backend.
 
@@ -27,7 +36,7 @@ The simplest way to deploy is to use the "one-click" option that creates resourc
 
 ![Azure ARM Deployment](./azure-deploy/arm-deployment.png)
 
-Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy`.
+Application will use a pre-built docker image hosted in GitHub registry: `ghcr.io/github-copilot-resources/copilot-metrics-viewer`.
 
 **Prerequisites:** Contributor permission to a resource group in Azure and a subscription with the `Microsoft.App` resource provider enabled.
 
@@ -36,22 +45,18 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
 
 1. **Option 1 - Using a Personal Access Token in the Backend**:
 
-    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-token%2Fazuredeploy.json)
+    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-token%2Fazuredeploy.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-token%2Fportal.json)
 
 2. **Option 2 - Using GitHub App Registration and GitHub Authentication**:
 
     When using this method, [register your app in Github first](#github-app-registration).
 
-    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fazuredeploy.json)
+    [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fazuredeploy.json/uiFormDefinitionUri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fwith-app-registration%2Fportal.json)
 
-    **Important**: After deploying Option 2, the redirect URI needs to be updated with the URL of the deployed container app.
-
-    Go to: `https://github.com/organizations/<your-org>/settings/apps/<your-app>` or in the UI to the settings of the registered application and add the following redirect URLs:
-
-    ```
-    http://<YOUR Container APP URL>.azurecontainerapps.io/callback
-    https://<YOUR Container APP URL>.azurecontainerapps.io/callback
-    ```
+>[!IMPORTANT]
+>**Important**: After deploying Option 2, the redirect URI needs to be updated with the URL of the deployed container app.
+>
+>Go to: `https://github.com/organizations/<your-org>/settings/apps/<your-app>` or in the UI to the settings of the registered application and add the following redirect URL: `https://<your-container-app-name-and-region>.azurecontainerapps.io/auth/github`
 
 ### Deployment with private networking
 
@@ -86,18 +91,7 @@ The deployment creates:
 
 ![AZD Deployment](./azure-deploy/azd-deployment.png)
 
-Before running `azd up`, configure GitHub variables:
-
-```bash
-azd env set VUE_APP_SCOPE <organization/enterprise>
-# when using organization
-azd env set VUE_APP_GITHUB_ORG <org name>
-# when using enterprise
-azd env set VUE_APP_GITHUB_ENT <ent name>
-azd env set VUE_APP_GITHUB_API /api/github
-azd env set GITHUB_CLIENT_ID <client id>
-azd env set GITHUB_CLIENT_SECRET <client secret for the GH App>
-```
+Run `azd up` and follow the prompts.
 
 ## Scenario 3: Deploying the container
 
@@ -107,37 +101,35 @@ For GitHub App:
 
 ```bash
 docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=organization \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ORG=<org name> \
--e GITHUB_CLIENT_ID=<client id> \
--e GITHUB_CLIENT_SECRET=<client secret for the GH App> \
--e SESSION_SECRET=<random string>  \
-ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
+-e NUXT_PUBLIC_SCOPE=organization \
+-e NUXT_PUBLIC_GITHUB_ORG=<org name> \
+-e NUXT_PUBLIC_USING_GITHUB_AUTH=true \
+-e NUXT_OAUTH_GITHUB_CLIENT_ID=<client id> \
+-e NUXT_OAUTH_GITHUB_CLIENT_SECRET=<client secret for the GH App> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>  \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
 or with PAT token and enterprise:
 
 ```bash
 docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=enterprise \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ENT=<enterprise name> \
--e VUE_APP_GITHUB_TOKEN=<github PAT> \
--e SESSION_SECRET=<random string>  \
-ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
+-e NUXT_PUBLIC_SCOPE=enterprise \
+-e NUXT_PUBLIC_GITHUB_ENT=<enterprise name> \
+-e NUXT_GITHUB_TOKEN=<github PAT> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>  \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
 or with PAT token and organization:
 
 ```bash
 docker run -it --rm -p 3000:3000 \
--e VUE_APP_SCOPE=organization \
--e VUE_APP_GITHUB_API=/api/github  \
--e VUE_APP_GITHUB_ORG=<org name> \
--e VUE_APP_GITHUB_TOKEN=<github PAT> \
--e SESSION_SECRET=<random string>   \
-ghcr.io/github-copilot-resources/copilot-metrics-viewer-with-proxy
+-e NUXT_PUBLIC_SCOPE=organization \
+-e NUXT_PUBLIC_GITHUB_ORG=<org name> \
+-e NUXT_GITHUB_TOKEN=<github PAT> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>   \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
 ## Github App Registration
@@ -158,7 +150,7 @@ or navigate using UI:
 
 1. Set a unique name.
 2. Provide a home page URL: your company URL or just `http://localhost`.
-3. Add a callback URL for `http://localhost:3000/callback`. (We'll add the real redirect URL after the application is deployed.)
+3. Add a callback URL for `http://localhost:3000/auth/github`. (We'll add the real redirect URL after the application is deployed.)
 4. Uncheck the "Webhook -> Active" checkbox.
 5. Set the scopes:
    - Select **Organization permissions**.
