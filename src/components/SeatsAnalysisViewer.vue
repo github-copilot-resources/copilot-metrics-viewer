@@ -53,8 +53,6 @@
                 </div>
             </v-card-item>
         </v-card>
-
-        <!-- New card for 60 days inactive users -->
         <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
             style="width: 330px; height: 175px;" @click="selectCategory('noActivity60Days')">
             <v-card-item class="d-flex justify-center align-center">
@@ -68,6 +66,40 @@
                 </div>
             </v-card-item>
         </v-card>
+
+        <!-- comment the new card for 15 days and 10 days as it is not must now.-->
+        <!-- New card for 15 days inactive users -->
+         <!--
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('noActivity15Days')">
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">No Activity in the Last 15 days </div>
+                    <div class="text-caption">
+                        No use in the last 15 days
+                    </div>
+                    <p class="text-h4">{{ unusedSeatsInFifteenDays }}</p>
+                </div>
+            </v-card-item>
+        </v-card>
+        -->
+        <!-- New card for 10 days inactive users -->
+        <!--
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('noActivity10Days')">
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">No Activity in the Last 10 days </div>
+                    <div class="text-caption">
+                        No use in the last 10 days
+                    </div>
+                    <p class="text-h4">{{ unusedSeatsInTenDays }}</p>
+                </div>
+            </v-card-item>
+        </v-card>
+        -->
     </div>
 
     <div>
@@ -151,11 +183,15 @@ export default defineComponent({
         const unusedSeatsInSevenDays = ref<number>(0);
         const unusedSeatsInThirtyDays = ref<number>(0);
         const unusedSeatsInSixtyDays = ref<number>(0); // Add new ref
+        const unusedSeatsInTenDays = ref<number>(0); // Add new ref
+        const unusedSeatsInFifteenDays = ref<number>(0); // Add new ref
 
         let noshowCount = 0;
         let unusedIn7Count = 0;
         let unusedIn30Count = 0;
         let unusedIn60Count = 0; // Add new counter
+        let unusedIn10Count = 0; // Add new counter
+        let unusedIn15Count = 0; // Add new counter
 
         watchEffect(() => {
             if (props.seats && Array.isArray(props.seats)) {
@@ -164,9 +200,13 @@ export default defineComponent({
                 const oneWeekAgo = new Date();
                 const thirtyDaysAgo = new Date();
                 const sixtyDaysAgo = new Date(); // Add new date
+                const tenDaysAgo = new Date(); // Add new date
+                const fifteenDaysAgo = new Date(); // Add new date
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60); // Add new date calculation
+                tenDaysAgo.setDate(tenDaysAgo.getDate() - 10); // Add new date calculation
+                fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15); // Add new date calculation
 
                 props.seats.forEach(seat => {
                     if (seat.last_activity_at === null) {
@@ -181,6 +221,12 @@ export default defineComponent({
                         }
                         if (lastActivityDate < sixtyDaysAgo) { // Add new condition
                             unusedIn60Count++;
+                        }
+                        if (lastActivityDate < tenDaysAgo) { // Add new condition
+                            unusedIn10Count++;
+                        }
+                        if (lastActivityDate < fifteenDaysAgo) { // Add new condition
+                            unusedIn15Count++;
                         }
                     }
                 });
@@ -205,13 +251,17 @@ export default defineComponent({
         unusedSeatsInSevenDays.value = unusedIn7Count;
         unusedSeatsInThirtyDays.value = unusedIn30Count;
         unusedSeatsInSixtyDays.value = unusedIn60Count; // Add new value assignment
+        unusedSeatsInTenDays.value = unusedIn10Count; // Add new value assignment
+        unusedSeatsInFifteenDays.value = unusedIn15Count; // Add new value assignment
 
         return {
             totalSeats,
             noshowSeats: noshowSeats,
             unusedSeatsInSevenDays: unusedSeatsInSevenDays,
             unusedSeatsInThirtyDays: unusedSeatsInThirtyDays,
-            unusedSeatsInSixtyDays: unusedSeatsInSixtyDays // Add to return object
+            unusedSeatsInSixtyDays: unusedSeatsInSixtyDays,
+            unusedSeatsInTenDays: unusedSeatsInTenDays,
+            unusedSeatsInFifteenDays // Add to return object
         }
     },
     computed: {
@@ -222,6 +272,11 @@ export default defineComponent({
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
             const sixtyDaysAgo = new Date();
             sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+            const tenDaysAgo = new Date();
+            tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+            const fifteenDaysAgo = new Date();
+            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
             switch (this.selectedCategory) { // Generated by Copilot: Filter seats based on selected category
                 case 'assignedButNeverUsed':
                     return this.totalSeats.filter(seat => seat.last_activity_at === null);
@@ -231,6 +286,10 @@ export default defineComponent({
                     return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < thirtyDaysAgo);
                 case 'noActivity60Days':
                     return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < sixtyDaysAgo);
+                case 'noActivity10Days':
+                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < tenDaysAgo);
+                case 'noActivity15Days':
+                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < fifteenDaysAgo);
                 default:
                     return this.totalSeats;
             }
