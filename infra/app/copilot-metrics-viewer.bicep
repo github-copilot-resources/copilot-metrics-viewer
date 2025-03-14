@@ -10,6 +10,8 @@ param exists bool
 @secure()
 param appDefinition object
 
+param port int = 3000
+
 var appSettingsArray = filter(array(appDefinition.settings), i => i.name != '')
 var secrets = map(filter(appSettingsArray, i => i.?secret != null), i => {
   name: i.name
@@ -71,7 +73,7 @@ resource app 'Microsoft.App/containerApps@2023-05-02-preview' = {
     configuration: {
       ingress:  {
         external: true
-        targetPort: 3000
+        targetPort: port
         transport: 'auto'
       }
       registries: [
@@ -98,8 +100,8 @@ resource app 'Microsoft.App/containerApps@2023-05-02-preview' = {
               value: applicationInsights.properties.ConnectionString
             }
             {
-              name: 'PORT'
-              value: '3000'
+              name: 'NITRO_PORT'
+              value: '${port}'
             }
           ],
           env,
