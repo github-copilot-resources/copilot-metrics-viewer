@@ -63,7 +63,8 @@
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
-          </v-card>
+            <MultiTeamsMetricsViewer v-if="item === 'multi-teams metrics'" :metrics="metrics" :teams="teams" />
+            </v-card>
         </v-window-item>
         <v-alert
 v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
@@ -87,6 +88,7 @@ import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue'
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
+import MultiTeamsMetricsViewer from './MultiTeamsMetricsViewer.vue'
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -95,7 +97,8 @@ export default defineNuxtComponent({
     BreakdownComponent,
     CopilotChatViewer,
     SeatsAnalysisViewer,
-    ApiResponse
+    ApiResponse,
+    MultiTeamsMetricsViewer
   },
   methods: {
     logout() {
@@ -115,6 +118,9 @@ export default defineNuxtComponent({
   },
   created() {
     this.tabItems.unshift(this.itemName);
+    if (config.showMultipleTeams) {
+      this.tabItems.push('multi-teams metrics');
+    }
   },
   async setup() {
     const { loggedIn, user } = useUserSession()
@@ -130,6 +136,8 @@ export default defineNuxtComponent({
     const originalMetrics = ref<CopilotMetrics[]>([]);
     const seatsReady = ref(false);
     const seats = ref<Seat[]>([]);
+    const teams = ref<string[]>([]);
+
     // API Error Message
     const apiError = ref<string | undefined>(undefined);
     const signInRequired = computed(() => {
@@ -178,6 +186,13 @@ export default defineNuxtComponent({
       apiError.value = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
     }
 
+    if (config.showMultipleTeams && !config.github.team) {
+      getTeams().then(data => {
+        teams.value = data.map(team => team.name); // Extract just the team names
+        console.log("Teams data in getTeams: ", teams.value);
+      }).catch(processError);
+    }
+
     const { data: seatsData, error: seatsError } = await seatsFetch;
     if (seatsError.value) {
       processError(seatsError.value as H3Error);
@@ -199,7 +214,8 @@ export default defineNuxtComponent({
       mockedDataMessage,
       itemName,
       displayName,
-      user
+      user,
+      teams
     };
   },
 })
