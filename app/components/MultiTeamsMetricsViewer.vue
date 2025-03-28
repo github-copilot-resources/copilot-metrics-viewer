@@ -2,7 +2,7 @@
   <div>
     <v-card>
       <v-toolbar color="indigo" elevation="4">
-        <v-toolbar-title>Multi-Teams Metrics Viewer</v-toolbar-title>
+        <v-toolbar-title>{{ organization }} Teams Metrics</v-toolbar-title>
       </v-toolbar>
       <v-container>
         <!-- Teams Selection -->
@@ -10,8 +10,8 @@
           <v-col cols="12">
             <v-select
               v-model="selectedTeams"
-              :items="teams"
-              label="Select Teams from All"
+              :items="allTeams"
+              label="Select Teams"
               multiple
               chips
               clearable
@@ -23,70 +23,70 @@
         </v-row>
 
         <!-- Teams Summary Table -->
-        <v-simple-table class="elevation-1 mb-6" fixed-header height="auto">
-          <template v-slot:default>
-            <thead>
-              <tr>
-                <th class="text-left primary--text" style="width: 15%;">Team</th>
-                <th class="text-center primary--text" style="width: 10%;">Total Suggestions</th>
-                <th class="text-center primary--text" style="width: 10%;">Total Acceptances</th>
-                <th class="text-center primary--text" style="width: 10%;">Lines Suggested</th>
-                <th class="text-center primary--text" style="width: 10%;">Lines Accepted</th>
-                <th class="text-center primary--text" style="width: 10%;">Chat Turns</th>
-                <th class="text-center primary--text" style="width: 10%;">Chat Acceptances</th>
-                <th class="text-center primary--text" style="width: 12.5%;">Acceptance Rate (Count)</th>
-                <th class="text-center primary--text" style="width: 12.5%;">Acceptance Rate (Lines)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in displayedTeamsSummary" :key="item.team">
-                <td class="text-left font-weight-medium">{{ item.team }}</td>
-                <td class="text-center">{{ item.total_suggestions_count.toLocaleString() }}</td>
-                <td class="text-center">{{ item.total_acceptances_count.toLocaleString() }}</td>
-                <td class="text-center">{{ item.total_lines_suggested.toLocaleString() }}</td>
-                <td class="text-center">{{ item.total_lines_accepted.toLocaleString() }}</td>
-                <td class="text-center">{{ item.total_chat_turns.toLocaleString() }}</td>
-                <td class="text-center">{{ item.total_chat_acceptances.toLocaleString() }}</td>
-                <td class="text-center">{{ (item.acceptance_rate_by_count * 100).toFixed(2) }}%</td>
-                <td class="text-center">{{ (item.acceptance_rate_by_lines * 100).toFixed(2) }}%</td>
-              </tr>
-              <tr v-if="displayedTeamsSummary.length === 0">
-                <td colspan="9" class="text-center py-4">No data available</td>
-              </tr>
-            </tbody>
-          </template>
-        </v-simple-table>
+        <v-row v-if="metricsReady">
+          <v-col cols="12">
+            <v-simple-table class="elevation-1 mb-6" fixed-header height="auto">
+              <template v-slot:default>
+                <thead>
+                  <tr>
+                    <th class="text-left primary--text" style="width: 15%;">Team</th>
+                    <th class="text-center primary--text" style="width: 10%;">Total Suggestions</th>
+                    <th class="text-center primary--text" style="width: 10%;">Total Acceptances</th>
+                    <th class="text-center primary--text" style="width: 10%;">Lines Suggested</th>
+                    <th class="text-center primary--text" style="width: 10%;">Lines Accepted</th>
+                    <th class="text-center primary--text" style="width: 10%;">Chat Turns</th>
+                    <th class="text-center primary--text" style="width: 10%;">Chat Acceptances</th>
+                    <th class="text-center primary--text" style="width: 12.5%;">Acceptance Rate (Count)</th>
+                    <th class="text-center primary--text" style="width: 12.5%;">Acceptance Rate (Lines)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="item in displayedTeamsSummary" :key="item.team">
+                    <td class="text-left font-weight-medium">{{ item.team }}</td>
+                    <td class="text-center">{{ item.total_suggestions_count.toLocaleString() }}</td>
+                    <td class="text-center">{{ item.total_acceptances_count.toLocaleString() }}</td>
+                    <td class="text-center">{{ item.total_lines_suggested.toLocaleString() }}</td>
+                    <td class="text-center">{{ item.total_lines_accepted.toLocaleString() }}</td>
+                    <td class="text-center">{{ item.total_chat_turns.toLocaleString() }}</td>
+                    <td class="text-center">{{ item.total_chat_acceptances.toLocaleString() }}</td>
+                    <td class="text-center">{{ (item.acceptance_rate_by_count * 100).toFixed(2) }}%</td>
+                    <td class="text-center">{{ (item.acceptance_rate_by_lines * 100).toFixed(2) }}%</td>
+                  </tr>
+                  <tr v-if="displayedTeamsSummary.length === 0">
+                    <td colspan="9" class="text-center py-4">No data available</td>
+                  </tr>
+                </tbody>
+              </template>
+            </v-simple-table>
+          </v-col>
+        </v-row>
+
+        <!-- Loading State -->
+        <v-row v-else>
+          <v-col cols="12" class="text-center">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          </v-col>
+        </v-row>
 
         <!-- Metrics Viewer -->
         <v-row>
           <v-col cols="12">
             <div v-if="metricsReady" class="metrics-container">
-              <div class="metrics-title">Detailed Metrics for {{ selectedTeamsLabel }}</div>
-              <div class="mb-4">
-                <v-chip
-                  v-if="metrics && metrics.length > 0"
-                  color="primary"
-                  small
-                >
-                Days+Teams combination of data: {{ metrics.length }} 
-                </v-chip>
+              <div class="metrics-title">
+                Detailed Metrics for {{ selectedTeams.length ? selectedTeams.join(', ') : 'All Teams' }}
               </div>
               <MetricsViewer 
-                v-if="metrics && metrics.length > 0"
-                :key="`metrics-${selectedTeams.length ? selectedTeams.join('-') : 'all'}`"
+                v-if="metrics.length"
                 :metrics="metrics"
               />
               <v-alert
                 v-else
                 type="info"
                 text
-                class="mt-4"
               >
-                No metrics data available for {{ selectedTeams.length ? 'selected teams' : 'any team' }}.
-                {{ selectedTeams.length ? 'Try selecting different teams.' : 'Please select some teams to view their metrics.' }}
+                No metrics data available for the selected teams.
               </v-alert>
             </div>
-            <v-progress-linear v-else indeterminate color="indigo"></v-progress-linear>
           </v-col>
         </v-row>
       </v-container>
@@ -94,156 +94,147 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, watch, computed, onMounted } from 'vue';
-import { getMultipleTeamsMetricsApi } from '../api/GitHubApi';
-import { Metrics } from '../model/Metrics';
+<script setup lang="ts">
+import { ref, watch, computed, onMounted } from 'vue';
+import type { Metrics } from '../model/Metrics';
 import MetricsViewer from './MetricsViewer.vue';
 
-interface TeamSummary {
-  team: string;
-  total_suggestions_count: number;
-  total_acceptances_count: number;
-  total_lines_suggested: number;
-  total_lines_accepted: number;
-  total_chat_acceptances: number;
-  total_chat_turns: number;
-  acceptance_rate_by_count: number;
-  acceptance_rate_by_lines: number;
-}
+const props = defineProps<{
+  teams: string[],
+  organization: string
+}>();
 
-export default defineComponent({
-  name: 'MultiTeamsMetricsViewer',
-  components: {
-    MetricsViewer
-  },
-  props: {
-    teams: {
-      type: Array as () => string[],
-      required: true
+const selectedTeams = ref<string[]>([]);
+const metrics = ref<Metrics[]>([]);
+const metricsReady = ref(false);
+const teamMetrics = ref<{ team: string, metrics: Metrics[] }[]>([]);
+const allTeams = ref<string[]>([]);
+const loadingTeams = ref(false);
+const error = ref<string | null>(null);
+
+// Fetch all teams from the organization if no teams are provided
+const fetchAllTeams = async () => {
+  try {
+    loadingTeams.value = true;
+    error.value = null;
+    const response = await $fetch('/api/teams');
+    if (Array.isArray(response)) {
+      allTeams.value = response.map((team: any) => team.name);
+      console.log("All teams fetched:", allTeams.value);
+      if (allTeams.value.length > 0) {
+        await handleTeamsChange();
+      }
     }
-  },
-  setup(props) {
-    const selectedTeams = ref<string[]>([]);
-    const metrics = ref<Metrics[]>([]);
-    const metricsReady = ref(false);
-    const teamMetrics = ref<{ team: string, metrics: Metrics[] }[]>([]);
+  } catch (err) {
+    console.error('Error fetching teams:', err);
+    error.value = 'Failed to fetch teams. Please try again later.';
+  } finally {
+    loadingTeams.value = false;
+  }
+};
 
-    // Handle team selection changes
-    const handleTeamsChange = async () => {
-      try {
-        metricsReady.value = false;
-        // Always fetch metrics for selected teams or all teams if none selected
-        const teamsToFetch = selectedTeams.value.length > 0 ? selectedTeams.value : props.teams;
-        
-        const data = await getMultipleTeamsMetricsApi(teamsToFetch);
-        if (data && data.teamMetrics.length > 0) {
-          // Store all fetched team metrics
-          teamMetrics.value = data.teamMetrics;
-          
-          // Update displayed metrics based on selection
-          if (selectedTeams.value.length > 0) {
-            const selectedMetrics = data.teamMetrics
-              .filter(tm => selectedTeams.value.includes(tm.team))
-              .flatMap(tm => tm.metrics);
-            metrics.value = selectedMetrics;
-          } else {
-            metrics.value = data.metrics;
-          }
-        } else {
-          metrics.value = [];
-          teamMetrics.value = [];
-        }
-      } catch (error) {
-        console.error('Error fetching team metrics:', error);
-        metrics.value = [];
-        teamMetrics.value = [];
-      } finally {
-        metricsReady.value = true;
-      }
-    };
-
-    // Initial fetch when component mounts
-    onMounted(() => {
-      if (props.teams.length > 0) {
-        handleTeamsChange();
-      }
-    });
-
-    // Watch for teams prop changes
-    watch(() => props.teams, (newTeams) => {
-      if (newTeams.length > 0) {
-        selectedTeams.value = []; // Reset selection when teams list changes
-        handleTeamsChange();
-      }
-    });
-
-    // Watch for team selection changes
-    watch(selectedTeams, () => {
-      handleTeamsChange();
-    });
-
-    // Calculate team summaries for display
-    const calculateTeamSummaries = (teamsData: { team: string, metrics: Metrics[] }[]): TeamSummary[] => {
-      return teamsData.map(tm => {
-        const summary = tm.metrics.reduce((acc, metric) => {
-          acc.total_suggestions_count += metric.total_suggestions_count;
-          acc.total_acceptances_count += metric.total_acceptances_count;
-          acc.total_lines_suggested += metric.total_lines_suggested;
-          acc.total_lines_accepted += metric.total_lines_accepted;
-          acc.total_chat_acceptances += metric.total_chat_acceptances;
-          acc.total_chat_turns += metric.total_chat_turns;
-          return acc;
-        }, {
-          team: tm.team,
-          total_suggestions_count: 0,
-          total_acceptances_count: 0,
-          total_lines_suggested: 0,
-          total_lines_accepted: 0,
-          total_chat_acceptances: 0,
-          total_chat_turns: 0,
-          acceptance_rate_by_count: 0,
-          acceptance_rate_by_lines: 0
-        } as TeamSummary);
-        
-        // Calculate rates only if we have data
-        summary.acceptance_rate_by_count = summary.total_suggestions_count > 0 
-          ? summary.total_acceptances_count / summary.total_suggestions_count 
-          : 0;
-        summary.acceptance_rate_by_lines = summary.total_lines_suggested > 0 
-          ? summary.total_lines_accepted / summary.total_lines_suggested 
-          : 0;
-        
-        return summary;
-      });
-    };
-
-    // Computed property for displayed team summaries
-    const displayedTeamsSummary = computed(() => {
-      if (!teamMetrics.value.length) return [];
-      
-      const teamsToDisplay = selectedTeams.value.length > 0
-        ? teamMetrics.value.filter(tm => selectedTeams.value.includes(tm.team))
-        : teamMetrics.value;
-      
-      return calculateTeamSummaries(teamsToDisplay);
-    });
-
-    const selectedTeamsLabel = computed(() => 
-      selectedTeams.value.length === 0 ? 'All Teams' : selectedTeams.value.join(', ')
-    );
-
-    return { 
-      selectedTeams, 
-      metrics, 
-      metricsReady, 
-      displayedTeamsSummary,
-      handleTeamsChange,
-      selectedTeamsLabel
-    };
+onMounted(async () => {
+  if (!props.teams || props.teams.length === 0) {
+    await fetchAllTeams();
+  } else {
+    allTeams.value = props.teams;
+    await handleTeamsChange();
   }
 });
 
+// Handle team selection changes
+const handleTeamsChange = async () => {
+  try {
+    metricsReady.value = false;
+    error.value = null;
+    const teamsToFetch = selectedTeams.value.length > 0 ? selectedTeams.value : allTeams.value;
+    
+    if (!teamsToFetch || teamsToFetch.length === 0) {
+      error.value = 'No teams available to fetch metrics';
+      return;
+    }
+
+    console.log('Fetching metrics for teams:', teamsToFetch);
+    const response = await $fetch('/api/teams-metrics', {
+      method: 'POST',
+      body: {
+        teams: teamsToFetch
+      }
+    });
+
+    if (response?.teamMetrics?.length > 0) {
+      teamMetrics.value = response.teamMetrics;
+      
+      if (selectedTeams.value.length > 0) {
+        const selectedMetrics = response.teamMetrics
+          .filter(tm => selectedTeams.value.includes(tm.team))
+          .flatMap(tm => tm.metrics);
+        metrics.value = selectedMetrics;
+      } else {
+        metrics.value = response.metrics;
+      }
+    } else {
+      metrics.value = [];
+      teamMetrics.value = [];
+      error.value = 'No metrics data available for the selected teams';
+    }
+  } catch (err) {
+    console.error('Error fetching team metrics:', err);
+    metrics.value = [];
+    teamMetrics.value = [];
+    error.value = 'Failed to fetch team metrics. Please try again later.';
+  } finally {
+    metricsReady.value = true;
+  }
+};
+
+// Watch for teams prop changes
+watch(() => props.teams, (newTeams) => {
+  if (newTeams.length > 0) {
+    selectedTeams.value = []; // Reset selection when teams list changes
+    handleTeamsChange();
+  }
+}, { immediate: true });
+
+// Calculate team summaries
+const displayedTeamsSummary = computed(() => {
+  if (!teamMetrics.value.length) return [];
+  
+  const teamsToDisplay = selectedTeams.value.length > 0
+    ? teamMetrics.value.filter(tm => selectedTeams.value.includes(tm.team))
+    : teamMetrics.value;
+  
+  return teamsToDisplay.map(tm => {
+    const summary = tm.metrics.reduce((acc, metric) => {
+      acc.total_suggestions_count += metric.total_suggestions_count;
+      acc.total_acceptances_count += metric.total_acceptances_count;
+      acc.total_lines_suggested += metric.total_lines_suggested;
+      acc.total_lines_accepted += metric.total_lines_accepted;
+      acc.total_chat_acceptances += metric.total_chat_acceptances;
+      acc.total_chat_turns += metric.total_chat_turns;
+      return acc;
+    }, {
+      team: tm.team,
+      total_suggestions_count: 0,
+      total_acceptances_count: 0,
+      total_lines_suggested: 0,
+      total_lines_accepted: 0,
+      total_chat_acceptances: 0,
+      total_chat_turns: 0,
+      acceptance_rate_by_count: 0,
+      acceptance_rate_by_lines: 0
+    });
+    
+    summary.acceptance_rate_by_count = summary.total_suggestions_count > 0 
+      ? summary.total_acceptances_count / summary.total_suggestions_count 
+      : 0;
+    summary.acceptance_rate_by_lines = summary.total_lines_suggested > 0 
+      ? summary.total_lines_accepted / summary.total_lines_suggested 
+      : 0;
+    
+    return summary;
+  });
+});
 </script>
 
 <style scoped>
