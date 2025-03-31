@@ -137,15 +137,19 @@ async function loadTeamsData() {
 
 // Helper function to get display name based on scope
 function getDisplayName(config: any): string {
+
+  console.log('Config received in getDisplayName:', config);
+  console.log('Scope value:', config.scope);
+
   switch (config.scope) {
     case 'team':
-      return `Team ${config.githubTeam} Metrics`;
-    case 'org':
-      return `Organization ${config.githubOrg} Metrics`;
-    case 'ent':
-      return `Enterprise ${config.githubEnt} Metrics`;
+      return `Copilot Metrics Viewer | Team： ${config.githubTeam}`;
+    case 'organization':
+      return `Copilot Metrics Viewer | Organization： ${config.githubOrg} `;
+    case 'enterprise':
+      return `Copilot Metrics Viewer | Enterprise： ${config.githubEnt} `;
     default:
-      return 'Copilot Metrics';
+      return 'Copilot Metrics Viewer';
   }
 }
 
@@ -166,8 +170,10 @@ const { loggedIn, user } = useUserSession()
 const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
 const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
 const itemName = computed(() => 'metrics'); // 默认显示 metrics 内容
-const githubInfo = getDisplayName(config.public)
-const displayName = computed(() => githubInfo);
+//const githubInfo = getDisplayName(config.public)
+//const displayName = computed(() => githubInfo);
+
+const displayName = computed(() => getDisplayName(config.public));
 
 const metricsReady = ref(false);
 const metrics = ref<Metrics[]>([]);
