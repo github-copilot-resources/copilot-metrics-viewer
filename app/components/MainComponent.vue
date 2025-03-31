@@ -180,7 +180,9 @@ const itemName = computed(() => 'metrics'); // 默认显示 metrics 内容
 //const githubInfo = getDisplayName(config.public)
 //const displayName = computed(() => githubInfo);
 
+
 const displayName = computed(() => getDisplayName(config.public));
+
 
 const metricsReady = ref(false);
 const metrics = ref<Metrics[]>([]);

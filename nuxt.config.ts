@@ -65,8 +65,7 @@ export default defineNuxtConfig({
     github: {
       enabled: true,
       clientId: '',
-      clientSecret: '',
-      scope: ''
+      clientSecret: ''
     }
   },
   nitro: {
@@ -84,7 +83,7 @@ export default defineNuxtConfig({
     oauth: {
       github: {
         clientId: '',
-        clientSecret: '',
+        clientSecret: ''
       }
     },
     public: {
