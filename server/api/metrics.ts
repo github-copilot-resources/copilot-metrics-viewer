@@ -1,8 +1,9 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
+import { ensureCopilotMetrics } from '@/model/Copilot_Metrics'; // Import the ensureCopilotMetrics function from model
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import type FetchError from 'ofetch';
-import { getTeamSlugByName } from './teams'; // 导入 getTeamSlugByName 函数
+import { getTeamSlugByName } from './teams'; // Import getTeamSlugByName function
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
@@ -68,28 +69,12 @@ export default defineEventHandler(async (event) => {
         }) as unknown[];
 
         // usage is the new API format
-        const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
+        const usageData = ensureCopilotMetrics(response as any[]);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
         return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
-    } catch (error: FetchError) {
+    } catch (error: any) {
         logger.error('Error fetching metrics data:', error);
         return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
     }
 })
-
-function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
-    return data.map(item => {
-        if (!item.copilot_ide_code_completions) {
-            item.copilot_ide_code_completions = { editors: [], total_engaged_users: 0, languages: [] };
-        }
-        item.copilot_ide_code_completions.editors?.forEach((editor) => {
-            editor.models?.forEach((model) => {
-                if (!model.languages) {
-                    model.languages = [];
-                }
-            });
-        });
-        return item as CopilotMetrics;
-    });
-};
