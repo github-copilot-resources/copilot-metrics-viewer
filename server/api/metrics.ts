@@ -2,6 +2,7 @@ import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import type FetchError from 'ofetch';
+import { getTeamSlugByName } from './teams'; // 导入 getTeamSlugByName 函数
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
@@ -17,7 +18,14 @@ export default defineEventHandler(async (event) => {
 
     switch (event.context.scope) {
         case 'team':
-            apiUrl = `https://api.github.com/orgs/${event.context.org}/team/${event.context.team}/copilot/metrics`;
+
+            // get team slug by name, then use it to get the metrics
+            const teamSlug = await getTeamSlugByName(event, event.context.team, event.context.org);
+            if (!teamSlug) {
+                logger.error(`Team slug not found for team: ${event.context.team}`);
+                return new Response(`Team slug not found for team: ${event.context.team}`, { status: 404 });
+            }
+            apiUrl = `https://api.github.com/orgs/${event.context.org}/team/${teamSlug}/copilot/metrics`;
             // no team test data available, using org data
             // '../../app/mock-data/organization_metrics_response_sample.json'
             mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
