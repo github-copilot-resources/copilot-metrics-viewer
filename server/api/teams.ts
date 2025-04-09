@@ -1,3 +1,5 @@
+import { defineEventHandler, getQuery } from 'h3';
+import { useRuntimeConfig } from '#imports';
 
 /**
  * Fetches a list of teams for a given organization.
@@ -16,6 +18,21 @@
  * @throws Will throw an error if the GitHub API response is invalid or if there is
  *         an issue during the fetch process.
  */
+export default defineEventHandler(async (event) => {
+    try {
+        // Extract organization from query parameters
+        const query = getQuery(event);
+        const organization = query.organization as string;
+        
+        // Pass organization to getTeams function
+        const teams = await getTeams(event, organization);
+        return teams;
+    } catch (error) {
+        console.error('Error in teams.get handler:', error);
+        throw error;
+    }
+});
+
 export const getTeams = async (event: any, organizationParam?: string): Promise<{ name: string; slug: string }[]> => {
     const config = useRuntimeConfig(event);
     
@@ -52,7 +69,6 @@ export const getTeams = async (event: any, organizationParam?: string): Promise<
         throw error;
     }
 };
-
 
 
 /**
