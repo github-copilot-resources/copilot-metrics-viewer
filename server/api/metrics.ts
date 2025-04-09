@@ -69,7 +69,8 @@ export default defineEventHandler(async (event) => {
         }) as unknown[];
 
         // usage is the new API format
-        const usageData = ensureCopilotMetrics(response as any[]);
+        // Define a proper type for the response to maintain type safety
+        const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
         return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
