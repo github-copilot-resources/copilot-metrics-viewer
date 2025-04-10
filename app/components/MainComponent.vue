@@ -93,8 +93,9 @@ import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 
-const router = useRouter();
-const route = useRoute();
+// /* const router = useRouter();
+// const route = useRoute(); */
+
 const config = useRuntimeConfig();
 
 // Tab management
