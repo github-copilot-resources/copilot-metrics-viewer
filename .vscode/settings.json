@@ -1,0 +1,3 @@
+{
+    "github.copilot.nextEditSuggestions.enabled": true
+}
