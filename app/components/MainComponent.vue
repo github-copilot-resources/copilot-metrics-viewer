@@ -148,12 +148,10 @@ async function loadTeamsData() {
 // Helper function to get display name based on scope
 function getDisplayName(config: any): string {
 
-  console.log('Config received in getDisplayName:', config);
-  console.log('Scope value:', config.scope);
-
   switch (config.scope) {
     case 'team':
-      return `Copilot Metrics Viewer | Team： ${config.githubTeam}`;
+      return `Copilot Metrics Viewer | Organization： ${config.githubOrg} | Team： ${config.githubTeam}`;
+      //return `Copilot Metrics Viewer | Team： ${config.githubTeam}`;
     case 'organization':
       if(config.githubTeam) {
         return `Copilot Metrics Viewer | Organization： ${config.githubOrg} | Team： ${config.githubTeam}`;
@@ -287,11 +285,22 @@ function logout() {
 </script>
 
 <style scoped>
-.toolbar-title {
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
+/* Ensure the toolbar container adapts to content width */
+.v-toolbar {
+  flex-wrap: wrap; /* Allow wrapping of child elements */
+  max-width: 100%; /* Prevent overflow beyond the screen width */
+}
 
+/* Adjust toolbar-title to ensure full visibility without truncation */
+.toolbar-title {
+  color: #4CAF50; /* Highlight text with green color */
+  font-weight: bold; /* Make the text bold */
+  font-size: 1.2rem; /* Slightly increase font size */
+  white-space: nowrap; /* Prevent text wrapping */
+  overflow: visible; /* Ensure text is fully visible */
+  text-overflow: clip; /* Disable ellipsis */
+  flex: 1 1 auto; /* Allow the title to take up available space */
+  min-width: 0; /* Prevent overflow issues */
 }
 
 .error-message {
