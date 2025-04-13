@@ -79,7 +79,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef } from 'vue';
+import { defineComponent, ref, toRef, watch } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Breakdown } from '@/model/Breakdown';
 import { Pie } from 'vue-chartjs'
@@ -125,7 +125,6 @@ export default defineComponent({
       }
   },
   setup(props) {
-
     // Create a reactive reference to store the breakdowns.
     const breakdownList = ref<Breakdown[]>([]);
 
@@ -157,76 +156,86 @@ export default defineComponent({
     '#7CFC00'  // Lawn Green
 ]);
 
-    const data = toRef(props, 'metrics').value;
+    // 使用 watch 监听 props.metrics 的变化
+    watch(() => props.metrics, (newMetrics) => {
+      console.log('BreakdownComponent received new metrics data:', newMetrics.length);
+      // 强制创建一个新的引用，确保数据变化被检测到
+      const metricsCopy = [...newMetrics];
+      processBreakdownData(metricsCopy);
+    }, { immediate: true, deep: true });
 
-    // Process the breakdown separately
-    data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
-    {
-      const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
-      let breakdown = breakdownList.value.find(b => b.name === breakdownName);
+    // 将数据处理逻辑封装到单独的函数中
+    function processBreakdownData(data: Metrics[]) {
+      // 清空现有数据
+      breakdownList.value = [];
 
-      if (!breakdown) {
-        // Create a new breakdown object if it does not exist
-        breakdown = new Breakdown({
-          name: breakdownName,
-          acceptedPrompts: breakdownData.acceptances_count,
-          suggestedPrompts: breakdownData.suggestions_count,
-          suggestedLinesOfCode: breakdownData.lines_suggested,
-          acceptedLinesOfCode: breakdownData.lines_accepted,
-        });
-        breakdownList.value.push(breakdown);
-      } else {
-        // Update the existing breakdown object
-        breakdown.acceptedPrompts += breakdownData.acceptances_count;
-        breakdown.suggestedPrompts += breakdownData.suggestions_count;
-        breakdown.suggestedLinesOfCode += breakdownData.lines_suggested;
-        breakdown.acceptedLinesOfCode += breakdownData.lines_accepted;
-      }
-      // Recalculate the acceptance rates
-      breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
-      breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
+      // 处理分解数据
+      data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => {
+        const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
+        let breakdown = breakdownList.value.find(b => b.name === breakdownName);
 
-      // Log each breakdown for debugging
-     // console.log('Breakdown:', breakdown);
-    }));
+        if (!breakdown) {
+          // 如果不存在则创建新的分解对象
+          breakdown = new Breakdown({
+            name: breakdownName,
+            acceptedPrompts: breakdownData.acceptances_count,
+            suggestedPrompts: breakdownData.suggestions_count,
+            suggestedLinesOfCode: breakdownData.lines_suggested,
+            acceptedLinesOfCode: breakdownData.lines_accepted,
+          });
+          breakdownList.value.push(breakdown);
+        } else {
+          // 更新现有分解对象
+          breakdown.acceptedPrompts += breakdownData.acceptances_count;
+          breakdown.suggestedPrompts += breakdownData.suggestions_count;
+          breakdown.suggestedLinesOfCode += breakdownData.lines_suggested;
+          breakdown.acceptedLinesOfCode += breakdownData.lines_accepted;
+        }
+        // 重新计算接受率
+        breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
+        breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
+      }));
 
-    //Sort breakdowns map by accepted prompts
-    breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
+      // 按接受的提示数量对分解列表进行排序
+      breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
 
-    // Get the top 5 breakdowns by accepted prompts
-    const top5BreakdownsAcceptedPrompts = breakdownList.value.slice(0, 5);
-    
-    breakdownsChartDataTop5AcceptedPrompts.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptedPrompts),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
+      // 获取接受的提示数量排名前 5 的分解
+      const top5BreakdownsAcceptedPrompts = breakdownList.value.slice(0, 5);
+      numberOfBreakdowns.value = breakdownList.value.length;
 
-    breakdownsChartDataTop5AcceptedPromptsByLines.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByLines.toFixed(2)),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
+      // 更新图表数据
+      breakdownsChartDataTop5AcceptedPrompts.value = {
+        labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptedPrompts),
+            backgroundColor: pieChartColors.value,
+          }
+        ]
+      };
 
-    breakdownsChartDataTop5AcceptedPromptsByCounts.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByCount.toFixed(2)),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
+      // 更新前 5 个分解的接受率 (按代码行)
+      breakdownsChartDataTop5AcceptedPromptsByLines.value = {
+        labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByLines),
+            backgroundColor: pieChartColors.value,
+          }
+        ]
+      };
 
-    numberOfBreakdowns.value = breakdownList.value.length;
+      // 更新前 5 个分解的接受率 (按计数)
+      breakdownsChartDataTop5AcceptedPromptsByCounts.value = {
+        labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByCount),
+            backgroundColor: pieChartColors.value,
+          }
+        ]
+      };
+    }
 
     return { chartOptions, breakdownList, numberOfBreakdowns, 
       breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts };

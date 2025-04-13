@@ -7,6 +7,15 @@ _NOTE: For information on support and assistance, click [here](https://github.co
 
 This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28).
 
+## Recent Updates
+
+### April 2025 - Date Filter Enhancement
+- Added a date range filter on specific tabs (metrics, languages, editors, copilot chat)
+- Implemented date picker with both preset options and custom date selection
+- Date selection automatically formats to YYYY-MM-DD for consistent filtering
+- Filter results are applied smoothly without page refresh
+- Filter can be easily cleared to view all available data
+
 ## Video
 
 https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/bc7e2a16-cc73-43c4-887a-b50809c08533

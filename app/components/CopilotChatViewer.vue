@@ -37,7 +37,7 @@
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, toRef } from 'vue';
+  import { defineComponent, ref, toRef, watch } from 'vue';
   import type { Metrics } from '@/model/Metrics';
   import { Line, Bar } from 'vue-chartjs'
   import {
@@ -125,49 +125,65 @@ setup(props) {
     //Total Number Acceptances And Turns
     const totalNumberAcceptancesAndTurnsChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
-    const data = toRef(props, 'metrics').value;
+    // 使用 watch 监听 props.metrics 的变化
+    watch(() => props.metrics, (newMetrics) => {
+        console.log('CopilotChatViewer received new metrics data:', newMetrics.length);
+        // 强制创建一个新的引用，确保数据变化被检测到
+        const metricsCopy = [...newMetrics];
+        processChatData(metricsCopy);
+    }, { immediate: true, deep: true });
 
-    cumulativeNumberTurns.value = 0;
-    const cumulativeNumberTurnsData = data.map((m: Metrics)  => {        
-        cumulativeNumberTurns.value += m.total_chat_turns;
-        return m.total_chat_turns;
-    });
+    // 将数据处理逻辑封装到单独的函数中
+    function processChatData(data: Metrics[]) {
+        // 重置累积值
+        cumulativeNumberTurns.value = 0;
+        cumulativeNumberAcceptances.value = 0;
 
-    cumulativeNumberAcceptances.value = 0;
-    const cumulativeNumberAcceptancesData = data.map((m: Metrics)  => {        
-        cumulativeNumberAcceptances.value += m.total_chat_acceptances;
-        return m.total_chat_acceptances;
-    });
+        // 处理回合数据
+        const cumulativeNumberTurnsData = data.map((m: Metrics) => {        
+            cumulativeNumberTurns.value += m.total_chat_turns;
+            return m.total_chat_turns;
+        });
 
-    totalNumberAcceptancesAndTurnsChartData.value = {
-    labels: data.map((m: Metrics)  => m.day),
-        datasets: [
-        {
-            label: 'Total Acceptances',
-            data: cumulativeNumberAcceptancesData,
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)'
+        // 处理接受数据
+        const cumulativeNumberAcceptancesData = data.map((m: Metrics) => {        
+            cumulativeNumberAcceptances.value += m.total_chat_acceptances;
+            return m.total_chat_acceptances;
+        });
 
-        },
-        {
-            label: 'Total Turns',
-            data: cumulativeNumberTurnsData,
-            backgroundColor: 'rgba(153, 102, 255, 0.2)',
-            borderColor: 'rgba(153, 102, 255, 1)'
-        }]
-    };
+        // 更新总接受数和回合数图表数据
+        totalNumberAcceptancesAndTurnsChartData.value = {
+            labels: data.map((m: Metrics) => m.day),
+            datasets: [
+            {
+                label: 'Total Acceptances',
+                data: cumulativeNumberAcceptancesData,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)'
+            },
+            {
+                label: 'Total Turns',
+                data: cumulativeNumberTurnsData,
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                borderColor: 'rgba(153, 102, 255, 1)'
+            }
+            ]
+        };
 
-    totalActiveCopilotChatUsersChartData.value = {
-        labels: data.map((m: Metrics) => m.day),
-        datasets: [
-        {
-            label: 'Total Active Copilot Chat Users',
-            data: data.map((m: Metrics) => m.total_active_chat_users),
-            backgroundColor: 'rgba(0, 0, 139, 0.2)', // dark blue with 20% opacity
-            borderColor: 'rgba(255, 99, 132, 1)'
-        }]
-    };
-    
+        // 更新活跃 Copilot 聊天用户图表数据
+        totalActiveCopilotChatUsersChartData.value = {
+            labels: data.map((m: Metrics) => m.day),
+            datasets: [
+            {
+                label: 'Total Active Copilot Chat Users',
+                data: data.map((m: Metrics) => m.total_active_chat_users),
+                backgroundColor: 'rgba(0, 0, 139, 0.2)', // dark blue with 20% opacity
+                borderColor: 'rgba(255, 99, 132, 1)'
+            }
+            ]
+        };
+    }
+
     return {  totalActiveCopilotChatUsersChartData, totalActiveChatUsersChartOptions,cumulativeNumberAcceptances, cumulativeNumberTurns, totalNumberAcceptancesAndTurnsChartData, chartOptions};
 }
 });
