@@ -1,7 +1,9 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
+import { ensureCopilotMetrics } from '@/model/Copilot_Metrics'; // Import the ensureCopilotMetrics function from model
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import type FetchError from 'ofetch';
+import { getTeamSlugByName } from './teams'; // Import getTeamSlugByName function
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
@@ -17,7 +19,14 @@ export default defineEventHandler(async (event) => {
 
     switch (event.context.scope) {
         case 'team':
-            apiUrl = `https://api.github.com/orgs/${event.context.org}/team/${event.context.team}/copilot/metrics`;
+
+            // get team slug by name, then use it to get the metrics
+            const teamSlug = await getTeamSlugByName(event, event.context.team, event.context.org);
+            if (!teamSlug) {
+                logger.error(`Team slug not found for team: ${event.context.team}`);
+                return new Response(`Team slug not found for team: ${event.context.team}`, { status: 404 });
+            }
+            apiUrl = `https://api.github.com/orgs/${event.context.org}/team/${teamSlug}/copilot/metrics`;
             // no team test data available, using org data
             // '../../app/mock-data/organization_metrics_response_sample.json'
             mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
@@ -60,28 +69,13 @@ export default defineEventHandler(async (event) => {
         }) as unknown[];
 
         // usage is the new API format
+        // Define a proper type for the response to maintain type safety
         const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
         return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
-    } catch (error: FetchError) {
+    } catch (error: any) {
         logger.error('Error fetching metrics data:', error);
         return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
     }
 })
-
-function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
-    return data.map(item => {
-        if (!item.copilot_ide_code_completions) {
-            item.copilot_ide_code_completions = { editors: [], total_engaged_users: 0, languages: [] };
-        }
-        item.copilot_ide_code_completions.editors?.forEach((editor) => {
-            editor.models?.forEach((model) => {
-                if (!model.languages) {
-                    model.languages = [];
-                }
-            });
-        });
-        return item as CopilotMetrics;
-    });
-};

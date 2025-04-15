@@ -11,7 +11,9 @@ export default {
         {
             name: 'org',
             path: '/orgs/:org',
-            component: () => import('~/pages/index.vue')
+            component: () => import('~/pages/index.vue'),
+            // Add alternative path for organization
+            alias: '/organization/:org'
         },
         {
             name: 'team',
@@ -21,7 +23,9 @@ export default {
         {
             name: 'ent',
             path: '/enterprises/:ent',
-            component: () => import('~/pages/index.vue')
+            component: () => import('~/pages/index.vue'),
+            // Add alternative path for enterprise
+            alias: '/enterprise/:ent'
         }
     ],
 } satisfies RouterConfig

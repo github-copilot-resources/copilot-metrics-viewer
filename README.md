@@ -136,6 +136,14 @@ The `NUXT_PUBLIC_GITHUB_TEAM` environment variable filters metrics for a specifi
 NUXT_PUBLIC_GITHUB_TEAM=
 ````
 
+#### NUXT_PUBLIC_SHOW_MULTIPLE_TEAMS
+
+The `NUXT_PUBLIC_SHOW_MULTIPLE_TEAMS` environment variable is a boolean parameter that controls whether the application should support multiple teams. The default value is `true`. When it is set to `true` and `NUXT_PUBLIC_GITHUB_TEAM` is not set, the application will call the GitHub API to get the teams for the current organization or enterprise.
+
+````
+NUXT_PUBLIC_SHOW_MULTIPLE_TEAMS=true
+````
+
 #### NUXT_PUBLIC_IS_DATA_MOCKED
 
 Variable is false by default. To view mocked data switch it to true or use query parameter `?mock=true`.
