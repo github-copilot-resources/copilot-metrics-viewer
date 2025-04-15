@@ -136,7 +136,7 @@ setup(props) {
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
                 props.seats.forEach(seat => {
-                    if (seat.last_activity_at === null) {
+                    if(!Boolean(seat.last_activity_at)) {
                         noshowCount++;
                     } else {
                         const lastActivityDate = new Date(seat.last_activity_at);
