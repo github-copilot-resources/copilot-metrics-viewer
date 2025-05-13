@@ -1,8 +1,7 @@
 <template>
     <div class="tiles-container">
-        <v-card
-elevation="4" color="white" variant="elevated" class="mx-auto my-4"
-            style="width: 330px; height: 175px;">
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('totalAssigned')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -15,9 +14,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-4"
             </v-card-item>
         </v-card>
 
-        <v-card
-elevation="4" color="white" variant="elevated" class="mx-auto my-3"
-            style="width: 300px; height: 175px;">
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+            style="width: 300px; height: 175px;" @click="selectCategory('assignedButNeverUsed')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -29,7 +27,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 </div>
             </v-card-item>
         </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('noActivity7Days')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -41,7 +40,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 </div>
             </v-card-item>
         </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('noActivity30Days')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -53,6 +53,53 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 </div>
             </v-card-item>
         </v-card>
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('noActivity60Days')">
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">No Activity in the Last 60 days </div>
+                    <div class="text-caption">
+                        No use in the last 60 days
+                    </div>
+                    <p class="text-h4">{{ unusedSeatsInSixtyDays }}</p>
+                </div>
+            </v-card-item>
+        </v-card>
+
+        <!-- comment the new card for 15 days and 10 days as it is not must now.-->
+        <!-- New card for 15 days inactive users -->
+         <!--
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('noActivity15Days')">
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">No Activity in the Last 15 days </div>
+                    <div class="text-caption">
+                        No use in the last 15 days
+                    </div>
+                    <p class="text-h4">{{ unusedSeatsInFifteenDays }}</p>
+                </div>
+            </v-card-item>
+        </v-card>
+        -->
+        <!-- New card for 10 days inactive users -->
+        <!--
+        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
+            style="width: 330px; height: 175px;" @click="selectCategory('noActivity10Days')">
+            <v-card-item class="d-flex justify-center align-center">
+                <div class="tiles-text">
+                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                    <div class="text-h6 mb-1">No Activity in the Last 10 days </div>
+                    <div class="text-caption">
+                        No use in the last 10 days
+                    </div>
+                    <p class="text-h4">{{ unusedSeatsInTenDays }}</p>
+                </div>
+            </v-card-item>
+        </v-card>
+        -->
     </div>
     
     <div>
@@ -61,18 +108,18 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 <br>
                 <h2>All assigned seats </h2>
                 <br>
-            <v-data-table :headers="headers" :items="totalSeats" :items-per-page="10" class="elevation-2">
-                <template #item="{ item, index }">
-                    <tr>
-                        <td>{{ index + 1 }}</td>
-                        <td>{{ item.login }}</td>
-                        <td>{{ item.id }}</td>
-                        <td>{{ item.team }}</td>
-                        <td>{{ item.created_at }}</td>
-                        <td>{{ item.last_activity_at }}</td>
-                        <td>{{ item.last_activity_editor }}</td>
-                    </tr>
-                </template>
+                <v-data-table :headers="headers" :items="filteredSeats" :items-per-page="10" class="elevation-2">
+                    <template v-slot:item="{ item, index }">
+                        <tr>
+                            <td>{{ index + 1 }}</td>
+                            <td>{{ item.login }}</td>
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.team }}</td>
+                            <td>{{ item.created_at }}</td>
+                            <td>{{ item.last_activity_at }}</td>
+                            <td>{{ item.last_activity_editor }}</td>
+                        </tr>
+                    </template>
                 </v-data-table>
             </v-container>
         </v-main>
@@ -116,15 +163,35 @@ props: {
             default: () => []  
         }
     },
-setup(props) {
-    const totalSeats = ref<Seat[]>([]);
+    data() {
+        return {
+            headers: [
+                { title: 'S.No', key: 'serialNumber' },
+                { title: 'Login', key: 'login' },
+                { title: 'GitHub ID', key: 'id' },
+                { title: 'Assigning team', key: 'team' },
+                { title: 'Assigned time', key: 'created_at' },
+                { title: 'Last Activity At', key: 'last_activity_at' },
+                { title: 'Last Activity Editor', key: 'last_activity_editor' },
+            ],
+            selectedCategory: 'totalAssigned' // Generated by Copilot: Add state to track selected category
+        };
+    },
+    setup(props) {
+        let totalSeats = ref<Seat[]>([]);
         const noshowSeats = ref<number>(0);
         const unusedSeatsInSevenDays = ref<number>(0);
         const unusedSeatsInThirtyDays = ref<number>(0);
+        const unusedSeatsInSixtyDays = ref<number>(0); // Add new ref
+        const unusedSeatsInTenDays = ref<number>(0); // Add new ref
+        const unusedSeatsInFifteenDays = ref<number>(0); // Add new ref
 
         let noshowCount = 0;
         let unusedIn7Count = 0;
         let unusedIn30Count = 0;
+        let unusedIn60Count = 0; // Add new counter
+        let unusedIn10Count = 0; // Add new counter
+        let unusedIn15Count = 0; // Add new counter
 
         watchEffect(() => {
             if (props.seats && Array.isArray(props.seats)) {
@@ -132,8 +199,14 @@ setup(props) {
 
                 const oneWeekAgo = new Date();
                 const thirtyDaysAgo = new Date();
+                const sixtyDaysAgo = new Date(); // Add new date
+                const tenDaysAgo = new Date(); // Add new date
+                const fifteenDaysAgo = new Date(); // Add new date
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60); // Add new date calculation
+                tenDaysAgo.setDate(tenDaysAgo.getDate() - 10); // Add new date calculation
+                fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15); // Add new date calculation
 
                 props.seats.forEach(seat => {
                     if(!Boolean(seat.last_activity_at)) {
@@ -145,6 +218,15 @@ setup(props) {
                         }
                         if (lastActivityDate < thirtyDaysAgo) {
                             unusedIn30Count++;
+                        }
+                        if (lastActivityDate < sixtyDaysAgo) { // Add new condition
+                            unusedIn60Count++;
+                        }
+                        if (lastActivityDate < tenDaysAgo) { // Add new condition
+                            unusedIn10Count++;
+                        }
+                        if (lastActivityDate < fifteenDaysAgo) { // Add new condition
+                            unusedIn15Count++;
                         }
                     }
                 });
@@ -168,27 +250,128 @@ setup(props) {
         noshowSeats.value = noshowCount;
         unusedSeatsInSevenDays.value = unusedIn7Count;
         unusedSeatsInThirtyDays.value = unusedIn30Count;
+        unusedSeatsInSixtyDays.value = unusedIn60Count; // Add new value assignment
+        unusedSeatsInTenDays.value = unusedIn10Count; // Add new value assignment
+        unusedSeatsInFifteenDays.value = unusedIn15Count; // Add new value assignment
 
         return {
             totalSeats,
             noshowSeats: noshowSeats,
             unusedSeatsInSevenDays: unusedSeatsInSevenDays,
-            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays
+            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays,
+            unusedSeatsInSixtyDays: unusedSeatsInSixtyDays,
+            unusedSeatsInTenDays: unusedSeatsInTenDays,
+            unusedSeatsInFifteenDays // Add to return object
         }
-},
-data() {
-    return {
-        headers: [
-            { title: 'S.No', key: 'serialNumber'},
-            { title: 'Login', key: 'login' },
-            { title: 'GitHub ID', key: 'id' },
-            { title: 'Assigning team', key: 'team' },
-            { title: 'Assigned time', key: 'created_at' },
-            { title: 'Last Activity At', key: 'last_activity_at' },
-            { title: 'Last Activity Editor', key: 'last_activity_editor' },
-        ],
-    };
-}   
-  
+    },
+    computed: {
+        filteredSeats() {
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const sixtyDaysAgo = new Date();
+            sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+            const tenDaysAgo = new Date();
+            tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+            const fifteenDaysAgo = new Date();
+            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+
+            switch (this.selectedCategory) { // Generated by Copilot: Filter seats based on selected category
+                case 'assignedButNeverUsed':
+                    return this.totalSeats.filter(seat => seat.last_activity_at === null);
+                case 'noActivity7Days':
+                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < oneWeekAgo);
+                case 'noActivity30Days':
+                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < thirtyDaysAgo);
+                case 'noActivity60Days':
+                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < sixtyDaysAgo);
+                case 'noActivity10Days':
+                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < tenDaysAgo);
+                case 'noActivity15Days':
+                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < fifteenDaysAgo);
+                default:
+                    return this.totalSeats;
+            }
+        }
+    },
+    methods: {
+        selectCategory(category: string) { // Generated by Copilot: Method to update selected category
+            this.selectedCategory = category;
+        }
+    }
 });
 </script>
+
+<style scoped>
+.v-toolbar-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.v-simple-table {
+    margin: 0 16px 20px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    width: calc(100% - 32px);
+}
+
+/* Table header styles */
+:deep(.v-simple-table > .v-table__wrapper > table > thead > tr > th) {
+    background: linear-gradient(to bottom, #f5f7ff, #e8eaf6);
+    color: #1a237e;
+    font-weight: 600;
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    border-bottom: 2px solid #1a237e;
+    white-space: nowrap;
+}
+
+/* Table body styles */
+:deep(.v-simple-table > .v-table__wrapper > table > tbody > tr > td) {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #e8eaf6;
+}
+
+/* Zebra striping */
+:deep(.v-simple-table > .v-table__wrapper > table > tbody > tr:nth-child(even)) {
+    background-color: #fafafa;
+}
+
+/* Hover effect */
+:deep(.v-simple-table > .v-table__wrapper > table > tbody > tr:hover) {
+    background-color: rgba(26, 35, 126, 0.04);
+}
+
+/* Metrics container styles */
+.metrics-container {
+    padding: 16px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.metrics-title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #1a237e;
+    margin-bottom: 16px;
+    padding-left: 8px;
+    border-left: 4px solid #1a237e;
+}
+
+/* Select field styles */
+:deep(.v-select) {
+    margin-bottom: 16px;
+}
+
+:deep(.v-select__slot) {
+    border-color: #1a237e;
+}
+
+:deep(.v-select__selection) {
+    color: #1a237e;
+}
+</style>

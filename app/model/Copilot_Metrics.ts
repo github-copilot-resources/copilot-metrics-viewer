@@ -1,4 +1,3 @@
-
 export class CopilotIdeCodeCompletionsEditorModelLanguage {
   name: string;
   total_engaged_users: number;
@@ -225,4 +224,11 @@ export class CopilotMetrics {
       : null;
   }
 
+}
+
+export function ensureCopilotMetrics(data: any): CopilotMetrics[] {
+  if (!Array.isArray(data)) {
+    return [new CopilotMetrics(data)];
+  }
+  return data.map(item => new CopilotMetrics(item));
 }
