@@ -11,11 +11,19 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 export default defineEventHandler(async (event) => {
-
     const logger = console;
     const config = useRuntimeConfig(event);
     let apiUrl = '';
     let mockedDataPath: string;
+    
+    // Check for query parameters that can override the context
+    const query = getQuery(event);
+    
+    // Override context with query parameters if provided
+    if (query.scope) event.context.scope = query.scope as string;
+    if (query.team) event.context.team = query.team as string;
+    if (query.org) event.context.org = query.org as string;
+    if (query.ent) event.context.ent = query.ent as string;
 
     switch (event.context.scope) {
         case 'team':
