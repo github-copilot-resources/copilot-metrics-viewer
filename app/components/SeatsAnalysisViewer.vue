@@ -1,7 +1,9 @@
 <template>
     <div class="tiles-container">
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
-            style="width: 330px; height: 175px;" @click="selectCategory('totalAssigned')">
+        <v-card elevation="4" color="white" 
+            :class="['mx-auto', 'my-4', {'selected-card': selectedCategory === 'totalAssigned'}]" 
+            style="width: 330px; height: 175px;" 
+            @click="selectCategory('totalAssigned')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -9,13 +11,16 @@
                     <div class="text-caption">
                         Currently assigned seats
                     </div>
-                    <p class="text-h4">{{ totalSeats.length }}</p>
+                    <!-- Change to use teamFilteredSeats instead of totalSeats -->
+                    <p class="text-h4">{{ teamFilteredSeats.length }}</p>
                 </div>
             </v-card-item>
         </v-card>
 
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3"
-            style="width: 300px; height: 175px;" @click="selectCategory('assignedButNeverUsed')">
+        <v-card elevation="4" color="white" 
+            :class="['mx-auto', 'my-3', {'selected-card': selectedCategory === 'assignedButNeverUsed'}]" 
+            style="width: 300px; height: 175px;" 
+            @click="selectCategory('assignedButNeverUsed')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -23,12 +28,15 @@
                     <div class="text-caption">
                         No show seats
                     </div>
-                    <p class="text-h4">{{ noshowSeats }}</p>
+                    <!-- Change to use teamFilteredNoshowSeats instead of noshowSeats -->
+                    <p class="text-h4">{{ teamFilteredNoshowSeats }}</p>
                 </div>
             </v-card-item>
         </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
-            style="width: 330px; height: 175px;" @click="selectCategory('noActivity7Days')">
+        <v-card elevation="4" color="white" 
+            :class="['mx-auto', 'my-4', {'selected-card': selectedCategory === 'noActivity7Days'}]" 
+            style="width: 330px; height: 175px;" 
+            @click="selectCategory('noActivity7Days')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -36,12 +44,15 @@
                     <div class="text-caption">
                         No use in the last 7 days
                     </div>
-                    <p class="text-h4">{{ unusedSeatsInSevenDays }}</p>
+                    <!-- Change to use teamFilteredUnusedSeatsInSevenDays -->
+                    <p class="text-h4">{{ teamFilteredUnusedSeatsInSevenDays }}</p>
                 </div>
             </v-card-item>
         </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
-            style="width: 330px; height: 175px;" @click="selectCategory('noActivity30Days')">
+        <v-card elevation="4" color="white" 
+            :class="['mx-auto', 'my-4', {'selected-card': selectedCategory === 'noActivity30Days'}]" 
+            style="width: 330px; height: 175px;" 
+            @click="selectCategory('noActivity30Days')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -49,12 +60,15 @@
                     <div class="text-caption">
                         No use in the last 30 days
                     </div>
-                    <p class="text-h4">{{ unusedSeatsInThirtyDays }}</p>
+                    <!-- Change to use teamFilteredUnusedSeatsInThirtyDays -->
+                    <p class="text-h4">{{ teamFilteredUnusedSeatsInThirtyDays }}</p>
                 </div>
             </v-card-item>
         </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4"
-            style="width: 330px; height: 175px;" @click="selectCategory('noActivity60Days')">
+        <v-card elevation="4" color="white" 
+            :class="['mx-auto', 'my-4', {'selected-card': selectedCategory === 'noActivity60Days'}]" 
+            style="width: 330px; height: 175px;" 
+            @click="selectCategory('noActivity60Days')">
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -62,7 +76,8 @@
                     <div class="text-caption">
                         No use in the last 60 days
                     </div>
-                    <p class="text-h4">{{ unusedSeatsInSixtyDays }}</p>
+                    <!-- Change to use teamFilteredUnusedSeatsInSixtyDays -->
+                    <p class="text-h4">{{ teamFilteredUnusedSeatsInSixtyDays }}</p>
                 </div>
             </v-card-item>
         </v-card>
@@ -106,7 +121,16 @@
         <v-main class="p-1" style="min-height: 300px;">
             <v-container style="min-height: 300px;" class="px-4 elevation-2">
                 <br>
-                <h2>All assigned seats </h2>
+                <h2>
+                  {{ 
+                    selectedCategory === 'totalAssigned' ? 'All assigned seats' :
+                    selectedCategory === 'assignedButNeverUsed' ? 'Seats assigned but never used' :
+                    selectedCategory === 'noActivity7Days' ? 'Seats with no activity in the last 7 days' :
+                    selectedCategory === 'noActivity30Days' ? 'Seats with no activity in the last 30 days' :
+                    selectedCategory === 'noActivity60Days' ? 'Seats with no activity in the last 60 days' :
+                    'All assigned seats'
+                  }}
+                </h2>
                 <br>
                 <v-data-table :headers="headers" :items="filteredSeats" :items-per-page="10" class="elevation-2">
                     <template v-slot:item="{ item, index }">
@@ -127,180 +151,279 @@
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, watchEffect } from 'vue';
+  import { defineComponent, ref, watchEffect, onMounted, computed } from 'vue';
   import type { Seat } from '@/model/Seat';
-  import {
-    Chart as ChartJS,
-    ArcElement,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend
-    } from 'chart.js'
 
-ChartJS.register(
-  ArcElement, 
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-)
-
-export default defineComponent({
-name: 'SeatsAnalysisViewer',
-props: {
-        seats: {
-            type: Array as () => Seat[],
-            required: true,
-            default: () => []  
-        }
-    },
-    data() {
-        return {
-            headers: [
-                { title: 'S.No', key: 'serialNumber' },
-                { title: 'Login', key: 'login' },
-                { title: 'GitHub ID', key: 'id' },
-                { title: 'Assigning team', key: 'team' },
-                { title: 'Assigned time', key: 'created_at' },
-                { title: 'Last Activity At', key: 'last_activity_at' },
-                { title: 'Last Activity Editor', key: 'last_activity_editor' },
-            ],
-            selectedCategory: 'totalAssigned' // Generated by Copilot: Add state to track selected category
-        };
+  export default defineComponent({
+    name: 'SeatsAnalysisViewer',
+    props: {
+      seats: {
+        type: Array as () => Seat[],
+        required: true,
+        default: () => []
+      },
+      teams: {
+        type: Array as () => string[], // Array of selected team slugs
+        required: false,
+        default: () => []
+      }
     },
     setup(props) {
-        let totalSeats = ref<Seat[]>([]);
-        const noshowSeats = ref<number>(0);
-        const unusedSeatsInSevenDays = ref<number>(0);
-        const unusedSeatsInThirtyDays = ref<number>(0);
-        const unusedSeatsInSixtyDays = ref<number>(0); // Add new ref
-        const unusedSeatsInTenDays = ref<number>(0); // Add new ref
-        const unusedSeatsInFifteenDays = ref<number>(0); // Add new ref
+      const totalSeats = ref<Seat[]>([]);
+      const noshowSeats = ref<number>(0);
+      const unusedSeatsInSevenDays = ref<number>(0);
+      const unusedSeatsInThirtyDays = ref<number>(0);
+      const unusedSeatsInSixtyDays = ref<number>(0);
+      
+      // Add new reactive ref to store team members
+      const teamMembers = ref<string[]>([]);
 
-        let noshowCount = 0;
-        let unusedIn7Count = 0;
-        let unusedIn30Count = 0;
-        let unusedIn60Count = 0; // Add new counter
-        let unusedIn10Count = 0; // Add new counter
-        let unusedIn15Count = 0; // Add new counter
+      // Log environment information
+      if (process.client) {
+        console.log('SeatsAnalysisViewer is running on the client.');
+      } else if (process.server) {
+        console.log('SeatsAnalysisViewer is running on the server.');
+      }
 
-        watchEffect(() => {
-            if (props.seats && Array.isArray(props.seats)) {
-                totalSeats.value = props.seats;
+      let noshowCount = 0;
+      let unusedIn7Count = 0;
+      let unusedIn30Count = 0;
+      let unusedIn60Count = 0; // Add new counter
 
-                const oneWeekAgo = new Date();
-                const thirtyDaysAgo = new Date();
-                const sixtyDaysAgo = new Date(); // Add new date
-                const tenDaysAgo = new Date(); // Add new date
-                const fifteenDaysAgo = new Date(); // Add new date
-                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-                sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60); // Add new date calculation
-                tenDaysAgo.setDate(tenDaysAgo.getDate() - 10); // Add new date calculation
-                fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15); // Add new date calculation
+      watchEffect(() => {
+        if (props.seats && Array.isArray(props.seats)) {
+          totalSeats.value = props.seats;
 
-                props.seats.forEach(seat => {
-                    if (seat.last_activity_at === null) {
-                        noshowCount++;
-                    } else {
-                        const lastActivityDate = new Date(seat.last_activity_at);
-                        if (lastActivityDate < oneWeekAgo) {
-                            unusedIn7Count++;
-                        }
-                        if (lastActivityDate < thirtyDaysAgo) {
-                            unusedIn30Count++;
-                        }
-                        if (lastActivityDate < sixtyDaysAgo) { // Add new condition
-                            unusedIn60Count++;
-                        }
-                        if (lastActivityDate < tenDaysAgo) { // Add new condition
-                            unusedIn10Count++;
-                        }
-                        if (lastActivityDate < fifteenDaysAgo) { // Add new condition
-                            unusedIn15Count++;
-                        }
-                    }
-                });
+          const oneWeekAgo = new Date();
+          const thirtyDaysAgo = new Date();
+          const sixtyDaysAgo = new Date(); // Add new date
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+          sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60); // Add new date calculation
 
-                // to sort totalSeats by last_activity_at
-                totalSeats.value.sort((a, b) => {
-                    if (a.last_activity_at === null) {
-                        return -1;
-                    }
-                    if (b.last_activity_at === null) {
-                        return 1;
-                    }
-                    return new Date(a.last_activity_at) > new Date(b.last_activity_at) ? 1 : -1;
-                });
+          props.seats.forEach(seat => {
+            if (seat.last_activity_at === null) {
+              noshowCount++;
             } else {
-                throw new Error('Invalid number of seats');
+              const lastActivityDate = new Date(seat.last_activity_at);
+              if (lastActivityDate < oneWeekAgo) {
+                unusedIn7Count++;
+              }
+              if (lastActivityDate < thirtyDaysAgo) {
+                unusedIn30Count++;
+              }
+              if (lastActivityDate < sixtyDaysAgo) { // Add new condition
+                unusedIn60Count++;
+              }
             }
+          });
 
-        });
-
-        noshowSeats.value = noshowCount;
-        unusedSeatsInSevenDays.value = unusedIn7Count;
-        unusedSeatsInThirtyDays.value = unusedIn30Count;
-        unusedSeatsInSixtyDays.value = unusedIn60Count; // Add new value assignment
-        unusedSeatsInTenDays.value = unusedIn10Count; // Add new value assignment
-        unusedSeatsInFifteenDays.value = unusedIn15Count; // Add new value assignment
-
-        return {
-            totalSeats,
-            noshowSeats: noshowSeats,
-            unusedSeatsInSevenDays: unusedSeatsInSevenDays,
-            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays,
-            unusedSeatsInSixtyDays: unusedSeatsInSixtyDays,
-            unusedSeatsInTenDays: unusedSeatsInTenDays,
-            unusedSeatsInFifteenDays // Add to return object
+          // to sort totalSeats by last_activity_at
+          totalSeats.value.sort((a, b) => {
+            if (a.last_activity_at === null) {
+              return -1;
+            }
+            if (b.last_activity_at === null) {
+              return 1;
+            }
+            return new Date(a.last_activity_at) > new Date(b.last_activity_at) ? 1 : -1;
+          });
+        } else {
+          throw new Error('Invalid number of seats');
         }
+
+      });
+
+      noshowSeats.value = noshowCount;
+      unusedSeatsInSevenDays.value = unusedIn7Count;
+      unusedSeatsInThirtyDays.value = unusedIn30Count;
+      unusedSeatsInSixtyDays.value = unusedIn60Count; // Add new value assignment
+
+      return {
+        totalSeats,
+        noshowSeats,
+        unusedSeatsInSevenDays,
+        unusedSeatsInThirtyDays,
+        unusedSeatsInSixtyDays,
+        teamMembers, // Export teamMembers to use in the component
+      };
+    },
+    data() {
+      return {
+        headers: [
+          { title: 'S.No', key: 'serialNumber' },
+          { title: 'Login', key: 'login' },
+          { title: 'GitHub ID', key: 'id' },
+          { title: 'Assigning team', key: 'team' },
+          { title: 'Assigned time', key: 'created_at' },
+          { title: 'Last Activity At', key: 'last_activity_at' },
+          { title: 'Last Activity Editor', key: 'last_activity_editor' },
+        ],
+        selectedCategory: 'totalAssigned', // Track selected category
+        filteredSeats: [] as Seat[], // Filtered seats based on team and category
+        // Removed redundant declaration of teamMembers to avoid state conflicts
+      };
     },
     computed: {
-        filteredSeats() {
+      // Add computed property for team filtered seats
+      // Generated by Zhuang
+      teamFilteredSeats(): Seat[] {
+        // If no team members, return all seats
+        if (this.teamMembers.length === 0) {
+          return this.totalSeats;
+        }
+        
+        // Filter seats by team member logins
+        return this.totalSeats.filter(seat => 
+          this.teamMembers.includes(seat.login)
+        );
+      },
+      
+      // Add computed properties for filtered metric counts
+      teamFilteredNoshowSeats(): number {
+        return this.teamFilteredSeats.filter(seat => seat.last_activity_at === null).length;
+      },
+      
+      teamFilteredUnusedSeatsInSevenDays(): number {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        return this.teamFilteredSeats.filter(seat => 
+          seat.last_activity_at && new Date(seat.last_activity_at) < oneWeekAgo
+        ).length;
+      },
+      
+      teamFilteredUnusedSeatsInThirtyDays(): number {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        return this.teamFilteredSeats.filter(seat => 
+          seat.last_activity_at && new Date(seat.last_activity_at) < thirtyDaysAgo
+        ).length;
+      },
+      
+      teamFilteredUnusedSeatsInSixtyDays(): number {
+        const sixtyDaysAgo = new Date();
+        sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+        
+        return this.teamFilteredSeats.filter(seat => 
+          seat.last_activity_at && new Date(seat.last_activity_at) < sixtyDaysAgo
+        ).length;
+      },
+      
+      // This computes the seats to display based on both team filter and category filter
+      // Generated by Zhuang
+      filteredSeatsByCategory() {
+        const seats = this.teamFilteredSeats;
+        
+        // Apply category filter
+        switch (this.selectedCategory) {
+          case 'assignedButNeverUsed':
+            return seats.filter(seat => seat.last_activity_at === null);
+            
+          case 'noActivity7Days':
             const oneWeekAgo = new Date();
             oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+            return seats.filter(seat => 
+              seat.last_activity_at && new Date(seat.last_activity_at) < oneWeekAgo
+            );
+            
+          case 'noActivity30Days':
             const thirtyDaysAgo = new Date();
             thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            return seats.filter(seat => 
+              seat.last_activity_at && new Date(seat.last_activity_at) < thirtyDaysAgo
+            );
+            
+          case 'noActivity60Days':
             const sixtyDaysAgo = new Date();
             sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-            const tenDaysAgo = new Date();
-            tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
-            const fifteenDaysAgo = new Date();
-            fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
-
-            switch (this.selectedCategory) { // Generated by Copilot: Filter seats based on selected category
-                case 'assignedButNeverUsed':
-                    return this.totalSeats.filter(seat => seat.last_activity_at === null);
-                case 'noActivity7Days':
-                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < oneWeekAgo);
-                case 'noActivity30Days':
-                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < thirtyDaysAgo);
-                case 'noActivity60Days':
-                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < sixtyDaysAgo);
-                case 'noActivity10Days':
-                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < tenDaysAgo);
-                case 'noActivity15Days':
-                    return this.totalSeats.filter(seat => seat.last_activity_at && new Date(seat.last_activity_at) < fifteenDaysAgo);
-                default:
-                    return this.totalSeats;
-            }
+            return seats.filter(seat => 
+              seat.last_activity_at && new Date(seat.last_activity_at) < sixtyDaysAgo
+            );
+            
+          case 'totalAssigned':
+          default:
+            return seats;
         }
+      }
     },
     methods: {
-        selectCategory(category: string) { // Generated by Copilot: Method to update selected category
-            this.selectedCategory = category;
+      async fetchTeamMembers() {
+        try {
+          const config = this.$config.public;
+          const currentTeam = this.teams.length > 0 
+            ? this.teams[0] // Just take the first team if there are any
+            : (config.githubTeam || '');
+
+          console.log('Team to fetch members for:', currentTeam);
+
+          if (currentTeam) {
+            // Ensure team is a string
+            const teamName = String(currentTeam);
+            
+            console.log('Processing team:', teamName);
+            
+            // Pass the team name directly as the $fetch utility will handle URL encoding
+            console.log('Team name:', teamName);
+            
+            const response = await $fetch('/api/teams', {
+              method: 'GET',
+              params: {
+                action: 'getTeamMembersByName',
+                teamName: teamName,
+                organization: config.githubOrg
+              }
+            });
+
+            if (Array.isArray(response)) {
+              this.teamMembers = response.map((member: any) => member.login);
+              console.log('Fetched team members:', this.teamMembers);
+            } else {
+              console.warn(`Invalid response for team ${teamName}:`, response);
+              this.teamMembers = [];
+            }
+          } else {
+            console.warn('No team provided for fetching members.');
+            this.teamMembers = [];
+          }
+        } catch (error) {
+          console.error('Error fetching team members:', error);
+          this.teamMembers = [];
         }
+      },
+      async updateFilteredSeats() {
+        console.log('Updating filtered seats...');
+        await this.fetchTeamMembers();
+        
+        // Apply both team and category filtering
+        this.filteredSeats = this.filteredSeatsByCategory;
+        
+        console.log('Filtered seats updated:', this.filteredSeats);
+      },
+      selectCategory(category: string) {
+        console.log('Category selected:', category);
+        this.selectedCategory = category;
+        this.updateFilteredSeats(); // Update filtered seats when category changes
+      }
+    },
+    watch: {
+      teams: {
+        handler: 'updateFilteredSeats',
+        immediate: true
+      },
+      
+      // Add watcher for selectedCategory
+      selectedCategory: {
+        handler: 'updateFilteredSeats',
+        immediate: true
+      }
+    },
+    mounted() {
+      console.log('SeatsAnalysisViewer component mounted.');
+      this.updateFilteredSeats(); // Initial filtering on mount
     }
-});
+  });
 </script>
 
 <style scoped>
@@ -373,5 +496,13 @@ props: {
 
 :deep(.v-select__selection) {
     color: #1a237e;
+}
+
+/* Add new style for selected card */
+.selected-card {
+  border: 2px solid #1a237e !important;
+  box-shadow: 0 4px 8px rgba(26, 35, 126, 0.2) !important;
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
 }
 </style>

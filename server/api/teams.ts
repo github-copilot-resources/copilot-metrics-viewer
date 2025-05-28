@@ -1,4 +1,4 @@
-import { defineEventHandler, getQuery } from 'h3';
+import { defineEventHandler, getQuery, readBody } from 'h3';
 import { useRuntimeConfig } from '#imports';
 
 /**
@@ -20,18 +20,29 @@ import { useRuntimeConfig } from '#imports';
  */
 export default defineEventHandler(async (event) => {
     try {
-        // Extract organization from query parameters
-        const query = getQuery(event);
+        const query = getQuery(event); // Read query parameters
+        console.log('Query parameters received:', query); // Log the query parameters
+
+        const action = query?.action || 'getTeams'; // Default action is 'getTeams'
+        console.log(`Action requested: ${action}`);
+
+        if (action === 'getTeamMembersByName') {
+            const { teamName, organization } = query;
+            console.log('Parsed teamName:', teamName); // Log the parsed teamName
+            console.log('Parsed organization:', organization); // Log the parsed organization
+
+            if (!teamName) {
+                throw new Error('teamName is required for getTeamMembersByName');
+            }
+            return await getTeamMembersByName(event, teamName, organization);
+        }
+
+        // Default behavior: Call getTeams
         const organization = query.organization as string;
         const teams = query.teams as string;
-       // console.log('query is ', query);
-        
-        // Pass organization and teams to getTeams function
-        const teamsData = await getTeams(event, organization, teams);
-
-        return teamsData;
+        return await getTeams(event, organization, teams);
     } catch (error) {
-        console.error('Error in teams.get handler:', error);
+        console.error('Error in teams API handler:', error);
         throw error;
     }
 });
@@ -135,3 +146,37 @@ export const getTeamSlugByName = async (event: any, teamName: string, organizati
         throw error;
     }
 };
+
+// get team members by team name. the team name should be conveertd to slug before call backend github API
+export const getTeamMembersByName = async (event: any, teamName: string, organizationParam?: string): Promise<any[]> => {
+    const config = useRuntimeConfig(event);
+    const orgName = organizationParam || config.public.githubOrg;
+    
+    //add log to debug
+    console.log(`Getting members for team: ${teamName} in organization: ${orgName}`);
+   
+    // get the slug for the team name,since the team name is not the same as the slug in github API
+    const teamSlug = await getTeamSlugByName(event, teamName, orgName);
+
+    //out the team slug for debug
+    console.log(`Team slug for ${teamName} is: ${teamSlug}`);
+    try {
+        // Fetch team members from GitHub API
+        const response = await $fetch(`https://api.github.com/orgs/${orgName}/teams/${teamSlug}/members`, {
+            headers: event.context.headers
+        }) as any[];
+
+        if (!Array.isArray(response)) {
+            throw new Error('Invalid response format from GitHub API');
+        }
+
+        // Return the list of team members
+        return response.map(member => ({
+            login: member.login,
+            id: member.id
+        }));
+    } catch (error: any) {
+        // console.error('Error fetching team members:', error.message);
+        throw error;
+    }
+}
