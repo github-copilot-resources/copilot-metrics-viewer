@@ -10,10 +10,22 @@ export default defineEventHandler(async (event) => {
   let apiUrl = '';
   let mockedDataPath: string;
 
+  // Get the org parameter from the URL query string if available
+  const query = getQuery(event);
+  const orgFromQuery = query.org as string | undefined;
+  
+  // Use the org from query params if available, otherwise fall back to event.context.org
+  const orgToUse = orgFromQuery || event.context.org;
+  
+ // logger.debug('Event context:', event.context);
+  logger.debug('scope is ', event.context.scope);
+  logger.debug('Using org from query:', orgFromQuery);
+  logger.debug('Final org being used:', orgToUse);
+  
   switch (event.context.scope) {
     case 'team':
     case 'org':
-      apiUrl = `https://api.github.com/orgs/${event.context.org}/copilot/billing/seats`;
+      apiUrl = `https://api.github.com/orgs/${orgToUse}/copilot/billing/seats`;
       mockedDataPath = resolve('public/mock-data/organization_seats_response_sample.json');
       break;
     case 'ent':

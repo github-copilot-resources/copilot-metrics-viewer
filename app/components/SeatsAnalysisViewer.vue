@@ -148,10 +148,10 @@
             </v-container>
         </v-main>
     </div>
-</template>
-  
+</template>  
 <script lang="ts">
   import { defineComponent, ref, watchEffect, onMounted, computed } from 'vue';
+  import { useRoute } from 'vue-router';
   import type { Seat } from '@/model/Seat';
 
   export default defineComponent({
@@ -348,15 +348,21 @@
         }
       }
     },
-    methods: {
-      async fetchTeamMembers() {
+    methods: {      async fetchTeamMembers() {
         try {
           const config = this.$config.public;
+          const route = useRoute();
+          
+          // 首先尝试从URL路由参数获取当前组织，如果不存在则使用配置
+          const currentOrg = (route.params.org as string) || config.githubOrg;
+          
+          // 获取当前团队，首先检查传入的teams，然后是路由参数，最后是配置
           const currentTeam = this.teams.length > 0 
             ? this.teams[0] // Just take the first team if there are any
-            : (config.githubTeam || '');
+            : (route.params.team as string || config.githubTeam || '');
 
           console.log('Team to fetch members for:', currentTeam);
+          console.log('Using organization:', currentOrg);
 
           if (currentTeam) {
             // Ensure team is a string
@@ -372,7 +378,7 @@
               params: {
                 action: 'getTeamMembersByName',
                 teamName: teamName,
-                organization: config.githubOrg
+                organization: currentOrg
               }
             });
 
