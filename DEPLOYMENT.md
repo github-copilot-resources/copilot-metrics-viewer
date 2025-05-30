@@ -100,7 +100,7 @@ Application can be deployed anywhere where containers can run and configured via
 For GitHub App:
 
 ```bash
-docker run -it --rm -p 3000:3000 \
+docker run -it --rm -p 3000:80 \
 -e NUXT_PUBLIC_SCOPE=organization \
 -e NUXT_PUBLIC_GITHUB_ORG=<org name> \
 -e NUXT_PUBLIC_USING_GITHUB_AUTH=true \
@@ -113,7 +113,7 @@ ghcr.io/github-copilot-resources/copilot-metrics-viewer
 or with PAT token and enterprise:
 
 ```bash
-docker run -it --rm -p 3000:3000 \
+docker run -it --rm -p 3000:80 \
 -e NUXT_PUBLIC_SCOPE=enterprise \
 -e NUXT_PUBLIC_GITHUB_ENT=<enterprise name> \
 -e NUXT_GITHUB_TOKEN=<github PAT> \
@@ -124,7 +124,7 @@ ghcr.io/github-copilot-resources/copilot-metrics-viewer
 or with PAT token and organization:
 
 ```bash
-docker run -it --rm -p 3000:3000 \
+docker run -it --rm -p 3000:80 \
 -e NUXT_PUBLIC_SCOPE=organization \
 -e NUXT_PUBLIC_GITHUB_ORG=<org name> \
 -e NUXT_GITHUB_TOKEN=<github PAT> \
@@ -159,5 +159,6 @@ or navigate using UI:
 7. Install the app in the organization:
    - Go to "Install App".
    - Select your organization.
+8. Generate a new `Client Secret` and copy it to a secure location. This is required for the application to authenticate with GitHub.
 
-Note the `Client ID` and `Private Key`.
+Note the `Client ID` and `Client Secret`.
