@@ -86,6 +86,11 @@ export default defineNuxtConfig({
         clientSecret: ''
       }
     },
+    basicAuth: {
+      username: '',
+      password: '',
+      enabled: false
+    },
     public: {
       isDataMocked: false,  // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
