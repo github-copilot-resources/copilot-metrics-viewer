@@ -2,6 +2,7 @@ import { Seat } from "@/model/Seat";
 import type FetchError from 'ofetch';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { log } from "console";
 
 export default defineEventHandler(async (event) => {
 
@@ -12,24 +13,35 @@ export default defineEventHandler(async (event) => {
 
   // Get the org parameter from the URL query string if available
   const query = getQuery(event);
-  const orgFromQuery = query.org as string | undefined;
+  const OrgName = query.org as string | undefined;
+  const EntName = query.ent as string | undefined;
+  let scope: 'team' | 'org' | 'ent' = 'org'; // Default to org if no parameters are provided
   
-  // Use the org from query params if available, otherwise fall back to event.context.org
-  const orgToUse = orgFromQuery || event.context.org;
-  
- // logger.debug('Event context:', event.context);
-  logger.debug('scope is ', event.context.scope);
-  logger.debug('Using org from query:', orgFromQuery);
-  logger.debug('Final org being used:', orgToUse);
-  
-  switch (event.context.scope) {
+  // Determine the scope based on the provided parameters
+  if (query.team && OrgName) {
+    scope = 'team';
+  } else if (OrgName) {
+    scope = 'org';
+  } else if (EntName) {
+    scope = 'ent';
+  }
+
+
+  // logger.debug('Event context:', event.context);
+  logger.debug(' 🟡 scope in seat is ', scope);
+  logger.debug(' 🟡 scope in event.context', event.context.scope);
+  logger.debug(' 🟡 Using org from query:', OrgName);
+  logger.debug(' 🟡 Using ent from query:', EntName);
+
+  switch (scope) {
     case 'team':
+      logger.debug(' 🟡 Using team scope,not support by github currently');
     case 'org':
-      apiUrl = `https://api.github.com/orgs/${orgToUse}/copilot/billing/seats`;
+      apiUrl = `https://api.github.com/orgs/${OrgName}/copilot/billing/seats`;
       mockedDataPath = resolve('public/mock-data/organization_seats_response_sample.json');
       break;
     case 'ent':
-      apiUrl = `https://api.github.com/enterprises/${event.context.ent}/copilot/billing/seats`;
+      apiUrl = `https://api.github.com/enterprises/${EntName}/copilot/billing/seats`;
       mockedDataPath = resolve('public/mock-data/enterprise_seats_response_sample.json');
       break;
     default:
@@ -54,7 +66,7 @@ export default defineEventHandler(async (event) => {
   const perPage = 100;
   let page = 1;
   let response;
-  logger.info(`Fetching 1st page of seats data from ${apiUrl}`);
+  logger.info(` 🟡 Fetching 1st page of seats data from ${apiUrl}`);
 
   try {
     response = await $fetch(apiUrl, {
@@ -65,8 +77,8 @@ export default defineEventHandler(async (event) => {
       }
     }) as { seats: unknown[], total_seats: number };
   } catch (error: FetchError) {
-    logger.error('Error fetching seats data:', error);
-    return new Response('Error fetching seats data. Error: ' + error, { status: error.statusCode || 500 });
+    logger.error(' 🟡 Error fetching seats data:', error);
+    return new Response(' 🟡 Error fetching seats data: ' + error, { status: error.statusCode || 500 });
   }
 
   let seatsData = response.seats.map((item: unknown) => new Seat(item));
