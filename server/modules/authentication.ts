@@ -30,16 +30,20 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
     const { secure } = await getUserSession(event);
 
     // check if token is expired and get new one
-    if (secure && secure.expires_at < new Date(Date.now() - 30 * 1000)) {
+    if (secure?.expires_at && secure.expires_at < new Date(Date.now() - 30 * 1000)) {
         // Token is expired or about to expire within 30 seconds
         // we could refresh but unlikely dashboard is used for long periods
         return buildHeaders('');
     }
 
-    return buildHeaders(secure?.tokens.access_token || '');
+    return buildHeaders(secure?.tokens?.access_token || '');
 }
 
 function buildHeaders(token: string): Headers {
+    if (!token) {
+        throw new Error('GitHub token is required');
+    }
+
     return new Headers({
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
