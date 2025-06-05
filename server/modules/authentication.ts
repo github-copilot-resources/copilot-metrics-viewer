@@ -29,6 +29,13 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
     // https://nuxt.com/docs/guide/recipes/sessions-and-authentication
     const { secure } = await getUserSession(event);
 
+    // check if token is expired and get new one
+    if (secure?.expires_at && secure.expires_at < new Date(Date.now() - 30 * 1000)) {
+        // Token is expired or about to expire within 30 seconds
+        // we could refresh but unlikely dashboard is used for long periods
+        return buildHeaders('');
+    }
+
     return buildHeaders(secure?.tokens?.access_token || '');
 }
 
