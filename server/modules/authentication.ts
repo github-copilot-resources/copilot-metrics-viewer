@@ -20,6 +20,7 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
     const config = useRuntimeConfig(event);
 
     if (config.public.isDataMocked) {
+        // when data is mocked, we still need to have a token, but it's not used for real API calls
         return buildHeaders('mock-token');
     }
     if (config.githubToken) {
@@ -47,6 +48,6 @@ function buildHeaders(token: string): Headers {
     return new Headers({
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        ...(token ? { Authorization: `token ${token}` } : {})
+        Authorization: `token ${token}`
     });
 }
