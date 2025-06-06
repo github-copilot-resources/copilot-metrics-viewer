@@ -27,3 +27,4 @@ logs
 playwright-report
 playwright-logs
 test-results
+results.xml
