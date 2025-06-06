@@ -39,11 +39,12 @@ jobs:
     - name: Run Vite tests
       run: CI=true npm test
     - name: Run Playwright tests
-      run: CI=true \
-           NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
-           NUXT_PUBLIC_GITHUB_ORG=octodemo \
-           NUXT_PUBLIC_IS_DATA_MOCKED=true \
-           RUN_COMMAND='npm run preview' npm run test:e2e
+      run: |
+          CI=true \
+          NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
+          NUXT_PUBLIC_GITHUB_ORG=octodemo \
+          NUXT_PUBLIC_IS_DATA_MOCKED=true \
+          RUN_COMMAND='npm run preview' npm run test:e2e
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
