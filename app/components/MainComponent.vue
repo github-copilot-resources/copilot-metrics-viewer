@@ -151,6 +151,9 @@ export default defineNuxtComponent({
           case 404:
             apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:"${config.public.githubOrg || ''}" ent:"${config.public.githubEnt || ''}" team:"${config.public.githubTeam}" correct? ${error.message}`;
             break;
+          case 422:
+            apiError.value = `422 Unprocessable Entity - Is the Copilot Metrics API enabled for the Org/Ent? ${error.message}`;
+            break;
           case 500:
             apiError.value = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
             break;
