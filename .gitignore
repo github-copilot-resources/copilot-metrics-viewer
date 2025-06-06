@@ -26,5 +26,7 @@ logs
 # Playwright
 playwright-report
 playwright-logs
+
+# Test results
 test-results
 results.xml
