@@ -1,83 +1,173 @@
 <template>
-  <div>
-    <v-toolbar color="indigo" elevation="4">
-      <v-btn icon>
-        <v-icon>mdi-github</v-icon>
-      </v-btn>
+  <v-container>
+    <div>
+      <v-toolbar color="indigo" elevation="4">
+        <v-btn icon>
+          <v-icon>mdi-github</v-icon>
+        </v-btn>
 
-      <v-toolbar-title class="toolbar-title">{{ displayName }}</v-toolbar-title>
-      <h2 class="error-message"> {{ mockedDataMessage }} </h2>
-      <v-spacer />
+        <v-toolbar-title class="toolbar-title">{{ displayName }}</v-toolbar-title>
+        <h2 class="error-message"> {{ mockedDataMessage }} </h2>
+        <v-spacer />
 
-      <!-- Conditionally render the logout button -->
+        <!-- Conditionally render the logout button -->
+        <AuthState>
+          <template #default="{ loggedIn, user }">
+            <div v-show="loggedIn" class="user-info">
+              Welcome,
+              <v-avatar class="user-avatar">
+                <v-img :alt="user?.name" :src="user?.avatarUrl" />
+              </v-avatar> {{ user?.name }}
+            </div>
+            <v-btn v-if="showLogoutButton && loggedIn" class="logout-button" @click="logout">Logout</v-btn>
+          </template>
+        </AuthState>
+
+        <template #extension>
+
+          <v-tabs v-model="tab" align-tabs="title">
+            <v-tab v-for="item in tabItems" :key="item" :value="item">
+              {{ item }}
+            </v-tab>
+          </v-tabs>
+
+        </template>
+
+      </v-toolbar>
+
+      <!-- API Error Message -->
+      <div v-show="apiError && !signInRequired" class="error-message" v-text="apiError" />
       <AuthState>
-        <template #default="{ loggedIn, user }">
-          <div v-show="loggedIn" class="user-info">
-            Welcome,
-            <v-avatar class="user-avatar">
-              <v-img :alt="user?.name" :src="user?.avatarUrl" />
-            </v-avatar> {{ user?.name }}
+        <template #default="{ loggedIn }">
+          <div v-show="signInRequired" class="github-login-container">
+            <NuxtLink v-if="!loggedIn && signInRequired" to="/auth/github" external class="github-login-button"> <v-icon
+                left>mdi-github</v-icon>
+              Sign in with GitHub</NuxtLink>
           </div>
-          <v-btn v-if="showLogoutButton && loggedIn" class="logout-button" @click="logout">Logout</v-btn>
+        </template>
+        <template #placeholder>
+          <button disabled>Loading...</button>
         </template>
       </AuthState>
 
-      <template #extension>
 
-        <v-tabs v-model="tab" align-tabs="title">
-          <v-tab v-for="item in tabItems" :key="item" :value="item">
-            {{ item }}
-          </v-tab>
-        </v-tabs>
+      <div v-show="!apiError">
+        <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
+        <v-window v-show="metricsReady && metrics.length" v-model="tab">
+          <v-window-item v-for="item in tabItems" :key="item" :value="item">
+            <v-card flat>
+              <MetricsViewer v-if="item === 'metrics'" :metrics="metrics" />
+              <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" />
+              <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
+              <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
+              <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
+              <ApiResponse
+                v-if="item === 'api response'"
+                :metrics="metrics"
+                :original-metrics="originalMetrics"
+                :seats="seats"
+              />
+              <MultiTeamsMetricsViewer 
+                v-if="item === 'multi-teams metrics'"
+                :teams="teams"
+              />
+            </v-card>
+          </v-window-item>
+          <v-alert
+            v-show="metricsReady && metrics.length === 0"
+            density="compact"
+            text="No data available to display"
+            title="No data"
+            type="warning"
+          />
+        </v-window>
 
-      </template>
-
-    </v-toolbar>
-
-    <!-- API Error Message -->
-    <div v-show="apiError && !signInRequired" class="error-message" v-text="apiError" />
-    <AuthState>
-      <template #default="{ loggedIn }">
-        <div v-show="signInRequired" class="github-login-container">
-          <NuxtLink v-if="!loggedIn && signInRequired" to="/auth/github" external class="github-login-button"> <v-icon
-              left>mdi-github</v-icon>
-            Sign in with GitHub</NuxtLink>
-        </div>
-      </template>
-      <template #placeholder>
-        <button disabled>Loading...</button>
-      </template>
-    </AuthState>
-
-
-    <div v-show="!apiError">
-      <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
-      <v-window v-show="metricsReady && metrics.length" v-model="tab">
-        <v-window-item v-for="item in tabItems" :key="item" :value="item">
-          <v-card flat>
-            <MetricsViewer v-if="item === itemName" :metrics="metrics" />
-            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" />
-            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
-            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
-            <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse
-v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
-              :seats="seats" />
-          </v-card>
-        </v-window-item>
-        <v-alert
-v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
-          title="No data" type="warning" />
-      </v-window>
+      </div>
 
     </div>
-
-  </div>
+  </v-container>
 </template>
-<script lang='ts'>
+
+<script setup lang="ts">
+import { ref, onMounted, watch, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import type { MetricsApiResponse } from '@/types/metricsApiResponse';
+
+// /* const router = useRouter();
+// const route = useRoute(); */
+
+const config = useRuntimeConfig();
+
+// Tab management
+const tab = ref('metrics');
+const tabItems = computed(() => {
+  // Generated by Copilot
+  // Only include 'multi-teams metrics' when scope is not enterprise
+  const items = ['metrics', 'languages', 'editors', 'copilot chat', 'seat analysis'];
+  
+  // Don't show multi-teams metrics for enterprise scope
+  if (config.public.scope !== 'enterprise') {
+    items.push('multi-teams metrics');
+  }
+
+  if (originalMetrics.value?.length > 0) {
+    items.push('api response');
+  }
+
+  return items;
+});
+
+// Generated by Copilot: Watch organization changes to reload teams
+watch(() => config.public.githubOrg, async (newOrg, oldOrg) => {
+  console.log(`Organization changed from ${oldOrg} to ${newOrg}, ready to reload teams`);
+    
+  if (newOrg && newOrg !== oldOrg && config.public.scope === 'org') {
+    console.log(`Organization changed from ${oldOrg} to ${newOrg}, reloading teams`);
+    await loadTeamsData();
+  }
+}, { immediate: true });
+
+// Generated by Copilot: Function to load teams data
+async function loadTeamsData() {
+  if (config.public.scope === 'org') {
+    // Generated by Copilot: Clear old teams data when organization changes
+    teams.value = []; // Reset teams array to clear old data
+    
+    const teamsFetch = useFetch('/api/teams');
+    const { data: teamsData, error: teamsError } = await teamsFetch;
+    
+    if (teamsError.value) {
+      processError(teamsError.value as H3Error);
+    } else if (teamsData.value) {
+      teams.value = teamsData.value.map((team: any) => team.name);
+      console.log(`Teams loaded for ${config.public.githubOrg}:`, teams.value);
+    }
+  }
+}
+
+// Helper function to get display name based on scope
+function getDisplayName(config: any): string {
+
+  switch (config.scope) {
+    case 'team':
+      return `Copilot Metrics Viewer | Organization： ${config.githubOrg} | Team： ${config.githubTeam}`;
+      //return `Copilot Metrics Viewer | Team： ${config.githubTeam}`;
+    case 'organization':
+      if(config.githubTeam) {
+        return `Copilot Metrics Viewer | Organization： ${config.githubOrg} | Team： ${config.githubTeam}`;
+      }
+      else {
+        return `Copilot Metrics Viewer | Organization： ${config.githubOrg}`;
+      }
+    case 'enterprise':
+      return `Copilot Metrics Viewer | Enterprise： ${config.githubEnt} `;
+    default:
+      return 'Copilot Metrics Viewer';
+  }
+}
+
 import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
-import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
 import type { H3Error } from 'h3'
 
@@ -87,130 +177,130 @@ import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue'
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
+import MultiTeamsMetricsViewer from './MultiTeamsMetricsViewer.vue'
 
-export default defineNuxtComponent({
-  name: 'MainComponent',
-  components: {
-    MetricsViewer,
-    BreakdownComponent,
-    CopilotChatViewer,
-    SeatsAnalysisViewer,
-    ApiResponse
-  },
-  methods: {
-    logout() {
-      const { clear } = useUserSession()
-      this.metrics = [];
-      this.seats = [];
-      // console.log('metrics are now', this.metrics);
-      clear();
+const { loggedIn, user } = useUserSession()
+const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
+const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
+const itemName = computed(() => 'metrics'); // 默认显示 metrics 内容
+//const githubInfo = getDisplayName(config.public)
+//const displayName = computed(() => githubInfo);
+
+
+const displayName = computed(() => getDisplayName(config.public));
+
+
+const metricsReady = ref(false);
+const metrics = ref<Metrics[]>([]);
+const originalMetrics = ref<CopilotMetrics[]>([]);
+const seatsReady = ref(false);
+const seats = ref<Seat[]>([]);
+const teams = ref<string[]>([]);
+
+// API Error Message
+const apiError = ref<string | undefined>(undefined);
+const signInRequired = computed(() => {
+  return config.public.usingGithubAuth && !loggedIn.value;
+});
+
+/**
+ * Handles API errors by setting appropriate error messages.
+ * @param {H3Error} error - The error object returned from the API call.
+ */
+function processError(error: H3Error) {
+  console.error(error || 'No data returned from API');
+  // Check the status code of the error response
+  if (error.statusCode) {
+    switch (error.statusCode) {
+      case 401:
+        apiError.value = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
+        break;
+      case 404:
+        apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:'${config.public.githubOrg || ''} ent:'${config.public.githubEnt || ''}' team:'${config.public.githubTeam}' correct? ${error.message}`;
+        break;
+      case 500:
+        apiError.value = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
+        break;
+      default:
+        apiError.value = `${error.statusCode} Error: ${error.message}`;
+        break;
     }
-  },
+  }
+}
 
-  data() {
-    return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
-      tab: null
-    }
-  },
-  created() {
-    this.tabItems.unshift(this.itemName);
-  },
-  async setup() {
-    const { loggedIn, user } = useUserSession()
-    const config = useRuntimeConfig();
-    const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
-    const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
-    const itemName = computed(() => config.public.scope);
-    const githubInfo = getDisplayName(config.public)
-    const displayName = computed(() => githubInfo);
+const metricsFetch = useFetch('/api/metrics');
+const seatsFetch = useFetch('/api/seats');
 
-    const metricsReady = ref(false);
-    const metrics = ref<Metrics[]>([]);
-    const originalMetrics = ref<CopilotMetrics[]>([]);
-    const seatsReady = ref(false);
-    const seats = ref<Seat[]>([]);
-    // API Error Message
-    const apiError = ref<string | undefined>(undefined);
-    const signInRequired = computed(() => {
-      return config.public.usingGithubAuth && !loggedIn.value;
-    });
+const { data: metricsData, error: metricsError } = await metricsFetch;
+if (metricsError.value || !metricsData.value) {
+  processError(metricsError.value as H3Error);
+} else {
+  const apiResponse = metricsData.value as MetricsApiResponse;
+  metrics.value = apiResponse.metrics || [];
+  originalMetrics.value = apiResponse.usage || [];
+  metricsReady.value = true;
+}
 
-    /**
-     * Handles API errors by setting appropriate error messages.
-     * @param {H3Error} error - The error object returned from the API call.
-     */
-    function processError(error: H3Error) {
-      console.error(error || 'No data returned from API');
-      // Check the status code of the error response
-      if (error.statusCode) {
-        switch (error.statusCode) {
-          case 401:
-            apiError.value = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
-            break;
-          case 404:
-            apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:"${config.public.githubOrg || ''}" ent:"${config.public.githubEnt || ''}" team:"${config.public.githubTeam}" correct? ${error.message}`;
-            break;
-          case 500:
-            apiError.value = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
-            break;
-          default:
-            apiError.value = `${error.statusCode} Error: ${error.message}`;
-            break;
-        }
-      }
-    }
+// Ensure originalMetrics is loaded
+if (metricsData.value) {
+  const apiResponse = metricsData.value as MetricsApiResponse;
+  metrics.value = apiResponse.metrics || [];
+  originalMetrics.value = apiResponse.usage || [];
+  metricsReady.value = true;
+}
 
-    const metricsFetch = useFetch('/api/metrics');
-    const seatsFetch = useFetch('/api/seats');
+if (config.public.scope === 'team' && metrics.value.length === 0 && !apiError.value) {
+  apiError.value = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
+}
 
-    const { data: metricsData, error: metricsError } = await metricsFetch;
-    if (metricsError.value || !metricsData.value) {
-      processError(metricsError.value as H3Error);
-    } else {
-      const apiResponse = metricsData.value as MetricsApiResponse;
-      metrics.value = apiResponse.metrics || [];
-      originalMetrics.value = apiResponse.usage || [];
-      metricsReady.value = true;
-    }
+// Ensure teams data is loaded
+//Todo: check whether the below code is needed, as it will fetch all teams for an org
+// why it is needed here? and the config.public.scope === 'organization', not org
+if (config.public.scope === 'org') {
+  const teamsFetch = useFetch('/api/teams');
+  const { data: teamsData, error: teamsError } = await teamsFetch;
+  
+  if (teamsError.value) {
+    processError(teamsError.value as H3Error);
+  } else if (teamsData.value) {
+    teams.value = teamsData.value.map((team: any) => team.name);
+    console.log("Teams data loaded in Main Component:", teams.value);
+  }
+}
 
-    if (config.public.scope === 'team' && metrics.value.length === 0 && !apiError.value) {
-      apiError.value = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
-    }
+const { data: seatsData, error: seatsError } = await seatsFetch;
+if (seatsError.value) {
+  processError(seatsError.value as H3Error);
+} else {
+  seats.value = seatsData.value || [];
+  seatsReady.value = true;
+}
 
-    const { data: seatsData, error: seatsError } = await seatsFetch;
-    if (seatsError.value) {
-      processError(seatsError.value as H3Error);
-    } else {
-      seats.value = seatsData.value || [];
-      seatsReady.value = true;
-    }
-
-    return {
-      metricsReady,
-      metrics,
-      originalMetrics,
-      seatsReady,
-      seats,
-      apiError,
-      signInRequired,
-      showLogoutButton,
-      config,
-      mockedDataMessage,
-      itemName,
-      displayName,
-      user
-    };
-  },
-})
+function logout() {
+  const { clear } = useUserSession()
+  metrics.value = [];
+  seats.value = [];
+  clear();
+}
 </script>
 
 <style scoped>
-.toolbar-title {
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
+/* Ensure the toolbar container adapts to content width */
+.v-toolbar {
+  flex-wrap: wrap; /* Allow wrapping of child elements */
+  max-width: 100%; /* Prevent overflow beyond the screen width */
+}
 
+/* Adjust toolbar-title to ensure full visibility without truncation */
+.toolbar-title {
+  color: #4CAF50; /* Highlight text with green color */
+  font-weight: bold; /* Make the text bold */
+  font-size: 1.2rem; /* Slightly increase font size */
+  white-space: nowrap; /* Prevent text wrapping */
+  overflow: visible; /* Ensure text is fully visible */
+  text-overflow: clip; /* Disable ellipsis */
+  flex: 1 1 auto; /* Allow the title to take up available space */
+  min-width: 0; /* Prevent overflow issues */
 }
 
 .error-message {
