@@ -72,6 +72,7 @@ export default defineNuxtConfig({
     plugins: [
       'plugins/http-agent',
     ],
+    preset: 'netlify'
   },
   runtimeConfig: {
     githubToken: '',
