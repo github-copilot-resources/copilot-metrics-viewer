@@ -41,10 +41,6 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
 }
 
 function buildHeaders(token: string): Headers {
-    if (!token) {
-        throw new Error('GitHub token is required');
-    }
-
     return new Headers({
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
