@@ -6,7 +6,14 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-4"
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">Total Assigned  </div>
+                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                      <template v-slot:activator="{ props }">
+                        <div v-bind="props" class="text-h6 mb-1">Total Assigned  </div>
+                      </template>
+                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of Copilot seats assigned within the current organization/enterprise.</span>
+                      </v-card>
+                    </v-tooltip>
                     <div class="text-caption">
                         Currently assigned seats
                     </div>
@@ -21,7 +28,14 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">Assigned But Never Used</div>
+                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                      <template v-slot:activator="{ props }">
+                        <div v-bind="props" class="text-h6 mb-1">Assigned But Never Used</div>
+                      </template>
+                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                        <span class="text-caption" style="font-size: 10px !important;">This metric shows seats that were assigned but never used within the current organization/enterprise. The assigned timestamp is also displayed in the chart.</span>
+                      </v-card>
+                    </v-tooltip>
                     <div class="text-caption">
                         No show seats
                     </div>
@@ -33,7 +47,14 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">No Activity in the Last 7 days </div>
+                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                      <template v-slot:activator="{ props }">
+                        <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 7 days </div>
+                      </template>
+                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                        <span class="text-caption" style="font-size: 10px !important;">Never used seats or seats used, but with no activity in the past 7 days.</span>
+                      </v-card>
+                    </v-tooltip>
                     <div class="text-caption">
                         No use in the last 7 days
                     </div>
@@ -45,7 +66,14 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <v-card-item class="d-flex justify-center align-center">
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <div class="text-h6 mb-1">No Activity in the Last 30 days </div>
+                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                      <template v-slot:activator="{ props }">
+                        <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 30 days </div>
+                      </template>
+                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                        <span class="text-caption" style="font-size: 10px !important;">This metric represents seats with no activity in the last 30 days, including those never used.</span>
+                      </v-card>
+                    </v-tooltip>
                     <div class="text-caption">
                         No use in the last 30 days
                     </div>

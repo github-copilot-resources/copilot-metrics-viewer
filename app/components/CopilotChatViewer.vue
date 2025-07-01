@@ -4,7 +4,14 @@
             <v-card-item>
                 <div class="tiles-text">
                     <div class="spacing-25"/>
-                    <div class="text-h6 mb-1">Cumulative Number of Turns</div>
+                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                      <template v-slot:activator="{ props }">
+                        <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Turns</div>
+                      </template>
+                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of turns (interactions) with the Copilot over the past 28 days. A 'turn' includes both user inputs and Copilot's responses.</span>
+                      </v-card>
+                    </v-tooltip>
                     <div class="text-caption">Over the last 28 days</div>
                     <p class="text-h4">{{ cumulativeNumberTurns }}</p>
                 </div>
@@ -15,7 +22,14 @@
             <v-card-item>
                 <div class="tiles-text">
                     <div class="spacing-10"/>
-                    <div class="text-h6 mb-1">Cumulative Number of Acceptances</div>
+                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                      <template v-slot:activator="{ props }">
+                        <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Acceptances</div>
+                      </template>
+                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                        <span class="text-caption" style="font-size: 10px !important;">This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the past 28 days.</span>
+                      </v-card>
+                    </v-tooltip>
                     <div class="text-caption">Over the last 28 days</div>
                     <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
                 </div>
@@ -26,10 +40,24 @@
     <v-main class="p-1" style="min-height: 300px;">
         <v-container style="min-height: 300px;" class="px-4 elevation-2">
 
-            <h2>Total Acceptances | Total Turns Count</h2>
+            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+              <template v-slot:activator="{ props }">
+                <h2 v-bind="props" class="mb-1">Total Acceptances | Total Turns Count</h2>
+              </template>
+              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                <span class="text-caption" style="font-size: 10px !important;">This is a chart that displays the total number of turns and acceptances.</span>
+              </v-card>
+            </v-tooltip>
             <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
 
-            <h2>Total Active Copilot Chat Users</h2>
+            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+              <template v-slot:activator="{ props }">
+                <h2 v-bind="props" class="mb-1">Total Active Copilot Chat Users</h2>
+              </template>
+              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                <span class="text-caption" style="font-size: 10px !important;">A bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.</span>
+              </v-card>
+            </v-tooltip>
             <Bar :data="totalActiveCopilotChatUsersChartData" :options="totalActiveChatUsersChartOptions" />
 
         </v-container>
