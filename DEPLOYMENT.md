@@ -132,6 +132,48 @@ docker run -it --rm -p 3000:80 \
 ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
+## Health Check Endpoints for Kubernetes
+
+The application provides dedicated health check endpoints for Kubernetes deployments that avoid triggering GitHub API calls:
+
+- **`/api/health`** - General health status
+- **`/api/ready`** - Readiness probe (application ready to serve traffic)  
+- **`/api/live`** - Liveness probe (application is alive and responsive)
+
+These endpoints:
+- Return 200 OK status with JSON response containing application status
+- Respond in ~200ms without making external API calls  
+- Do not require authentication
+- Are ideal for Kubernetes liveness and readiness probes
+
+### Example Kubernetes Health Check Configuration
+
+```yaml
+spec:
+  containers:
+  - name: copilot-metrics-viewer
+    image: ghcr.io/github-copilot-resources/copilot-metrics-viewer
+    ports:
+    - containerPort: 80
+    livenessProbe:
+      httpGet:
+        path: /api/live
+        port: 80
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+    readinessProbe:
+      httpGet:
+        path: /api/ready
+        port: 80
+      initialDelaySeconds: 5
+      periodSeconds: 5
+      timeoutSeconds: 3
+```
+
+>[!NOTE]
+> Using these dedicated health endpoints instead of the root `/` path avoids triggering GitHub API calls during health checks, which can cause flaky response times and authentication issues in Kubernetes environments.
+
 ## Github App Registration
 
 While it is possible to run the API Proxy without GitHub app registration and with a hardcoded token, it is not the recommended way.
