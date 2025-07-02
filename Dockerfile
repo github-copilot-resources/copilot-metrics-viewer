@@ -6,7 +6,7 @@
 # build with 'docker build -t copilot-metrics .' for production
 ARG mode=prod
 
-FROM node:23-alpine AS build-stage
+FROM node:24-alpine AS build-stage
 
 USER node
 WORKDIR /app
