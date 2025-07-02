@@ -3,6 +3,14 @@ import { authenticateAndGetGitHubHeaders } from '../modules/authentication';
 type Scope = 'org' | 'team' | 'ent';
 
 export default defineEventHandler(async (event) => {
+    // Skip authentication for health check endpoints
+    const url = getRequestURL(event);
+    const healthEndpoints = ['/api/health', '/api/ready', '/api/live'];
+    
+    if (healthEndpoints.some(endpoint => url.pathname === endpoint)) {
+        return;
+    }
+
     // get runtime config
     const config = useRuntimeConfig(event);
 

@@ -206,6 +206,34 @@ docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
 
 The application will be accessible at http://localhost:8080
 
+## Health Check Endpoints
+
+For Kubernetes deployments and health monitoring, the application provides dedicated health check endpoints that don't require authentication and don't make external API calls:
+
+- **`/api/health`** - General health check endpoint
+- **`/api/ready`** - Readiness probe endpoint 
+- **`/api/live`** - Liveness probe endpoint
+
+All endpoints return JSON responses with status information and respond in ~200ms, making them ideal for Kubernetes health checks instead of using the root `/` endpoint which triggers GitHub API calls.
+
+### Example Kubernetes Configuration
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /api/live
+    port: 80
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /api/ready
+    port: 80
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
 ## License
 
 This project is licensed under the terms of the MIT open source license. Please refer to [MIT](./LICENSE.txt) for the full terms.
