@@ -3,6 +3,14 @@ import { authenticateAndGetGitHubHeaders } from '../modules/authentication';
 type Scope = 'org' | 'team' | 'ent';
 
 export default defineEventHandler(async (event) => {
+    // Only apply authentication to API routes
+    const url = event.node.req.url || '';
+    
+    // Skip authentication for non-API routes
+    if (!url.startsWith('/api/')) {
+        return;
+    }
+    
     // get runtime config
     const config = useRuntimeConfig(event);
 
