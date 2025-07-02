@@ -1,5 +1,5 @@
 {
-    "total_seats": 2,
+    "total_seats": 3,
     "seats": [
       {
         "created_at": "2021-08-03T18:00:00-06:00",
@@ -68,6 +68,29 @@
           "received_events_url": "https://api.github.com/users/octokitten/received_events",
           "type": "User",
           "site_admin": false
+        }
+      },
+      {
+        "created_at": "2021-09-23T18:00:00-06:00",
+        "updated_at": "2021-09-23T15:00:00-06:00",
+        "pending_cancellation_date": "2021-11-01",
+        "last_activity_at": "2021-10-12T00:53:32-06:00",
+        "last_activity_editor": "vscode/1.77.3/copilot/1.86.82",
+        "assignee": null,
+        "assigning_team": {
+          "id": 1,
+          "node_id": "MDQ6VGVhbTE=",
+          "url": "https://api.github.com/teams/1",
+          "html_url": "https://github.com/orgs/github/teams/justice-league",
+          "name": "Justice League",
+          "slug": "justice-league",
+          "description": "A great team.",
+          "privacy": "closed",
+          "notification_setting": "notifications_enabled",
+          "permission": "admin",
+          "members_url": "https://api.github.com/teams/1/members{/member}",
+          "repositories_url": "https://api.github.com/teams/1/repos",
+          "parent": null
         }
       }
     ]
