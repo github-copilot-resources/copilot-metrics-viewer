@@ -1,3 +1,4 @@
 {
-    "github.copilot.nextEditSuggestions.enabled": true
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "postman.settings.dotenv-detection-notification-visibility": false
 }
