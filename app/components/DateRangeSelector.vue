@@ -22,7 +22,7 @@
           @update:model-value="updateDateRange"
         />
       </v-col>
-      <v-col cols="12" sm="4" class="d-flex align-center">
+      <v-col cols="12" sm="4" class="d-flex align-end">
         <v-btn
           color="primary"
           variant="outlined"
@@ -33,7 +33,7 @@
         </v-btn>
         <v-btn
           color="primary"
-          :loading="loading"
+          :loading="props.loading"
           @click="applyDateRange"
         >
           Apply
