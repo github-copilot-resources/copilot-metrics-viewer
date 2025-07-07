@@ -3,11 +3,17 @@ import { authenticateAndGetGitHubHeaders } from '../modules/authentication';
 type Scope = 'org' | 'team' | 'ent';
 
 export default defineEventHandler(async (event) => {
-    // Skip authentication for health check endpoints
-    const url = getRequestURL(event);
-    const healthEndpoints = ['/api/health', '/api/ready', '/api/live'];
+    // Only apply authentication to API routes
+    const url = event.node.req.url || '';
     
-    if (healthEndpoints.some(endpoint => url.pathname === endpoint)) {
+    // Skip authentication for non-API routes
+    if (!url.startsWith('/api/')) {
+        return;
+    }
+    
+    // Skip authentication for health check endpoints
+    const healthEndpoints = ['/api/health', '/api/ready', '/api/live'];
+    if (healthEndpoints.some(endpoint => url === endpoint)) {
         return;
     }
 
