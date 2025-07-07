@@ -36,7 +36,7 @@
 
     <!-- Date Range Selector - Hidden for seats tab -->
     <DateRangeSelector 
-      v-if="tab !== 'seat analysis'"
+      v-show="tab !== 'seat analysis'"
       :loading="isLoading"
       @date-range-changed="handleDateRangeChange"
     />
@@ -234,8 +234,14 @@ export default defineNuxtComponent({
     });
 
     // Initial data load with default date range
-    const metricsFetch = useFetch('/api/metrics');
-    const seatsFetch = useFetch('/api/seats');
+    const metricsFetch = useFetch('/api/metrics', { 
+      key: 'initial-metrics',
+      server: false
+    });
+    const seatsFetch = useFetch('/api/seats', { 
+      key: 'initial-seats',
+      server: false
+    });
 
     return {
       showLogoutButton,
