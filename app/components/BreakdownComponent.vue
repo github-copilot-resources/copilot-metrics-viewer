@@ -8,7 +8,7 @@
               <div class="spacing-25"/>
               <div class="text-h6 mb-1">Number of {{ breakdownDisplayNamePlural }}</div>
               <div class="text-caption">
-                Over the last 28 days
+                {{ dateRangeDescription }}
               </div>
               <p class="text-h4">{{ numberOfBreakdowns }}</p> 
           </div>
@@ -122,6 +122,10 @@ export default defineComponent({
       breakdownKey: {
           type: String,
           required: true
+      },
+      dateRangeDescription: {
+          type: String,
+          default: 'Over the last 28 days'
       }
   },
   setup(props) {

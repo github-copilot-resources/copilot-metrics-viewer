@@ -34,11 +34,21 @@
 
     </v-toolbar>
 
-    <!-- Date Range Selector -->
+    <!-- Date Range Selector - Hidden for seats tab -->
     <DateRangeSelector 
+      v-if="tab !== 'seat analysis'"
       :loading="isLoading"
       @date-range-changed="handleDateRangeChange"
     />
+    
+    <!-- Organization info for seats tab -->
+    <div v-if="tab === 'seat analysis'" class="organization-info">
+      <v-card flat class="pa-3 mb-2">
+        <div class="text-body-2 text-center">
+          Displaying data for organization: <strong>{{ displayName }}</strong>
+        </div>
+      </v-card>
+    </div>
 
     <!-- API Error Message -->
     <div v-show="apiError && !signInRequired" class="error-message" v-text="apiError" />
@@ -62,8 +72,8 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
-            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" />
-            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
+            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" :date-range-description="dateRangeDescription" />
+            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" :date-range-description="dateRangeDescription" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
@@ -292,5 +302,10 @@ export default defineNuxtComponent({
   margin-right: 8px;
   margin-left: 8px;
   border: 2px solid white;
+}
+
+.organization-info {
+  background-color: #f5f5f5;
+  border-left: 4px solid #1976d2;
 }
 </style>
