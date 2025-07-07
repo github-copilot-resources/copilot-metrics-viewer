@@ -186,10 +186,10 @@ export default defineNuxtComponent({
     // Load initial data
     try {
       const { data: metricsData, error: metricsError } = await this.metricsFetch;
-      if (metricsError || !metricsData) {
-        this.processError(metricsError as H3Error);
+      if (metricsError.value || !metricsData.value) {
+        this.processError(metricsError.value as H3Error);
       } else {
-        const apiResponse = metricsData as MetricsApiResponse;
+        const apiResponse = metricsData.value as MetricsApiResponse;
         this.metrics = apiResponse.metrics || [];
         this.originalMetrics = apiResponse.usage || [];
         this.metricsReady = true;
