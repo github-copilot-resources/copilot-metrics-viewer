@@ -43,6 +43,6 @@
     "vitest": "^3.0.5",
     "vue-tsc": "^2.1.6",
     "vuetify-nuxt-module": "^0.18.3",
-    "esbuild": ">=0.25.0"
+    "esbuild": ">=0.25.6"
   }
 }
