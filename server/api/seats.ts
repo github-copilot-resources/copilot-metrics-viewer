@@ -1,7 +1,38 @@
 import { Seat } from "@/model/Seat";
-import type FetchError from 'ofetch';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+
+/**
+ * Deduplicates seats by user ID, keeping the seat with the most recent activity.
+ * This handles enterprise scenarios where users are assigned to multiple organizations.
+ * @param seats Array of seats to deduplicate
+ * @returns Array of unique seats
+ */
+function deduplicateSeats(seats: Seat[]): Seat[] {
+  const uniqueSeats = new Map<number, Seat>();
+  
+  for (const seat of seats) {
+    // Skip seats with invalid user ID
+    if (!seat.id || seat.id === 0) {
+      continue;
+    }
+    
+    const existingSeat = uniqueSeats.get(seat.id);
+    if (!existingSeat) {
+      uniqueSeats.set(seat.id, seat);
+    } else {
+      // Keep the seat with more recent activity, treating null as earliest date
+      const seatActivity = seat.last_activity_at || '1970-01-01T00:00:00Z';
+      const existingActivity = existingSeat.last_activity_at || '1970-01-01T00:00:00Z';
+      
+      if (seatActivity > existingActivity) {
+        uniqueSeats.set(seat.id, seat);
+      }
+    }
+  }
+  
+  return Array.from(uniqueSeats.values());
+}
 
 export default defineEventHandler(async (event) => {
 
@@ -29,9 +60,12 @@ export default defineEventHandler(async (event) => {
     const data = readFileSync(path, 'utf8');
     const dataJson = JSON.parse(data);
     const seatsData = dataJson.seats.map((item: unknown) => new Seat(item));
+    
+    // Deduplicate seats by user ID to handle enterprise scenarios where users are assigned to multiple organizations
+    const deduplicatedSeats = deduplicateSeats(seatsData);
 
     logger.info('Using mocked data');
-    return seatsData;
+    return deduplicatedSeats;
   }
 
   if (!event.context.headers.has('Authorization')) {
@@ -76,5 +110,8 @@ export default defineEventHandler(async (event) => {
     seatsData = seatsData.concat(response.seats.map((item: unknown) => new Seat(item)));
   }
 
-  return seatsData;
+  // Deduplicate seats by user ID to handle enterprise scenarios where users are assigned to multiple organizations
+  const deduplicatedSeats = deduplicateSeats(seatsData);
+
+  return deduplicatedSeats;
 })
