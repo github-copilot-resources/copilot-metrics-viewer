@@ -7,8 +7,8 @@ export class Seat {
     last_activity_editor: string;
 
     constructor(data: any) {
-        this.login = data.assignee.login;
-        this.id = data.assignee.id;
+        this.login = data.assignee ? data.assignee.login : 'deprecated';
+        this.id = data.assignee ? data.assignee.id : 0;
         this.team = data.assigning_team ? data.assigning_team.name : '';
         this.created_at = data.created_at;
         this.last_activity_at = data.last_activity_at;
