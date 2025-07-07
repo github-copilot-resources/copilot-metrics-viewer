@@ -11,12 +11,6 @@ export default defineEventHandler(async (event) => {
         return;
     }
     
-    // Skip authentication for health check endpoints
-    const healthEndpoints = ['/api/health', '/api/ready', '/api/live'];
-    if (healthEndpoints.some(endpoint => url === endpoint)) {
-        return;
-    }
-
     // get runtime config
     const config = useRuntimeConfig(event);
 
