@@ -79,7 +79,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef } from 'vue';
+import { defineComponent, ref, toRef, watch } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Breakdown } from '@/model/Breakdown';
 import { Pie } from 'vue-chartjs'
@@ -161,76 +161,87 @@ export default defineComponent({
     '#7CFC00'  // Lawn Green
 ]);
 
-    const data = toRef(props, 'metrics').value;
+    // Function to process breakdown data
+    const processBreakdownData = (data: Metrics[]) => {
+      // Reset the breakdown list
+      breakdownList.value = [];
+      
+      // Process the breakdown separately
+      data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
+      {
+        const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
+        let breakdown = breakdownList.value.find(b => b.name === breakdownName);
 
-    // Process the breakdown separately
-    data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
-    {
-      const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
-      let breakdown = breakdownList.value.find(b => b.name === breakdownName);
+        if (!breakdown) {
+          // Create a new breakdown object if it does not exist
+          breakdown = new Breakdown({
+            name: breakdownName,
+            acceptedPrompts: breakdownData.acceptances_count,
+            suggestedPrompts: breakdownData.suggestions_count,
+            suggestedLinesOfCode: breakdownData.lines_suggested,
+            acceptedLinesOfCode: breakdownData.lines_accepted,
+          });
+          breakdownList.value.push(breakdown);
+        } else {
+          // Update the existing breakdown object
+          breakdown.acceptedPrompts += breakdownData.acceptances_count;
+          breakdown.suggestedPrompts += breakdownData.suggestions_count;
+          breakdown.suggestedLinesOfCode += breakdownData.lines_suggested;
+          breakdown.acceptedLinesOfCode += breakdownData.lines_accepted;
+        }
+        // Recalculate the acceptance rates
+        breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
+        breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
 
-      if (!breakdown) {
-        // Create a new breakdown object if it does not exist
-        breakdown = new Breakdown({
-          name: breakdownName,
-          acceptedPrompts: breakdownData.acceptances_count,
-          suggestedPrompts: breakdownData.suggestions_count,
-          suggestedLinesOfCode: breakdownData.lines_suggested,
-          acceptedLinesOfCode: breakdownData.lines_accepted,
-        });
-        breakdownList.value.push(breakdown);
-      } else {
-        // Update the existing breakdown object
-        breakdown.acceptedPrompts += breakdownData.acceptances_count;
-        breakdown.suggestedPrompts += breakdownData.suggestions_count;
-        breakdown.suggestedLinesOfCode += breakdownData.lines_suggested;
-        breakdown.acceptedLinesOfCode += breakdownData.lines_accepted;
+        // Log each breakdown for debugging
+       // console.log('Breakdown:', breakdown);
+      }));
+
+      //Sort breakdowns map by accepted prompts
+      breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
+
+      // Get the top 5 breakdowns by accepted prompts
+      const top5BreakdownsAcceptedPrompts = breakdownList.value.slice(0, 5);
+      
+      breakdownsChartDataTop5AcceptedPrompts.value = {
+        labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptedPrompts),
+            backgroundColor: pieChartColors.value,
+          },
+        ],
+      };
+
+      breakdownsChartDataTop5AcceptedPromptsByLines.value = {
+        labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByLines.toFixed(2)),
+            backgroundColor: pieChartColors.value,
+          },
+        ],
+      };
+
+      breakdownsChartDataTop5AcceptedPromptsByCounts.value = {
+        labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
+        datasets: [
+          {
+            data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByCount.toFixed(2)),
+            backgroundColor: pieChartColors.value,
+          },
+        ],
+      };
+
+      numberOfBreakdowns.value = breakdownList.value.length;
+    };
+
+    // Watch for changes in metrics prop and re-process data
+    watch(() => props.metrics, (newMetrics) => {
+      if (newMetrics && Array.isArray(newMetrics)) {
+        processBreakdownData(newMetrics);
       }
-      // Recalculate the acceptance rates
-      breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
-      breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
-
-      // Log each breakdown for debugging
-     // console.log('Breakdown:', breakdown);
-    }));
-
-    //Sort breakdowns map by accepted prompts
-    breakdownList.value.sort((a, b) => b.acceptedPrompts - a.acceptedPrompts);
-
-    // Get the top 5 breakdowns by accepted prompts
-    const top5BreakdownsAcceptedPrompts = breakdownList.value.slice(0, 5);
-    
-    breakdownsChartDataTop5AcceptedPrompts.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptedPrompts),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
-
-    breakdownsChartDataTop5AcceptedPromptsByLines.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByLines.toFixed(2)),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
-
-    breakdownsChartDataTop5AcceptedPromptsByCounts.value = {
-      labels: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.name),
-      datasets: [
-        {
-          data: top5BreakdownsAcceptedPrompts.map(breakdown => breakdown.acceptanceRateByCount.toFixed(2)),
-          backgroundColor: pieChartColors.value,
-        },
-      ],
-    };
-
-    numberOfBreakdowns.value = breakdownList.value.length;
+    }, { immediate: true, deep: true });
 
     return { chartOptions, breakdownList, numberOfBreakdowns, 
       breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts };
