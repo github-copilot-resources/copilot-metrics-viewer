@@ -1,7 +1,7 @@
 <template>
   <v-card class="pa-4 ma-4" elevation="2">
     <v-card-title class="text-h6 pb-2">Date Range Filter</v-card-title>
-    <v-row>
+    <v-row align="end">
       <v-col cols="12" sm="4">
         <v-text-field
           v-model="fromDate"
@@ -22,18 +22,20 @@
           @update:model-value="updateDateRange"
         />
       </v-col>
-      <v-col cols="12" sm="4" class="d-flex align-end">
+      <v-col cols="12" sm="4" class="d-flex align-center justify-start" style="padding-bottom: 35px;">
         <v-btn
           color="primary"
           variant="outlined"
-          class="mr-2"
+          size="default"
+          class="mr-3"
           @click="resetToDefault"
         >
           Last 28 Days
         </v-btn>
         <v-btn
           color="primary"
-          :loading="props.loading"
+          size="default"
+          :loading="loading"
           @click="applyDateRange"
         >
           Apply
@@ -57,7 +59,7 @@ interface Emits {
   (e: 'date-range-changed', value: { since?: string; until?: string; description: string }): void
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   loading: false
 })
 
@@ -71,7 +73,7 @@ const fromDate = ref(formatDate(defaultFromDate))
 const toDate = ref(formatDate(today))
 
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0]
+  return date.toISOString().split('T')[0] || ''
 }
 
 function parseDate(dateString: string): Date {

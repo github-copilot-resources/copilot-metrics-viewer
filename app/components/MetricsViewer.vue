@@ -143,7 +143,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef } from 'vue';
+import { defineComponent, ref, toRef, watchEffect } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import {
   Chart as ChartJS,
@@ -251,9 +251,15 @@ export default defineComponent({
       },
     };
 
-    const data = toRef(props, 'metrics').value;
+    // Watch for changes in metrics prop and recalculate all data
+    watchEffect(() => {
+      const data = toRef(props, 'metrics').value;
+      
+      if (!data || data.length === 0) {
+        return;
+      }
 
-    cumulativeNumberSuggestions.value = 0;
+      cumulativeNumberSuggestions.value = 0;
     const cumulativeSuggestionsData = data.map((m: Metrics) => {
       cumulativeNumberSuggestions.value += m.total_suggestions_count;
       return m.total_suggestions_count;
@@ -375,6 +381,8 @@ export default defineComponent({
         }
       ]
     };
+    
+    }); // end of watchEffect
 
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
