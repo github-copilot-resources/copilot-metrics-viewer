@@ -5,7 +5,7 @@
                 <div class="tiles-text">
                     <div class="spacing-25"/>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template v-slot:activator="{ props }">
+                      <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Turns</div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -23,7 +23,7 @@
                 <div class="tiles-text">
                     <div class="spacing-10"/>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template v-slot:activator="{ props }">
+                      <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Acceptances</div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -41,7 +41,7 @@
         <v-container style="min-height: 300px;" class="px-4 elevation-2">
 
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template v-slot:activator="{ props }">
+              <template #activator="{ props }">
                 <h2 v-bind="props" class="mb-1">Total Acceptances | Total Turns Count</h2>
               </template>
               <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -51,7 +51,7 @@
             <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
 
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template v-slot:activator="{ props }">
+              <template #activator="{ props }">
                 <h2 v-bind="props" class="mb-1">Total Active Copilot Chat Users</h2>
               </template>
               <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">

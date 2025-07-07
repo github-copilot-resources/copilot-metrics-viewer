@@ -59,6 +59,7 @@
             <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" />
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
+            <AgentModeViewer v-if="item === 'agent mode'" :original-metrics="originalMetrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
@@ -87,6 +88,7 @@ import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue'
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
+import AgentModeViewer from './AgentModeViewer.vue'
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -95,7 +97,8 @@ export default defineNuxtComponent({
     BreakdownComponent,
     CopilotChatViewer,
     SeatsAnalysisViewer,
-    ApiResponse
+    ApiResponse,
+    AgentModeViewer
   },
   methods: {
     logout() {
@@ -109,7 +112,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent mode', 'seat analysis', 'api response'],
       tab: null
     }
   },
