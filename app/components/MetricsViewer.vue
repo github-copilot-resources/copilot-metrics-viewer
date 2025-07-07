@@ -16,7 +16,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption">
-              Over the last 28 days
+              {{ dateRangeDescription }}
             </div>
             <p class="text-h4">{{ acceptanceRateAverageByCount.toFixed(2) }}%</p>
           </div>
@@ -35,8 +35,8 @@
                 <span class="text-caption" style="font-size: 10px !important;">This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption">
-              Over the last 28 days
+              <div class="text-caption">
+              {{ dateRangeDescription }}
             </div>
             <p class="text-h4">{{ cumulativeNumberSuggestions }}</p>
           </div>
@@ -56,7 +56,7 @@
                 </v-card>
               </v-tooltip>
               <div class="text-caption">
-                Over the last 28 days
+                {{ dateRangeDescription }}
               </div>
               <p class="text-h4">{{ acceptanceRateAverageByLines.toFixed(2) }}%</p>
           </div>
@@ -76,7 +76,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption">
-              Over the last 28 days
+              {{ dateRangeDescription }}
             </div>
             <p class="text-h4">{{ totalLinesSuggested }}</p>
           </div>
@@ -184,6 +184,10 @@ export default defineComponent({
         metrics: {
             type: Array as PropType<Metrics[]>,
             required: true
+        },
+        dateRangeDescription: {
+            type: String,
+            default: 'Over the last 28 days'
         }
     },
   setup(props) {

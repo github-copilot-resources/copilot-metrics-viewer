@@ -12,8 +12,14 @@ export default defineEventHandler(async (event) => {
 
     const logger = console;
     const config = useRuntimeConfig(event);
+    const query = getQuery(event);
+    
     let apiUrl = '';
     let mockedDataPath: string;
+
+    // Extract date parameters from query
+    const since = query.since as string | undefined;
+    const until = query.until as string | undefined;
 
     switch (event.context.scope) {
         case 'team':
@@ -32,6 +38,14 @@ export default defineEventHandler(async (event) => {
             break;
         default:
             return new Response('Invalid configuration/parameters for the request', { status: 400 });
+    }
+
+    // Add query parameters for date filtering if provided
+    if (since || until) {
+        const urlParams = new URLSearchParams();
+        if (since) urlParams.append('since', since);
+        if (until) urlParams.append('until', until);
+        apiUrl += `?${urlParams.toString()}`;
     }
 
     if (config.public.isDataMocked && mockedDataPath) {
@@ -55,12 +69,42 @@ export default defineEventHandler(async (event) => {
     logger.info(`Fetching metrics data from ${apiUrl}`);
 
     try {
-        const response = await $fetch(apiUrl, {
-            headers: event.context.headers
-        }) as unknown[];
+        // Handle potential pagination for metrics API
+        let allMetricsData: CopilotMetrics[] = [];
+        let page = 1;
+        const perPage = 100; // GitHub API typically uses 100 as max per_page
+        
+        while (true) {
+            // Build URL with pagination parameters
+            const paginatedUrl = new URL(apiUrl);
+            paginatedUrl.searchParams.set('per_page', perPage.toString());
+            paginatedUrl.searchParams.set('page', page.toString());
+            
+            logger.info(`Fetching metrics data page ${page} from ${paginatedUrl.toString()}`);
+            
+            const response = await $fetch(paginatedUrl.toString(), {
+                headers: event.context.headers
+            }) as unknown[];
+
+            const pageData = response as CopilotMetrics[];
+            
+            // If we get less than perPage items, this is the last page
+            if (pageData.length === 0) {
+                break;
+            }
+            
+            allMetricsData = allMetricsData.concat(pageData);
+            
+            // If we got less than perPage items, this is the last page
+            if (pageData.length < perPage) {
+                break;
+            }
+            
+            page++;
+        }
 
         // usage is the new API format
-        const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
+        const usageData = ensureCopilotMetrics(allMetricsData);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
         return { metrics: metricsData, usage: usageData } as MetricsApiResponse;

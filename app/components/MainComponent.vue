@@ -34,6 +34,12 @@
 
     </v-toolbar>
 
+    <!-- Date Range Selector -->
+    <DateRangeSelector 
+      :loading="isLoading"
+      @date-range-changed="handleDateRangeChange"
+    />
+
     <!-- API Error Message -->
     <div v-show="apiError && !signInRequired" class="error-message" v-text="apiError" />
     <AuthState>
@@ -55,10 +61,10 @@
       <v-window v-show="metricsReady && metrics.length" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
-            <MetricsViewer v-if="item === itemName" :metrics="metrics" />
+            <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
             <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" />
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" />
-            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" />
+            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
@@ -87,6 +93,7 @@ import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue'
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
+import DateRangeSelector from './DateRangeSelector.vue'
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -95,7 +102,8 @@ export default defineNuxtComponent({
     BreakdownComponent,
     CopilotChatViewer,
     SeatsAnalysisViewer,
-    ApiResponse
+    ApiResponse,
+    DateRangeSelector
   },
   methods: {
     logout() {
@@ -104,17 +112,103 @@ export default defineNuxtComponent({
       this.seats = [];
       // console.log('metrics are now', this.metrics);
       clear();
+    },
+    async handleDateRangeChange(dateRange: { since?: string; until?: string; description: string }) {
+      this.dateRangeDescription = dateRange.description;
+      this.isLoading = true;
+      
+      try {
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (dateRange.since) params.append('since', dateRange.since);
+        if (dateRange.until) params.append('until', dateRange.until);
+        
+        const queryString = params.toString();
+        const apiUrl = queryString ? `/api/metrics?${queryString}` : '/api/metrics';
+        
+        const response = await $fetch(apiUrl) as MetricsApiResponse;
+        
+        this.metrics = response.metrics || [];
+        this.originalMetrics = response.usage || [];
+        this.metricsReady = true;
+        this.apiError = undefined;
+      } catch (error: any) {
+        this.processError(error);
+      } finally {
+        this.isLoading = false;
+      }
+    },
+    processError(error: H3Error) {
+      console.error(error || 'No data returned from API');
+      // Check the status code of the error response
+      if (error.statusCode) {
+        switch (error.statusCode) {
+          case 401:
+            this.apiError = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
+            break;
+          case 404:
+            this.apiError = `404 Not Found - is the ${this.config?.public?.scope || ''} org:"${this.config?.public?.githubOrg || ''}" ent:"${this.config?.public?.githubEnt || ''}" team:"${this.config?.public?.githubTeam}" correct? ${error.message}`;
+            break;
+          case 422:
+            this.apiError = `422 Unprocessable Entity - Is the Copilot Metrics API enabled for the Org/Ent? ${error.message}`;
+            break;
+          case 500:
+            this.apiError = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
+            break;
+          default:
+            this.apiError = `${error.statusCode} Error: ${error.message}`;
+            break;
+        }
+      }
     }
   },
 
   data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
-      tab: null
+      tab: null,
+      dateRangeDescription: 'Over the last 28 days',
+      isLoading: false,
+      metricsReady: false,
+      metrics: [] as Metrics[],
+      originalMetrics: [] as CopilotMetrics[],
+      seatsReady: false,
+      seats: [] as Seat[],
+      apiError: undefined as string | undefined,
+      config: null as any
     }
   },
   created() {
     this.tabItems.unshift(this.itemName);
+    this.config = useRuntimeConfig();
+  },
+  async mounted() {
+    // Load initial data
+    try {
+      const { data: metricsData, error: metricsError } = await this.metricsFetch;
+      if (metricsError || !metricsData) {
+        this.processError(metricsError as H3Error);
+      } else {
+        const apiResponse = metricsData as MetricsApiResponse;
+        this.metrics = apiResponse.metrics || [];
+        this.originalMetrics = apiResponse.usage || [];
+        this.metricsReady = true;
+      }
+
+      if (this.config.public.scope === 'team' && this.metrics.length === 0 && !this.apiError) {
+        this.apiError = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
+      }
+
+      const { data: seatsData, error: seatsError } = await this.seatsFetch;
+      if (seatsError) {
+        this.processError(seatsError as H3Error);
+      } else {
+        this.seats = seatsData || [];
+        this.seatsReady = true;
+      }
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+    }
   },
   async setup() {
     const { loggedIn, user } = useUserSession()
@@ -125,84 +219,23 @@ export default defineNuxtComponent({
     const githubInfo = getDisplayName(config.public)
     const displayName = computed(() => githubInfo);
 
-    const metricsReady = ref(false);
-    const metrics = ref<Metrics[]>([]);
-    const originalMetrics = ref<CopilotMetrics[]>([]);
-    const seatsReady = ref(false);
-    const seats = ref<Seat[]>([]);
-    // API Error Message
-    const apiError = ref<string | undefined>(undefined);
     const signInRequired = computed(() => {
       return config.public.usingGithubAuth && !loggedIn.value;
     });
 
-    /**
-     * Handles API errors by setting appropriate error messages.
-     * @param {H3Error} error - The error object returned from the API call.
-     */
-    function processError(error: H3Error) {
-      console.error(error || 'No data returned from API');
-      // Check the status code of the error response
-      if (error.statusCode) {
-        switch (error.statusCode) {
-          case 401:
-            apiError.value = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
-            break;
-          case 404:
-            apiError.value = `404 Not Found - is the ${config.public.scope || ''} org:"${config.public.githubOrg || ''}" ent:"${config.public.githubEnt || ''}" team:"${config.public.githubTeam}" correct? ${error.message}`;
-            break;
-          case 422:
-            apiError.value = `422 Unprocessable Entity - Is the Copilot Metrics API enabled for the Org/Ent? ${error.message}`;
-            break;
-          case 500:
-            apiError.value = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
-            break;
-          default:
-            apiError.value = `${error.statusCode} Error: ${error.message}`;
-            break;
-        }
-      }
-    }
-
+    // Initial data load with default date range
     const metricsFetch = useFetch('/api/metrics');
     const seatsFetch = useFetch('/api/seats');
 
-    const { data: metricsData, error: metricsError } = await metricsFetch;
-    if (metricsError.value || !metricsData.value) {
-      processError(metricsError.value as H3Error);
-    } else {
-      const apiResponse = metricsData.value as MetricsApiResponse;
-      metrics.value = apiResponse.metrics || [];
-      originalMetrics.value = apiResponse.usage || [];
-      metricsReady.value = true;
-    }
-
-    if (config.public.scope === 'team' && metrics.value.length === 0 && !apiError.value) {
-      apiError.value = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
-    }
-
-    const { data: seatsData, error: seatsError } = await seatsFetch;
-    if (seatsError.value) {
-      processError(seatsError.value as H3Error);
-    } else {
-      seats.value = seatsData.value || [];
-      seatsReady.value = true;
-    }
-
     return {
-      metricsReady,
-      metrics,
-      originalMetrics,
-      seatsReady,
-      seats,
-      apiError,
-      signInRequired,
       showLogoutButton,
-      config,
       mockedDataMessage,
       itemName,
       displayName,
-      user
+      signInRequired,
+      user,
+      metricsFetch,
+      seatsFetch
     };
   },
 })
