@@ -38,8 +38,6 @@ jobs:
       run: npx playwright install --with-deps
     - name: Run Vite tests
       run: CI=true npm test
-    - name: Run Health Check Endpoints tests
-      run: CI=true npx vitest tests/health-endpoints.nuxt.spec.ts --run
     - name: Run Playwright tests
       run: |
           CI=true \
