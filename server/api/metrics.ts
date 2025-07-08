@@ -6,63 +6,46 @@ import type FetchError from 'ofetch';
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
 import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { Options } from '@/model/Options';
+
+const cache = new Map<string, MetricsApiResponse>();
 
 export default defineEventHandler(async (event) => {
 
     const logger = console;
-    const config = useRuntimeConfig(event);
     const query = getQuery(event);
-    
-    let apiUrl = '';
-    let mockedDataPath: string;
+    const options = Options.fromQuery(query);
 
-    // Extract date parameters from query
-    const since = query.since as string | undefined;
-    const until = query.until as string | undefined;
+    const apiUrl = options.getApiUrl();
+    const mockedDataPath = options.getMockDataPath();
 
-    switch (event.context.scope) {
-        case 'team':
-            apiUrl = `https://api.github.com/orgs/${event.context.org}/team/${event.context.team}/copilot/metrics`;
-            // no team test data available, using org data
-            // '../../app/mock-data/organization_metrics_response_sample.json'
-            mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
-            break;
-        case 'org':
-            apiUrl = `https://api.github.com/orgs/${event.context.org}/copilot/metrics`;
-            mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
-            break;
-        case 'ent':
-            apiUrl = `https://api.github.com/enterprises/${event.context.ent}/copilot/metrics`;
-            mockedDataPath = resolve('public/mock-data/enterprise_metrics_response_sample.json');
-            break;
-        default:
-            return new Response('Invalid configuration/parameters for the request', { status: 400 });
-    }
-
-    // Add query parameters for date filtering if provided
-    if (since || until) {
-        const urlParams = new URLSearchParams();
-        if (since) urlParams.append('since', since);
-        if (until) urlParams.append('until', until);
-        apiUrl += `?${urlParams.toString()}`;
-    }
-
-    if (config.public.isDataMocked && mockedDataPath) {
+    if (options.isDataMocked && mockedDataPath) {
         const path = mockedDataPath;
         const data = readFileSync(path, 'utf8');
         const dataJson = JSON.parse(data);
-        
+
         // Make mock data dynamic based on date range
-        const dynamicData = updateMockDataDates(dataJson, since, until);
-        
+        const dynamicData = updateMockDataDates(dataJson, options.since, options.until);
+
         // usage is the new API format
         const usageData = ensureCopilotMetrics(dynamicData);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
 
         logger.info('Using mocked data with dynamic date range');
-        return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        const result = { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        return result;
+    }
+
+    if (cache.has(apiUrl)) {
+        logger.info(`Returning cached data for ${apiUrl}`);
+        const cachedData = cache.get(apiUrl);
+        if (cachedData && cachedData.valid_until > Date.now() / 1000) {
+            return cachedData;
+        } else {
+            logger.info(`Cached data for ${apiUrl} is expired, fetching new data`);
+            cache.delete(apiUrl);
+        }
     }
 
     if (!event.context.headers.has('Authorization')) {
@@ -81,7 +64,10 @@ export default defineEventHandler(async (event) => {
         const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
-        return { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
+        const result = { metrics: metricsData, usage: usageData, valid_until: validUntil } as MetricsApiResponse;
+        cache.set(apiUrl, result);
+        return result;
     } catch (error: FetchError) {
         logger.error('Error fetching metrics data:', error);
         return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
@@ -121,7 +107,7 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
     // Generate array of dates in the range
     const dateRange: Date[] = [];
     const currentDate = new Date(startDate);
-    
+
     while (currentDate <= endDate) {
         dateRange.push(new Date(currentDate));
         currentDate.setDate(currentDate.getDate() + 1);
@@ -132,10 +118,10 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
         // Use existing data entries, cycling through them
         const dataIndex = index % originalData.length;
         const entry = { ...originalData[dataIndex] };
-        
+
         // Update the date
         entry.date = date.toISOString().split('T')[0];
-        
+
         return entry;
     });
 

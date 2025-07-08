@@ -42,7 +42,7 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
 
 function buildHeaders(token: string): Headers {
     if (!token) {
-        throw new Error('GitHub token is required');
+        throw new Error('Authentication required but not provided. This happens on the first visit to the dashboard or when the token is expired/not available.');
     }
 
     return new Headers({
