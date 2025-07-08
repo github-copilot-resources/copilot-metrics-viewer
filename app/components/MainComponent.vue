@@ -151,7 +151,7 @@ export default defineNuxtComponent({
     processError(error: H3Error) {
       console.error(error || 'No data returned from API');
       // Check the status code of the error response
-      if (error.statusCode) {
+      if (error && error.statusCode) {
         switch (error.statusCode) {
           case 401:
             this.apiError = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
@@ -236,11 +236,11 @@ export default defineNuxtComponent({
     // Initial data load with default date range
     const metricsFetch = useFetch('/api/metrics', { 
       key: 'initial-metrics',
-      server: false
+      server: true
     });
     const seatsFetch = useFetch('/api/seats', { 
       key: 'initial-seats',
-      server: false
+      server: true
     });
 
     return {
