@@ -3,20 +3,9 @@ import { authenticateAndGetGitHubHeaders } from '../modules/authentication';
 type Scope = 'org' | 'team' | 'ent';
 
 export default defineEventHandler(async (event) => {
-    // Only apply authentication to API routes
-    const url = event.node.req.url || '';
-    
-    // Skip authentication for non-API routes
-    if (!url.startsWith('/api/')) {
-        return;
-    }
-    
+
     // get runtime config
     const config = useRuntimeConfig(event);
-
-    // get github headers - this also authenticates the user 
-    // and throws exception when authentication is required but not provided
-    event.context.headers = await authenticateAndGetGitHubHeaders(event);
 
     event.context.ent = config.public.githubEnt
     event.context.org = config.public.githubOrg
@@ -31,4 +20,16 @@ export default defineEventHandler(async (event) => {
     else if (event.context.ent) {
         event.context.scope = 'ent' as Scope;
     }
+
+    // Only apply authentication to API routes
+    const url = event.node.req.url || '';
+
+    // Skip authentication for non-API routes
+    if (!url.startsWith('/api/')) {
+        return;
+    }
+
+    // get github headers - this also authenticates the user 
+    // and throws exception when authentication is required but not provided
+    event.context.headers = await authenticateAndGetGitHubHeaders(event);
 })

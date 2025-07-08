@@ -14,13 +14,18 @@ export default {
             component: () => import('~/pages/index.vue')
         },
         {
-            name: 'team',
+            name: 'org-team',
             path: '/orgs/:org/teams/:team',
             component: () => import('~/pages/index.vue')
         },
         {
             name: 'ent',
             path: '/enterprises/:ent',
+            component: () => import('~/pages/index.vue')
+        },
+        {
+            name: 'ent-team',
+            path: '/enterprises/:ent/teams/:team',
             component: () => import('~/pages/index.vue')
         }
     ],

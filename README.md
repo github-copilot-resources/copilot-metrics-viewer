@@ -100,11 +100,12 @@ can be overriden by route parameters, e.g.
 - `http://localhost:3000/enterprises/octo-demo-ent`
 - `http://localhost:3000/orgs/octo-demo-org`
 - `http://localhost:3000/orgs/octo-demo-org/teams/the-a-team`
+- `http://localhost:3000/enterprises/octo-demo-ent/teams/the-a-team`
 - `http://localhost:3000/orgs/mocked-org?mock=true`
 
 #### NUXT_PUBLIC_SCOPE
 
-The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization' or 'team'.
+The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization', 'team-organization' or 'team-enterprise'.
 
 - If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
 - If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
