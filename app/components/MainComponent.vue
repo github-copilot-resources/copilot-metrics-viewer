@@ -68,7 +68,7 @@
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
-      <v-window v-show="metricsReady && metrics.length" v-model="tab">
+      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis')" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
@@ -82,7 +82,7 @@ v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMet
           </v-card>
         </v-window-item>
         <v-alert
-v-show="metricsReady && metrics.length == 0" density="compact" text="No data available to display"
+v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis') || (seatsReady && seats.length == 0 && tab === 'seat analysis')" density="compact" text="No data available to display"
           title="No data" type="warning" />
       </v-window>
 
