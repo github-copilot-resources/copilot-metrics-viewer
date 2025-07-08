@@ -75,7 +75,7 @@
             <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" :date-range-description="dateRangeDescription" />
             <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" :date-range-description="dateRangeDescription" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" :date-range-description="dateRangeDescription" />
-            <AgentModeViewer v-if="item === 'agent mode'" :original-metrics="originalMetrics" />
+            <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
@@ -178,7 +178,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'agent mode', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,

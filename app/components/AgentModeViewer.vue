@@ -1,15 +1,15 @@
 <template>
-    <div class="agent-mode-container">
+    <div class="github-com-container">
         <v-main class="p-1" style="min-height: 300px;">
             <v-container style="min-height: 300px;" class="px-4 elevation-2">
                 <!-- Agent Mode Statistics Title -->
                 <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
                     <template #activator="{ props }">
-                        <h2 v-bind="props" class="mb-4">Agent Mode Statistics</h2>
+                        <h2 v-bind="props" class="mb-4">GitHub.com Statistics</h2>
                     </template>
                     <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
                         <span class="text-caption" style="font-size: 10px !important;">
-                            This section displays statistics for different modes of Copilot interaction and the models used by users.
+                            This section displays statistics for different GitHub.com Copilot features and the models used by users.
                         </span>
                     </v-card>
                 </v-tooltip>
@@ -18,40 +18,84 @@
                 <v-row class="mb-4">
                     <v-col cols="12" md="6" lg="3">
                         <v-card elevation="4" color="blue lighten-4">
-                            <v-card-title class="text-h6">IDE Code Completions</v-card-title>
+                            <v-card-title class="text-h6">
+                                <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                                    <template #activator="{ props }">
+                                        <span v-bind="props">IDE Code Completions</span>
+                                    </template>
+                                    <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                                        <span class="text-caption" style="font-size: 10px !important;">
+                                            Statistics for code completions in integrated development environments.
+                                        </span>
+                                    </v-card>
+                                </v-tooltip>
+                            </v-card-title>
                             <v-card-text>
                                 <div class="text-h4 mb-2">{{ totalIdeCodeCompletionUsers }}</div>
-                                <div class="text-caption">Total Engaged Users</div>
+                                <div class="text-caption">Total Users with Activity</div>
                                 <div class="text-subtitle2 mt-2">{{ totalIdeCodeCompletionModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
                     </v-col>
                     <v-col cols="12" md="6" lg="3">
                         <v-card elevation="4" color="green lighten-4">
-                            <v-card-title class="text-h6">IDE Chat</v-card-title>
+                            <v-card-title class="text-h6">
+                                <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                                    <template #activator="{ props }">
+                                        <span v-bind="props">IDE Chat</span>
+                                    </template>
+                                    <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                                        <span class="text-caption" style="font-size: 10px !important;">
+                                            Statistics for chat interactions in integrated development environments.
+                                        </span>
+                                    </v-card>
+                                </v-tooltip>
+                            </v-card-title>
                             <v-card-text>
                                 <div class="text-h4 mb-2">{{ totalIdeChatUsers }}</div>
-                                <div class="text-caption">Total Engaged Users</div>
+                                <div class="text-caption">Total Users with Activity</div>
                                 <div class="text-subtitle2 mt-2">{{ totalIdeChatModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
                     </v-col>
                     <v-col cols="12" md="6" lg="3">
                         <v-card elevation="4" color="purple lighten-4">
-                            <v-card-title class="text-h6">Dotcom Chat</v-card-title>
+                            <v-card-title class="text-h6">
+                                <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                                    <template #activator="{ props }">
+                                        <span v-bind="props">GitHub.com Chat</span>
+                                    </template>
+                                    <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                                        <span class="text-caption" style="font-size: 10px !important;">
+                                            Statistics for chat interactions on GitHub.com web interface.
+                                        </span>
+                                    </v-card>
+                                </v-tooltip>
+                            </v-card-title>
                             <v-card-text>
                                 <div class="text-h4 mb-2">{{ totalDotcomChatUsers }}</div>
-                                <div class="text-caption">Total Engaged Users</div>
+                                <div class="text-caption">Total Users with Activity</div>
                                 <div class="text-subtitle2 mt-2">{{ totalDotcomChatModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
                     </v-col>
                     <v-col cols="12" md="6" lg="3">
                         <v-card elevation="4" color="orange lighten-4">
-                            <v-card-title class="text-h6">Dotcom PR</v-card-title>
+                            <v-card-title class="text-h6">
+                                <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                                    <template #activator="{ props }">
+                                        <span v-bind="props">GitHub.com PR Summaries</span>
+                                    </template>
+                                    <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                                        <span class="text-caption" style="font-size: 10px !important;">
+                                            Statistics for pull request summaries generated by Copilot on GitHub.com.
+                                        </span>
+                                    </v-card>
+                                </v-tooltip>
+                            </v-card-title>
                             <v-card-text>
-                                <div class="text-h4 mb-2">{{ totalDotcomPRUsers }}</div>
-                                <div class="text-caption">Total Engaged Users</div>
+                                <div class="text-h4 mb-2">{{ totalPRSummariesCreated }}</div>
+                                <div class="text-caption">Total PR Summaries Created</div>
                                 <div class="text-subtitle2 mt-2">{{ totalDotcomPRModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
@@ -61,11 +105,11 @@
                 <!-- Agent Mode Statistics Chart -->
                 <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
                     <template #activator="{ props }">
-                        <h2 v-bind="props" class="mb-1">Agent Mode Usage Over Time</h2>
+                        <h2 v-bind="props" class="mb-1">GitHub.com Feature Usage Over Time</h2>
                     </template>
                     <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
                         <span class="text-caption" style="font-size: 10px !important;">
-                            This chart shows the usage of different Copilot agent modes over time.
+                            This chart shows the usage of different GitHub.com Copilot features over time.
                         </span>
                     </v-card>
                 </v-tooltip>
@@ -78,7 +122,7 @@
                     </template>
                     <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
                         <span class="text-caption" style="font-size: 10px !important;">
-                            This section shows detailed information about the AI models used across different agent modes.
+                            This section shows detailed information about the AI models used across different GitHub.com Copilot features.
                         </span>
                     </v-card>
                 </v-tooltip>
@@ -120,7 +164,7 @@
                     <v-expansion-panel v-if="dotcomChatModels.length > 0">
                         <v-expansion-panel-title>
                             <v-icon start>mdi-web</v-icon>
-                            Dotcom Chat Models ({{ dotcomChatModels.length }})
+                            GitHub.com Chat Models ({{ dotcomChatModels.length }})
                         </v-expansion-panel-title>
                         <v-expansion-panel-text>
                             <v-data-table
@@ -136,7 +180,7 @@
                     <v-expansion-panel v-if="dotcomPRModels.length > 0">
                         <v-expansion-panel-title>
                             <v-icon start>mdi-source-pull</v-icon>
-                            Dotcom PR Models ({{ dotcomPRModels.length }})
+                            GitHub.com PR Summary Models ({{ dotcomPRModels.length }})
                         </v-expansion-panel-title>
                         <v-expansion-panel-text>
                             <v-data-table
@@ -157,7 +201,7 @@
                     </template>
                     <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
                         <span class="text-caption" style="font-size: 10px !important;">
-                            This chart shows the distribution of model usage across different agent modes.
+                            This chart shows the distribution of model usage across different GitHub.com Copilot features.
                         </span>
                     </v-card>
                 </v-tooltip>
@@ -229,6 +273,19 @@ export default defineComponent({
         const totalDotcomPRUsers = computed(() => {
             return props.originalMetrics.reduce((sum, metric) => {
                 return sum + (metric.copilot_dotcom_pull_requests?.total_engaged_users || 0);
+            }, 0);
+        });
+
+        const totalPRSummariesCreated = computed(() => {
+            return props.originalMetrics.reduce((sum, metric) => {
+                if (metric.copilot_dotcom_pull_requests?.repositories) {
+                    return sum + metric.copilot_dotcom_pull_requests.repositories.reduce((repoSum, repo) => {
+                        return repoSum + (repo.models?.reduce((modelSum, model) => {
+                            return modelSum + (model.total_pr_summaries_created || 0);
+                        }, 0) || 0);
+                    }, 0);
+                }
+                return sum;
             }, 0);
         });
 
@@ -394,14 +451,14 @@ export default defineComponent({
                         tension: 0.1
                     },
                     {
-                        label: 'Dotcom Chat',
+                        label: 'GitHub.com Chat',
                         data: props.originalMetrics.map(metric => metric.copilot_dotcom_chat?.total_engaged_users || 0),
                         borderColor: 'rgb(153, 102, 255)',
                         backgroundColor: 'rgba(153, 102, 255, 0.2)',
                         tension: 0.1
                     },
                     {
-                        label: 'Dotcom PR',
+                        label: 'GitHub.com PR',
                         data: props.originalMetrics.map(metric => metric.copilot_dotcom_pull_requests?.total_engaged_users || 0),
                         borderColor: 'rgb(255, 159, 64)',
                         backgroundColor: 'rgba(255, 159, 64, 0.2)',
@@ -413,7 +470,7 @@ export default defineComponent({
 
         const modelUsageChartData = computed(() => {
             return {
-                labels: ['IDE Code Completions', 'IDE Chat', 'Dotcom Chat', 'Dotcom PR'],
+                labels: ['IDE Code Completions', 'IDE Chat', 'GitHub.com Chat', 'GitHub.com PR'],
                 datasets: [
                     {
                         label: 'Total Models',
@@ -446,14 +503,14 @@ export default defineComponent({
             { title: 'Model Name', key: 'name' },
             { title: 'Editor', key: 'editor' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Engaged Users', key: 'total_engaged_users' }
+            { title: 'Total Users with Activity', key: 'total_engaged_users' }
         ];
 
         const ideChatHeaders = [
             { title: 'Model Name', key: 'name' },
             { title: 'Editor', key: 'editor' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Engaged Users', key: 'total_engaged_users' },
+            { title: 'Total Users with Activity', key: 'total_engaged_users' },
             { title: 'Total Chats', key: 'total_chats' },
             { title: 'Insertions', key: 'total_chat_insertion_events' },
             { title: 'Copy Events', key: 'total_chat_copy_events' }
@@ -462,7 +519,7 @@ export default defineComponent({
         const dotcomChatHeaders = [
             { title: 'Model Name', key: 'name' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Engaged Users', key: 'total_engaged_users' },
+            { title: 'Total Users with Activity', key: 'total_engaged_users' },
             { title: 'Total Chats', key: 'total_chats' }
         ];
 
@@ -470,7 +527,7 @@ export default defineComponent({
             { title: 'Model Name', key: 'name' },
             { title: 'Repository', key: 'repository' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Engaged Users', key: 'total_engaged_users' },
+            { title: 'Total Users with Activity', key: 'total_engaged_users' },
             { title: 'PR Summaries', key: 'total_pr_summaries_created' }
         ];
 
@@ -483,14 +540,14 @@ export default defineComponent({
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Engaged Users'
+                        text: 'Users with Activity'
                     }
                 }
             },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Agent Mode Usage Over Time'
+                    text: 'GitHub.com Feature Usage Over Time'
                 }
             }
         };
@@ -520,6 +577,7 @@ export default defineComponent({
             totalIdeChatUsers,
             totalDotcomChatUsers,
             totalDotcomPRUsers,
+            totalPRSummariesCreated,
             totalIdeCodeCompletionModels,
             totalIdeChatModels,
             totalDotcomChatModels,
@@ -542,7 +600,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.agent-mode-container {
+.github-com-container {
     padding: 16px;
 }
 
