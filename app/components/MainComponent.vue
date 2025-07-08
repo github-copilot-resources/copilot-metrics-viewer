@@ -35,12 +35,9 @@
     </v-toolbar>
 
     <!-- Date Range Selector - Hidden for seats tab -->
-    <DateRangeSelector 
-      v-show="tab !== 'seat analysis' && !signInRequired"
-      :loading="isLoading"
-      @date-range-changed="handleDateRangeChange"
-    />
-    
+    <DateRangeSelector v-show="tab !== 'seat analysis' && !signInRequired" :loading="isLoading"
+      @date-range-changed="handleDateRangeChange" />
+
     <!-- Organization info for seats tab -->
     <div v-if="tab === 'seat analysis'" class="organization-info">
       <v-card flat class="pa-3 mb-2">
@@ -72,18 +69,20 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
-            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'" :date-range-description="dateRangeDescription" />
-            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'" :date-range-description="dateRangeDescription" />
-            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics" :date-range-description="dateRangeDescription" />
+            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
+              :date-range-description="dateRangeDescription" />
+            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
+              :date-range-description="dateRangeDescription" />
+            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics"
+              :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse
-v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
+            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
         <v-alert
-v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis') || (seatsReady && seats.length == 0 && tab === 'seat analysis')" density="compact" text="No data available to display"
-          title="No data" type="warning" />
+          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis') || (seatsReady && seats.length == 0 && tab === 'seat analysis')"
+          density="compact" text="No data available to display" title="No data" type="warning" />
       </v-window>
 
     </div>
@@ -104,6 +103,8 @@ import CopilotChatViewer from './CopilotChatViewer.vue'
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
+import { Options } from '@/model/Options';
+import { useRoute } from 'vue-router';
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -120,28 +121,42 @@ export default defineNuxtComponent({
       const { clear } = useUserSession()
       this.metrics = [];
       this.seats = [];
-      // console.log('metrics are now', this.metrics);
       clear();
     },
-    async handleDateRangeChange(dateRange: { since?: string; until?: string; description: string }) {
-      this.dateRangeDescription = dateRange.description;
+    async handleDateRangeChange(newDateRange: { since?: string; until?: string; description: string }) {
+      this.dateRangeDescription = newDateRange.description;
+      this.dateRange = {
+        since: newDateRange.since,
+        until: newDateRange.until
+      };
+
+      await this.fetchMetrics();
+    },
+    async fetchMetrics() {
+      if (this.signInRequired || !this.dateRange.since || !this.dateRange.until || this.isLoading) {
+        return;
+      }
+      const config = useRuntimeConfig();
+
       this.isLoading = true;
-      
+
       try {
-        // Build query parameters
-        const params = new URLSearchParams();
-        if (dateRange.since) params.append('since', dateRange.since);
-        if (dateRange.until) params.append('until', dateRange.until);
-        
-        const queryString = params.toString();
+        const options = Options.fromRoute(this.route, this.dateRange.since, this.dateRange.until);
+        const params = options.toParams();
+
+        const queryString = new URLSearchParams(params).toString();
         const apiUrl = queryString ? `/api/metrics?${queryString}` : '/api/metrics';
-        
+
         const response = await $fetch(apiUrl) as MetricsApiResponse;
-        
+
         this.metrics = response.metrics || [];
         this.originalMetrics = response.usage || [];
         this.metricsReady = true;
-        this.apiError = undefined;
+
+        if (config.public.scope && config.public.scope.includes('team') && this.metrics.length === 0 && !this.apiError) {
+          this.apiError = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
+        }
+
       } catch (error: any) {
         this.processError(error);
       } finally {
@@ -185,7 +200,7 @@ export default defineNuxtComponent({
       seatsReady: false,
       seats: [] as Seat[],
       apiError: undefined as string | undefined,
-      config: null as any
+      config: null as ReturnType<typeof useRuntimeConfig> | null
     }
   },
   created() {
@@ -195,27 +210,22 @@ export default defineNuxtComponent({
   async mounted() {
     // Load initial data
     try {
-      const { data: metricsData, error: metricsError } = await this.metricsFetch;
-      if (metricsError.value || !metricsData.value) {
-        this.processError(metricsError.value as H3Error);
-      } else {
-        const apiResponse = metricsData.value as MetricsApiResponse;
-        this.metrics = apiResponse.metrics || [];
-        this.originalMetrics = apiResponse.usage || [];
-        this.metricsReady = true;
+
+      await this.fetchMetrics();
+
+      const { data: seatsData, error: seatsError, execute: executeSeats } = this.seatsFetch;
+
+      if (!this.signInRequired) {
+        await executeSeats();
+
+        if (seatsError.value) {
+          this.processError(seatsError.value as H3Error);
+        } else {
+          this.seats = (seatsData.value as Seat[]) || [];
+          this.seatsReady = true;
+        }
       }
 
-      if (this.config.public.scope === 'team' && this.metrics.length === 0 && !this.apiError) {
-        this.apiError = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
-      }
-
-      const { data: seatsData, error: seatsError } = await this.seatsFetch;
-      if (seatsError.value) {
-        this.processError(seatsError.value as H3Error);
-      } else {
-        this.seats = seatsData.value || [];
-        this.seatsReady = true;
-      }
     } catch (error) {
       console.error('Error loading initial data:', error);
     }
@@ -228,19 +238,21 @@ export default defineNuxtComponent({
     const itemName = computed(() => config.public.scope);
     const githubInfo = getDisplayName(config.public)
     const displayName = computed(() => githubInfo);
+    const dateRange = ref({ since: undefined as string | undefined, until: undefined as string | undefined });
+    const isLoading = ref(false);
+    const route = ref(useRoute());
 
     const signInRequired = computed(() => {
       return config.public.usingGithubAuth && !loggedIn.value;
     });
 
-    // Initial data load with default date range
-    const metricsFetch = useFetch('/api/metrics', { 
-      key: 'initial-metrics',
-      server: true
-    });
-    const seatsFetch = useFetch('/api/seats', { 
-      key: 'initial-seats',
-      server: true
+    const seatsFetch = useFetch('/api/seats', {
+      server: true,
+      immediate: !signInRequired.value,
+      query: computed(() => {
+        const options = Options.fromRoute(route.value);
+        return options.toParams();
+      })
     });
 
     return {
@@ -250,8 +262,10 @@ export default defineNuxtComponent({
       displayName,
       signInRequired,
       user,
-      metricsFetch,
-      seatsFetch
+      seatsFetch,
+      dateRange,
+      isLoading,
+      route,
     };
   },
 })

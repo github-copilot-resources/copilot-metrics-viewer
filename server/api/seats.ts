@@ -1,6 +1,6 @@
 import { Seat } from "@/model/Seat";
 import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { Options } from '@/model/Options';
 
 /**
  * Deduplicates seats by user ID, keeping the seat with the most recent activity.
@@ -10,13 +10,13 @@ import { resolve } from 'path';
  */
 function deduplicateSeats(seats: Seat[]): Seat[] {
   const uniqueSeats = new Map<number, Seat>();
-  
+
   for (const seat of seats) {
     // Skip seats with invalid user ID
     if (!seat.id || seat.id === 0) {
       continue;
     }
-    
+
     const existingSeat = uniqueSeats.get(seat.id);
     if (!existingSeat) {
       uniqueSeats.set(seat.id, seat);
@@ -24,43 +24,31 @@ function deduplicateSeats(seats: Seat[]): Seat[] {
       // Keep the seat with more recent activity, treating null as earliest date
       const seatActivity = seat.last_activity_at || '1970-01-01T00:00:00Z';
       const existingActivity = existingSeat.last_activity_at || '1970-01-01T00:00:00Z';
-      
+
       if (seatActivity > existingActivity) {
         uniqueSeats.set(seat.id, seat);
       }
     }
   }
-  
+
   return Array.from(uniqueSeats.values());
 }
 
 export default defineEventHandler(async (event) => {
 
   const logger = console;
-  const config = useRuntimeConfig(event);
-  let apiUrl = '';
-  let mockedDataPath: string;
+  const query = getQuery(event);
+  const options = Options.fromQuery(query);
 
-  switch (event.context.scope) {
-    case 'team':
-    case 'org':
-      apiUrl = `https://api.github.com/orgs/${event.context.org}/copilot/billing/seats`;
-      mockedDataPath = resolve('public/mock-data/organization_seats_response_sample.json');
-      break;
-    case 'ent':
-      apiUrl = `https://api.github.com/enterprises/${event.context.ent}/copilot/billing/seats`;
-      mockedDataPath = resolve('public/mock-data/enterprise_seats_response_sample.json');
-      break;
-    default:
-      return new Response('Invalid configuration/parameters for the request', { status: 400 });
-  }
+  const apiUrl = options.getSeatsApiUrl();
+  const mockedDataPath = options.getSeatsMockDataPath();
 
-  if (config.public.isDataMocked && mockedDataPath) {
+  if (options.isDataMocked && mockedDataPath) {
     const path = mockedDataPath;
     const data = readFileSync(path, 'utf8');
     const dataJson = JSON.parse(data);
     const seatsData = dataJson.seats.map((item: unknown) => new Seat(item));
-    
+
     // Deduplicate seats by user ID to handle enterprise scenarios where users are assigned to multiple organizations
     const deduplicatedSeats = deduplicateSeats(seatsData);
 
