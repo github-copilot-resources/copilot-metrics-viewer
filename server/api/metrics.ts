@@ -64,7 +64,8 @@ export default defineEventHandler(async (event) => {
         const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
-        const result = { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
+        const result = { metrics: metricsData, usage: usageData, valid_until: validUntil } as MetricsApiResponse;
         cache.set(apiUrl, result);
         return result;
     } catch (error: FetchError) {
