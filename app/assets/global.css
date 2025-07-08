@@ -26,8 +26,16 @@
   .v-tab:hover {
     background-color: rgba(63, 81, 181, 0.1) !important;
   }
+  
+  .v-tab:hover .v-tab__overlay {
+    display: none !important;
+  }
 
   /* Fix button hover styles - light gray background */
   .v-btn:hover {
     background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+  
+  .v-btn:hover .v-btn__overlay {
+    display: none !important;
   }
