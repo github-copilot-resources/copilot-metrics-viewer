@@ -2,6 +2,21 @@
     <div class="github-com-container">
         <v-main class="p-1" style="min-height: 300px;">
             <v-container style="min-height: 300px;" class="px-4 elevation-2">
+                <!-- Loading state -->
+                <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 300px;">
+                    <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
+                </div>
+
+                <!-- Error state -->
+                <div v-else-if="error" class="d-flex justify-center align-center" style="min-height: 300px;">
+                    <v-alert type="error" class="mb-4">
+                        <v-alert-title>Error Loading Statistics</v-alert-title>
+                        {{ error }}
+                    </v-alert>
+                </div>
+
+                <!-- Main content -->
+                <div v-else>
                 <!-- Agent Mode Statistics Title -->
                 <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
                     <template #activator="{ props }">
@@ -206,13 +221,14 @@
                     </v-card>
                 </v-tooltip>
                 <BarChart :data="modelUsageChartData" :options="barChartOptions" />
+                </div>
             </v-container>
         </v-main>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, type PropType } from 'vue';
+import { defineComponent, ref, onMounted, watch, computed, type PropType } from 'vue';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import { Line as LineChart, Bar as BarChart } from 'vue-chartjs';
 import {
@@ -238,6 +254,24 @@ ChartJS.register(
     Legend
 );
 
+interface GitHubStats {
+    totalIdeCodeCompletionUsers: number;
+    totalIdeChatUsers: number;
+    totalDotcomChatUsers: number;
+    totalDotcomPRUsers: number;
+    totalPRSummariesCreated: number;
+    totalIdeCodeCompletionModels: number;
+    totalIdeChatModels: number;
+    totalDotcomChatModels: number;
+    totalDotcomPRModels: number;
+    ideCodeCompletionModels: any[];
+    ideChatModels: any[];
+    dotcomChatModels: any[];
+    dotcomPRModels: any[];
+    agentModeChartData: any;
+    modelUsageChartData: any;
+}
+
 export default defineComponent({
     name: 'AgentModeViewer',
     components: {
@@ -251,252 +285,46 @@ export default defineComponent({
         }
     },
     setup(props) {
-        // Computed properties for totals
-        const totalIdeCodeCompletionUsers = computed(() => {
-            return props.originalMetrics.reduce((sum, metric) => {
-                return sum + (metric.copilot_ide_code_completions?.total_engaged_users || 0);
-            }, 0);
+        const stats = ref<GitHubStats>({
+            totalIdeCodeCompletionUsers: 0,
+            totalIdeChatUsers: 0,
+            totalDotcomChatUsers: 0,
+            totalDotcomPRUsers: 0,
+            totalPRSummariesCreated: 0,
+            totalIdeCodeCompletionModels: 0,
+            totalIdeChatModels: 0,
+            totalDotcomChatModels: 0,
+            totalDotcomPRModels: 0,
+            ideCodeCompletionModels: [],
+            ideChatModels: [],
+            dotcomChatModels: [],
+            dotcomPRModels: [],
+            agentModeChartData: { labels: [], datasets: [] },
+            modelUsageChartData: { labels: [], datasets: [] }
         });
 
-        const totalIdeChatUsers = computed(() => {
-            return props.originalMetrics.reduce((sum, metric) => {
-                return sum + (metric.copilot_ide_chat?.total_engaged_users || 0);
-            }, 0);
-        });
+        const loading = ref(false);
+        const error = ref<string | null>(null);
 
-        const totalDotcomChatUsers = computed(() => {
-            return props.originalMetrics.reduce((sum, metric) => {
-                return sum + (metric.copilot_dotcom_chat?.total_engaged_users || 0);
-            }, 0);
-        });
+        const fetchStats = async () => {
+            if (props.originalMetrics.length === 0) return;
+            
+            loading.value = true;
+            error.value = null;
 
-        const totalDotcomPRUsers = computed(() => {
-            return props.originalMetrics.reduce((sum, metric) => {
-                return sum + (metric.copilot_dotcom_pull_requests?.total_engaged_users || 0);
-            }, 0);
-        });
+            try {
+                const response = await $fetch('/api/github-stats') as GitHubStats;
+                stats.value = response;
+            } catch (err: any) {
+                error.value = err.message || 'Failed to fetch GitHub statistics';
+                console.error('Error fetching GitHub stats:', err);
+            } finally {
+                loading.value = false;
+            }
+        };
 
-        const totalPRSummariesCreated = computed(() => {
-            return props.originalMetrics.reduce((sum, metric) => {
-                if (metric.copilot_dotcom_pull_requests?.repositories) {
-                    return sum + metric.copilot_dotcom_pull_requests.repositories.reduce((repoSum, repo) => {
-                        return repoSum + (repo.models?.reduce((modelSum, model) => {
-                            return modelSum + (model.total_pr_summaries_created || 0);
-                        }, 0) || 0);
-                    }, 0);
-                }
-                return sum;
-            }, 0);
-        });
-
-        // Computed properties for model counts
-        const totalIdeCodeCompletionModels = computed(() => {
-            const models = new Set<string>();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_ide_code_completions?.editors?.forEach(editor => {
-                    editor.models?.forEach(model => {
-                        models.add(model.name);
-                    });
-                });
-            });
-            return models.size;
-        });
-
-        const totalIdeChatModels = computed(() => {
-            const models = new Set<string>();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_ide_chat?.editors?.forEach(editor => {
-                    editor.models?.forEach(model => {
-                        models.add(model.name);
-                    });
-                });
-            });
-            return models.size;
-        });
-
-        const totalDotcomChatModels = computed(() => {
-            const models = new Set<string>();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_dotcom_chat?.models?.forEach(model => {
-                    models.add(model.name);
-                });
-            });
-            return models.size;
-        });
-
-        const totalDotcomPRModels = computed(() => {
-            const models = new Set<string>();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_dotcom_pull_requests?.repositories?.forEach(repo => {
-                    repo.models?.forEach(model => {
-                        models.add(model.name);
-                    });
-                });
-            });
-            return models.size;
-        });
-
-        // Model data for tables
-        const ideCodeCompletionModels = computed(() => {
-            const modelMap = new Map();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_ide_code_completions?.editors?.forEach(editor => {
-                    editor.models?.forEach(model => {
-                        const key = `${model.name}-${editor.name}`;
-                        if (!modelMap.has(key)) {
-                            modelMap.set(key, {
-                                name: model.name,
-                                editor: editor.name,
-                                model_type: model.is_custom_model ? 'Custom' : 'Default',
-                                total_engaged_users: 0
-                            });
-                        }
-                        modelMap.get(key).total_engaged_users += model.total_engaged_users;
-                    });
-                });
-            });
-            return Array.from(modelMap.values());
-        });
-
-        const ideChatModels = computed(() => {
-            const modelMap = new Map();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_ide_chat?.editors?.forEach(editor => {
-                    editor.models?.forEach(model => {
-                        const key = `${model.name}-${editor.name}`;
-                        if (!modelMap.has(key)) {
-                            modelMap.set(key, {
-                                name: model.name,
-                                editor: editor.name,
-                                model_type: model.is_custom_model ? 'Custom' : 'Default',
-                                total_engaged_users: 0,
-                                total_chats: 0,
-                                total_chat_insertion_events: 0,
-                                total_chat_copy_events: 0
-                            });
-                        }
-                        const entry = modelMap.get(key);
-                        entry.total_engaged_users += model.total_engaged_users;
-                        entry.total_chats += model.total_chats;
-                        entry.total_chat_insertion_events += model.total_chat_insertion_events;
-                        entry.total_chat_copy_events += model.total_chat_copy_events;
-                    });
-                });
-            });
-            return Array.from(modelMap.values());
-        });
-
-        const dotcomChatModels = computed(() => {
-            const modelMap = new Map();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_dotcom_chat?.models?.forEach(model => {
-                    if (!modelMap.has(model.name)) {
-                        modelMap.set(model.name, {
-                            name: model.name,
-                            model_type: model.is_custom_model ? 'Custom' : 'Default',
-                            total_engaged_users: 0,
-                            total_chats: 0
-                        });
-                    }
-                    const entry = modelMap.get(model.name);
-                    entry.total_engaged_users += model.total_engaged_users;
-                    entry.total_chats += model.total_chats;
-                });
-            });
-            return Array.from(modelMap.values());
-        });
-
-        const dotcomPRModels = computed(() => {
-            const modelMap = new Map();
-            props.originalMetrics.forEach(metric => {
-                metric.copilot_dotcom_pull_requests?.repositories?.forEach(repo => {
-                    repo.models?.forEach(model => {
-                        const key = `${model.name}-${repo.name}`;
-                        if (!modelMap.has(key)) {
-                            modelMap.set(key, {
-                                name: model.name,
-                                repository: repo.name,
-                                model_type: model.is_custom_model ? 'Custom' : 'Default',
-                                total_engaged_users: 0,
-                                total_pr_summaries_created: 0
-                            });
-                        }
-                        const entry = modelMap.get(key);
-                        entry.total_engaged_users += model.total_engaged_users;
-                        entry.total_pr_summaries_created += model.total_pr_summaries_created;
-                    });
-                });
-            });
-            return Array.from(modelMap.values());
-        });
-
-        // Chart data
-        const agentModeChartData = computed(() => {
-            const labels = props.originalMetrics.map(metric => metric.date);
-            return {
-                labels,
-                datasets: [
-                    {
-                        label: 'IDE Code Completions',
-                        data: props.originalMetrics.map(metric => metric.copilot_ide_code_completions?.total_engaged_users || 0),
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'IDE Chat',
-                        data: props.originalMetrics.map(metric => metric.copilot_ide_chat?.total_engaged_users || 0),
-                        borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'GitHub.com Chat',
-                        data: props.originalMetrics.map(metric => metric.copilot_dotcom_chat?.total_engaged_users || 0),
-                        borderColor: 'rgb(153, 102, 255)',
-                        backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'GitHub.com PR',
-                        data: props.originalMetrics.map(metric => metric.copilot_dotcom_pull_requests?.total_engaged_users || 0),
-                        borderColor: 'rgb(255, 159, 64)',
-                        backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                        tension: 0.1
-                    }
-                ]
-            };
-        });
-
-        const modelUsageChartData = computed(() => {
-            return {
-                labels: ['IDE Code Completions', 'IDE Chat', 'GitHub.com Chat', 'GitHub.com PR'],
-                datasets: [
-                    {
-                        label: 'Total Models',
-                        data: [
-                            totalIdeCodeCompletionModels.value,
-                            totalIdeChatModels.value,
-                            totalDotcomChatModels.value,
-                            totalDotcomPRModels.value
-                        ],
-                        backgroundColor: [
-                            'rgba(75, 192, 192, 0.6)',
-                            'rgba(255, 99, 132, 0.6)',
-                            'rgba(153, 102, 255, 0.6)',
-                            'rgba(255, 159, 64, 0.6)'
-                        ],
-                        borderColor: [
-                            'rgb(75, 192, 192)',
-                            'rgb(255, 99, 132)',
-                            'rgb(153, 102, 255)',
-                            'rgb(255, 159, 64)'
-                        ],
-                        borderWidth: 1
-                    }
-                ]
-            };
-        });
+        // Watch for changes in originalMetrics
+        watch(() => props.originalMetrics, fetchStats, { immediate: true });
 
         // Table headers
         const codeCompletionHeaders = [
@@ -573,21 +401,24 @@ export default defineComponent({
         };
 
         return {
-            totalIdeCodeCompletionUsers,
-            totalIdeChatUsers,
-            totalDotcomChatUsers,
-            totalDotcomPRUsers,
-            totalPRSummariesCreated,
-            totalIdeCodeCompletionModels,
-            totalIdeChatModels,
-            totalDotcomChatModels,
-            totalDotcomPRModels,
-            ideCodeCompletionModels,
-            ideChatModels,
-            dotcomChatModels,
-            dotcomPRModels,
-            agentModeChartData,
-            modelUsageChartData,
+            stats,
+            loading,
+            error,
+            totalIdeCodeCompletionUsers: computed(() => stats.value.totalIdeCodeCompletionUsers),
+            totalIdeChatUsers: computed(() => stats.value.totalIdeChatUsers),
+            totalDotcomChatUsers: computed(() => stats.value.totalDotcomChatUsers),
+            totalDotcomPRUsers: computed(() => stats.value.totalDotcomPRUsers),
+            totalPRSummariesCreated: computed(() => stats.value.totalPRSummariesCreated),
+            totalIdeCodeCompletionModels: computed(() => stats.value.totalIdeCodeCompletionModels),
+            totalIdeChatModels: computed(() => stats.value.totalIdeChatModels),
+            totalDotcomChatModels: computed(() => stats.value.totalDotcomChatModels),
+            totalDotcomPRModels: computed(() => stats.value.totalDotcomPRModels),
+            ideCodeCompletionModels: computed(() => stats.value.ideCodeCompletionModels),
+            ideChatModels: computed(() => stats.value.ideChatModels),
+            dotcomChatModels: computed(() => stats.value.dotcomChatModels),
+            dotcomPRModels: computed(() => stats.value.dotcomPRModels),
+            agentModeChartData: computed(() => stats.value.agentModeChartData),
+            modelUsageChartData: computed(() => stats.value.modelUsageChartData),
             codeCompletionHeaders,
             ideChatHeaders,
             dotcomChatHeaders,
