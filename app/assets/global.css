@@ -21,3 +21,13 @@
   .spacing-25 {
     margin-bottom: 25px;
   }
+
+  /* Fix tab hover styles - light blue background */
+  .v-tab:hover {
+    background-color: rgba(63, 81, 181, 0.1) !important;
+  }
+
+  /* Fix button hover styles - light gray background */
+  .v-btn:hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
