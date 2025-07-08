@@ -36,7 +36,7 @@
 
     <!-- Date Range Selector - Hidden for seats tab -->
     <DateRangeSelector 
-      v-show="tab !== 'seat analysis'"
+      v-show="tab !== 'seat analysis' && !signInRequired"
       :loading="isLoading"
       @date-range-changed="handleDateRangeChange"
     />
