@@ -16,7 +16,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption">
-              Over the last 28 days
+              {{ dateRangeDescription }}
             </div>
             <p class="text-h4">{{ acceptanceRateAverageByCount.toFixed(2) }}%</p>
           </div>
@@ -35,8 +35,8 @@
                 <span class="text-caption" style="font-size: 10px !important;">This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption">
-              Over the last 28 days
+              <div class="text-caption">
+              {{ dateRangeDescription }}
             </div>
             <p class="text-h4">{{ cumulativeNumberSuggestions }}</p>
           </div>
@@ -56,7 +56,7 @@
                 </v-card>
               </v-tooltip>
               <div class="text-caption">
-                Over the last 28 days
+                {{ dateRangeDescription }}
               </div>
               <p class="text-h4">{{ acceptanceRateAverageByLines.toFixed(2) }}%</p>
           </div>
@@ -76,7 +76,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption">
-              Over the last 28 days
+              {{ dateRangeDescription }}
             </div>
             <p class="text-h4">{{ totalLinesSuggested }}</p>
           </div>
@@ -143,7 +143,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef } from 'vue';
+import { defineComponent, ref, toRef, watchEffect } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import {
   Chart as ChartJS,
@@ -184,6 +184,10 @@ export default defineComponent({
         metrics: {
             type: Array as PropType<Metrics[]>,
             required: true
+        },
+        dateRangeDescription: {
+            type: String,
+            default: 'Over the last 28 days'
         }
     },
   setup(props) {
@@ -247,9 +251,15 @@ export default defineComponent({
       },
     };
 
-    const data = toRef(props, 'metrics').value;
+    // Watch for changes in metrics prop and recalculate all data
+    watchEffect(() => {
+      const data = toRef(props, 'metrics').value;
+      
+      if (!data || data.length === 0) {
+        return;
+      }
 
-    cumulativeNumberSuggestions.value = 0;
+      cumulativeNumberSuggestions.value = 0;
     const cumulativeSuggestionsData = data.map((m: Metrics) => {
       cumulativeNumberSuggestions.value += m.total_suggestions_count;
       return m.total_suggestions_count;
@@ -371,6 +381,8 @@ export default defineComponent({
         }
       ]
     };
+    
+    }); // end of watchEffect
 
     return { totalSuggestionsAndAcceptanceChartData, chartData, 
       chartOptions, totalActiveUsersChartData, 
