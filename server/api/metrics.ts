@@ -2,6 +2,7 @@ import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import type FetchError from 'ofetch';
+import Holidays from 'date-holidays';
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
@@ -15,6 +16,16 @@ export default defineEventHandler(async (event) => {
     const logger = console;
     const query = getQuery(event);
     const options = Options.fromQuery(query);
+    
+    // Extract locale from headers if not provided in query
+    if (!options.locale) {
+        const acceptLanguage = getHeader(event, 'accept-language');
+        if (acceptLanguage) {
+            // Extract primary locale from accept-language header
+            const primaryLocale = acceptLanguage.split(',')[0].split(';')[0].trim();
+            options.locale = primaryLocale;
+        }
+    }
 
     const apiUrl = options.getApiUrl();
     const mockedDataPath = options.getMockDataPath();
@@ -25,7 +36,7 @@ export default defineEventHandler(async (event) => {
         const dataJson = JSON.parse(data);
 
         // Make mock data dynamic based on date range
-        const dynamicData = updateMockDataDates(dataJson, options.since, options.until);
+        const dynamicData = updateMockDataDates(dataJson, options.since, options.until, options.excludeHolidays, options.locale);
 
         // usage is the new API format
         const usageData = ensureCopilotMetrics(dynamicData);
@@ -62,10 +73,12 @@ export default defineEventHandler(async (event) => {
 
         // usage is the new API format
         const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
+        // Filter holidays if requested
+        const filteredUsageData = filterHolidaysFromMetrics(usageData, options.excludeHolidays || false, options.locale);
         // metrics is the old API format
-        const metricsData = convertToMetrics(usageData);
+        const metricsData = convertToMetrics(filteredUsageData);
         const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
-        const result = { metrics: metricsData, usage: usageData, valid_until: validUntil } as MetricsApiResponse;
+        const result = { metrics: metricsData, usage: filteredUsageData, valid_until: validUntil } as MetricsApiResponse;
         cache.set(apiUrl, result);
         return result;
     } catch (error: FetchError) {
@@ -90,7 +103,39 @@ function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
     });
 };
 
-function updateMockDataDates(originalData: CopilotMetrics[], since?: string, until?: string): CopilotMetrics[] {
+function filterHolidaysFromMetrics(data: CopilotMetrics[], excludeHolidays: boolean, locale?: string): CopilotMetrics[] {
+    if (!excludeHolidays || !locale) {
+        return data;
+    }
+    
+    return data.filter(metric => {
+        if (!metric.date) return true;
+        
+        try {
+            const date = new Date(metric.date);
+            return !isHoliday(date, locale);
+        } catch (error) {
+            // If date parsing fails, keep the entry
+            console.warn('Error parsing date:', metric.date, error);
+            return true;
+        }
+    });
+}
+
+function isHoliday(date: Date, locale: string): boolean {
+    try {
+        const holidays = new Holidays(locale);
+        const result = holidays.isHoliday(date);
+        // holidays.isHoliday returns false for no holiday, or an array for holidays
+        return result && Array.isArray(result) && result.length > 0;
+    } catch (error) {
+        // If locale is invalid or error occurs, fallback to no holidays
+        console.warn(`Invalid locale ${locale} or error checking holidays:`, error);
+        return false;
+    }
+}
+
+function updateMockDataDates(originalData: CopilotMetrics[], since?: string, until?: string, excludeHolidays?: boolean, locale?: string): CopilotMetrics[] {
     const today = new Date();
     let startDate: Date;
     let endDate: Date;
@@ -109,7 +154,15 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
     const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-        dateRange.push(new Date(currentDate));
+        const dateToCheck = new Date(currentDate);
+        
+        // Skip holidays if excludeHolidays is true
+        if (excludeHolidays && locale && isHoliday(dateToCheck, locale)) {
+            currentDate.setDate(currentDate.getDate() + 1);
+            continue;
+        }
+        
+        dateRange.push(dateToCheck);
         currentDate.setDate(currentDate.getDate() + 1);
     }
 

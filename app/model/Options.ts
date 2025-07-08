@@ -15,6 +15,8 @@ export interface OptionsData {
     githubEnt?: string;
     githubTeam?: string;
     scope?: Scope;
+    excludeHolidays?: boolean;
+    locale?: string;
 }
 
 export interface RuntimeConfig {
@@ -52,6 +54,8 @@ export class Options {
     public githubEnt?: string;
     public githubTeam?: string;
     public scope?: Scope;
+    public excludeHolidays?: boolean;
+    public locale?: string;
 
     constructor(data: OptionsData = {}) {
         this.since = data.since;
@@ -61,6 +65,8 @@ export class Options {
         this.githubEnt = data.githubEnt;
         this.githubTeam = data.githubTeam;
         this.scope = data.scope;
+        this.excludeHolidays = data.excludeHolidays;
+        this.locale = data.locale;
     }
 
     /**
@@ -113,27 +119,49 @@ export class Options {
      * Create Options from URLSearchParams
      */
     static fromURLSearchParams(params: URLSearchParams): Options {
-        return new Options({
+        const options = new Options({
             since: params.get('since') || undefined,
             until: params.get('until') || undefined,
-            isDataMocked: params.get('isDataMocked') === 'true',
             githubOrg: params.get('githubOrg') || undefined,
             githubEnt: params.get('githubEnt') || undefined,
             githubTeam: params.get('githubTeam') || undefined,
-            scope: (params.get('scope') as Scope) || undefined
+            scope: (params.get('scope') as Scope) || undefined,
+            locale: params.get('locale') || undefined
         });
+        
+        // Only set boolean properties if they're explicitly provided
+        if (params.has('isDataMocked')) {
+            options.isDataMocked = params.get('isDataMocked') === 'true';
+        }
+        
+        if (params.has('excludeHolidays')) {
+            options.excludeHolidays = params.get('excludeHolidays') === 'true';
+        }
+        
+        return options;
     }
 
     static fromQuery(query: QueryObject): Options {
-        return new Options({
+        const options = new Options({
             since: query.since as string | undefined,
             until: query.until as string | undefined,
-            isDataMocked: query.isDataMocked === 'true',
             githubOrg: query.githubOrg as string | undefined,
             githubEnt: query.githubEnt as string | undefined,
             githubTeam: query.githubTeam as string | undefined,
-            scope: (query.scope as Scope) || undefined
+            scope: (query.scope as Scope) || undefined,
+            locale: query.locale as string | undefined
         });
+        
+        // Only set boolean properties if they're explicitly provided
+        if (query.isDataMocked !== undefined) {
+            options.isDataMocked = query.isDataMocked === 'true';
+        }
+        
+        if (query.excludeHolidays !== undefined) {
+            options.excludeHolidays = query.excludeHolidays === 'true';
+        }
+        
+        return options;
     }
 
     /**
@@ -156,6 +184,8 @@ export class Options {
         if (this.githubEnt) params.set('githubEnt', this.githubEnt);
         if (this.githubTeam) params.set('githubTeam', this.githubTeam);
         if (this.scope) params.set('scope', this.scope);
+        if (this.excludeHolidays) params.set('excludeHolidays', 'true');
+        if (this.locale) params.set('locale', this.locale);
 
         return params;
     }
@@ -169,6 +199,8 @@ export class Options {
         if (this.githubEnt) params.githubEnt = this.githubEnt;
         if (this.githubTeam) params.githubTeam = this.githubTeam;
         if (this.scope) params.scope = this.scope;
+        if (this.excludeHolidays) params.excludeHolidays = String(this.excludeHolidays);
+        if (this.locale) params.locale = this.locale;
         return params;
     }
 
@@ -176,15 +208,19 @@ export class Options {
      * Serialize to plain object
      */
     toObject(): OptionsData {
-        return {
-            since: this.since,
-            until: this.until,
-            isDataMocked: this.isDataMocked,
-            githubOrg: this.githubOrg,
-            githubEnt: this.githubEnt,
-            githubTeam: this.githubTeam,
-            scope: this.scope
-        };
+        const result: OptionsData = {};
+        
+        if (this.since !== undefined) result.since = this.since;
+        if (this.until !== undefined) result.until = this.until;
+        if (this.isDataMocked !== undefined) result.isDataMocked = this.isDataMocked;
+        if (this.githubOrg !== undefined) result.githubOrg = this.githubOrg;
+        if (this.githubEnt !== undefined) result.githubEnt = this.githubEnt;
+        if (this.githubTeam !== undefined) result.githubTeam = this.githubTeam;
+        if (this.scope !== undefined) result.scope = this.scope;
+        if (this.excludeHolidays !== undefined) result.excludeHolidays = this.excludeHolidays;
+        if (this.locale !== undefined) result.locale = this.locale;
+        
+        return result;
     }
 
     /**
@@ -205,7 +241,9 @@ export class Options {
             githubOrg: other.githubOrg ?? this.githubOrg,
             githubEnt: other.githubEnt ?? this.githubEnt,
             githubTeam: other.githubTeam ?? this.githubTeam,
-            scope: other.scope ?? this.scope
+            scope: other.scope ?? this.scope,
+            excludeHolidays: other.excludeHolidays ?? this.excludeHolidays,
+            locale: other.locale ?? this.locale
         });
     }
 
