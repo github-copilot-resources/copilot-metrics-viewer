@@ -1,4 +1,5 @@
-import type { Metrics, BreakdownData } from '@/model/Metrics';
+import type { Metrics } from '@/model/Metrics';
+import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 
 /**
  * Converts metrics data to CSV format
@@ -50,63 +51,190 @@ export function convertMetricsToCSV(metrics: Metrics[]): string {
 }
 
 /**
- * Converts breakdown data to CSV format
- * @param metrics - Array of metrics data containing breakdown information
- * @returns CSV string for breakdown data
+ * Converts raw CopilotMetrics data to flattened CSV format by day
+ * @param metrics - Array of CopilotMetrics data
+ * @returns CSV string with all metrics flattened by day
  */
-export function convertBreakdownToCSV(metrics: Metrics[]): string {
+export function convertCopilotMetricsToCSV(metrics: CopilotMetrics[]): string {
   if (!metrics || metrics.length === 0) {
     return '';
   }
 
-  // Flatten all breakdown data
-  const allBreakdowns: (BreakdownData & { date: string })[] = [];
+  // Create flattened rows for each day
+  const flattenedRows: Record<string, string | number | boolean | null>[] = [];
+  
   metrics.forEach(metric => {
-    metric.breakdown.forEach(breakdown => {
-      allBreakdowns.push({
-        ...breakdown,
-        date: metric.day
+    // IDE Code Completions - by Editor and Model and Language
+    if (metric.copilot_ide_code_completions) {
+      metric.copilot_ide_code_completions.editors.forEach(editor => {
+        editor.models.forEach(model => {
+          model.languages.forEach(language => {
+            flattenedRows.push({
+              date: metric.date,
+              total_active_users: metric.total_active_users,
+              total_engaged_users: metric.total_engaged_users,
+              feature_type: 'IDE Code Completions',
+              editor_name: editor.name,
+              model_name: model.name,
+              is_custom_model: model.is_custom_model,
+              custom_model_training_date: model.custom_model_training_date || '',
+              language_name: language.name,
+              feature_engaged_users: language.total_engaged_users,
+              suggestions_count: language.total_code_suggestions,
+              acceptances_count: language.total_code_acceptances,
+              lines_suggested: language.total_code_lines_suggested,
+              lines_accepted: language.total_code_lines_accepted,
+              chats: null,
+              chat_insertion_events: null,
+              chat_copy_events: null,
+              pr_summaries_created: null,
+              repository_name: null
+            });
+          });
+        });
       });
-    });
+    }
+
+    // IDE Chat - by Editor and Model  
+    if (metric.copilot_ide_chat) {
+      metric.copilot_ide_chat.editors.forEach(editor => {
+        editor.models.forEach(model => {
+          flattenedRows.push({
+            date: metric.date,
+            total_active_users: metric.total_active_users,
+            total_engaged_users: metric.total_engaged_users,
+            feature_type: 'IDE Chat',
+            editor_name: editor.name,
+            model_name: model.name,
+            is_custom_model: model.is_custom_model,
+            custom_model_training_date: model.custom_model_training_date || '',
+            language_name: null,
+            feature_engaged_users: model.total_engaged_users,
+            suggestions_count: null,
+            acceptances_count: null,
+            lines_suggested: null,
+            lines_accepted: null,
+            chats: model.total_chats,
+            chat_insertion_events: model.total_chat_insertion_events,
+            chat_copy_events: model.total_chat_copy_events,
+            pr_summaries_created: null,
+            repository_name: null
+          });
+        });
+      });
+    }
+
+    // Dotcom Chat - by Model
+    if (metric.copilot_dotcom_chat) {
+      metric.copilot_dotcom_chat.models.forEach(model => {
+        flattenedRows.push({
+          date: metric.date,
+          total_active_users: metric.total_active_users,
+          total_engaged_users: metric.total_engaged_users,
+          feature_type: 'Dotcom Chat',
+          editor_name: null,
+          model_name: model.name,
+          is_custom_model: model.is_custom_model,
+          custom_model_training_date: model.custom_model_training_date || '',
+          language_name: null,
+          feature_engaged_users: model.total_engaged_users,
+          suggestions_count: null,
+          acceptances_count: null,
+          lines_suggested: null,
+          lines_accepted: null,
+          chats: model.total_chats,
+          chat_insertion_events: null,
+          chat_copy_events: null,
+          pr_summaries_created: null,
+          repository_name: null
+        });
+      });
+    }
+
+    // Dotcom Pull Requests - by Repository and Model
+    if (metric.copilot_dotcom_pull_requests) {
+      metric.copilot_dotcom_pull_requests.repositories.forEach(repo => {
+        repo.models.forEach(model => {
+          flattenedRows.push({
+            date: metric.date,
+            total_active_users: metric.total_active_users,
+            total_engaged_users: metric.total_engaged_users,
+            feature_type: 'Dotcom Pull Requests',
+            editor_name: null,
+            model_name: model.name,
+            is_custom_model: model.is_custom_model,
+            custom_model_training_date: model.custom_model_training_date || '',
+            language_name: null,
+            feature_engaged_users: model.total_engaged_users,
+            suggestions_count: null,
+            acceptances_count: null,
+            lines_suggested: null,
+            lines_accepted: null,
+            chats: null,
+            chat_insertion_events: null,
+            chat_copy_events: null,
+            pr_summaries_created: model.total_pr_summaries_created,
+            repository_name: repo.name
+          });
+        });
+      });
+    }
   });
 
-  if (allBreakdowns.length === 0) {
+  if (flattenedRows.length === 0) {
     return '';
   }
 
-  // Breakdown headers
-  const breakdownHeaders = [
+  // Define headers for flattened CSV
+  const headers = [
     'Date',
-    'Language',
-    'Editor',
+    'Total Active Users',
+    'Total Engaged Users',
+    'Feature Type',
+    'Editor Name',
+    'Model Name',
+    'Is Custom Model',
+    'Custom Model Training Date',
+    'Language Name',
+    'Feature Engaged Users',
     'Suggestions Count',
     'Acceptances Count',
     'Lines Suggested',
     'Lines Accepted',
-    'Active Users',
-    'Chat Acceptances',
-    'Chat Turns',
-    'Active Chat Users'
+    'Chats',
+    'Chat Insertion Events',
+    'Chat Copy Events',
+    'PR Summaries Created',
+    'Repository Name'
   ];
 
+  // Create CSV rows
   const csvRows: string[] = [];
-  csvRows.push(breakdownHeaders.join(','));
+  csvRows.push(headers.join(','));
 
-  allBreakdowns.forEach(breakdown => {
-    const row = [
-      breakdown.date,
-      breakdown.language,
-      breakdown.editor,
-      breakdown.suggestions_count.toString(),
-      breakdown.acceptances_count.toString(),
-      breakdown.lines_suggested.toString(),
-      breakdown.lines_accepted.toString(),
-      breakdown.active_users.toString(),
-      breakdown.chat_acceptances.toString(),
-      breakdown.chat_turns.toString(),
-      breakdown.active_chat_users.toString()
+  flattenedRows.forEach(row => {
+    const csvRow = [
+      row.date,
+      row.total_active_users?.toString() || '',
+      row.total_engaged_users?.toString() || '',
+      row.feature_type || '',
+      row.editor_name || '',
+      row.model_name || '',
+      row.is_custom_model?.toString() || '',
+      row.custom_model_training_date || '',
+      row.language_name || '',
+      row.feature_engaged_users?.toString() || '',
+      row.suggestions_count?.toString() || '',
+      row.acceptances_count?.toString() || '',
+      row.lines_suggested?.toString() || '',
+      row.lines_accepted?.toString() || '',
+      row.chats?.toString() || '',
+      row.chat_insertion_events?.toString() || '',
+      row.chat_copy_events?.toString() || '',
+      row.pr_summaries_created?.toString() || '',
+      row.repository_name || ''
     ];
-    csvRows.push(row.join(','));
+    csvRows.push(csvRow.join(','));
   });
 
   return csvRows.join('\n');

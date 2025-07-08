@@ -4,7 +4,8 @@
       <v-btn @click="checkMetricsDataQuality">Check Metric data quality</v-btn>
       <v-spacer/>
       <v-btn @click="copyToClipboard('metricsJsonText')">Copy Metrics to Clipboard</v-btn>
-      <v-btn @click="downloadMetricsCSV" color="primary">Download CSV</v-btn>
+      <v-btn color="primary" @click="downloadMetricsCSV">Download CSV (Summary)</v-btn>
+      <v-btn color="secondary" @click="downloadFullMetricsCSV">Download CSV (Full)</v-btn>
     </div>
     <transition name="fade">
       <div v-if="showQualityMessage || showCopyMessage || showSeatMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
@@ -34,7 +35,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { MetricsValidator } from '@/model/MetricsValidator';
-import { convertMetricsToCSV, downloadCSV } from '@/utils/csvExport';
+import { convertMetricsToCSV, convertCopilotMetricsToCSV, downloadCSV } from '@/utils/csvExport';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { Metrics } from '@/model/Metrics';
 
@@ -132,9 +133,34 @@ export default defineComponent({
         const csvContent = convertMetricsToCSV(this.metrics);
         if (csvContent) {
           const currentDate = new Date().toISOString().split('T')[0];
-          const filename = `copilot-metrics-${currentDate}.csv`;
+          const filename = `copilot-metrics-summary-${currentDate}.csv`;
           downloadCSV(csvContent, filename);
-          this.message = 'CSV file downloaded successfully!';
+          this.message = 'Summary CSV file downloaded successfully!';
+          this.isError = false;
+        } else {
+          this.message = 'No metrics data available to export.';
+          this.isError = true;
+        }
+      } catch (error) {
+        this.message = 'Error generating CSV file.';
+        this.isError = true;
+        console.error('Error generating CSV:', error);
+      }
+
+      this.showCopyMessage = true;
+      setTimeout(() => {
+        this.showCopyMessage = false;
+      }, 3000);
+    },
+
+    downloadFullMetricsCSV() {
+      try {
+        const csvContent = convertCopilotMetricsToCSV(this.originalMetrics);
+        if (csvContent) {
+          const currentDate = new Date().toISOString().split('T')[0];
+          const filename = `copilot-metrics-full-${currentDate}.csv`;
+          downloadCSV(csvContent, filename);
+          this.message = 'Full CSV file downloaded successfully!';
           this.isError = false;
         } else {
           this.message = 'No metrics data available to export.';
