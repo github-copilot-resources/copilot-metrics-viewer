@@ -42,6 +42,30 @@
         </v-btn>
       </v-col>
     </v-row>
+    
+    <!-- Holiday Exclusion Options -->
+    <v-row class="mt-2">
+      <v-col cols="12" sm="6">
+        <v-checkbox
+          v-model="excludeHolidays"
+          label="Exclude holidays from metrics"
+          density="compact"
+          @update:model-value="updateOptions"
+        />
+      </v-col>
+      <v-col cols="12" sm="6">
+        <v-select
+          v-model="locale"
+          :items="localeOptions"
+          label="Country/Locale"
+          variant="outlined"
+          density="compact"
+          :disabled="!excludeHolidays"
+          @update:model-value="updateOptions"
+        />
+      </v-col>
+    </v-row>
+    
     <v-card-text class="pt-2">
       <span class="text-caption text-medium-emphasis">
         {{ dateRangeText }}
@@ -51,12 +75,20 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+
 interface Props {
   loading?: boolean
 }
 
 interface Emits {
-  (e: 'date-range-changed', value: { since?: string; until?: string; description: string }): void
+  (e: 'date-range-changed', value: { 
+    since?: string; 
+    until?: string; 
+    description: string;
+    excludeHolidays?: boolean;
+    locale?: string;
+  }): void
 }
 
 withDefaults(defineProps<Props>(), {
@@ -71,6 +103,26 @@ const defaultFromDate = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000) // 
 
 const fromDate = ref(formatDate(defaultFromDate))
 const toDate = ref(formatDate(today))
+const excludeHolidays = ref(false)
+const locale = ref('US')
+
+// Common locale options for holiday exclusion
+const localeOptions = [
+  { title: 'United States', value: 'US' },
+  { title: 'Germany', value: 'DE' },
+  { title: 'France', value: 'FR' },
+  { title: 'United Kingdom', value: 'GB' },
+  { title: 'Canada', value: 'CA' },
+  { title: 'Australia', value: 'AU' },
+  { title: 'Japan', value: 'JP' },
+  { title: 'Netherlands', value: 'NL' },
+  { title: 'Sweden', value: 'SE' },
+  { title: 'Spain', value: 'ES' },
+  { title: 'Italy', value: 'IT' },
+  { title: 'Brazil', value: 'BR' },
+  { title: 'India', value: 'IN' },
+  { title: 'China', value: 'CN' }
+]
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0] || ''
@@ -118,6 +170,11 @@ function updateDateRange() {
   // User needs to click Apply button
 }
 
+function updateOptions() {
+  // This function is called when excludeHolidays or locale changes
+  // We don't auto-apply, user needs to click Apply button
+}
+
 function resetToDefault() {
   const today = new Date()
   const defaultFrom = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000)
@@ -141,11 +198,13 @@ function applyDateRange() {
     toDate.value = temp
   }
   
-  // Emit the date range change
+  // Emit the date range change with holiday options
   emit('date-range-changed', {
     since: fromDate.value,
     until: toDate.value,
-    description: dateRangeText.value
+    description: dateRangeText.value,
+    excludeHolidays: excludeHolidays.value,
+    locale: excludeHolidays.value ? locale.value : undefined
   })
 }
 

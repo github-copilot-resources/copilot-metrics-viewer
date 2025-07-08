@@ -128,11 +128,23 @@ export default defineNuxtComponent({
       this.seats = [];
       clear();
     },
-    async handleDateRangeChange(newDateRange: { since?: string; until?: string; description: string }) {
+    async handleDateRangeChange(newDateRange: { 
+      since?: string; 
+      until?: string; 
+      description: string;
+      excludeHolidays?: boolean;
+      locale?: string;
+    }) {
       this.dateRangeDescription = newDateRange.description;
       this.dateRange = {
         since: newDateRange.since,
         until: newDateRange.until
+      };
+
+      // Store holiday options
+      this.holidayOptions = {
+        excludeHolidays: newDateRange.excludeHolidays,
+        locale: newDateRange.locale
       };
 
       await this.fetchMetrics();
@@ -147,6 +159,15 @@ export default defineNuxtComponent({
 
       try {
         const options = Options.fromRoute(this.route, this.dateRange.since, this.dateRange.until);
+        
+        // Add holiday options if they're set
+        if (this.holidayOptions?.excludeHolidays) {
+          options.excludeHolidays = this.holidayOptions.excludeHolidays;
+          if (this.holidayOptions.locale) {
+            options.locale = this.holidayOptions.locale;
+          }
+        }
+        
         const params = options.toParams();
 
         const queryString = new URLSearchParams(params).toString();
@@ -205,7 +226,11 @@ export default defineNuxtComponent({
       seatsReady: false,
       seats: [] as Seat[],
       apiError: undefined as string | undefined,
-      config: null as ReturnType<typeof useRuntimeConfig> | null
+      config: null as ReturnType<typeof useRuntimeConfig> | null,
+      holidayOptions: {
+        excludeHolidays: false,
+        locale: undefined as string | undefined
+      }
     }
   },
   created() {
