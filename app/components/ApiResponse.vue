@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, toRaw } from 'vue';
 import { MetricsValidator } from '@/model/MetricsValidator';
 import { convertMetricsToCSV, convertCopilotMetricsToCSV, downloadCSV } from '@/utils/csvExport';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
@@ -97,7 +97,9 @@ export default defineComponent({
     },
 
     checkMetricsDataQuality() {
-      const validator = new MetricsValidator(this.originalMetrics);
+      // Convert reactive proxy to raw object using Vue's toRaw
+      const rawOriginalMetrics = toRaw(this.originalMetrics) as CopilotMetrics[];
+      const validator = new MetricsValidator(rawOriginalMetrics);
     
      // console.log(validator);
       // create a new MetricsValidator object
@@ -130,7 +132,9 @@ export default defineComponent({
 
     downloadMetricsCSV() {
       try {
-        const csvContent = convertMetricsToCSV(this.metrics);
+        // Convert reactive proxy to raw object using Vue's toRaw
+        const rawMetrics = toRaw(this.metrics) as Metrics[];
+        const csvContent = convertMetricsToCSV(rawMetrics);
         if (csvContent) {
           const currentDate = new Date().toISOString().split('T')[0];
           const filename = `copilot-metrics-summary-${currentDate}.csv`;
@@ -155,7 +159,9 @@ export default defineComponent({
 
     downloadFullMetricsCSV() {
       try {
-        const csvContent = convertCopilotMetricsToCSV(this.originalMetrics);
+        // Convert reactive proxy to raw object using Vue's toRaw
+        const rawMetrics = toRaw(this.originalMetrics) as CopilotMetrics[];
+        const csvContent = convertCopilotMetricsToCSV(rawMetrics);
         if (csvContent) {
           const currentDate = new Date().toISOString().split('T')[0];
           const filename = `copilot-metrics-full-${currentDate}.csv`;
