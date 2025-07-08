@@ -1,7 +1,6 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
-import type FetchError from 'ofetch';
 import Holidays from 'date-holidays';
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
@@ -81,9 +80,13 @@ export default defineEventHandler(async (event) => {
         const result = { metrics: metricsData, usage: filteredUsageData, valid_until: validUntil } as MetricsApiResponse;
         cache.set(apiUrl, result);
         return result;
-    } catch (error: FetchError) {
+    } catch (error: unknown) {
         logger.error('Error fetching metrics data:', error);
-        return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const statusCode = (error && typeof error === 'object' && 'statusCode' in error) 
+            ? (error as { statusCode: number }).statusCode 
+            : 500;
+        return new Response('Error fetching metrics data: ' + errorMessage, { status: statusCode });
     }
 })
 

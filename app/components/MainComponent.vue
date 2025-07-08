@@ -35,7 +35,8 @@
     </v-toolbar>
 
     <!-- Date Range Selector - Hidden for seats tab -->
-    <DateRangeSelector v-show="tab !== 'seat analysis' && !signInRequired" :loading="isLoading"
+    <DateRangeSelector
+v-show="tab !== 'seat analysis' && !signInRequired" :loading="isLoading"
       @date-range-changed="handleDateRangeChange" />
 
     <!-- Organization info for seats tab -->
@@ -69,14 +70,18 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
-            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
+            <BreakdownComponent
+v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
               :date-range-description="dateRangeDescription" />
-            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
+            <BreakdownComponent
+v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
               :date-range-description="dateRangeDescription" />
-            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics"
+            <CopilotChatViewer
+v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
+            <ApiResponse
+v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
