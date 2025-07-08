@@ -4,6 +4,8 @@
       <v-btn @click="checkMetricsDataQuality">Check Metric data quality</v-btn>
       <v-spacer/>
       <v-btn @click="copyToClipboard('metricsJsonText')">Copy Metrics to Clipboard</v-btn>
+      <v-btn color="primary" @click="downloadMetricsCSV">Download CSV (Summary)</v-btn>
+      <v-btn color="secondary" @click="downloadFullMetricsCSV">Download CSV (Full)</v-btn>
     </div>
     <transition name="fade">
       <div v-if="showQualityMessage || showCopyMessage || showSeatMessage" :class="{'copy-message': true, 'error': isError}">{{ message }}</div>
@@ -31,8 +33,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, toRaw } from 'vue';
 import { MetricsValidator } from '@/model/MetricsValidator';
+import { convertMetricsToCSV, convertCopilotMetricsToCSV, downloadCSV } from '@/utils/csvExport';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { Metrics } from '@/model/Metrics';
 
@@ -94,7 +97,9 @@ export default defineComponent({
     },
 
     checkMetricsDataQuality() {
-      const validator = new MetricsValidator(this.originalMetrics);
+      // Convert reactive proxy to raw object using Vue's toRaw
+      const rawOriginalMetrics = toRaw(this.originalMetrics) as CopilotMetrics[];
+      const validator = new MetricsValidator(rawOriginalMetrics);
     
      // console.log(validator);
       // create a new MetricsValidator object
@@ -123,6 +128,60 @@ export default defineComponent({
       setTimeout(() => {
         this.showQualityMessage = false;
       }, 6000);
+    },
+
+    downloadMetricsCSV() {
+      try {
+        // Convert reactive proxy to raw object using Vue's toRaw
+        const rawMetrics = toRaw(this.metrics) as Metrics[];
+        const csvContent = convertMetricsToCSV(rawMetrics);
+        if (csvContent) {
+          const currentDate = new Date().toISOString().split('T')[0];
+          const filename = `copilot-metrics-summary-${currentDate}.csv`;
+          downloadCSV(csvContent, filename);
+          this.message = 'Summary CSV file downloaded successfully!';
+          this.isError = false;
+        } else {
+          this.message = 'No metrics data available to export.';
+          this.isError = true;
+        }
+      } catch (error) {
+        this.message = 'Error generating CSV file.';
+        this.isError = true;
+        console.error('Error generating CSV:', error);
+      }
+
+      this.showCopyMessage = true;
+      setTimeout(() => {
+        this.showCopyMessage = false;
+      }, 3000);
+    },
+
+    downloadFullMetricsCSV() {
+      try {
+        // Convert reactive proxy to raw object using Vue's toRaw
+        const rawMetrics = toRaw(this.originalMetrics) as CopilotMetrics[];
+        const csvContent = convertCopilotMetricsToCSV(rawMetrics);
+        if (csvContent) {
+          const currentDate = new Date().toISOString().split('T')[0];
+          const filename = `copilot-metrics-full-${currentDate}.csv`;
+          downloadCSV(csvContent, filename);
+          this.message = 'Full CSV file downloaded successfully!';
+          this.isError = false;
+        } else {
+          this.message = 'No metrics data available to export.';
+          this.isError = true;
+        }
+      } catch (error) {
+        this.message = 'Error generating CSV file.';
+        this.isError = true;
+        console.error('Error generating CSV:', error);
+      }
+
+      this.showCopyMessage = true;
+      setTimeout(() => {
+        this.showCopyMessage = false;
+      }, 3000);
     }
   }
 });

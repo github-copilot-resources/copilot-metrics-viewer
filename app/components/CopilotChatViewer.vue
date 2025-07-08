@@ -12,7 +12,7 @@
                         <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of turns (interactions) with the Copilot over the past 28 days. A 'turn' includes both user inputs and Copilot's responses.</span>
                       </v-card>
                     </v-tooltip>
-                    <div class="text-caption">Over the last 28 days</div>
+                    <div class="text-caption">{{ dateRangeDescription }}</div>
                     <p class="text-h4">{{ cumulativeNumberTurns }}</p>
                 </div>
             </v-card-item>
@@ -30,7 +30,7 @@
                         <span class="text-caption" style="font-size: 10px !important;">This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the past 28 days.</span>
                       </v-card>
                     </v-tooltip>
-                    <div class="text-caption">Over the last 28 days</div>
+                    <div class="text-caption">{{ dateRangeDescription }}</div>
                     <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
                 </div>
             </v-card-item>
@@ -103,6 +103,10 @@ props: {
         metrics: {
             type: Object,
             required: true
+        },
+        dateRangeDescription: {
+            type: String,
+            default: 'Over the last 28 days'
         }
     },
 setup(props) {
