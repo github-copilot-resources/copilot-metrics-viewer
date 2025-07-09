@@ -18,9 +18,10 @@ import type { H3Event, EventHandlerRequest } from 'h3'
  */
 export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandlerRequest>): Promise<Headers> {
     const config = useRuntimeConfig(event);
-    
+    const query = getQuery(event);
+
     // simple way to check if mock data requested in path
-    const dataMocked = event.path?.includes('mock=true') || event.path?.includes('isDataMocked=true') || false;
+    const dataMocked = query.mock || query.isDataMocked || false;
 
     if (config.public.isDataMocked || dataMocked) {
         // when data is mocked, we still need to have a token, but it's not used for real API calls

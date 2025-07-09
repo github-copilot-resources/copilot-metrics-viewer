@@ -27,7 +27,6 @@
           v-model="excludeHolidays"
           label="Exclude holidays from metrics"
           density="compact"
-          @update:model-value="updateOptions"
         />
       </v-col>
       <v-col cols="6" sm="4" class="d-flex align-center justify-start" style="padding-bottom: 35px;">
@@ -135,11 +134,6 @@ function isLast28Days(): boolean {
 function updateDateRange() {
   // This function is called when dates change, but we don't auto-apply
   // User needs to click Apply button
-}
-
-function updateOptions() {
-  // This function is called when excludeHolidays or locale changes
-  // We don't auto-apply, user needs to click Apply button
 }
 
 function resetToDefault() {
