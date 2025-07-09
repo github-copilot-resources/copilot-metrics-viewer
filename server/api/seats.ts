@@ -1,6 +1,7 @@
 import { Seat } from "@/model/Seat";
 import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
+import { resolve } from 'path';
 
 /**
  * Deduplicates seats by user ID, keeping the seat with the most recent activity.
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
   const mockedDataPath = options.getSeatsMockDataPath();
 
   if (options.isDataMocked && mockedDataPath) {
-    const path = mockedDataPath;
+    const path = resolve(mockedDataPath);
     const data = readFileSync(path, 'utf8');
     const dataJson = JSON.parse(data);
     const seatsData = dataJson.seats.map((item: unknown) => new Seat(item));

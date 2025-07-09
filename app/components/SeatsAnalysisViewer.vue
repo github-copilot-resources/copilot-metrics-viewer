@@ -7,7 +7,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-4"
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template v-slot:activator="{ props }">
+                      <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">Total Assigned  </div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -29,7 +29,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template v-slot:activator="{ props }">
+                      <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">Assigned But Never Used</div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -48,7 +48,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template v-slot:activator="{ props }">
+                      <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 7 days </div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -67,7 +67,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 <div class="tiles-text">
                     <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template v-slot:activator="{ props }">
+                      <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 30 days </div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -164,7 +164,7 @@ setup(props) {
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
                 props.seats.forEach(seat => {
-                    if(!Boolean(seat.last_activity_at)) {
+                    if(!seat.last_activity_at) {
                         noshowCount++;
                     } else {
                         const lastActivityDate = new Date(seat.last_activity_at);

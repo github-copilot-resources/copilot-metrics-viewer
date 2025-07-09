@@ -18,8 +18,12 @@ import type { H3Event, EventHandlerRequest } from 'h3'
  */
 export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandlerRequest>): Promise<Headers> {
     const config = useRuntimeConfig(event);
+    const query = getQuery(event);
 
-    if (config.public.isDataMocked) {
+    // simple way to check if mock data requested in path
+    const dataMocked = query.mock || query.isDataMocked || false;
+
+    if (config.public.isDataMocked || dataMocked) {
         // when data is mocked, we still need to have a token, but it's not used for real API calls
         return buildHeaders('mock-token');
     }
@@ -42,7 +46,13 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
 
 function buildHeaders(token: string): Headers {
     if (!token) {
-        throw new Error('Authentication required but not provided. This happens on the first visit to the dashboard or when the token is expired/not available.');
+        throw new Error(
+            `Authentication required but not provided.
+            This can happen when:
+            1. First call to the API when client checks if user is authenticated - /api/_auth/session.
+            2. When App is not configured correctly:
+             - For PAT, set NUXT_PUBLIC_GITHUB_TOKEN environment variable.
+             - For GitHub Auth - ensure NUXT_PUBLIC_USING_GITHUB_AUTH is set to true, NUXT_OAUTH_GITHUB_CLIENT_ID and NUXT_OAUTH_GITHUB_CLIENT_SECRET are provided and user is authenticated.`);
     }
 
     return new Headers({

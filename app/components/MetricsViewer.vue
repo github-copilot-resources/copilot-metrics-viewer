@@ -8,7 +8,7 @@
           <div class="tiles-text">
             <div class="spacing-25"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template v-slot:activator="{ props }">
+              <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Acceptance Rate (by count)</div>
               </template>
               <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -28,7 +28,7 @@
           <div class="tiles-text">
             <div class="spacing-10"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template v-slot:activator="{ props }">
+              <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Total count of Suggestions (Prompts)</div>
               </template>
               <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -48,7 +48,7 @@
             <div class="spacing-25"/>
             <div class="tiles-text">
               <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                <template v-slot:activator="{ props }">
+                <template #activator="{ props }">
                   <div v-bind="props" class="text-h6 mb-1">Acceptance Rate (by lines)</div>
                 </template>
                 <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -68,7 +68,7 @@
           <div class="tiles-text">
             <div class="spacing-10"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template v-slot:activator="{ props }">
+              <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Total Lines of code Suggested</div>
               </template>
               <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -88,7 +88,7 @@
 
       <v-container style="min-height: 300px;" class="px-4 elevation-2">
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-        <template v-slot:activator="{ props }">
+        <template #activator="{ props }">
           <h2 v-bind="props">Acceptance rate by count (%)</h2>
         </template>
         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -98,7 +98,7 @@
       <Bar :data="acceptanceRateByCountChartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-        <template v-slot:activator="{ props }">
+        <template #activator="{ props }">
           <h2 v-bind="props" class="mb-1">Total Suggestions Count | Total Acceptances Count</h2>
         </template>
         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -108,7 +108,7 @@
       <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-        <template v-slot:activator="{ props }">
+        <template #activator="{ props }">
           <h2 v-bind="props">Acceptance rate by lines (%)</h2>
         </template>
         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -118,7 +118,7 @@
       <Bar :data="acceptanceRateByLinesChartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-        <template v-slot:activator="{ props }">
+        <template #activator="{ props }">
           <h2 v-bind="props" class="mb-1">Total Lines Suggested | Total Lines Accepted</h2>
         </template>
         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
@@ -128,7 +128,7 @@
       <Line :data="chartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-        <template v-slot:activator="{ props }">
+        <template #activator="{ props }">
           <h2 v-bind="props" class="mb-1">Total Active Users</h2>
         </template>
         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">

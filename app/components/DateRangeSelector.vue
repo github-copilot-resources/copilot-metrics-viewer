@@ -2,7 +2,7 @@
   <v-card class="pa-4 ma-4" elevation="2">
     <v-card-title class="text-h6 pb-2">Date Range Filter</v-card-title>
     <v-row align="end">
-      <v-col cols="12" sm="4">
+      <v-col cols="6" sm="3">
         <v-text-field
           v-model="fromDate"
           label="From Date"
@@ -12,7 +12,7 @@
           @update:model-value="updateDateRange"
         />
       </v-col>
-      <v-col cols="12" sm="4">
+      <v-col cols="6" sm="3">
         <v-text-field
           v-model="toDate"
           label="To Date"
@@ -22,7 +22,14 @@
           @update:model-value="updateDateRange"
         />
       </v-col>
-      <v-col cols="12" sm="4" class="d-flex align-center justify-start" style="padding-bottom: 35px;">
+      <v-col cols="6" sm="2">
+        <v-checkbox
+          v-model="excludeHolidays"
+          label="Exclude holidays from metrics"
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="6" sm="4" class="d-flex align-center justify-start" style="padding-bottom: 35px;">
         <v-btn
           color="primary"
           variant="outlined"
@@ -42,6 +49,8 @@
         </v-btn>
       </v-col>
     </v-row>
+
+    
     <v-card-text class="pt-2">
       <span class="text-caption text-medium-emphasis">
         {{ dateRangeText }}
@@ -51,12 +60,19 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+
 interface Props {
   loading?: boolean
 }
 
 interface Emits {
-  (e: 'date-range-changed', value: { since?: string; until?: string; description: string }): void
+  (e: 'date-range-changed', value: { 
+    since?: string; 
+    until?: string; 
+    description: string;
+    excludeHolidays?: boolean;
+  }): void
 }
 
 withDefaults(defineProps<Props>(), {
@@ -71,6 +87,8 @@ const defaultFromDate = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000) // 
 
 const fromDate = ref(formatDate(defaultFromDate))
 const toDate = ref(formatDate(today))
+const excludeHolidays = ref(false)
+
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0] || ''
@@ -141,11 +159,12 @@ function applyDateRange() {
     toDate.value = temp
   }
   
-  // Emit the date range change
+  // Emit the date range change with holiday options
   emit('date-range-changed', {
     since: fromDate.value,
     until: toDate.value,
-    description: dateRangeText.value
+    description: dateRangeText.value,
+    excludeHolidays: excludeHolidays.value,
   })
 }
 

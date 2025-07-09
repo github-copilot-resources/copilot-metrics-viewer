@@ -72,6 +72,22 @@ describe('Options', () => {
       expect(options.scope).toBe('team-organization')
     })
 
+    test('handles new excludeHolidays and locale properties', () => {
+      const data: OptionsData = {
+        since: '2023-01-01',
+        until: '2023-12-31',
+        excludeHolidays: true,
+        locale: 'US'
+      }
+      
+      const options = new Options(data)
+      
+      expect(options.since).toBe('2023-01-01')
+      expect(options.until).toBe('2023-12-31')
+      expect(options.excludeHolidays).toBe(true)
+      expect(options.locale).toBe('US')
+    })
+
     test('handles partial data correctly', () => {
       const data: OptionsData = {
         since: '2023-01-01',
@@ -149,6 +165,25 @@ describe('Options', () => {
   })
 
   describe('fromURLSearchParams', () => {
+    test('creates options from URL search params with holidays parameters', () => {
+      const params = new URLSearchParams()
+      params.set('since', '2023-01-01')
+      params.set('until', '2023-12-31')
+      params.set('excludeHolidays', 'true')
+      params.set('locale', 'US')
+      params.set('githubOrg', 'test-org')
+      params.set('scope', 'organization')
+      
+      const options = Options.fromURLSearchParams(params)
+      
+      expect(options.since).toBe('2023-01-01')
+      expect(options.until).toBe('2023-12-31')
+      expect(options.excludeHolidays).toBe(true)
+      expect(options.locale).toBe('US')
+      expect(options.githubOrg).toBe('test-org')
+      expect(options.scope).toBe('organization')
+    })
+
     test('creates options from URL search params', () => {
       const params = new URLSearchParams()
       params.set('since', '2023-01-01')
@@ -173,7 +208,7 @@ describe('Options', () => {
       
       expect(options.since).toBeUndefined()
       expect(options.until).toBeUndefined()
-      expect(options.isDataMocked).toBe(false)
+      expect(options.isDataMocked).toBeUndefined()
       expect(options.githubOrg).toBeUndefined()
       expect(options.scope).toBeUndefined()
     })
@@ -189,6 +224,26 @@ describe('Options', () => {
   })
 
   describe('fromQuery', () => {
+    test('creates options from query object with holidays parameters', () => {
+      const query = {
+        since: '2023-01-01',
+        until: '2023-12-31',
+        excludeHolidays: 'true',
+        locale: 'US',
+        githubOrg: 'test-org',
+        scope: 'organization'
+      }
+      
+      const options = Options.fromQuery(query)
+      
+      expect(options.since).toBe('2023-01-01')
+      expect(options.until).toBe('2023-12-31')
+      expect(options.excludeHolidays).toBe(true)
+      expect(options.locale).toBe('US')
+      expect(options.githubOrg).toBe('test-org')
+      expect(options.scope).toBe('organization')
+    })
+
     test('creates options from query object', () => {
       const query = {
         since: '2023-01-01',
@@ -212,13 +267,33 @@ describe('Options', () => {
       
       expect(options.since).toBeUndefined()
       expect(options.until).toBeUndefined()
-      expect(options.isDataMocked).toBe(false)
+      expect(options.isDataMocked).toBeUndefined()
       expect(options.githubOrg).toBeUndefined()
       expect(options.scope).toBeUndefined()
     })
   })
 
   describe('serialization methods', () => {
+    test('toQueryString serializes holidays parameters correctly', () => {
+      const options = new Options({
+        since: '2023-01-01',
+        until: '2023-12-31',
+        excludeHolidays: true,
+        locale: 'US',
+        githubOrg: 'test-org',
+        scope: 'organization'
+      })
+      
+      const queryString = options.toQueryString()
+      
+      expect(queryString).toContain('since=2023-01-01')
+      expect(queryString).toContain('until=2023-12-31')
+      expect(queryString).toContain('excludeHolidays=true')
+      expect(queryString).toContain('locale=US')
+      expect(queryString).toContain('githubOrg=test-org')
+      expect(queryString).toContain('scope=organization')
+    })
+
     test('toQueryString serializes correctly', () => {
       const options = new Options({
         since: '2023-01-01',
