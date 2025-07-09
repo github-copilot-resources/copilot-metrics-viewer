@@ -347,7 +347,7 @@ export default defineComponent({
         const lastMetricsHash = ref<string>('');
 
         // Optimized fetch function with caching and debouncing
-        let fetchTimeout: NodeJS.Timeout | null = null;
+        let fetchTimeout: ReturnType<typeof setTimeout> | null = null;
         const fetchStats = async () => {
             if (props.originalMetrics.length === 0) return;
             
