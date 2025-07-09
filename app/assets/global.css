@@ -22,20 +22,57 @@
     margin-bottom: 25px;
   }
 
-  /* Fix tab hover styles - light blue background */
-  .v-tab:hover {
-    background-color: rgba(63, 81, 181, 0.1) !important;
+  /* Fix tab hover styles - dark blue overlay using pseudo-element */
+  .v-tab {
+    position: relative !important;
   }
   
-  .v-tab:hover .v-tab__overlay {
-    display: none !important;
+  .v-tab:hover::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(44, 32, 157, 0.557) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+  }
+
+  /* Ensure tab content is above overlay */
+  .v-tab .v-tab__content {
+    position: relative !important;
+    z-index: 2 !important;
+  }
+
+  /* Fix expansion panel title overlay on hover - gray overlay */
+  .v-expansion-panel-title:hover .v-expansion-panel-title__overlay {
+    display: block !important;
+    background-color: rgba(0, 0, 0, 0.04) !important;
+    opacity: 1 !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    pointer-events: none !important;
   }
 
   /* Fix button hover styles - light gray background */
   .v-btn:hover {
-    background-color: rgba(0, 0, 0, 0.04) !important;
+    background-color: rgba(63, 81, 181, 0.1) !important;
   }
   
   .v-btn:hover .v-btn__overlay {
     display: none !important;
+  }
+
+  /* Override Vuetify's default overlay behavior for tabs */
+  .v-tab.v-btn--variant-text .v-tab__overlay {
+    background: transparent !important;
+  }
+
+  /* Override Vuetify's default overlay behavior for variant-text buttons in tabs */
+  .v-tab .v-btn--variant-text .v-btn__overlay {
+    background: transparent !important;
   }

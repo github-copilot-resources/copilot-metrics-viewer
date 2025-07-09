@@ -4,7 +4,7 @@
             <v-container style="min-height: 300px;" class="px-4 elevation-2">
                 <!-- Loading state -->
                 <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 300px;">
-                    <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
+                    <v-progress-circular indeterminate size="64" color="primary" />
                 </div>
 
                 <!-- Error state -->
@@ -29,6 +29,14 @@
                     </v-card>
                 </v-tooltip>
 
+                <!-- Date Range Information -->
+                <v-card v-if="dateRangeDescription" flat class="pa-3 mb-4" color="blue-grey lighten-5">
+                    <div class="text-body-2 text-center">
+                        <v-icon left small>mdi-calendar-range</v-icon>
+                        {{ dateRangeDescription }}
+                    </div>
+                </v-card>
+
                 <!-- Agent Mode Overview Cards -->
                 <v-row class="mb-4">
                     <v-col cols="12" md="6" lg="3">
@@ -46,9 +54,9 @@
                                 </v-tooltip>
                             </v-card-title>
                             <v-card-text>
-                                <div class="text-h4 mb-2">{{ totalIdeCodeCompletionUsers }}</div>
+                                <div class="text-h4 mb-2">{{ stats.totalIdeCodeCompletionUsers }}</div>
                                 <div class="text-caption">Total Users with Activity</div>
-                                <div class="text-subtitle2 mt-2">{{ totalIdeCodeCompletionModels }} Models Used</div>
+                                <div class="text-subtitle2 mt-2">{{ stats.totalIdeCodeCompletionModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
                     </v-col>
@@ -67,9 +75,9 @@
                                 </v-tooltip>
                             </v-card-title>
                             <v-card-text>
-                                <div class="text-h4 mb-2">{{ totalIdeChatUsers }}</div>
+                                <div class="text-h4 mb-2">{{ stats.totalIdeChatUsers }}</div>
                                 <div class="text-caption">Total Users with Activity</div>
-                                <div class="text-subtitle2 mt-2">{{ totalIdeChatModels }} Models Used</div>
+                                <div class="text-subtitle2 mt-2">{{ stats.totalIdeChatModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
                     </v-col>
@@ -88,9 +96,9 @@
                                 </v-tooltip>
                             </v-card-title>
                             <v-card-text>
-                                <div class="text-h4 mb-2">{{ totalDotcomChatUsers }}</div>
+                                <div class="text-h4 mb-2">{{ stats.totalDotcomChatUsers }}</div>
                                 <div class="text-caption">Total Users with Activity</div>
-                                <div class="text-subtitle2 mt-2">{{ totalDotcomChatModels }} Models Used</div>
+                                <div class="text-subtitle2 mt-2">{{ stats.totalDotcomChatModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
                     </v-col>
@@ -109,9 +117,9 @@
                                 </v-tooltip>
                             </v-card-title>
                             <v-card-text>
-                                <div class="text-h4 mb-2">{{ totalPRSummariesCreated }}</div>
+                                <div class="text-h4 mb-2">{{ stats.totalPRSummariesCreated }}</div>
                                 <div class="text-caption">Total PR Summaries Created</div>
-                                <div class="text-subtitle2 mt-2">{{ totalDotcomPRModels }} Models Used</div>
+                                <div class="text-subtitle2 mt-2">{{ stats.totalDotcomPRModels }} Models Used</div>
                             </v-card-text>
                         </v-card>
                     </v-col>
@@ -128,7 +136,9 @@
                         </span>
                     </v-card>
                 </v-tooltip>
-                <LineChart :data="agentModeChartData" :options="chartOptions" />
+                <div class="chart-container">
+                    <LineChart v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData" :options="chartOptions" />
+                </div>
 
                 <!-- Models Used Section -->
                 <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
@@ -144,67 +154,63 @@
 
                 <!-- Models by Agent Mode -->
                 <v-expansion-panels class="mb-4">
-                    <v-expansion-panel v-if="ideCodeCompletionModels.length > 0">
+                    <v-expansion-panel v-if="stats.ideCodeCompletionModels.length > 0">
                         <v-expansion-panel-title>
                             <v-icon start>mdi-code-braces</v-icon>
-                            IDE Code Completions Models ({{ ideCodeCompletionModels.length }})
+                            IDE Code Completions Models ({{ stats.ideCodeCompletionModels.length }})
                         </v-expansion-panel-title>
                         <v-expansion-panel-text>
                             <v-data-table
                                 :headers="codeCompletionHeaders"
-                                :items="ideCodeCompletionModels"
+                                :items="stats.ideCodeCompletionModels"
                                 class="elevation-1"
                                 item-key="name"
-                            >
-                            </v-data-table>
+                            />
                         </v-expansion-panel-text>
                     </v-expansion-panel>
 
-                    <v-expansion-panel v-if="ideChatModels.length > 0">
+                    <v-expansion-panel v-if="stats.ideChatModels.length > 0">
                         <v-expansion-panel-title>
                             <v-icon start>mdi-chat</v-icon>
-                            IDE Chat Models ({{ ideChatModels.length }})
+                            IDE Chat Models ({{ stats.ideChatModels.length }})
                         </v-expansion-panel-title>
                         <v-expansion-panel-text>
                             <v-data-table
                                 :headers="ideChatHeaders"
-                                :items="ideChatModels"
+                                :items="stats.ideChatModels"
                                 class="elevation-1"
                                 item-key="name"
-                            >
-                            </v-data-table>
+                            />
                         </v-expansion-panel-text>
                     </v-expansion-panel>
 
-                    <v-expansion-panel v-if="dotcomChatModels.length > 0">
+                    <v-expansion-panel v-if="stats.dotcomChatModels.length > 0">
                         <v-expansion-panel-title>
                             <v-icon start>mdi-web</v-icon>
-                            GitHub.com Chat Models ({{ dotcomChatModels.length }})
+                            GitHub.com Chat Models ({{ stats.dotcomChatModels.length }})
                         </v-expansion-panel-title>
                         <v-expansion-panel-text>
                             <v-data-table
                                 :headers="dotcomChatHeaders"
-                                :items="dotcomChatModels"
+                                :items="stats.dotcomChatModels"
                                 class="elevation-1"
                                 item-key="name"
-                            >
-                            </v-data-table>
+                            />
                         </v-expansion-panel-text>
                     </v-expansion-panel>
 
-                    <v-expansion-panel v-if="dotcomPRModels.length > 0">
+                    <v-expansion-panel v-if="stats.dotcomPRModels.length > 0">
                         <v-expansion-panel-title>
                             <v-icon start>mdi-source-pull</v-icon>
-                            GitHub.com PR Summary Models ({{ dotcomPRModels.length }})
+                            GitHub.com PR Summary Models ({{ stats.dotcomPRModels.length }})
                         </v-expansion-panel-title>
                         <v-expansion-panel-text>
                             <v-data-table
                                 :headers="dotcomPRHeaders"
-                                :items="dotcomPRModels"
+                                :items="stats.dotcomPRModels"
                                 class="elevation-1"
                                 item-key="name"
-                            >
-                            </v-data-table>
+                            />
                         </v-expansion-panel-text>
                     </v-expansion-panel>
                 </v-expansion-panels>
@@ -220,7 +226,9 @@
                         </span>
                     </v-card>
                 </v-tooltip>
-                <BarChart :data="modelUsageChartData" :options="barChartOptions" />
+                <div class="chart-container">
+                    <BarChart v-if="stats.modelUsageChartData.labels.length" :data="stats.modelUsageChartData" :options="barChartOptions" />
+                </div>
                 </div>
             </v-container>
         </v-main>
@@ -228,7 +236,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, watch, computed, type PropType } from 'vue';
+import { defineComponent, ref, watch, type PropType, shallowRef } from 'vue';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import { Line as LineChart, Bar as BarChart } from 'vue-chartjs';
 import {
@@ -254,6 +262,29 @@ ChartJS.register(
     Legend
 );
 
+interface ModelData {
+    name: string;
+    editor?: string;
+    repository?: string;
+    model_type: string;
+    total_engaged_users: number;
+    total_chats?: number;
+    total_chat_insertion_events?: number;
+    total_chat_copy_events?: number;
+    total_pr_summaries_created?: number;
+}
+
+interface ChartData {
+    labels: string[];
+    datasets: Array<{
+        label: string;
+        data: number[];
+        borderColor?: string;
+        backgroundColor?: string;
+        fill?: boolean;
+    }>;
+}
+
 interface GitHubStats {
     totalIdeCodeCompletionUsers: number;
     totalIdeChatUsers: number;
@@ -264,13 +295,31 @@ interface GitHubStats {
     totalIdeChatModels: number;
     totalDotcomChatModels: number;
     totalDotcomPRModels: number;
-    ideCodeCompletionModels: any[];
-    ideChatModels: any[];
-    dotcomChatModels: any[];
-    dotcomPRModels: any[];
-    agentModeChartData: any;
-    modelUsageChartData: any;
+    ideCodeCompletionModels: ModelData[];
+    ideChatModels: ModelData[];
+    dotcomChatModels: ModelData[];
+    dotcomPRModels: ModelData[];
+    agentModeChartData: ChartData;
+    modelUsageChartData: ChartData;
 }
+
+const defaultStats: GitHubStats = {
+    totalIdeCodeCompletionUsers: 0,
+    totalIdeChatUsers: 0,
+    totalDotcomChatUsers: 0,
+    totalDotcomPRUsers: 0,
+    totalPRSummariesCreated: 0,
+    totalIdeCodeCompletionModels: 0,
+    totalIdeChatModels: 0,
+    totalDotcomChatModels: 0,
+    totalDotcomPRModels: 0,
+    ideCodeCompletionModels: [],
+    ideChatModels: [],
+    dotcomChatModels: [],
+    dotcomPRModels: [],
+    agentModeChartData: { labels: [], datasets: [] },
+    modelUsageChartData: { labels: [], datasets: [] }
+};
 
 export default defineComponent({
     name: 'AgentModeViewer',
@@ -282,51 +331,60 @@ export default defineComponent({
         originalMetrics: {
             type: Array as PropType<CopilotMetrics[]>,
             required: true
+        },
+        dateRangeDescription: {
+            type: String,
+            default: ''
         }
     },
     setup(props) {
-        const stats = ref<GitHubStats>({
-            totalIdeCodeCompletionUsers: 0,
-            totalIdeChatUsers: 0,
-            totalDotcomChatUsers: 0,
-            totalDotcomPRUsers: 0,
-            totalPRSummariesCreated: 0,
-            totalIdeCodeCompletionModels: 0,
-            totalIdeChatModels: 0,
-            totalDotcomChatModels: 0,
-            totalDotcomPRModels: 0,
-            ideCodeCompletionModels: [],
-            ideChatModels: [],
-            dotcomChatModels: [],
-            dotcomPRModels: [],
-            agentModeChartData: { labels: [], datasets: [] },
-            modelUsageChartData: { labels: [], datasets: [] }
-        });
-
+        // Use shallowRef for better performance with large objects
+        const stats = shallowRef<GitHubStats>({ ...defaultStats });
         const loading = ref(false);
         const error = ref<string | null>(null);
+        
+        // Cache to prevent unnecessary API calls
+        const lastMetricsHash = ref<string>('');
 
+        // Optimized fetch function with caching and debouncing
+        let fetchTimeout: NodeJS.Timeout | null = null;
         const fetchStats = async () => {
             if (props.originalMetrics.length === 0) return;
             
-            loading.value = true;
-            error.value = null;
-
-            try {
-                const response = await $fetch('/api/github-stats') as GitHubStats;
-                stats.value = response;
-            } catch (err: any) {
-                error.value = err.message || 'Failed to fetch GitHub statistics';
-                console.error('Error fetching GitHub stats:', err);
-            } finally {
-                loading.value = false;
+            // Create a simple hash of the metrics to detect changes
+            const currentHash = JSON.stringify(props.originalMetrics.map(m => ({ 
+                date: m.date, 
+                activeUsers: m.total_active_users,
+                engagedUsers: m.total_engaged_users 
+            })));
+            if (currentHash === lastMetricsHash.value) return;
+            
+            if (fetchTimeout) {
+                clearTimeout(fetchTimeout);
             }
+
+            fetchTimeout = setTimeout(async () => {
+                loading.value = true;
+                error.value = null;
+
+                try {
+                    const response = await $fetch('/api/github-stats') as GitHubStats;
+                    // Use Object.assign to maintain reactivity while updating properties
+                    Object.assign(stats.value, response);
+                    lastMetricsHash.value = currentHash;
+                } catch (err: unknown) {
+                    error.value = err instanceof Error ? err.message : 'Failed to fetch GitHub statistics';
+                    console.error('Error fetching GitHub stats:', err);
+                } finally {
+                    loading.value = false;
+                }
+            }, 150); // Reduced debounce time for better responsiveness
         };
 
-        // Watch for changes in originalMetrics
-        watch(() => props.originalMetrics, fetchStats, { immediate: true });
+        // Watch for changes with improved performance
+        watch(() => props.originalMetrics, fetchStats, { immediate: true, deep: false });
 
-        // Table headers
+        // Static table headers (avoid recreating on every render)
         const codeCompletionHeaders = [
             { title: 'Model Name', key: 'name' },
             { title: 'Editor', key: 'editor' },
@@ -359,10 +417,13 @@ export default defineComponent({
             { title: 'PR Summaries', key: 'total_pr_summaries_created' }
         ];
 
-        // Chart options
+        // Optimized chart options with performance settings
         const chartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 0 // Disable animations for better performance
+            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -376,13 +437,23 @@ export default defineComponent({
                 title: {
                     display: true,
                     text: 'GitHub.com Feature Usage Over Time'
+                },
+                legend: {
+                    display: true,
+                    position: 'top' as const
                 }
+            },
+            interaction: {
+                intersect: false
             }
         };
 
         const barChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 0 // Disable animations for better performance
+            },
             scales: {
                 y: {
                     beginAtZero: true,
@@ -396,7 +467,14 @@ export default defineComponent({
                 title: {
                     display: true,
                     text: 'Model Usage Distribution'
+                },
+                legend: {
+                    display: true,
+                    position: 'top' as const
                 }
+            },
+            interaction: {
+                intersect: false
             }
         };
 
@@ -404,21 +482,6 @@ export default defineComponent({
             stats,
             loading,
             error,
-            totalIdeCodeCompletionUsers: computed(() => stats.value.totalIdeCodeCompletionUsers),
-            totalIdeChatUsers: computed(() => stats.value.totalIdeChatUsers),
-            totalDotcomChatUsers: computed(() => stats.value.totalDotcomChatUsers),
-            totalDotcomPRUsers: computed(() => stats.value.totalDotcomPRUsers),
-            totalPRSummariesCreated: computed(() => stats.value.totalPRSummariesCreated),
-            totalIdeCodeCompletionModels: computed(() => stats.value.totalIdeCodeCompletionModels),
-            totalIdeChatModels: computed(() => stats.value.totalIdeChatModels),
-            totalDotcomChatModels: computed(() => stats.value.totalDotcomChatModels),
-            totalDotcomPRModels: computed(() => stats.value.totalDotcomPRModels),
-            ideCodeCompletionModels: computed(() => stats.value.ideCodeCompletionModels),
-            ideChatModels: computed(() => stats.value.ideChatModels),
-            dotcomChatModels: computed(() => stats.value.dotcomChatModels),
-            dotcomPRModels: computed(() => stats.value.dotcomPRModels),
-            agentModeChartData: computed(() => stats.value.agentModeChartData),
-            modelUsageChartData: computed(() => stats.value.modelUsageChartData),
             codeCompletionHeaders,
             ideChatHeaders,
             dotcomChatHeaders,
@@ -435,12 +498,6 @@ export default defineComponent({
     padding: 16px;
 }
 
-.tiles-container {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 24px;
-}
-
 .v-card {
     margin-bottom: 16px;
 }
@@ -451,5 +508,12 @@ export default defineComponent({
 
 .v-data-table {
     margin-top: 16px;
+}
+
+/* Optimize chart rendering */
+.chart-container {
+    height: 400px;
+    width: 100%;
+    position: relative;
 }
 </style>

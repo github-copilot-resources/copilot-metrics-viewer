@@ -35,7 +35,9 @@
     </v-toolbar>
 
     <!-- Date Range Selector - Hidden for seats tab -->
-    <DateRangeSelector v-show="tab !== 'seat analysis' && !signInRequired" :loading="isLoading"
+    <DateRangeSelector 
+      v-show="tab !== 'seat analysis' && !signInRequired" 
+      :loading="isLoading"
       @date-range-changed="handleDateRangeChange" />
 
     <!-- Organization info for seats tab -->
@@ -75,7 +77,7 @@
               :date-range-description="dateRangeDescription" />
             <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
-            <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" />
+            <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
