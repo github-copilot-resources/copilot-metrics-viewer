@@ -133,7 +133,6 @@ export default defineNuxtComponent({
       until?: string; 
       description: string;
       excludeHolidays?: boolean;
-      locale?: string;
     }) {
       this.dateRangeDescription = newDateRange.description;
       this.dateRange = {
@@ -144,7 +143,6 @@ export default defineNuxtComponent({
       // Store holiday options
       this.holidayOptions = {
         excludeHolidays: newDateRange.excludeHolidays,
-        locale: newDateRange.locale
       };
 
       await this.fetchMetrics();
@@ -163,9 +161,6 @@ export default defineNuxtComponent({
         // Add holiday options if they're set
         if (this.holidayOptions?.excludeHolidays) {
           options.excludeHolidays = this.holidayOptions.excludeHolidays;
-          if (this.holidayOptions.locale) {
-            options.locale = this.holidayOptions.locale;
-          }
         }
         
         const params = options.toParams();
@@ -229,7 +224,6 @@ export default defineNuxtComponent({
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
-        locale: undefined as string | undefined
       }
     }
   },

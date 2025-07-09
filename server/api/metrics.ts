@@ -1,12 +1,13 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
-import Holidays from 'date-holidays';
+import { filterHolidaysFromMetrics, isHoliday, parseUtcDate } from '@/utils/dateUtils';
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
 import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
+import { resolve } from 'path';
 
 const cache = new Map<string, MetricsApiResponse>();
 
@@ -30,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const mockedDataPath = options.getMockDataPath();
 
     if (options.isDataMocked && mockedDataPath) {
-        const path = mockedDataPath;
+        const path = resolve(mockedDataPath);
         const data = readFileSync(path, 'utf8');
         const dataJson = JSON.parse(data);
 
@@ -47,14 +48,14 @@ export default defineEventHandler(async (event) => {
         return result;
     }
 
-    if (cache.has(apiUrl)) {
-        logger.info(`Returning cached data for ${apiUrl}`);
-        const cachedData = cache.get(apiUrl);
+    if (cache.has(event.path)) {
+        const cachedData = cache.get(event.path);
         if (cachedData && cachedData.valid_until > Date.now() / 1000) {
+            logger.info(`Returning cached data for ${event.path}`);
             return cachedData;
         } else {
-            logger.info(`Cached data for ${apiUrl} is expired, fetching new data`);
-            cache.delete(apiUrl);
+            logger.info(`Cached data for ${event.path} is expired, fetching new data`);
+            cache.delete(event.path);
         }
     }
 
@@ -78,7 +79,7 @@ export default defineEventHandler(async (event) => {
         const metricsData = convertToMetrics(filteredUsageData);
         const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
         const result = { metrics: metricsData, usage: filteredUsageData, valid_until: validUntil } as MetricsApiResponse;
-        cache.set(apiUrl, result);
+        cache.set(event.path, result);
         return result;
     } catch (error: unknown) {
         logger.error('Error fetching metrics data:', error);
@@ -106,38 +107,6 @@ function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
     });
 };
 
-function filterHolidaysFromMetrics(data: CopilotMetrics[], excludeHolidays: boolean, locale?: string): CopilotMetrics[] {
-    if (!excludeHolidays || !locale) {
-        return data;
-    }
-    
-    return data.filter(metric => {
-        if (!metric.date) return true;
-        
-        try {
-            const date = new Date(metric.date);
-            return !isHoliday(date, locale);
-        } catch (error) {
-            // If date parsing fails, keep the entry
-            console.warn('Error parsing date:', metric.date, error);
-            return true;
-        }
-    });
-}
-
-function isHoliday(date: Date, locale: string): boolean {
-    try {
-        const holidays = new Holidays(locale);
-        const result = holidays.isHoliday(date);
-        // holidays.isHoliday returns false for no holiday, or an array for holidays
-        return result && Array.isArray(result) && result.length > 0;
-    } catch (error) {
-        // If locale is invalid or error occurs, fallback to no holidays
-        console.warn(`Invalid locale ${locale} or error checking holidays:`, error);
-        return false;
-    }
-}
-
 function updateMockDataDates(originalData: CopilotMetrics[], since?: string, until?: string, excludeHolidays?: boolean, locale?: string): CopilotMetrics[] {
     const today = new Date();
     let startDate: Date;
@@ -148,8 +117,8 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
         startDate = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
         endDate = today;
     } else {
-        startDate = since ? new Date(since) : new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
-        endDate = until ? new Date(until) : today;
+        startDate = since ? parseUtcDate(since) : new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
+        endDate = until ? parseUtcDate(until) : today;
     }
 
     // Generate array of dates in the range
