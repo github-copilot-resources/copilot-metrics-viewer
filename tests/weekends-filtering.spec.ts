@@ -9,10 +9,6 @@ describe('Weekend filtering debug', () => {
     const saturday = parseUtcDate('2025-06-14'); // Saturday
     const friday = parseUtcDate('2025-06-13'); // Friday
 
-    console.log('Sunday (2025-06-15):', sunday.getDay(), 'isWeekend:', isWeekend(sunday));
-    console.log('Saturday (2025-06-14):', saturday.getDay(), 'isWeekend:', isWeekend(saturday));
-    console.log('Friday (2025-06-13):', friday.getDay(), 'isWeekend:', isWeekend(friday));
-
     expect(isWeekend(sunday)).toBe(true);
     expect(isWeekend(saturday)).toBe(true);
     expect(isWeekend(friday)).toBe(false);
