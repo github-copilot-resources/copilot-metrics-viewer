@@ -71,15 +71,19 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
-            <BreakdownComponent v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
+            <BreakdownComponent
+v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
               :date-range-description="dateRangeDescription" />
-            <BreakdownComponent v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
+            <BreakdownComponent
+v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
               :date-range-description="dateRangeDescription" />
-            <CopilotChatViewer v-if="item === 'copilot chat'" :metrics="metrics"
+            <CopilotChatViewer
+v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
             <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
+            <ApiResponse
+v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
@@ -128,11 +132,21 @@ export default defineNuxtComponent({
       this.seats = [];
       clear();
     },
-    async handleDateRangeChange(newDateRange: { since?: string; until?: string; description: string }) {
+    async handleDateRangeChange(newDateRange: { 
+      since?: string; 
+      until?: string; 
+      description: string;
+      excludeHolidays?: boolean;
+    }) {
       this.dateRangeDescription = newDateRange.description;
       this.dateRange = {
         since: newDateRange.since,
         until: newDateRange.until
+      };
+
+      // Store holiday options
+      this.holidayOptions = {
+        excludeHolidays: newDateRange.excludeHolidays,
       };
 
       await this.fetchMetrics();
@@ -147,6 +161,12 @@ export default defineNuxtComponent({
 
       try {
         const options = Options.fromRoute(this.route, this.dateRange.since, this.dateRange.until);
+        
+        // Add holiday options if they're set
+        if (this.holidayOptions?.excludeHolidays) {
+          options.excludeHolidays = this.holidayOptions.excludeHolidays;
+        }
+        
         const params = options.toParams();
 
         const queryString = new URLSearchParams(params).toString();
@@ -205,7 +225,10 @@ export default defineNuxtComponent({
       seatsReady: false,
       seats: [] as Seat[],
       apiError: undefined as string | undefined,
-      config: null as ReturnType<typeof useRuntimeConfig> | null
+      config: null as ReturnType<typeof useRuntimeConfig> | null,
+      holidayOptions: {
+        excludeHolidays: false,
+      }
     }
   },
   created() {

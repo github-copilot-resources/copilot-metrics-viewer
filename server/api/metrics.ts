@@ -1,12 +1,13 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
-import type FetchError from 'ofetch';
+import { filterHolidaysFromMetrics, isHoliday, parseUtcDate } from '@/utils/dateUtils';
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
 import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
+import { resolve } from 'path';
 
 const cache = new Map<string, MetricsApiResponse>();
 
@@ -15,17 +16,27 @@ export default defineEventHandler(async (event) => {
     const logger = console;
     const query = getQuery(event);
     const options = Options.fromQuery(query);
+    
+    // Extract locale from headers if not provided in query
+    if (!options.locale) {
+        const acceptLanguage = getHeader(event, 'accept-language');
+        if (acceptLanguage) {
+            // Extract primary locale from accept-language header
+            const primaryLocale = acceptLanguage.split(',')[0].split(';')[0].trim();
+            options.locale = primaryLocale;
+        }
+    }
 
     const apiUrl = options.getApiUrl();
     const mockedDataPath = options.getMockDataPath();
 
     if (options.isDataMocked && mockedDataPath) {
-        const path = mockedDataPath;
+        const path = resolve(mockedDataPath);
         const data = readFileSync(path, 'utf8');
         const dataJson = JSON.parse(data);
 
         // Make mock data dynamic based on date range
-        const dynamicData = updateMockDataDates(dataJson, options.since, options.until);
+        const dynamicData = updateMockDataDates(dataJson, options.since, options.until, options.excludeHolidays, options.locale);
 
         // usage is the new API format
         const usageData = ensureCopilotMetrics(dynamicData);
@@ -37,14 +48,14 @@ export default defineEventHandler(async (event) => {
         return result;
     }
 
-    if (cache.has(apiUrl)) {
-        logger.info(`Returning cached data for ${apiUrl}`);
-        const cachedData = cache.get(apiUrl);
+    if (cache.has(event.path)) {
+        const cachedData = cache.get(event.path);
         if (cachedData && cachedData.valid_until > Date.now() / 1000) {
+            logger.info(`Returning cached data for ${event.path}`);
             return cachedData;
         } else {
-            logger.info(`Cached data for ${apiUrl} is expired, fetching new data`);
-            cache.delete(apiUrl);
+            logger.info(`Cached data for ${event.path} is expired, fetching new data`);
+            cache.delete(event.path);
         }
     }
 
@@ -62,15 +73,21 @@ export default defineEventHandler(async (event) => {
 
         // usage is the new API format
         const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
+        // Filter holidays if requested
+        const filteredUsageData = filterHolidaysFromMetrics(usageData, options.excludeHolidays || false, options.locale);
         // metrics is the old API format
-        const metricsData = convertToMetrics(usageData);
+        const metricsData = convertToMetrics(filteredUsageData);
         const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
-        const result = { metrics: metricsData, usage: usageData, valid_until: validUntil } as MetricsApiResponse;
-        cache.set(apiUrl, result);
+        const result = { metrics: metricsData, usage: filteredUsageData, valid_until: validUntil } as MetricsApiResponse;
+        cache.set(event.path, result);
         return result;
-    } catch (error: FetchError) {
+    } catch (error: unknown) {
         logger.error('Error fetching metrics data:', error);
-        return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const statusCode = (error && typeof error === 'object' && 'statusCode' in error) 
+            ? (error as { statusCode: number }).statusCode 
+            : 500;
+        return new Response('Error fetching metrics data: ' + errorMessage, { status: statusCode });
     }
 })
 
@@ -90,7 +107,7 @@ function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
     });
 };
 
-function updateMockDataDates(originalData: CopilotMetrics[], since?: string, until?: string): CopilotMetrics[] {
+function updateMockDataDates(originalData: CopilotMetrics[], since?: string, until?: string, excludeHolidays?: boolean, locale?: string): CopilotMetrics[] {
     const today = new Date();
     let startDate: Date;
     let endDate: Date;
@@ -100,8 +117,8 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
         startDate = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
         endDate = today;
     } else {
-        startDate = since ? new Date(since) : new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
-        endDate = until ? new Date(until) : today;
+        startDate = since ? parseUtcDate(since) : new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
+        endDate = until ? parseUtcDate(until) : today;
     }
 
     // Generate array of dates in the range
@@ -109,7 +126,15 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
     const currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-        dateRange.push(new Date(currentDate));
+        const dateToCheck = new Date(currentDate);
+        
+        // Skip holidays if excludeHolidays is true
+        if (excludeHolidays && locale && isHoliday(dateToCheck, locale)) {
+            currentDate.setDate(currentDate.getDate() + 1);
+            continue;
+        }
+        
+        dateRange.push(dateToCheck);
         currentDate.setDate(currentDate.getDate() + 1);
     }
 
