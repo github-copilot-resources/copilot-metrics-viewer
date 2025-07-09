@@ -69,7 +69,7 @@ v-show="tab !== 'seat analysis' && !signInRequired" :loading="isLoading"
       <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis')" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
-            <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
+            <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :date-range-description="dateRangeDescription" />
             <BreakdownComponent
 v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
               :date-range-description="dateRangeDescription" />
@@ -79,6 +79,7 @@ v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
             <CopilotChatViewer
 v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
+            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
@@ -106,6 +107,7 @@ import MetricsViewer from './MetricsViewer.vue'
 import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue'
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
+import TeamsComponent from './TeamsComponent.vue'
 import ApiResponse from './ApiResponse.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import { Options } from '@/model/Options';
@@ -118,6 +120,7 @@ export default defineNuxtComponent({
     BreakdownComponent,
     CopilotChatViewer,
     SeatsAnalysisViewer,
+    TeamsComponent,
     ApiResponse,
     DateRangeSelector
   },
@@ -127,6 +130,19 @@ export default defineNuxtComponent({
       this.metrics = [];
       this.seats = [];
       clear();
+    },
+    getDisplayTabName(itemName: string): string {
+      // Transform scope names to display names for tabs
+      switch (itemName) {
+        case 'team-organization':
+        case 'team-enterprise':
+          return 'team';
+        case 'organization':
+        case 'enterprise':
+          return itemName;
+        default:
+          return itemName;
+      }
     },
     async handleDateRangeChange(newDateRange: { 
       since?: string; 
@@ -228,7 +244,13 @@ export default defineNuxtComponent({
     }
   },
   created() {
-    this.tabItems.unshift(this.itemName);
+    this.tabItems.unshift(this.getDisplayTabName(this.itemName));
+    
+    // Add teams tab for organization and enterprise scopes to allow team comparison
+    if (this.itemName === 'organization' || this.itemName === 'enterprise') {
+      this.tabItems.splice(1, 0, 'teams'); // Insert after the first tab
+    }
+    
     this.config = useRuntimeConfig();
   },
   async mounted() {
