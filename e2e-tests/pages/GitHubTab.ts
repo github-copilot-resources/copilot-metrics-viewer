@@ -122,7 +122,7 @@ export class GitHubTab {
 
     async expectChartContainersPresent() {
         const count = await this.getChartContainerCount();
-        expect(count).toBeGreaterThanOrEqual(0);
+        expect(count).toBeGreaterThan(0);
         return count;
     }
 
