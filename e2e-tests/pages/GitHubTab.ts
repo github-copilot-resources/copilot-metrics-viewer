@@ -239,7 +239,7 @@ export class GitHubTab {
     async monitorPerformanceWarnings() {
         const performanceWarnings: string[] = [];
         
-        this.page.on('console', (msg) => {
+        this.page.once('console', (msg) => {
             if (msg.type() === 'warning' && msg.text().includes('requestAnimationFrame')) {
                 performanceWarnings.push(msg.text());
             }
