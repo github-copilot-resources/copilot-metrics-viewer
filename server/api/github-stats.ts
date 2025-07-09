@@ -12,12 +12,12 @@ interface GitHubStats {
   totalIdeChatModels: number;
   totalDotcomChatModels: number;
   totalDotcomPRModels: number;
-  ideCodeCompletionModels: any[];
-  ideChatModels: any[];
-  dotcomChatModels: any[];
-  dotcomPRModels: any[];
-  agentModeChartData: any;
-  modelUsageChartData: any;
+  ideCodeCompletionModels: ModelData[];
+  ideChatModels: ModelData[];
+  dotcomChatModels: ModelData[];
+  dotcomPRModels: ModelData[];
+  agentModeChartData: ChartData;
+  modelUsageChartData: ChartData;
 }
 
 export default defineEventHandler(async (event) => {
