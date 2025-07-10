@@ -35,8 +35,9 @@
     </v-toolbar>
 
     <!-- Date Range Selector - Hidden for seats tab -->
-    <DateRangeSelector
-v-show="tab !== 'seat analysis' && !signInRequired" :loading="isLoading"
+    <DateRangeSelector 
+      v-show="tab !== 'seat analysis' && !signInRequired" 
+      :loading="isLoading"
       @date-range-changed="handleDateRangeChange" />
 
     <!-- Organization info for seats tab -->
@@ -79,6 +80,7 @@ v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
             <CopilotChatViewer
 v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
+            <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
@@ -107,6 +109,7 @@ import BreakdownComponent from './BreakdownComponent.vue'
 import CopilotChatViewer from './CopilotChatViewer.vue'
 import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import ApiResponse from './ApiResponse.vue'
+import AgentModeViewer from './AgentModeViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -119,6 +122,7 @@ export default defineNuxtComponent({
     CopilotChatViewer,
     SeatsAnalysisViewer,
     ApiResponse,
+    AgentModeViewer,
     DateRangeSelector
   },
   methods: {
@@ -211,7 +215,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
