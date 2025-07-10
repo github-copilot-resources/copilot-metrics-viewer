@@ -1,6 +1,5 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { getMetricsData } from '../../shared/utils/metrics-util';
 
 interface GitHubStats {
   totalIdeCodeCompletionUsers: number;
@@ -12,80 +11,25 @@ interface GitHubStats {
   totalIdeChatModels: number;
   totalDotcomChatModels: number;
   totalDotcomPRModels: number;
-  ideCodeCompletionModels: ModelData[];
-  ideChatModels: ModelData[];
-  dotcomChatModels: ModelData[];
-  dotcomPRModels: ModelData[];
-  agentModeChartData: ChartData;
-  modelUsageChartData: ChartData;
+  ideCodeCompletionModels: any[];
+  ideChatModels: any[];
+  dotcomChatModels: any[];
+  dotcomPRModels: any[];
+  agentModeChartData: any[];
+  modelUsageChartData: any[];
 }
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
-  const config = useRuntimeConfig(event);
-  const query = getQuery(event);
-  
-  let apiUrl = '';
-  let mockedDataPath: string;
-
-  // Extract date parameters from query
-  const since = query.since as string | undefined;
-  const until = query.until as string | undefined;
-
-  switch (event.context.scope) {
-    case 'team':
-      apiUrl = `https://api.github.com/orgs/${event.context.org}/team/${event.context.team}/copilot/metrics`;
-      mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
-      break;
-    case 'org':
-      apiUrl = `https://api.github.com/orgs/${event.context.org}/copilot/metrics`;
-      mockedDataPath = resolve('public/mock-data/organization_metrics_response_sample.json');
-      break;
-    case 'ent':
-      apiUrl = `https://api.github.com/enterprises/${event.context.ent}/copilot/metrics`;
-      mockedDataPath = resolve('public/mock-data/enterprise_metrics_response_sample.json');
-      break;
-    default:
-      return new Response('Invalid configuration/parameters for the request', { status: 400 });
+  try {
+    const metricsData = await getMetricsData(event);
+    // Calculate GitHub.com statistics
+    const stats = calculateGitHubStats(metricsData);
+    return stats;
+  } catch (error) {
+    const logger = console;
+    logger.error('Error in github-stats endpoint:', error);
+    return new Response('Error fetching metrics data: ' + (error instanceof Error ? error.message : String(error)), { status: 500 });
   }
-
-  let metricsData: CopilotMetrics[] = [];
-
-  if (config.public.isDataMocked && mockedDataPath) {
-    const path = mockedDataPath;
-    const data = readFileSync(path, 'utf8');
-    const dataJson = JSON.parse(data);
-    metricsData = updateMockDataDates(dataJson, since, until);
-  } else {
-    if (!event.context.headers.has('Authorization')) {
-      logger.error('No Authentication provided');
-      return new Response('No Authentication provided', { status: 401 });
-    }
-
-    // Add query parameters for date filtering if provided
-    if (since || until) {
-      const urlParams = new URLSearchParams();
-      if (since) urlParams.append('since', since);
-      if (until) urlParams.append('until', until);
-      apiUrl += `?${urlParams.toString()}`;
-    }
-
-    try {
-      const response = await $fetch(apiUrl, {
-        headers: event.context.headers
-      }) as CopilotMetrics[];
-      
-      metricsData = response;
-    } catch (error: any) {
-      logger.error('Error fetching metrics data:', error);
-      return new Response('Error fetching metrics data: ' + error, { status: error.statusCode || 500 });
-    }
-  }
-
-  // Calculate GitHub.com statistics
-  const stats = calculateGitHubStats(metricsData);
-  
-  return stats;
 });
 
 function calculateGitHubStats(metrics: CopilotMetrics[]): GitHubStats {
@@ -290,42 +234,4 @@ function calculateGitHubStats(metrics: CopilotMetrics[]): GitHubStats {
     agentModeChartData,
     modelUsageChartData
   };
-}
-
-function updateMockDataDates(originalData: CopilotMetrics[], since?: string, until?: string): CopilotMetrics[] {
-  const today = new Date();
-  let startDate: Date;
-  let endDate: Date;
-
-  // If no dates provided, use last 28 days
-  if (!since && !until) {
-    startDate = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
-    endDate = today;
-  } else {
-    startDate = since ? new Date(since) : new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000);
-    endDate = until ? new Date(until) : today;
-  }
-
-  // Generate array of dates in the range
-  const dateRange: Date[] = [];
-  const currentDate = new Date(startDate);
-  
-  while (currentDate <= endDate) {
-    dateRange.push(new Date(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  // Update dates in the dataset, copying existing entries when needed
-  const result = dateRange.map((date, index) => {
-    // Use existing data entries, cycling through them
-    const dataIndex = index % originalData.length;
-    const entry = { ...originalData[dataIndex] };
-    
-    // Update the date
-    entry.date = date.toISOString().split('T')[0];
-    
-    return entry;
-  });
-
-  return result;
 }

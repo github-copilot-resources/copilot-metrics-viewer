@@ -37,7 +37,7 @@ export class GitHubTab {
         
         // Container and main elements
         this.githubContainer = page.locator('.github-com-container');
-        this.statisticsTitle = page.locator('h2').filter({ hasText: 'GitHub.com Statistics' });
+        this.statisticsTitle = page.locator('h2').filter({ hasText: 'Copilot Statistics' });
         this.dateRangeCard = page.locator('.v-card').filter({ hasText: /calendar-range/ });
         
         // Overview cards - using more specific selectors to avoid ambiguity
@@ -47,7 +47,7 @@ export class GitHubTab {
         this.githubPRSummariesCard = page.locator('.v-card').filter({ hasText: 'GitHub.com PR Summaries' }).first();
         
         // Chart sections
-        this.featureUsageTitle = page.locator('h2').filter({ hasText: 'GitHub.com Feature Usage Over Time' });
+        this.featureUsageTitle = page.locator('h2').filter({ hasText: 'Copilot Feature Usage Over Time' });
         this.modelUsageTitle = page.locator('h2').filter({ hasText: 'Model Usage Distribution' });
         this.chartContainers = page.locator('.chart-container');
         

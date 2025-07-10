@@ -28,7 +28,7 @@ test.describe('AgentModeViewer Component', () => {
     await githubTab.expectContainerVisible();
   });
 
-  test('should display GitHub.com Statistics title', async () => {
+  test('should display Copilot Statistics title', async () => {
     // Wait for the component to load and display the title
     const githubTab = await dashboard.gotoGitHubTab();
     await githubTab.expectStatisticsTitleVisible();
