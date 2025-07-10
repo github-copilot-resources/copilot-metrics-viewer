@@ -4,6 +4,7 @@ import { EditorsTab } from './EditorsTab';
 import { SeatAnalysisTab } from './SeatAnalysisTab';
 import { ApiResponseTab } from './ApiResponseTab';
 import { CopilotChatTab } from './CopilotChatTab';
+import { GitHubTab } from './GitHubTab';
 
 export class DashboardPage {
     readonly page: Page;
@@ -23,6 +24,7 @@ export class DashboardPage {
     readonly seatAnalysisTabLink: Locator;
     readonly apiResponseTabLink: Locator;
     readonly copilotChatTabLink: Locator;
+    readonly githubTabLink: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -32,12 +34,13 @@ export class DashboardPage {
         this.totalLinesSuggestedLabel = page.getByRole('heading', { name: 'Total Lines Suggested | Total' })
         this.totalLinesSuggestedValue = page.locator('.v-card-item').filter({ has: page.getByText('Total Lines of code Suggested') }).locator('.text-h4')
         this.toolbarTitle = page.locator(".toolbar-title")
-        
+
         this.languagesTabLink = page.getByRole('tab', { name: 'languages' })
         this.editorsTabLink = page.getByRole('tab', { name: 'editors' })
         this.seatAnalysisTabLink = page.getByRole('tab', { name: 'seat analysis' })
         this.apiResponseTabLink = page.getByRole('tab', { name: 'api response' })
         this.copilotChatTabLink = page.getByRole('tab', { name: 'copilot chat' })
+        this.githubTabLink = page.getByRole('tab', { name: 'github.com' })
 
         this.teamTabLink = page.getByRole('tab', { name: 'team' })
         this.orgTabLink = page.getByRole('tab', { name: 'organization' })
@@ -96,6 +99,11 @@ export class DashboardPage {
     async gotoCopilotChatTab() {
         await this.copilotChatTabLink.click();
         return new CopilotChatTab(this.page);
+    }
+
+    async gotoGitHubTab() {
+        await this.githubTabLink.click();
+        return new GitHubTab(this.page);
     }
 
     async close() {

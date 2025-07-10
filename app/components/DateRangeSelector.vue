@@ -106,13 +106,14 @@ const dateRangeText = computed(() => {
   const from = parseDate(fromDate.value)
   const to = parseDate(toDate.value)
   const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
-  
+  const withoutHolidays = excludeHolidays.value ? ' (excluding holidays/weekends)' : ''
+
   if (diffDays === 1) {
-    return `For ${from.toLocaleDateString()}`
+    return `For ${from.toLocaleDateString()}${withoutHolidays}`
   } else if (diffDays <= 28 && isLast28Days()) {
-    return 'Over the last 28 days'
+    return `Over the last 28 days ${withoutHolidays}`
   } else {
-    return `From ${from.toLocaleDateString()} to ${to.toLocaleDateString()} (${diffDays} days)`
+    return `From ${from.toLocaleDateString()} to ${to.toLocaleDateString()} (${diffDays} days)${withoutHolidays}`
   }
 })
 
