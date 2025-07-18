@@ -1,78 +1,173 @@
+/* Base styles */
+:root {
+  --transition-speed: 0.3s;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+}
+
+/* Layout components */
 .tiles-container {
-    display: flex;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-  .tiles-text {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
+  display: flex;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
 
-  .error-message {
-    color: red;
-  }
+.tiles-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
-  .spacing-10 {
-    margin-bottom: 10px;
-  }
+.content-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
 
-  .spacing-25 {
-    margin-bottom: 25px;
-  }
+/* Utility classes */
+.error-message {
+  color: #EF5350;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: rgba(239, 83, 80, 0.1);
+  margin: 8px 0;
+}
 
-  /* Fix tab hover styles - dark blue overlay using pseudo-element */
-  .v-tab {
-    position: relative !important;
+.spacing-10 {
+  margin-bottom: 10px;
+}
+
+.spacing-25 {
+  margin-bottom: 25px;
+}
+
+.text-capitalize {
+  text-transform: capitalize !important;
+}
+
+/* Card enhancements */
+.v-card {
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+  overflow: hidden;
+}
+
+.v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Tab styling */
+.v-tab {
+  position: relative !important;
+  text-transform: capitalize !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  transition: all var(--transition-speed) !important;
+}
+
+.v-tab:hover::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: rgba(44, 32, 157, 0.2) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.v-tab .v-tab__content {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* Expansion panel enhancements */
+.v-expansion-panel {
+  border-radius: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.v-expansion-panel-title {
+  font-weight: 500 !important;
+}
+
+.v-expansion-panel-title:hover .v-expansion-panel-title__overlay {
+  display: block !important;
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  opacity: 1 !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+/* Button enhancements */
+.v-btn {
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  transition: all var(--transition-speed) !important;
+}
+
+.v-btn:hover {
+  background-color: rgba(63, 81, 181, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.v-btn:hover .v-btn__overlay {
+  display: none !important;
+}
+
+/* Override Vuetify's default overlay behavior */
+.v-tab.v-btn--variant-text .v-tab__overlay,
+.v-tab .v-btn--variant-text .v-btn__overlay {
+  background: transparent !important;
+}
+
+/* GitHub login button styling */
+.github-login-button {
+  display: flex;
+  align-items: center;
+  background-color: #24292e;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all var(--transition-speed);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.github-login-button:hover {
+  background-color: #2c3440;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Organization info styling */
+.organization-info {
+  background-color: #f5f7fa;
+  border-left: 4px solid #3949AB;
+  border-radius: 4px;
+  margin: 16px 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-container {
+    padding: 16px;
   }
   
-  .v-tab:hover::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background-color: rgba(44, 32, 157, 0.557) !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
+  .tiles-container {
+    gap: 12px;
   }
-
-  /* Ensure tab content is above overlay */
-  .v-tab .v-tab__content {
-    position: relative !important;
-    z-index: 2 !important;
-  }
-
-  /* Fix expansion panel title overlay on hover - gray overlay */
-  .v-expansion-panel-title:hover .v-expansion-panel-title__overlay {
-    display: block !important;
-    background-color: rgba(0, 0, 0, 0.04) !important;
-    opacity: 1 !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    pointer-events: none !important;
-  }
-
-  /* Fix button hover styles - light gray background */
-  .v-btn:hover {
-    background-color: rgba(63, 81, 181, 0.1) !important;
-  }
-  
-  .v-btn:hover .v-btn__overlay {
-    display: none !important;
-  }
-
-  /* Override Vuetify's default overlay behavior for tabs */
-  .v-tab.v-btn--variant-text .v-tab__overlay {
-    background: transparent !important;
-  }
-
-  /* Override Vuetify's default overlay behavior for variant-text buttons in tabs */
-  .v-tab .v-btn--variant-text .v-btn__overlay {
-    background: transparent !important;
-  }
+}

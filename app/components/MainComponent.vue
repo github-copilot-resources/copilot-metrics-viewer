@@ -1,38 +1,87 @@
 <template>
   <div>
-    <v-toolbar color="indigo" elevation="4">
-      <v-btn icon>
+    <v-app-bar color="primary" elevation="2" class="app-header">
+      <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none"></v-app-bar-nav-icon>
+      
+      <v-btn icon class="mr-2">
         <v-icon>mdi-github</v-icon>
       </v-btn>
 
-      <v-toolbar-title class="toolbar-title">{{ displayName }}</v-toolbar-title>
-      <h2 class="error-message"> {{ mockedDataMessage }} </h2>
+      <v-app-bar-title class="toolbar-title font-weight-bold">{{ displayName }}</v-app-bar-title>
+      <span v-if="mockedDataMessage" class="error-message text-caption px-2 py-1 rounded">{{ mockedDataMessage }}</span>
       <v-spacer />
 
       <!-- Conditionally render the logout button -->
       <AuthState>
         <template #default="{ loggedIn, user }">
-          <div v-show="loggedIn" class="user-info">
-            Welcome,
-            <v-avatar class="user-avatar">
+          <div v-show="loggedIn" class="user-info d-none d-sm-flex">
+            <span class="mr-2">Welcome,</span>
+            <v-avatar size="32" class="user-avatar">
               <v-img :alt="user?.name" :src="user?.avatarUrl" />
-            </v-avatar> {{ user?.name }}
+            </v-avatar> 
+            <span class="ml-2 font-weight-medium">{{ user?.name }}</span>
           </div>
-          <v-btn v-if="showLogoutButton && loggedIn" class="logout-button" @click="logout">Logout</v-btn>
+          <v-btn 
+            v-if="showLogoutButton && loggedIn" 
+            class="logout-button ml-4" 
+            @click="logout" 
+            prepend-icon="mdi-logout"
+            variant="tonal"
+            color="primary"
+          >
+            Logout
+          </v-btn>
         </template>
       </AuthState>
 
-      <template #extension>
+      <v-btn icon class="ml-2" @click="toggleTheme">
+        <v-icon>{{ isDarkTheme ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
 
-        <v-tabs v-model="tab" align-tabs="title">
-          <v-tab v-for="item in tabItems" :key="item" :value="item">
+      <template #extension>
+        <v-tabs 
+          v-model="tab" 
+          align-tabs="center"
+          slider-color="white"
+          bg-color="primary"
+          class="d-none d-md-flex"
+        >
+          <v-tab 
+            v-for="item in tabItems" 
+            :key="item" 
+            :value="item"
+            class="text-white text-capitalize"
+          >
             {{ item }}
           </v-tab>
         </v-tabs>
-
       </template>
-
-    </v-toolbar>
+    </v-app-bar>
+    
+    <!-- Navigation drawer for mobile -->
+    <v-navigation-drawer
+      v-model="drawer"
+      temporary
+      class="d-md-none"
+    >
+      <v-list>
+        <v-list-item
+          prepend-icon="mdi-view-dashboard"
+          title="Copilot Metrics"
+          :subtitle="displayName"
+        ></v-list-item>
+        <v-divider></v-divider>
+        <v-list-item
+          v-for="item in tabItems"
+          :key="item"
+          :value="item"
+          @click="tab = item; drawer = false"
+          :active="tab === item"
+          :title="item"
+          class="text-capitalize"
+        ></v-list-item>
+      </v-list>
+    </v-navigation-drawer>
 
     <!-- Date Range Selector - Hidden for seats tab -->
     <DateRangeSelector 
@@ -65,33 +114,65 @@
     </AuthState>
 
 
-    <div v-show="!apiError">
-      <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
+    <div v-show="!apiError" class="content-container pa-4">
+      <v-progress-linear v-show="!metricsReady" indeterminate color="primary" />
+      
       <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis')" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
-          <v-card flat>
-            <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
-            <BreakdownComponent
-v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
-              :date-range-description="dateRangeDescription" />
-            <BreakdownComponent
-v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
-              :date-range-description="dateRangeDescription" />
-            <CopilotChatViewer
-v-if="item === 'copilot chat'" :metrics="metrics"
-              :date-range-description="dateRangeDescription" />
-            <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
-            <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <ApiResponse
-v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
-              :seats="seats" />
+          <v-card class="pa-4 rounded-lg elevation-1">
+            <v-card-title class="text-h5 font-weight-bold pb-4 text-primary text-capitalize">
+              {{ item }}
+              <v-chip size="small" color="primary" class="ml-2 text-white">{{ dateRangeDescription }}</v-chip>
+            </v-card-title>
+            
+            <v-card-text>
+              <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
+              <BreakdownComponent
+                v-if="item === 'languages'" 
+                :metrics="metrics" 
+                :breakdown-key="'language'"
+                :date-range-description="dateRangeDescription" 
+              />
+              <BreakdownComponent
+                v-if="item === 'editors'" 
+                :metrics="metrics" 
+                :breakdown-key="'editor'"
+                :date-range-description="dateRangeDescription" 
+              />
+              <CopilotChatViewer
+                v-if="item === 'copilot chat'" 
+                :metrics="metrics"
+                :date-range-description="dateRangeDescription" 
+              />
+              <AgentModeViewer 
+                v-if="item === 'github.com'" 
+                :original-metrics="originalMetrics" 
+                :date-range="dateRange" 
+                :date-range-description="dateRangeDescription" 
+              />
+              <SeatsAnalysisViewer 
+                v-if="item === 'seat analysis'" 
+                :seats="seats" 
+              />
+              <ApiResponse
+                v-if="item === 'api response'" 
+                :metrics="metrics" 
+                :original-metrics="originalMetrics"
+                :seats="seats" 
+              />
+            </v-card-text>
           </v-card>
         </v-window-item>
+        
         <v-alert
           v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis') || (seatsReady && seats.length == 0 && tab === 'seat analysis')"
-          density="compact" text="No data available to display" title="No data" type="warning" />
+          density="compact" 
+          text="No data available to display" 
+          title="No data" 
+          type="warning"
+          class="mt-4" 
+        />
       </v-window>
-
     </div>
 
   </div>
@@ -126,6 +207,10 @@ export default defineNuxtComponent({
     DateRangeSelector
   },
   methods: {
+    toggleTheme() {
+      this.isDarkTheme = !this.isDarkTheme;
+      this.$vuetify.theme.global.name = this.isDarkTheme ? 'dark' : 'light';
+    },
     logout() {
       const { clear } = useUserSession()
       this.metrics = [];
@@ -228,9 +313,12 @@ export default defineNuxtComponent({
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
-      }
+      },
+      drawer: false,
+      isDarkTheme: false
     }
   },
+  
   created() {
     this.tabItems.unshift(this.itemName);
     this.config = useRuntimeConfig();
