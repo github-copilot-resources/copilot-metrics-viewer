@@ -1,48 +1,82 @@
 <template>
-  <v-card class="pa-4 ma-4" elevation="2">
-    <v-card-title class="text-h6 pb-2">Date Range Filter</v-card-title>
+  <v-card class="date-range-selector" elevation="2">
+    <v-card-title class="d-flex align-center pb-2">
+      <v-icon color="primary" class="mr-2">mdi-calendar-range</v-icon>
+      <span class="text-h6">Date Range Filter</span>
+    </v-card-title>
+    
+    <v-divider class="mb-4"></v-divider>
+    
     <v-row align="end">
-      <v-col cols="6" sm="3">
+      <v-col cols="12" sm="6" md="3">
         <v-text-field
           v-model="fromDate"
           label="From Date"
           type="date"
           variant="outlined"
-          density="compact"
+          density="comfortable"
+          prepend-inner-icon="mdi-calendar-start"
+          color="primary"
           @update:model-value="updateDateRange"
+          hide-details
         />
       </v-col>
-      <v-col cols="6" sm="3">
+      <v-col cols="12" sm="6" md="3">
         <v-text-field
           v-model="toDate"
           label="To Date"
           type="date"
           variant="outlined"
-          density="compact"
+          density="comfortable"
+          prepend-inner-icon="mdi-calendar-end"
+          color="primary"
           @update:model-value="updateDateRange"
+          hide-details
         />
       </v-col>
-      <v-col cols="6" sm="2">
+      <v-col cols="12" sm="6" md="3">
         <v-checkbox
           v-model="excludeHolidays"
-          label="Exclude holidays from metrics"
-          density="compact"
-        />
-      </v-col>
-      <v-col cols="6" sm="4" class="d-flex align-center justify-start" style="padding-bottom: 35px;">
-        <v-btn
+          label="Exclude holidays"
+          density="comfortable"
           color="primary"
-          variant="outlined"
-          size="default"
+          hide-details
+        >
+          <template v-slot:label>
+            <div class="d-flex align-center">
+              <span>Exclude holidays</span>
+              <v-tooltip location="top">
+                <template v-slot:activator="{ props }">
+                  <v-icon
+                    v-bind="props"
+                    size="small"
+                    class="ml-1"
+                  >
+                    mdi-information-outline
+                  </v-icon>
+                </template>
+                <span>Exclude weekends and holidays from metrics calculation</span>
+              </v-tooltip>
+            </div>
+          </template>
+        </v-checkbox>
+      </v-col>
+      <v-col cols="12" sm="6" md="3" class="d-flex align-center justify-end">
+        <v-btn
+          color="secondary"
+          variant="tonal"
+          size="large"
           class="mr-3"
+          prepend-icon="mdi-refresh"
           @click="resetToDefault"
         >
           Last 28 Days
         </v-btn>
         <v-btn
           color="primary"
-          size="default"
+          size="large"
           :loading="loading"
+          prepend-icon="mdi-check"
           @click="applyDateRange"
         >
           Apply
@@ -50,11 +84,16 @@
       </v-col>
     </v-row>
 
-    
-    <v-card-text class="pt-2">
-      <span class="text-caption text-medium-emphasis">
+    <v-card-text class="pt-4">
+      <v-chip
+        color="primary"
+        variant="outlined"
+        size="large"
+        class="font-weight-medium"
+      >
+        <v-icon start>mdi-information-outline</v-icon>
         {{ dateRangeText }}
-      </span>
+      </v-chip>
     </v-card-text>
   </v-card>
 </template>
@@ -174,3 +213,14 @@ onMounted(() => {
   applyDateRange()
 })
 </script>
+
+<style scoped>
+.date-range-selector {
+  border-radius: var(--border-radius-md);
+  transition: all var(--transition-speed);
+}
+
+.date-range-selector:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+</style>
