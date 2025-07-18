@@ -1,9 +1,9 @@
 <template>
   <v-card class="metric-card h-100" :class="{ 'theme--dark': isDarkTheme }">
-    <div class="card-accent" :class="`bg-${color}`"></div>
+    <div class="card-accent"></div>
     <v-card-text class="d-flex flex-column h-100">
       <div class="d-flex align-center mb-4">
-        <div class="icon-container" :class="`bg-${color}-light`">
+        <div class="icon-container" :class="`icon-${color}`">
           <v-icon :color="color">{{ icon }}</v-icon>
         </div>
         <h3 class="text-subtitle-1 font-weight-medium ml-2 mb-0">{{ title }}</h3>
@@ -71,15 +71,19 @@ const trendIcon = computed(() => {
   overflow: hidden;
   transition: transform 0.3s, box-shadow 0.3s;
   border-radius: 12px;
+  background-color: rgba(18, 18, 18, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
 }
 
 .metric-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 8px 24px rgba(100, 216, 203, 0.15) !important;
+  border: 1px solid rgba(139, 233, 253, 0.2);
 }
 
 .theme--dark.metric-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 8px 24px rgba(100, 216, 203, 0.15) !important;
 }
 
 .card-accent {
@@ -88,6 +92,9 @@ const trendIcon = computed(() => {
   left: 0;
   right: 0;
   height: 4px;
+  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8) !important;
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite;
 }
 
 .icon-container {
@@ -99,52 +106,34 @@ const trendIcon = computed(() => {
   border-radius: 8px;
 }
 
-.bg-primary {
-  background-color: var(--v-theme-primary);
+.icon-primary {
+  background-color: rgba(100, 216, 203, 0.15);
+  box-shadow: 0 0 15px rgba(100, 216, 203, 0.1);
 }
 
-.bg-primary-light {
-  background-color: rgba(63, 81, 181, 0.1);
+.icon-success {
+  background-color: rgba(80, 250, 123, 0.15);
+  box-shadow: 0 0 15px rgba(80, 250, 123, 0.1);
 }
 
-.bg-success {
-  background-color: var(--v-theme-success);
+.icon-info {
+  background-color: rgba(139, 233, 253, 0.15);
+  box-shadow: 0 0 15px rgba(139, 233, 253, 0.1);
 }
 
-.bg-success-light {
-  background-color: rgba(76, 175, 80, 0.1);
+.icon-warning {
+  background-color: rgba(255, 184, 108, 0.15);
+  box-shadow: 0 0 15px rgba(255, 184, 108, 0.1);
 }
 
-.bg-info {
-  background-color: var(--v-theme-info);
+.icon-error {
+  background-color: rgba(255, 82, 82, 0.15);
+  box-shadow: 0 0 15px rgba(255, 82, 82, 0.1);
 }
 
-.bg-info-light {
-  background-color: rgba(33, 150, 243, 0.1);
-}
-
-.bg-warning {
-  background-color: var(--v-theme-warning);
-}
-
-.bg-warning-light {
-  background-color: rgba(255, 167, 38, 0.1);
-}
-
-.bg-error {
-  background-color: var(--v-theme-error);
-}
-
-.bg-error-light {
-  background-color: rgba(239, 83, 80, 0.1);
-}
-
-.bg-accent {
-  background-color: var(--v-theme-accent);
-}
-
-.bg-accent-light {
-  background-color: rgba(83, 109, 254, 0.1);
+.icon-accent {
+  background-color: rgba(156, 100, 216, 0.15);
+  box-shadow: 0 0 15px rgba(156, 100, 216, 0.1);
 }
 
 .trend-indicator {
@@ -155,34 +144,32 @@ const trendIcon = computed(() => {
 }
 
 .trend-up {
-  color: var(--v-theme-success);
+  color: #50FA7B;
 }
 
 .trend-down {
-  color: var(--v-theme-error);
+  color: #FF5252;
 }
 
-.theme--dark .bg-primary-light {
-  background-color: rgba(92, 107, 192, 0.2);
+@keyframes shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
 }
 
-.theme--dark .bg-success-light {
-  background-color: rgba(102, 187, 106, 0.2);
+.text-h4 {
+  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700 !important;
 }
 
-.theme--dark .bg-info-light {
-  background-color: rgba(66, 165, 245, 0.2);
+.text-subtitle-1 {
+  color: #8BE9FD !important;
 }
 
-.theme--dark .bg-warning-light {
-  background-color: rgba(255, 167, 38, 0.2);
-}
-
-.theme--dark .bg-error-light {
-  background-color: rgba(239, 83, 80, 0.2);
-}
-
-.theme--dark .bg-accent-light {
-  background-color: rgba(124, 77, 255, 0.2);
+.text-caption {
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 </style>

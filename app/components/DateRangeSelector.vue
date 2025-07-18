@@ -1,11 +1,11 @@
 <template>
   <v-card class="date-range-selector" elevation="2">
     <v-card-title class="d-flex align-center pb-2">
-      <v-icon color="primary" class="mr-2">mdi-calendar-range</v-icon>
-      <span class="text-h6">Date Range Filter</span>
+      <v-icon color="secondary" class="mr-2">mdi-calendar-range</v-icon>
+      <span class="text-h6 text-secondary">Date Range Filter</span>
     </v-card-title>
     
-    <v-divider class="mb-4"></v-divider>
+    <v-divider class="mb-4" color="rgba(139, 233, 253, 0.2)"></v-divider>
     
     <v-row align="end">
       <v-col cols="12" sm="6" md="3">
@@ -16,9 +16,11 @@
           variant="outlined"
           density="comfortable"
           prepend-inner-icon="mdi-calendar-start"
-          color="primary"
+          color="secondary"
+          bg-color="rgba(139, 233, 253, 0.05)"
           @update:model-value="updateDateRange"
           hide-details
+          class="date-field"
         />
       </v-col>
       <v-col cols="12" sm="6" md="3">
@@ -29,9 +31,11 @@
           variant="outlined"
           density="comfortable"
           prepend-inner-icon="mdi-calendar-end"
-          color="primary"
+          color="secondary"
+          bg-color="rgba(139, 233, 253, 0.05)"
           @update:model-value="updateDateRange"
           hide-details
+          class="date-field"
         />
       </v-col>
       <v-col cols="12" sm="6" md="3">
@@ -39,7 +43,7 @@
           v-model="excludeHolidays"
           label="Exclude holidays"
           density="comfortable"
-          color="primary"
+          color="accent"
           hide-details
         >
           <template v-slot:label>
@@ -63,12 +67,13 @@
       </v-col>
       <v-col cols="12" sm="6" md="3" class="d-flex align-center justify-end">
         <v-btn
-          color="secondary"
-          variant="tonal"
+          color="primary"
+          variant="flat"
           size="large"
           class="mr-3"
           prepend-icon="mdi-refresh"
           @click="resetToDefault"
+          style="background-color: #1976D2 !important; color: white !important; font-weight: 600 !important;"
         >
           Last 28 Days
         </v-btn>
@@ -78,6 +83,7 @@
           :loading="loading"
           prepend-icon="mdi-check"
           @click="applyDateRange"
+          class="apply-button"
         >
           Apply
         </v-btn>
@@ -86,12 +92,12 @@
 
     <v-card-text class="pt-4">
       <v-chip
-        color="primary"
+        color="secondary"
         variant="outlined"
         size="large"
-        class="font-weight-medium"
+        class="font-weight-medium date-chip"
       >
-        <v-icon start>mdi-information-outline</v-icon>
+        <v-icon start color="secondary">mdi-information-outline</v-icon>
         {{ dateRangeText }}
       </v-chip>
     </v-card-text>
@@ -218,9 +224,57 @@ onMounted(() => {
 .date-range-selector {
   border-radius: var(--border-radius-md);
   transition: all var(--transition-speed);
+  background-color: rgba(18, 18, 18, 0.8) !important;
+  border: 1px solid rgba(139, 233, 253, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .date-range-selector:hover {
-  box-shadow: var(--shadow-md) !important;
+  box-shadow: 0 8px 24px rgba(100, 216, 203, 0.15) !important;
+  border: 1px solid rgba(139, 233, 253, 0.2);
+}
+
+.date-field :deep(.v-field__input) {
+  color: #8BE9FD !important;
+}
+
+.date-field :deep(.v-field__outline) {
+  color: rgba(139, 233, 253, 0.2) !important;
+}
+
+.date-field :deep(.v-field__outline__start),
+.date-field :deep(.v-field__outline__end),
+.date-field :deep(.v-field__outline__notch) {
+  border-color: rgba(139, 233, 253, 0.2) !important;
+}
+
+.date-field:hover :deep(.v-field__outline__start),
+.date-field:hover :deep(.v-field__outline__end),
+.date-field:hover :deep(.v-field__outline__notch) {
+  border-color: rgba(139, 233, 253, 0.4) !important;
+}
+
+.date-chip {
+  background: transparent !important;
+  border: 1px solid rgba(139, 233, 253, 0.3) !important;
+  color: #8BE9FD !important;
+}
+
+.apply-button {
+  background-color: #1976D2 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.days-28-button {
+  background-color: #0D47A1 !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 </style>

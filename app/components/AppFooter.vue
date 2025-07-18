@@ -122,27 +122,52 @@ const socialIcons = [
 
 <style scoped>
 .app-footer {
-  background-color: var(--v-theme-surface);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: rgba(18, 18, 18, 0.95);
+  border-top: 1px solid rgba(139, 233, 253, 0.1);
   padding: 48px 0 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.app-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8);
+  opacity: 0.5;
 }
 
 .footer-link {
   display: flex;
   align-items: center;
-  color: var(--v-theme-on-surface-variant);
+  color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
-  transition: color 0.3s;
+  transition: all 0.3s;
   font-size: 0.875rem;
 }
 
 .footer-link:hover {
-  color: var(--v-theme-primary);
+  color: #8BE9FD;
   text-decoration: none;
+  transform: translateX(5px);
 }
 
-.v-theme--dark .app-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+.footer-link .v-icon {
+  color: #64D8CB;
+}
+
+.text-h6 {
+  background: linear-gradient(90deg, #8BE9FD, #64D8CB);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-subtitle-1 {
+  color: #8BE9FD !important;
 }
 
 @media (max-width: 768px) {

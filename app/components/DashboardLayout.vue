@@ -2,9 +2,9 @@
   <div class="dashboard-layout">
     <v-row>
       <v-col cols="12">
-        <h2 class="text-h5 font-weight-bold mb-4 d-flex align-center">
+        <h2 class="text-h5 font-weight-bold mb-4 d-flex align-center section-heading">
           <v-icon color="primary" class="mr-2">{{ icon }}</v-icon>
-          {{ title }}
+          <span class="section-title">{{ title }}</span>
           <v-chip v-if="dateRange" size="small" color="primary" class="ml-2 text-white">{{ dateRange }}</v-chip>
         </h2>
       </v-col>
@@ -132,5 +132,18 @@ function formatNumber(num: number): string {
 <style scoped>
 .dashboard-layout {
   margin-bottom: 32px;
+}
+
+.section-heading {
+  position: relative;
+  z-index: 1;
+}
+
+.section-title {
+  color: white !important;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 2;
 }
 </style>

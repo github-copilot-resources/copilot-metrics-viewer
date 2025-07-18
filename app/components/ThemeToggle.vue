@@ -72,10 +72,12 @@ function toggleTheme() {
 }
 
 .sun {
-  color: #FFC107;
+  color: #8BE9FD;
+  filter: drop-shadow(0 0 5px rgba(139, 233, 253, 0.5));
 }
 
 .moon {
-  color: #E0E0E0;
+  color: #9C64D8;
+  filter: drop-shadow(0 0 5px rgba(156, 100, 216, 0.5));
 }
 </style>

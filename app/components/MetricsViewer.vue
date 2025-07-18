@@ -1,138 +1,92 @@
 <template>
   <div>
     <div class="tiles-container">      
-      <!-- Acceptance Rate Tile -->  
-      <!--changed on 2024/11/22 to reorder cards, so the accepance rate by counts are be more focused-->
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-        <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-25"/>
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">Acceptance Rate (by count)</div>
-              </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                  <span class="text-caption" style="font-size: 10px !important;">This metric represents the ratio of accepted suggestions to the total suggestions made by GitHub Copilot. This rate indicates the relevance and usefulness of Copilot's suggestions based on the number of prompts, but should be used with caution as developers use Copilot in various ways (research, confirm, verify, etc., not always "inject").</span>
-              </v-card>
-            </v-tooltip>
-            <div class="text-caption">
-              {{ dateRangeDescription }}
-            </div>
-            <p class="text-h4">{{ acceptanceRateAverageByCount.toFixed(2) }}%</p>
-          </div>
-        </v-card-item>
-      </v-card>
-
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-        <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"/>
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">Total count of Suggestions (Prompts)</div>
-              </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.</span>
-              </v-card>
-            </v-tooltip>
-              <div class="text-caption">
-              {{ dateRangeDescription }}
-            </div>
-            <p class="text-h4">{{ cumulativeNumberSuggestions }}</p>
-          </div>
-        </v-card-item>
-      </v-card>
-
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-          <v-card-item>
-            <div class="spacing-25"/>
-            <div class="tiles-text">
-              <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                <template #activator="{ props }">
-                  <div v-bind="props" class="text-h6 mb-1">Acceptance Rate (by lines)</div>
-                </template>
-                <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                  <span class="text-caption" style="font-size: 10px !important;">This metric represents the ratio of accepted lines of code to the total lines suggested by GitHub Copilot. This rate indicates the relevance and usefulness of Copilot's suggestions based on the volume of code, but should be used with caution as developers use Copilot in various ways (research, confirm, verify, etc., not always "inject").</span>
-                </v-card>
-              </v-tooltip>
-              <div class="text-caption">
-                {{ dateRangeDescription }}
-              </div>
-              <p class="text-h4">{{ acceptanceRateAverageByLines.toFixed(2) }}%</p>
-          </div>
-        </v-card-item>
-      </v-card>
-
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-        <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"/>
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">Total Lines of code Suggested</div>
-              </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">Showcases the total number of lines of code suggested by GitHub Copilot. This gives an idea of the volume of code generation and assistance provided.</span>
-              </v-card>
-            </v-tooltip>
-            <div class="text-caption">
-              {{ dateRangeDescription }}
-            </div>
-            <p class="text-h4">{{ totalLinesSuggested }}</p>
-          </div>
-        </v-card-item>
-      </v-card>
+      <MetricCard
+        title="Acceptance Rate (by count)"
+        :value="`${acceptanceRateAverageByCount.toFixed(2)}%`"
+        description="Ratio of accepted suggestions to total suggestions made by GitHub Copilot"
+        icon="mdi-check-circle-outline"
+        color="success"
+        :is-dark-theme="isDarkTheme"
+      />
+      
+      <MetricCard
+        title="Total Suggestions"
+        :value="cumulativeNumberSuggestions.toLocaleString()"
+        description="Total number of code suggestions made by GitHub Copilot"
+        icon="mdi-lightbulb-outline"
+        color="primary"
+        :is-dark-theme="isDarkTheme"
+      />
+      
+      <MetricCard
+        title="Acceptance Rate (by lines)"
+        :value="`${acceptanceRateAverageByLines.toFixed(2)}%`"
+        description="Ratio of accepted lines of code to total lines suggested"
+        icon="mdi-file-check-outline"
+        color="info"
+        :is-dark-theme="isDarkTheme"
+      />
+      
+      <MetricCard
+        title="Total Lines Suggested"
+        :value="totalLinesSuggested.toLocaleString()"
+        description="Total number of lines of code suggested by GitHub Copilot"
+        icon="mdi-code-braces"
+        color="accent"
+        :is-dark-theme="isDarkTheme"
+      />
     </div>
 
     <v-main class="p-1" style="min-height: 300px;">
 
-      <v-container style="min-height: 300px;" class="px-4 elevation-2">
+      <v-container style="min-height: 300px;" class="px-4 elevation-2 chart-container">
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
         <template #activator="{ props }">
-          <h2 v-bind="props">Acceptance rate by count (%)</h2>
+          <h2 v-bind="props" class="chart-title">Acceptance rate by count (%)</h2>
         </template>
-        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-          <span class="text-caption" style="font-size: 10px !important;">This metric represents the ratio of accepted suggestions to the total suggestions made by GitHub Copilot. This rate indicates the relevance and usefulness of Copilot's suggestions based on the number of prompts, but should be used with caution as developers use Copilot in various ways (research, confirm, verify, etc., not always "inject").</span>
+        <v-card class="tooltip-card pa-3">
+          <span class="tooltip-text">This metric represents the ratio of accepted suggestions to the total suggestions made by GitHub Copilot. This rate indicates the relevance and usefulness of Copilot's suggestions based on the number of prompts, but should be used with caution as developers use Copilot in various ways (research, confirm, verify, etc., not always "inject").</span>
         </v-card>
       </v-tooltip>
       <Bar :data="acceptanceRateByCountChartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
         <template #activator="{ props }">
-          <h2 v-bind="props" class="mb-1">Total Suggestions Count | Total Acceptances Count</h2>
+          <h2 v-bind="props" class="chart-title">Total Suggestions Count | Total Acceptances Count</h2>
         </template>
-        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-          <span class="text-caption" style="font-size: 10px !important;">This visualization focuses on the total number of suggestions accepted by users.</span>
+        <v-card class="tooltip-card pa-3">
+          <span class="tooltip-text">This visualization focuses on the total number of suggestions accepted by users.</span>
         </v-card>
       </v-tooltip>
       <Line :data="totalSuggestionsAndAcceptanceChartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
         <template #activator="{ props }">
-          <h2 v-bind="props">Acceptance rate by lines (%)</h2>
+          <h2 v-bind="props" class="chart-title">Acceptance rate by lines (%)</h2>
         </template>
-        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-          <span class="text-caption" style="font-size: 10px !important;">This metric represents the ratio of accepted lines of code to the total lines suggested by GitHub Copilot. This rate indicates the relevance and usefulness of Copilot's suggestions based on the volume of code, but should be used with caution as developers use Copilot in various ways (research, confirm, verify, etc., not always "inject").</span>
+        <v-card class="tooltip-card pa-3">
+          <span class="tooltip-text">This metric represents the ratio of accepted lines of code to the total lines suggested by GitHub Copilot. This rate indicates the relevance and usefulness of Copilot's suggestions based on the volume of code, but should be used with caution as developers use Copilot in various ways (research, confirm, verify, etc., not always "inject").</span>
         </v-card>
       </v-tooltip>
       <Bar :data="acceptanceRateByLinesChartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
         <template #activator="{ props }">
-          <h2 v-bind="props" class="mb-1">Total Lines Suggested | Total Lines Accepted</h2>
+          <h2 v-bind="props" class="chart-title">Total Lines Suggested | Total Lines Accepted</h2>
         </template>
-        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-          <span class="text-caption" style="font-size: 10px !important;">As the name suggests, the total lines of code accepted by users (full acceptances) offering insights into how much of the suggested code is actually being utilized and incorporated into the codebase.</span>
+        <v-card class="tooltip-card pa-3">
+          <span class="tooltip-text">As the name suggests, the total lines of code accepted by users (full acceptances) offering insights into how much of the suggested code is actually being utilized and incorporated into the codebase.</span>
         </v-card>
       </v-tooltip>
       <Line :data="chartData" :options="chartOptions" />
 
       <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
         <template #activator="{ props }">
-          <h2 v-bind="props" class="mb-1">Total Active Users</h2>
+          <h2 v-bind="props" class="chart-title">Total Active Users</h2>
         </template>
-        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-          <span class="text-caption" style="font-size: 10px !important;">Represents the number of active users engaging with GitHub Copilot. This helps in understanding the user base growth and adoption rate.</span>
+        <v-card class="tooltip-card pa-3">
+          <span class="tooltip-text">Represents the number of active users engaging with GitHub Copilot. This helps in understanding the user base growth and adoption rate.</span>
         </v-card>
       </v-tooltip>
       <Bar :data="totalActiveUsersChartData" :options="totalActiveUsersChartOptions" />
@@ -159,6 +113,7 @@ import {
 } from 'chart.js'
 
 import { Line, Bar } from 'vue-chartjs'
+import MetricCard from './MetricCard.vue'
 
 ChartJS.register(
   ArcElement, 
@@ -177,9 +132,9 @@ export default defineComponent({
   name: 'MetricsViewer',
   components: {
     Line,
-    Bar
-  }
-  ,
+    Bar,
+    MetricCard
+  },
   props: {
         metrics: {
             type: Array as PropType<Metrics[]>,
@@ -188,6 +143,10 @@ export default defineComponent({
         dateRangeDescription: {
             type: String,
             default: 'Over the last 28 days'
+        },
+        isDarkTheme: {
+            type: Boolean,
+            default: false
         }
     },
   setup(props) {
@@ -228,6 +187,38 @@ export default defineComponent({
           bottom: 40
         }
       },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#F8F8F2'  // Light text color for better readability
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(30, 30, 30, 0.8)',
+          titleColor: '#8BE9FD',
+          bodyColor: '#F8F8F2',
+          borderColor: 'rgba(100, 216, 203, 0.3)',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#BFBFBF'  // Light gray for better readability
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        },
+        y: {
+          ticks: {
+            color: '#BFBFBF'  // Light gray for better readability
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        }
+      }
     };
 
     const totalActiveUsersChartOptions = {
@@ -237,8 +228,34 @@ export default defineComponent({
         y: {
           beginAtZero: true,
           ticks: {
-            stepSize: 1
+            stepSize: 1,
+            color: '#BFBFBF'  // Light gray for better readability
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
           }
+        },
+        x: {
+          ticks: {
+            color: '#BFBFBF'  // Light gray for better readability
+          },
+          grid: {
+            color: 'rgba(255, 255, 255, 0.1)'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            color: '#F8F8F2'  // Light text color for better readability
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(30, 30, 30, 0.8)',
+          titleColor: '#8BE9FD',
+          bodyColor: '#F8F8F2',
+          borderColor: 'rgba(100, 216, 203, 0.3)',
+          borderWidth: 1
         }
       },
       layout: {
@@ -277,17 +294,15 @@ export default defineComponent({
         {
           label: 'Total Suggestions',
           data: cumulativeSuggestionsData,
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderColor: 'rgba(75, 192, 192, 1)'
-
+          backgroundColor: 'rgba(139, 233, 253, 0.3)',  // Cyan with transparency
+          borderColor: '#8BE9FD'  // Solid cyan
         },
         {
           label: 'Total Acceptance',
           data: cumulativeAcceptancesData,
-          backgroundColor: 'rgba(153, 102, 255, 0.2)',
-          borderColor: 'rgba(153, 102, 255, 1)'
+          backgroundColor: 'rgba(156, 100, 216, 0.3)',  // Purple with transparency
+          borderColor: '#9C64D8'  // Solid purple
         },
-        
       ]
     };
 
@@ -304,15 +319,14 @@ export default defineComponent({
         {
           label: 'Total Lines Suggested',
           data: data.map((m: Metrics) => m.total_lines_suggested),
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderColor: 'rgba(75, 192, 192, 1)'
-
+          backgroundColor: 'rgba(100, 216, 203, 0.3)',  // Teal with transparency
+          borderColor: '#64D8CB'  // Solid teal
         },
         {
           label: 'Total Lines Accepted',
           data: cumulativeLOCAcceptedData,
-          backgroundColor: 'rgba(153, 102, 255, 0.2)',
-          borderColor: 'rgba(153, 102, 255, 1)'
+          backgroundColor: 'rgba(156, 100, 216, 0.3)',  // Purple with transparency
+          borderColor: '#9C64D8'  // Solid purple
         }
       ]
     };
@@ -331,12 +345,13 @@ export default defineComponent({
       labels: data.map((m: Metrics) => m.day),
       datasets: [
         {
-          type: 'line', // This makes the dataset a line in the chart
+          type: 'line',
           label: 'Acceptance Rate by Lines',
           data: acceptanceRatesByLines,
-          backgroundColor: 'rgba(173, 216, 230, 0.2)', // light blue
-          borderColor: 'rgba(173, 216, 230, 1)', // darker blue
-          fill: false // This makes the area under the line not filled
+          backgroundColor: 'rgba(139, 233, 253, 0.3)',  // Cyan with transparency
+          borderColor: '#8BE9FD',  // Solid cyan
+          fill: false,
+          tension: 0.4  // Smooth curve
         }
       ]
     };
@@ -345,12 +360,13 @@ export default defineComponent({
       labels: data.map((m: Metrics) => m.day),
       datasets: [
         {
-          type: 'line', // This makes the dataset a line in the chart
+          type: 'line',
           label: 'Acceptance Rate by Count',
           data: acceptanceRatesByCount,
-          backgroundColor: 'rgba(173, 216, 230, 0.2)', // light blue
-          borderColor: 'rgba(173, 216, 230, 1)', // darker blue
-          fill: false // This makes the area under the line not filled
+          backgroundColor: 'rgba(100, 216, 203, 0.3)',  // Teal with transparency
+          borderColor: '#64D8CB',  // Solid teal
+          fill: false,
+          tension: 0.4  // Smooth curve
         }
       ]
     };
@@ -376,8 +392,8 @@ export default defineComponent({
         {
           label: 'Total Active Users',
           data: data.map((m: Metrics) => m.total_active_users),
-          backgroundColor: 'rgba(0, 0, 139, 0.2)', // dark blue with 20% opacity
-          borderColor: 'rgba(255, 99, 132, 1)'
+          backgroundColor: 'rgba(156, 100, 216, 0.3)',  // Purple with transparency
+          borderColor: '#9C64D8'  // Solid purple
         }
       ]
     };
@@ -406,6 +422,47 @@ export default defineComponent({
       }
     }
   },
-  
 });
 </script>
+
+<style scoped>
+.chart-title {
+  color: #8BE9FD;
+  margin-bottom: 16px;
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 2;
+}
+
+.tooltip-card {
+  background-color: rgba(30, 30, 30, 0.95) !important;
+  border: 1px solid rgba(139, 233, 253, 0.3);
+  max-width: 350px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip-text {
+  color: #F8F8F2 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5;
+}
+
+.chart-container {
+  background-color: rgba(18, 18, 18, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+/* Ensure chart labels are visible */
+:deep(.chartjs-render-monitor) {
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+
+:deep(canvas) {
+  margin: 16px 0 32px;
+}
+</style>

@@ -1,14 +1,25 @@
 <template>
   <div>
-    <!-- Modern App Bar with responsive design -->
-    <v-app-bar color="primary" elevation="2" class="app-header">
-      <v-app-bar-nav-icon @click="drawer = !drawer" class="d-md-none text-white"></v-app-bar-nav-icon>
+    <!-- Modern App Bar with hamburger menu -->
+    <v-app-bar 
+      :color="isDarkTheme ? 'gradient-dark' : 'gradient-light'" 
+      elevation="3" 
+      class="app-header"
+      height="70"
+    >
+      <v-app-bar-nav-icon 
+        @click="drawer = !drawer" 
+        class="text-white hamburger-icon"
+        size="large"
+      ></v-app-bar-nav-icon>
       
-      <v-btn icon class="mr-2 text-white">
-        <v-icon>mdi-github</v-icon>
-      </v-btn>
-
-      <v-app-bar-title class="toolbar-title text-white">{{ displayName }}</v-app-bar-title>
+      <div class="d-flex align-center">
+        <CopilotLogo />
+        <v-app-bar-title class="toolbar-title text-white ml-2">
+          <span class="text-subtitle-2 d-block">{{ displayName }}</span>
+        </v-app-bar-title>
+      </div>
+      
       <span v-if="mockedDataMessage" class="error-message text-caption px-2 py-1 rounded">{{ mockedDataMessage }}</span>
       <v-spacer />
 
@@ -27,7 +38,7 @@
             class="logout-button ml-4" 
             @click="logout" 
             prepend-icon="mdi-logout"
-            variant="tonal"
+            variant="outlined"
             color="white"
           >
             Logout
@@ -40,50 +51,96 @@
         :is-dark-theme="isDarkTheme" 
         @toggle="toggleTheme" 
       />
-
-      <template #extension>
-        <v-tabs 
-          v-model="tab" 
-          align-tabs="center"
-          slider-color="white"
-          bg-color="primary"
-          class="d-none d-md-flex"
-        >
-          <v-tab 
-            v-for="item in tabItems" 
-            :key="item" 
-            :value="item"
-            class="text-white text-capitalize"
-          >
-            {{ item }}
-          </v-tab>
-        </v-tabs>
-      </template>
     </v-app-bar>
     
-    <!-- Navigation drawer for mobile -->
+    <!-- Navigation drawer with hamburger menu -->
     <v-navigation-drawer
       v-model="drawer"
       temporary
-      class="d-md-none"
+      location="left"
+      width="280"
+      class="navigation-drawer"
     >
-      <v-list>
+      <v-list class="drawer-list">
         <v-list-item
           prepend-icon="mdi-view-dashboard"
           title="Copilot Metrics"
           :subtitle="displayName"
-        ></v-list-item>
-        <v-divider></v-divider>
-        <v-list-item
+          class="py-4 drawer-header"
+        >
+          <template v-slot:append>
+            <v-btn
+              icon
+              variant="text"
+              @click="drawer = false"
+              class="close-btn"
+            >
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </template>
+        </v-list-item>
+        
+        <v-divider class="drawer-divider"></v-divider>
+        
+        <div 
           v-for="item in tabItems"
           :key="item"
-          :value="item"
+          class="custom-menu-item my-1"
+          :class="{'custom-menu-item-active': tab === item}"
           @click="tab = item; drawer = false"
-          :active="tab === item"
-          :title="item"
-          class="text-capitalize"
-        ></v-list-item>
+        >
+          <v-icon class="menu-icon" :icon="getTabIcon(item)"></v-icon>
+          <span class="menu-text text-capitalize">{{ item }}</span>
+        </div>
+        
+        <v-divider class="drawer-divider my-3"></v-divider>
+        
+        <v-list-item
+          prepend-icon="mdi-cog-outline"
+          title="Settings"
+          class="drawer-item my-1"
+          rounded="lg"
+        >
+          <template v-slot:append>
+            <v-switch
+              v-model="isDarkTheme"
+              color="primary"
+              hide-details
+              inset
+              :label="isDarkTheme ? 'Dark' : 'Light'"
+              density="compact"
+              @change="toggleTheme"
+            ></v-switch>
+          </template>
+        </v-list-item>
+        
+        <AuthState>
+          <template #default="{ loggedIn }">
+            <v-list-item
+              v-if="loggedIn && showLogoutButton"
+              prepend-icon="mdi-logout"
+              title="Logout"
+              class="drawer-item my-1"
+              rounded="lg"
+              @click="logout"
+            ></v-list-item>
+          </template>
+        </AuthState>
       </v-list>
+      
+      <template v-slot:append>
+        <div class="pa-4">
+          <v-btn
+            block
+            color="primary"
+            href="https://github.com/github-copilot-resources/copilot-metrics-viewer"
+            target="_blank"
+            prepend-icon="mdi-github"
+          >
+            View on GitHub
+          </v-btn>
+        </div>
+      </template>
     </v-navigation-drawer>
 
     <!-- Main Content Container -->
@@ -160,41 +217,53 @@
                 :is-dark-theme="isDarkTheme"
               >
                 <v-card-text class="pa-0">
-                <MetricsViewer v-if="item === itemName" :metrics="metrics" :date-range-description="dateRangeDescription" />
-                <BreakdownComponent
-                  v-if="item === 'languages'" 
-                  :metrics="metrics" 
-                  :breakdown-key="'language'"
-                  :date-range-description="dateRangeDescription" 
-                />
-                <BreakdownComponent
-                  v-if="item === 'editors'" 
-                  :metrics="metrics" 
-                  :breakdown-key="'editor'"
-                  :date-range-description="dateRangeDescription" 
-                />
-                <CopilotChatViewer
-                  v-if="item === 'copilot chat'" 
-                  :metrics="metrics"
-                  :date-range-description="dateRangeDescription" 
-                />
-                <AgentModeViewer 
-                  v-if="item === 'github.com'" 
-                  :original-metrics="originalMetrics" 
-                  :date-range="dateRange" 
-                  :date-range-description="dateRangeDescription" 
-                />
-                <SeatsAnalysisViewer 
-                  v-if="item === 'seat analysis'" 
-                  :seats="seats" 
-                />
-                <ApiResponse
-                  v-if="item === 'api response'" 
-                  :metrics="metrics" 
-                  :original-metrics="originalMetrics"
-                  :seats="seats" 
-                />
-              </v-card-text>
+                  <MetricsViewer 
+                    v-if="item === itemName" 
+                    :metrics="metrics" 
+                    :date-range-description="dateRangeDescription"
+                    :is-dark-theme="isDarkTheme" 
+                  />
+                  <BreakdownComponent
+                    v-if="item === 'languages'" 
+                    :metrics="metrics" 
+                    :breakdown-key="'language'"
+                    :date-range-description="dateRangeDescription"
+                    :is-dark-theme="isDarkTheme" 
+                  />
+                  <BreakdownComponent
+                    v-if="item === 'editors'" 
+                    :metrics="metrics" 
+                    :breakdown-key="'editor'"
+                    :date-range-description="dateRangeDescription"
+                    :is-dark-theme="isDarkTheme" 
+                  />
+                  <CopilotChatViewer
+                    v-if="item === 'copilot chat'" 
+                    :metrics="metrics"
+                    :date-range-description="dateRangeDescription"
+                    :is-dark-theme="isDarkTheme" 
+                  />
+                  <AgentModeViewer 
+                    v-if="item === 'github.com'" 
+                    :original-metrics="originalMetrics" 
+                    :date-range="dateRange" 
+                    :date-range-description="dateRangeDescription"
+                    :is-dark-theme="isDarkTheme" 
+                  />
+                  <SeatsAnalysisViewer 
+                    v-if="item === 'seat analysis'" 
+                    :seats="seats"
+                    :is-dark-theme="isDarkTheme" 
+                  />
+                  <ApiResponse
+                    v-if="item === 'api response'" 
+                    :metrics="metrics" 
+                    :original-metrics="originalMetrics"
+                    :seats="seats"
+                    :is-dark-theme="isDarkTheme" 
+                  />
+                </v-card-text>
+              </DashboardLayout>
             </v-card>
           </v-window-item>
           
@@ -235,6 +304,7 @@ import LoadingAnimation from './LoadingAnimation.vue'
 import DashboardLayout from './DashboardLayout.vue'
 import MetricCard from './MetricCard.vue'
 import ThemeToggle from './ThemeToggle.vue'
+import CopilotLogo from './CopilotLogo.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 
@@ -253,7 +323,8 @@ export default defineNuxtComponent({
     LoadingAnimation,
     DashboardLayout,
     MetricCard,
-    ThemeToggle
+    ThemeToggle,
+    CopilotLogo
   },
   methods: {
     toggleTheme() {
@@ -470,7 +541,39 @@ export default defineNuxtComponent({
 }
 
 .app-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  position: relative;
+  z-index: 10;
+}
+
+.app-header::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+  z-index: 11;
+}
+
+.v-theme--dark .app-header {
+  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+
+.v-theme--dark .app-header::after {
+  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8);
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
 }
 
 .toolbar-title {
@@ -478,6 +581,25 @@ export default defineNuxtComponent({
   overflow: visible;
   text-overflow: clip;
   font-weight: 600;
+}
+
+.hamburger-icon {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.hamburger-icon:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.header-logo {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s;
+}
+
+.header-logo:hover {
+  transform: scale(1.05);
 }
 
 .user-info {
@@ -496,5 +618,122 @@ export default defineNuxtComponent({
 
 .logout-button {
   margin-left: auto;
+}
+
+/* Navigation drawer styling */
+.navigation-drawer {
+  background-color: #1E1E1E !important; /* Solid background color, no transparency */
+  border-right: 1px solid rgba(139, 233, 253, 0.2);
+}
+
+/* Custom menu item styling */
+.custom-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 4px;
+  color: #F8F8F2;
+  position: relative;
+  background-color: transparent;
+}
+
+.custom-menu-item:hover {
+  background-color: rgba(100, 216, 203, 0.05);
+}
+
+.menu-icon {
+  margin-right: 12px;
+  color: rgba(139, 233, 253, 0.7);
+}
+
+.menu-text {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Custom active item styling to ensure readability */
+.custom-menu-item-active {
+  background-color: #333333 !important;
+  border-left: 3px solid #8BE9FD;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  padding-left: 13px; /* Compensate for the border */
+}
+
+.custom-menu-item-active .menu-icon {
+  color: #8BE9FD;
+}
+
+.custom-menu-item-active .menu-text {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.drawer-list {
+  background-color: #1E1E1E !important;
+  padding: 8px;
+}
+
+.drawer-header {
+  border-bottom: 1px solid rgba(139, 233, 253, 0.1);
+}
+
+.drawer-header :deep(.v-list-item-title) {
+  color: #8BE9FD !important;
+  font-weight: 600;
+}
+
+.drawer-header :deep(.v-list-item-subtitle) {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.drawer-divider {
+  border-color: rgba(139, 233, 253, 0.1) !important;
+}
+
+.drawer-item {
+  margin-bottom: 4px;
+  transition: all 0.3s;
+}
+
+.drawer-item :deep(.v-list-item__content) {
+  color: #F8F8F2 !important;
+}
+
+.drawer-item :deep(.v-icon) {
+  color: rgba(139, 233, 253, 0.7) !important;
+}
+
+.drawer-item-active {
+  background-color: #1A1A1A !important;
+  border-left: 3px solid #8BE9FD;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(139, 233, 253, 0.3);
+  position: relative;
+  z-index: 1;
+  color: white !important;
+}
+
+.drawer-item-active :deep(.v-list-item__content) {
+  color: #FFFFFF !important;
+  font-weight: 700;
+}
+
+.drawer-item-active :deep(.v-list-item-title) {
+  color: #FFFFFF !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.drawer-item-active :deep(.v-icon) {
+  color: #8BE9FD !important;
+}
+
+.drawer-item:hover {
+  background-color: rgba(100, 216, 203, 0.05) !important;
+}
+
+.close-btn:hover {
+  color: #8BE9FD !important;
 }
 </style>

@@ -9,27 +9,7 @@
           <p class="text-body-2 mb-6">
             Track your organization's GitHub Copilot usage, analyze trends, and optimize your development workflow.
           </p>
-          <div class="d-flex flex-wrap gap-3">
-            <v-btn 
-              color="primary" 
-              variant="elevated" 
-              size="large"
-              prepend-icon="mdi-chart-timeline-variant"
-              @click="scrollToMetrics"
-            >
-              View Metrics
-            </v-btn>
-            <v-btn 
-              color="secondary" 
-              variant="tonal" 
-              size="large"
-              prepend-icon="mdi-information-outline"
-              href="https://github.com/github-copilot-resources/copilot-metrics-viewer" 
-              target="_blank"
-            >
-              Learn More
-            </v-btn>
-          </div>
+          <!-- Buttons removed -->
         </div>
         <div class="banner-image d-none d-md-flex">
           <v-img
@@ -89,12 +69,14 @@ function scrollToMetrics() {
   position: relative;
   overflow: hidden;
   border-radius: 16px;
-  background: linear-gradient(135deg, #3F51B5 0%, #5C6BC0 100%);
+  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%);
   color: white;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .theme--dark.welcome-banner {
-  background: linear-gradient(135deg, #303F9F 0%, #3F51B5 100%);
+  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%);
 }
 
 .banner-overlay {

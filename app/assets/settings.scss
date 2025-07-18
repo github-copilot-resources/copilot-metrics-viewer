@@ -66,21 +66,7 @@
   
   // Card specific
   $card-border-radius: 12px,
-  $card-elevation: 2,
-  
-  // Button specific
-  $button-border-radius: 8px,
-  $button-text-transform: none,
-  
-  // Expansion panels
-  $expansion-panel-border-radius: 8px,
-  
-  // Data tables
-  $data-table-border-radius: 8px,
-  
-  // Tabs
-  $tabs-item-letter-spacing: 0,
-  $tabs-item-font-weight: 500,
+  $card-elevation: 2
 );
 
 // Custom CSS variables
@@ -89,11 +75,24 @@
   --card-hover-transform: translateY(-2px);
   --card-hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
   --transition-speed: 0.3s;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --button-border-radius: 8px;
+  --expansion-panel-border-radius: 8px;
+  --data-table-border-radius: 8px;
+  --tabs-item-letter-spacing: 0;
+  --tabs-item-font-weight: 500;
 }
 
 // Global styles
 html {
   scroll-behavior: smooth;
+}
+
+// Button styles
+.v-btn {
+  text-transform: none !important;
 }
 
 // Custom scrollbar
@@ -126,4 +125,19 @@ html {
 
 .v-theme--dark ::-webkit-scrollbar-thumb:hover {
   background: #777;
+}
+
+// Additional component styles
+.v-data-table {
+  border-radius: var(--border-radius-md) !important;
+  overflow: hidden;
+}
+
+.v-expansion-panel {
+  border-radius: var(--border-radius-md) !important;
+}
+
+.v-tabs .v-tab {
+  letter-spacing: 0 !important;
+  font-weight: 500 !important;
 }

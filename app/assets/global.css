@@ -4,9 +4,26 @@
   --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+  
+  /* Color palette based on the image */
+  --color-cyan: #8BE9FD;
+  --color-teal: #64D8CB;
+  --color-purple: #9C64D8;
+  --color-dark-bg: #121212;
+  --color-card-bg: #1E1E1E;
+  --color-success: #50FA7B;
+  --color-warning: #FFB86C;
+  --color-error: #FF5252;
+  --color-text: #F8F8F2;
+  --color-text-muted: #BFBFBF;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--color-teal) 0%, var(--color-purple) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--color-cyan) 0%, var(--color-teal) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--color-purple) 0%, var(--color-cyan) 100%);
 }
 
 body {
@@ -14,6 +31,8 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-dark-bg);
+  color: var(--color-text);
 }
 
 /* Layout components */
@@ -39,7 +58,7 @@ body {
 
 /* Utility classes */
 .error-message {
-  color: #FF5252;
+  color: var(--color-error);
   font-weight: 500;
   padding: 8px 12px;
   border-radius: var(--border-radius-sm);
@@ -65,16 +84,20 @@ body {
   transition: transform var(--transition-speed), box-shadow var(--transition-speed);
   overflow: hidden;
   border-radius: var(--border-radius-md) !important;
+  background-color: var(--color-card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .v-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(100, 216, 203, 0.2);
 }
 
 .v-card__title {
   font-weight: 600 !important;
   letter-spacing: -0.01em !important;
+  color: var(--color-cyan) !important;
 }
 
 /* Tab styling */
@@ -86,6 +109,7 @@ body {
   transition: all var(--transition-speed) !important;
   border-radius: 0 !important;
   min-width: 100px;
+  color: var(--color-text) !important;
 }
 
 .v-tab:hover::before {
@@ -95,7 +119,7 @@ body {
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  background-color: rgba(63, 81, 181, 0.1) !important;
+  background-color: rgba(100, 216, 203, 0.1) !important;
   pointer-events: none !important;
   z-index: 1 !important;
 }
@@ -107,7 +131,7 @@ body {
 
 /* App bar styling */
 .app-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .toolbar-title {
@@ -121,19 +145,23 @@ body {
   margin-bottom: 8px !important;
   overflow: hidden;
   box-shadow: var(--shadow-sm) !important;
+  background-color: var(--color-card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .v-expansion-panel-title {
   font-weight: 500 !important;
   padding: 16px !important;
+  color: var(--color-text) !important;
 }
 
 .v-expansion-panel-title:hover .v-expansion-panel-title__overlay {
-  background-color: rgba(0, 0, 0, 0.03) !important;
+  background-color: rgba(100, 216, 203, 0.1) !important;
 }
 
 .v-expansion-panel-text__wrapper {
   padding: 16px !important;
+  background-color: var(--color-card-bg) !important;
 }
 
 /* Button enhancements */
@@ -146,6 +174,8 @@ body {
 
 .v-btn--elevated {
   box-shadow: var(--shadow-sm) !important;
+  background: var(--gradient-primary) !important;
+  color: white !important;
 }
 
 .v-btn--elevated:hover {
@@ -154,7 +184,7 @@ body {
 }
 
 .v-btn:hover .v-btn__overlay {
-  opacity: 0.05 !important;
+  opacity: 0.1 !important;
 }
 
 /* GitHub login button styling */
@@ -168,7 +198,7 @@ body {
 .github-login-button {
   display: flex;
   align-items: center;
-  background-color: #24292e;
+  background: var(--gradient-primary);
   color: white;
   padding: 12px 24px;
   border-radius: var(--border-radius-md);
@@ -180,9 +210,9 @@ body {
 }
 
 .github-login-button:hover {
-  background-color: #2c3440;
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  filter: brightness(1.1);
 }
 
 .github-login-button .v-icon {
@@ -201,32 +231,34 @@ body {
 .user-avatar {
   margin-right: 8px;
   margin-left: 8px;
-  border: 2px solid white;
+  border: 2px solid var(--color-cyan);
 }
 
 /* Organization info styling */
 .organization-info {
-  background-color: rgba(63, 81, 181, 0.05);
-  border-left: 4px solid #3F51B5;
+  background-color: rgba(100, 216, 203, 0.05);
+  border-left: 4px solid var(--color-teal);
   border-radius: var(--border-radius-sm);
   margin: 16px 0;
 }
 
 /* Date range selector styling */
 .date-range-selector {
-  background-color: white;
+  background-color: var(--color-card-bg);
   border-radius: var(--border-radius-md);
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Chart enhancements */
 .chart-container {
-  background-color: white;
+  background-color: var(--color-card-bg);
   border-radius: var(--border-radius-md);
   padding: 16px;
   box-shadow: var(--shadow-sm);
   margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 /* Data table styling */
@@ -234,10 +266,11 @@ body {
   border-radius: var(--border-radius-md) !important;
   overflow: hidden;
   box-shadow: var(--shadow-sm) !important;
+  background-color: var(--color-card-bg) !important;
 }
 
 .v-data-table__thead {
-  background-color: rgba(63, 81, 181, 0.05);
+  background-color: rgba(100, 216, 203, 0.05);
 }
 
 .v-data-table__th {
@@ -245,6 +278,7 @@ body {
   text-transform: uppercase !important;
   font-size: 0.75rem !important;
   letter-spacing: 0.05em !important;
+  color: var(--color-cyan) !important;
 }
 
 /* Responsive adjustments */
@@ -262,17 +296,123 @@ body {
   }
 }
 
-/* Dark mode adjustments */
-.v-theme--dark .organization-info {
-  background-color: rgba(92, 107, 192, 0.1);
-  border-left-color: #5C6BC0;
+/* Glow effects for cards */
+.metric-card {
+  position: relative;
+  overflow: hidden;
 }
 
-.v-theme--dark .chart-container,
-.v-theme--dark .date-range-selector {
-  background-color: #1E1E1E;
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--gradient-primary);
+  z-index: -1;
+  border-radius: calc(var(--border-radius-md) + 2px);
+  opacity: 0;
+  transition: opacity var(--transition-speed);
 }
 
-.v-theme--dark .v-data-table__thead {
-  background-color: rgba(92, 107, 192, 0.1);
+.metric-card:hover::before {
+  opacity: 0.7;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-teal);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyan);
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--color-teal) !important;
+}
+
+.text-secondary {
+  color: var(--color-cyan) !important;
+}
+
+.text-accent {
+  color: var(--color-purple) !important;
+}
+
+.text-success {
+  color: var(--color-success) !important;
+}
+
+.text-warning {
+  color: var(--color-warning) !important;
+}
+
+.text-error {
+  color: var(--color-error) !important;
+}
+
+/* Background colors */
+.bg-primary {
+  background-color: var(--color-teal) !important;
+}
+
+.bg-secondary {
+  background-color: var(--color-cyan) !important;
+}
+
+.bg-accent {
+  background-color: var(--color-purple) !important;
+}
+
+.bg-gradient-primary {
+  background: var(--gradient-primary) !important;
+}
+
+.bg-gradient-secondary {
+  background: var(--gradient-secondary) !important;
+}
+
+.bg-gradient-accent {
+  background: var(--gradient-accent) !important;
+}
+
+/* Chip styling */
+.v-chip {
+  background: var(--gradient-primary) !important;
+  color: white !important;
+}
+
+/* Progress indicators */
+.v-progress-circular {
+  color: var(--color-teal) !important;
+}
+
+.v-progress-linear {
+  background-color: rgba(100, 216, 203, 0.2) !important;
+}
+
+.v-progress-linear__determinate {
+  background: var(--gradient-primary) !important;
+}
+
+/* Switch styling */
+.v-switch__track {
+  background-color: rgba(100, 216, 203, 0.2) !important;
+}
+
+.v-switch--active .v-switch__track {
+  background-color: var(--color-teal) !important;
 }
