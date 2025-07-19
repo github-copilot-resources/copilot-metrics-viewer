@@ -23,29 +23,6 @@
       <span v-if="mockedDataMessage" class="error-message text-caption px-2 py-1 rounded">{{ mockedDataMessage }}</span>
       <v-spacer />
 
-      <!-- Conditionally render the user info and logout button -->
-      <AuthState>
-        <template #default="{ loggedIn, user }">
-          <div v-show="loggedIn" class="user-info d-none d-sm-flex">
-            <span class="mr-2 text-white">Welcome,</span>
-            <v-avatar size="32" class="user-avatar">
-              <v-img :alt="user?.name" :src="user?.avatarUrl" />
-            </v-avatar> 
-            <span class="ml-2 font-weight-medium text-white">{{ user?.name }}</span>
-          </div>
-          <v-btn 
-            v-if="showLogoutButton && loggedIn" 
-            class="logout-button ml-4" 
-            @click="logout" 
-            prepend-icon="mdi-logout"
-            variant="outlined"
-            color="white"
-          >
-            Logout
-          </v-btn>
-        </template>
-      </AuthState>
-
       <ThemeToggle 
         class="ml-2" 
         :is-dark-theme="isDarkTheme" 
