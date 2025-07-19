@@ -37,7 +37,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: ['~/assets/global.css', '~/assets/background.css'],
+  css: ['~/assets/global.css', '~/assets/background.css', '~/assets/date-range-fix.css'],
   modules: ['@nuxt/fonts', 'vuetify-nuxt-module', '@nuxt/eslint', 'nuxt-auth-utils'],
 
   vuetify: {

@@ -1,65 +1,35 @@
 <template>
     <div class="tiles-container">      
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-            <v-card-item>
-                <div class="tiles-text">
-                    <div class="spacing-25"/>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Turns</div>
-                      </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of turns (interactions) with the Copilot over the past 28 days. A 'turn' includes both user inputs and Copilot's responses.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">{{ dateRangeDescription }}</div>
-                    <p class="text-h4">{{ cumulativeNumberTurns }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
+        <MetricCard
+          title="Cumulative Number of Turns"
+          :value="cumulativeNumberTurns.toString()"
+          :description="dateRangeDescription"
+          icon="mdi-chat-processing"
+          color="primary"
+          :is-dark-theme="isDarkTheme"
+        />
 
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-            <v-card-item>
-                <div class="tiles-text">
-                    <div class="spacing-10"/>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Acceptances</div>
-                      </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the past 28 days.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">{{ dateRangeDescription }}</div>
-                    <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
+        <MetricCard
+          title="Cumulative Number of Acceptances"
+          :value="cumulativeNumberAcceptances.toString()"
+          :description="dateRangeDescription"
+          icon="mdi-check-circle"
+          color="success"
+          :is-dark-theme="isDarkTheme"
+        />
     </div>
 
     <v-main class="p-1" style="min-height: 300px;">
-        <v-container style="min-height: 300px;" class="px-4 elevation-2">
+        <v-container style="min-height: 300px;" class="px-4 elevation-2 chart-container">
+            <h2 class="chart-title">Total Acceptances | Total Turns Count</h2>
+            <div class="chart-wrapper">
+              <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
+            </div>
 
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <h2 v-bind="props" class="mb-1">Total Acceptances | Total Turns Count</h2>
-              </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">This is a chart that displays the total number of turns and acceptances.</span>
-              </v-card>
-            </v-tooltip>
-            <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
-
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <h2 v-bind="props" class="mb-1">Total Active Copilot Chat Users</h2>
-              </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">A bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.</span>
-              </v-card>
-            </v-tooltip>
-            <Bar :data="totalActiveCopilotChatUsersChartData" :options="totalActiveChatUsersChartOptions" />
-
+            <h2 class="chart-title">Total Active Copilot Chat Users</h2>
+            <div class="chart-wrapper">
+              <Bar :data="totalActiveCopilotChatUsersChartData" :options="totalActiveChatUsersChartOptions" />
+            </div>
         </v-container>
     </v-main>
 </template>
@@ -67,7 +37,8 @@
 <script lang="ts">
   import { defineComponent, ref, toRef } from 'vue';
   import type { Metrics } from '@/model/Metrics';
-  import { Line, Bar } from 'vue-chartjs'
+  import { Line, Bar } from 'vue-chartjs';
+  import MetricCard from './MetricCard.vue';
   import {
   Chart as ChartJS,
   ArcElement,
@@ -107,6 +78,10 @@ props: {
         dateRangeDescription: {
             type: String,
             default: 'Over the last 28 days'
+        },
+        isDarkTheme: {
+            type: Boolean,
+            default: false
         }
     },
 setup(props) {
@@ -205,3 +180,33 @@ setup(props) {
 });
 
 </script>
+
+<style scoped>
+.chart-title {
+  color: #8BE9FD;
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 16px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  position: relative;
+  z-index: 2;
+}
+
+.chart-container {
+  background-color: rgba(18, 18, 18, 0.8) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.chart-wrapper {
+  margin-bottom: 32px;
+  position: relative;
+  height: 400px;
+}
+
+:deep(.chartjs-render-monitor) {
+  filter: drop-shadow(0 0 8px rgba(100, 216, 203, 0.2));
+}
+</style>

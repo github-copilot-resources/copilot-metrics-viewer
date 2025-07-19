@@ -5,7 +5,10 @@
         <h2 class="text-h5 font-weight-bold mb-4 d-flex align-center section-heading">
           <v-icon color="primary" class="mr-2">{{ icon }}</v-icon>
           <span class="section-title">{{ title }}</span>
-          <v-chip v-if="dateRange" size="small" color="primary" class="ml-2 text-white">{{ dateRange }}</v-chip>
+          <div v-if="dateRange" class="ml-2 custom-date-badge">
+            <v-icon class="date-icon">mdi-calendar-range</v-icon>
+            <span class="date-text">{{ dateRange }}</span>
+          </div>
         </h2>
       </v-col>
     </v-row>
@@ -145,5 +148,32 @@ function formatNumber(num: number): string {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 2;
+}
+
+.custom-date-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #000000;
+  color: #FFFFFF;
+  font-weight: 700;
+  border: 2px solid #8BE9FD;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  padding: 6px 12px;
+  border-radius: 4px;
+  margin-left: 12px;
+}
+
+.date-icon {
+  color: #8BE9FD;
+  margin-right: 6px;
+  font-size: 18px;
+}
+
+.date-text {
+  color: #FFFFFF;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  letter-spacing: 0.5px;
+  font-size: 0.9rem;
 }
 </style>

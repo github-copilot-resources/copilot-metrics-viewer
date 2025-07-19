@@ -1,0 +1,33 @@
+/* Override styles for date range text */
+.section-heading .date-range-container {
+  display: inline-block !important;
+  background-color: #000000 !important;
+  border-radius: 4px !important;
+  border: 2px solid #8BE9FD !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7) !important;
+  padding: 0 !important;
+  margin-left: 8px !important;
+  overflow: visible !important;
+}
+
+.section-heading .date-range-text {
+  display: inline-block !important;
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  padding: 6px 12px !important;
+  border-radius: 0 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  font-size: 0.9rem !important;
+  letter-spacing: 0.5px !important;
+  opacity: 1 !important;
+}
+
+/* Override any global chip styles */
+.v-chip.date-range-chip {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  border: 2px solid #8BE9FD !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7) !important;
+}
