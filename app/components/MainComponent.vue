@@ -15,9 +15,6 @@
       
       <div class="d-flex align-center">
         <CopilotLogo />
-        <v-app-bar-title class="toolbar-title text-white ml-2">
-          <span class="text-subtitle-2 d-block">{{ displayName }}</span>
-        </v-app-bar-title>
       </div>
       
       <span v-if="mockedDataMessage" class="error-message text-caption px-2 py-1 rounded">{{ mockedDataMessage }}</span>

@@ -1,0 +1,164 @@
+/* Direct targeting of the white background in the dropdown */
+
+/* Target the specific element causing the white background */
+.v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Target the specific element in the dropdown */
+.v-select__content .v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Target the specific element in the data table footer */
+.v-data-table-footer .v-select__content .v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Target the specific element in the data table footer */
+.v-data-table-footer__items-per-page .v-select__content .v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Target all list items in the dropdown */
+.v-list-item {
+  --v-theme-overlay-multiplier: 0 !important;
+  --v-activated-opacity: 0 !important;
+  --v-selected-opacity: 0 !important;
+  --v-hover-opacity: 0 !important;
+  --v-focus-opacity: 0 !important;
+  --v-pressed-opacity: 0 !important;
+  --v-dragged-opacity: 0 !important;
+}
+
+/* Target the specific element causing the white background */
+.v-theme--light .v-list-item__underlay,
+.v-theme--dark .v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__overlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item--active .v-list-item__overlay,
+.v-list-item--selected .v-list-item__overlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Force background colors for list items */
+.v-list-item {
+  background-color: #1E1E1E !important;
+}
+
+.v-list-item--active,
+.v-list-item--selected {
+  background-color: #333333 !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item .v-list-item__underlay::before,
+.v-list-item .v-list-item__underlay::after {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item .v-list-item__overlay::before,
+.v-list-item .v-list-item__overlay::after {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__content {
+  background-color: transparent !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__prepend {
+  background-color: transparent !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__append {
+  background-color: transparent !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__spacer {
+  background-color: transparent !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__base {
+  background-color: transparent !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__bg {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__bg::before,
+.v-list-item__bg::after {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__bg > * {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__underlay > * {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__overlay > * {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__bg > div {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__underlay > div {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__overlay > div {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  display: none !important;
+}

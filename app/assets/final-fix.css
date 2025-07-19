@@ -1,0 +1,5 @@
+/* Final fix for the white background in the dropdown */
+.v-list-item__underlay {
+  background-color: transparent !important;
+  display: none !important;
+}

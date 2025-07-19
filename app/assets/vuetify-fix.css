@@ -1,0 +1,66 @@
+/* Fix for Vuetify list item underlay */
+.v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Fix for Vuetify list item overlay */
+.v-list-item__overlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Fix for Vuetify list item background */
+.v-list-item {
+  background-color: #1E1E1E !important;
+}
+
+/* Fix for Vuetify list item active background */
+.v-list-item--active {
+  background-color: #333333 !important;
+}
+
+/* Fix for Vuetify list item selected background */
+.v-list-item--selected {
+  background-color: #333333 !important;
+}
+
+/* Fix for Vuetify list item hover background */
+.v-list-item:hover {
+  background-color: #333333 !important;
+}
+
+/* Fix for Vuetify list item text color */
+.v-list-item__content {
+  color: #FFFFFF !important;
+}
+
+/* Fix for Vuetify list background */
+.v-list {
+  background-color: #1E1E1E !important;
+}
+
+/* Fix for Vuetify menu content background */
+.v-menu__content {
+  background-color: #1E1E1E !important;
+}
+
+/* Fix for Vuetify select content background */
+.v-select__content {
+  background-color: #1E1E1E !important;
+}
+
+/* Fix for Vuetify select list background */
+.v-select-list {
+  background-color: #1E1E1E !important;
+}
+
+/* Fix for Vuetify overlay content background */
+.v-overlay__content {
+  background-color: #1E1E1E !important;
+}
+
+/* Fix for Vuetify overlay scrim background */
+.v-overlay__scrim {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
