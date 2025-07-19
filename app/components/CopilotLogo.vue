@@ -74,14 +74,11 @@ defineProps({
 }
 
 .text-gradient {
-  background: linear-gradient(90deg, #FFFFFF, #8BE9FD, #64D8CB);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-  position: relative;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+  color: #9C64D8 !important; /* Dark purple from the site's color palette */
+  -webkit-text-fill-color: #9C64D8; /* Ensure the color is applied in webkit browsers */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-weight: 800;
+  letter-spacing: 0.5px;
 }
 
 @keyframes pulse {
