@@ -9,7 +9,7 @@
     >
       <v-app-bar-nav-icon 
         @click="drawer = !drawer" 
-        class="text-white hamburger-icon"
+        class="hamburger-icon"
         size="large"
       ></v-app-bar-nav-icon>
       
@@ -516,8 +516,8 @@ export default defineNuxtComponent({
 
 .app-header {
   border-bottom: 3px solid rgba(255, 255, 255, 0.2);
-  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  background: v-bind('isDarkTheme ? "linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%)" : "linear-gradient(135deg, #26A69A 0%, #7B1FA2 100%)"') !important;
+  box-shadow: v-bind('isDarkTheme ? "0 4px 12px rgba(0, 0, 0, 0.4)" : "0 4px 12px rgba(0, 0, 0, 0.2)"') !important;
   position: relative;
   z-index: 10;
 }
@@ -529,20 +529,10 @@ export default defineNuxtComponent({
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8);
+  background: v-bind('isDarkTheme ? "linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8)" : "linear-gradient(90deg, #4DD0E1, #26A69A, #7B1FA2)"');
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
   z-index: 11;
-}
-
-.v-theme--dark .app-header {
-  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
-}
-
-.v-theme--dark .app-header::after {
-  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8);
-  background-size: 200% 100%;
 }
 
 @keyframes shimmer {
@@ -558,13 +548,15 @@ export default defineNuxtComponent({
 }
 
 .hamburger-icon {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   transition: all 0.3s;
+  color: white !important;
+  font-weight: bold;
 }
 
 .hamburger-icon:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.3);
 }
 
 .header-logo {
@@ -596,7 +588,7 @@ export default defineNuxtComponent({
 
 /* Navigation drawer styling */
 .navigation-drawer {
-  background-color: #1E1E1E !important; /* Solid background color, no transparency */
+  background-color: v-bind('isDarkTheme ? "#1E1E1E" : "#FFFFFF"') !important; /* Solid background color, no transparency */
   border-right: 1px solid rgba(139, 233, 253, 0.2);
 }
 
@@ -609,7 +601,7 @@ export default defineNuxtComponent({
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 4px;
-  color: #F8F8F2;
+  color: v-bind('isDarkTheme ? "#F8F8F2" : "#333333"');
   position: relative;
   background-color: transparent;
 }
@@ -620,7 +612,7 @@ export default defineNuxtComponent({
 
 .menu-icon {
   margin-right: 12px;
-  color: rgba(139, 233, 253, 0.7);
+  color: v-bind('isDarkTheme ? "rgba(139, 233, 253, 0.7)" : "rgba(38, 166, 154, 0.8)"');
 }
 
 .menu-text {
@@ -630,9 +622,9 @@ export default defineNuxtComponent({
 
 /* Custom active item styling to ensure readability */
 .custom-menu-item-active {
-  background-color: #333333 !important;
+  background-color: v-bind('isDarkTheme ? "#333333" : "#E8F5F5"') !important;
   border-left: 3px solid #8BE9FD;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  box-shadow: v-bind('isDarkTheme ? "0 0 8px rgba(0, 0, 0, 0.5)" : "0 0 8px rgba(0, 0, 0, 0.1)"');
   padding-left: 13px; /* Compensate for the border */
 }
 
@@ -641,12 +633,12 @@ export default defineNuxtComponent({
 }
 
 .custom-menu-item-active .menu-text {
-  color: #FFFFFF;
+  color: v-bind('isDarkTheme ? "#FFFFFF" : "#333333"');
   font-weight: 700;
 }
 
 .drawer-list {
-  background-color: #1E1E1E !important;
+  background-color: v-bind('isDarkTheme ? "#1E1E1E" : "#FFFFFF"') !important;
   padding: 8px;
 }
 
@@ -655,12 +647,12 @@ export default defineNuxtComponent({
 }
 
 .drawer-header :deep(.v-list-item-title) {
-  color: #8BE9FD !important;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
   font-weight: 600;
 }
 
 .drawer-header :deep(.v-list-item-subtitle) {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)"') !important;
 }
 
 .drawer-divider {
@@ -673,7 +665,7 @@ export default defineNuxtComponent({
 }
 
 .drawer-item :deep(.v-list-item__content) {
-  color: #F8F8F2 !important;
+  color: v-bind('isDarkTheme ? "#F8F8F2" : "#333333"') !important;
 }
 
 .drawer-item :deep(.v-icon) {

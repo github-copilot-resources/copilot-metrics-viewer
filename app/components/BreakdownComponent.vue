@@ -78,7 +78,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef, watch } from 'vue';
+import { defineComponent, ref, toRef, watch, computed } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Breakdown } from '@/model/Breakdown';
 import { Pie } from 'vue-chartjs'
@@ -153,13 +153,13 @@ export default defineComponent({
     //Acceptance Rate by counts for top 5 by accepted prompts
     const breakdownsChartDataTop5AcceptedPromptsByCounts = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
-    const chartOptions = {
+    const chartOptions = computed(() => ({
       responsive: true,
       maintainAspectRatio: true,
       plugins: {
         legend: {
           labels: {
-            color: '#F8F8F2',  // Light text color for better readability
+            color: props.isDarkTheme ? '#F8F8F2' : '#333333',  // Text color based on theme
             font: {
               size: 12
             }
@@ -167,14 +167,14 @@ export default defineComponent({
           position: 'bottom'
         },
         tooltip: {
-          backgroundColor: 'rgba(30, 30, 30, 0.8)',
-          titleColor: '#8BE9FD',
-          bodyColor: '#F8F8F2',
+          backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+          titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+          bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
           borderColor: 'rgba(100, 216, 203, 0.3)',
           borderWidth: 1
         }
       }
-    };
+    }));
 
     // Updated color palette to match the site theme
     const pieChartColors = ref([
@@ -301,8 +301,8 @@ export default defineComponent({
   overflow: hidden;
   transition: transform 0.3s, box-shadow 0.3s;
   border-radius: 12px;
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   backdrop-filter: blur(10px);
   height: 100%;
 }
@@ -329,22 +329,22 @@ export default defineComponent({
 }
 
 .text-subtitle-1 {
-  color: #8BE9FD !important;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
 }
 
 .breakdown-title {
-  color: #8BE9FD;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"');
   font-weight: 700;
   font-size: 1.5rem;
   margin: 16px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: v-bind('isDarkTheme ? "0 2px 4px rgba(0, 0, 0, 0.5)" : "none"');
   position: relative;
   z-index: 2;
 }
 
 .chart-container {
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;
@@ -352,18 +352,18 @@ export default defineComponent({
 
 /* Data table styling for better readability */
 .data-table {
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   border-radius: 12px;
   overflow: hidden;
 }
 
 :deep(.v-data-table__thead) {
-  background-color: rgba(100, 216, 203, 0.1) !important;
+  background-color: v-bind('isDarkTheme ? "rgba(100, 216, 203, 0.1)" : "rgba(100, 216, 203, 0.05)"') !important;
 }
 
 :deep(.v-data-table__thead th) {
-  color: #8BE9FD !important;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
   font-weight: 600 !important;
   font-size: 0.8rem !important;
   text-transform: uppercase;
@@ -371,11 +371,11 @@ export default defineComponent({
 }
 
 .data-table-row {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
 }
 
 .data-table-cell {
-  color: #F8F8F2 !important;
+  color: v-bind('isDarkTheme ? "#F8F8F2" : "#333333"') !important;
   padding: 12px 16px;
 }
 

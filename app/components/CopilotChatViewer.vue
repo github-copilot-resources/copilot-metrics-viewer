@@ -37,7 +37,7 @@
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, toRef } from 'vue';
+  import { defineComponent, ref, toRef, computed } from 'vue';
   import type { Metrics } from '@/model/Metrics';
   import { Line, Bar } from 'vue-chartjs';
   import MetricCard from './MetricCard.vue';
@@ -96,7 +96,7 @@ setup(props) {
     const totalActiveCopilotChatUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
 
     // Use consistent chart options for both charts
-    const chartOptions = {
+    const chartOptions = computed(() => ({
         responsive: true,
         maintainAspectRatio: false,
         height: 400,
@@ -104,16 +104,16 @@ setup(props) {
             legend: {
                 position: 'top',
                 labels: {
-                    color: '#F8F8F2',
+                    color: props.isDarkTheme ? '#F8F8F2' : '#333333',
                     font: {
                         size: 12
                     }
                 }
             },
             tooltip: {
-                backgroundColor: 'rgba(30, 30, 30, 0.8)',
-                titleColor: '#8BE9FD',
-                bodyColor: '#F8F8F2',
+                backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+                bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
                 borderColor: 'rgba(100, 216, 203, 0.3)',
                 borderWidth: 1
             }
@@ -122,18 +122,18 @@ setup(props) {
             y: {
                 beginAtZero: true,
                 ticks: {
-                    color: '#BFBFBF'
+                    color: props.isDarkTheme ? '#BFBFBF' : '#666666'
                 },
                 grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
+                    color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                 }
             },
             x: {
                 ticks: {
-                    color: '#BFBFBF'
+                    color: props.isDarkTheme ? '#BFBFBF' : '#666666'
                 },
                 grid: {
-                    color: 'rgba(255, 255, 255, 0.1)'
+                    color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                 }
             }
         },
@@ -142,10 +142,10 @@ setup(props) {
                 tension: 0.4 // Add curve to all line charts
             }
         }
-    };
+    }));
     
     // Use the same options for both charts for consistent alignment
-    const totalActiveChatUsersChartOptions = { ...chartOptions };
+    const totalActiveChatUsersChartOptions = computed(() => chartOptions.value);
 
     //Total Number Acceptances And Turns
     const totalNumberAcceptancesAndTurnsChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -209,18 +209,18 @@ setup(props) {
 
 <style scoped>
 .chart-title {
-  color: #8BE9FD;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"');
   font-weight: 700;
   font-size: 1.5rem;
   margin: 16px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: v-bind('isDarkTheme ? "0 2px 4px rgba(0, 0, 0, 0.5)" : "none"');
   position: relative;
   z-index: 2;
 }
 
 .chart-container {
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;

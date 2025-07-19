@@ -17,7 +17,7 @@
           density="comfortable"
           prepend-inner-icon="mdi-calendar-start"
           color="secondary"
-          bg-color="rgba(139, 233, 253, 0.05)"
+          :bg-color="$vuetify.theme.global.name === 'dark' ? 'rgba(139, 233, 253, 0.05)' : 'rgba(38, 166, 154, 0.05)'"
           @update:model-value="updateDateRange"
           hide-details
           class="date-field"
@@ -32,7 +32,7 @@
           density="comfortable"
           prepend-inner-icon="mdi-calendar-end"
           color="secondary"
-          bg-color="rgba(139, 233, 253, 0.05)"
+          :bg-color="$vuetify.theme.global.name === 'dark' ? 'rgba(139, 233, 253, 0.05)' : 'rgba(38, 166, 154, 0.05)'"
           @update:model-value="updateDateRange"
           hide-details
           class="date-field"
@@ -70,10 +70,9 @@
           color="primary"
           variant="flat"
           size="large"
-          class="mr-3"
+          class="mr-3 days-28-button"
           prepend-icon="mdi-refresh"
           @click="resetToDefault"
-          style="background-color: #1976D2 !important; color: white !important; font-weight: 600 !important;"
         >
           Last 28 Days
         </v-btn>
@@ -224,57 +223,66 @@ onMounted(() => {
 .date-range-selector {
   border-radius: var(--border-radius-md);
   transition: all var(--transition-speed);
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(139, 233, 253, 0.1);
+  background-color: v-bind('$vuetify.theme.global.name === "dark" ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('$vuetify.theme.global.name === "dark" ? "rgba(139, 233, 253, 0.1)" : "rgba(38, 166, 154, 0.1)"');
   backdrop-filter: blur(10px);
 }
 
 .date-range-selector:hover {
-  box-shadow: 0 8px 24px rgba(100, 216, 203, 0.15) !important;
-  border: 1px solid rgba(139, 233, 253, 0.2);
+  box-shadow: v-bind('$vuetify.theme.global.name === "dark" ? "0 8px 24px rgba(100, 216, 203, 0.15)" : "0 8px 24px rgba(38, 166, 154, 0.15)"') !important;
+  border: 1px solid v-bind('$vuetify.theme.global.name === "dark" ? "rgba(139, 233, 253, 0.2)" : "rgba(38, 166, 154, 0.2)"');
 }
 
 .date-field :deep(.v-field__input) {
-  color: #8BE9FD !important;
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#8BE9FD" : "#333333"') !important;
+  font-weight: 500;
 }
 
 .date-field :deep(.v-field__outline) {
-  color: rgba(139, 233, 253, 0.2) !important;
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "rgba(139, 233, 253, 0.2)" : "rgba(38, 166, 154, 0.3)"') !important;
 }
 
 .date-field :deep(.v-field__outline__start),
 .date-field :deep(.v-field__outline__end),
 .date-field :deep(.v-field__outline__notch) {
-  border-color: rgba(139, 233, 253, 0.2) !important;
+  border-color: v-bind('$vuetify.theme.global.name === "dark" ? "rgba(139, 233, 253, 0.2)" : "rgba(38, 166, 154, 0.3)"') !important;
 }
 
 .date-field:hover :deep(.v-field__outline__start),
 .date-field:hover :deep(.v-field__outline__end),
 .date-field:hover :deep(.v-field__outline__notch) {
-  border-color: rgba(139, 233, 253, 0.4) !important;
+  border-color: v-bind('$vuetify.theme.global.name === "dark" ? "rgba(139, 233, 253, 0.4)" : "rgba(38, 166, 154, 0.5)"') !important;
+}
+
+.date-field :deep(.v-field__prepend-inner) {
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#8BE9FD" : "#26A69A"') !important;
+}
+
+.date-field :deep(.v-label) {
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)"') !important;
 }
 
 .date-chip {
   background: transparent !important;
-  border: 1px solid rgba(139, 233, 253, 0.3) !important;
-  color: #8BE9FD !important;
+  border: 1px solid v-bind('$vuetify.theme.global.name === "dark" ? "rgba(139, 233, 253, 0.3)" : "rgba(38, 166, 154, 0.3)"') !important;
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#8BE9FD" : "#26A69A"') !important;
 }
 
 .apply-button {
-  background-color: #1976D2 !important;
+  background-color: v-bind('$vuetify.theme.global.name === "dark" ? "#1976D2" : "#26A69A"') !important;
   color: white !important;
   font-weight: 600 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: v-bind('$vuetify.theme.global.name === "dark" ? "0 2px 8px rgba(0, 0, 0, 0.3)" : "0 2px 8px rgba(0, 0, 0, 0.15)"') !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: v-bind('$vuetify.theme.global.name === "dark" ? "0 1px 2px rgba(0, 0, 0, 0.5)" : "none"');
 }
 
 .days-28-button {
-  background-color: #0D47A1 !important;
+  background-color: v-bind('$vuetify.theme.global.name === "dark" ? "#0D47A1" : "#00897B"') !important;
   color: white !important;
   font-weight: 600 !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: v-bind('$vuetify.theme.global.name === "dark" ? "0 2px 8px rgba(0, 0, 0, 0.3)" : "0 2px 8px rgba(0, 0, 0, 0.15)"') !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: v-bind('$vuetify.theme.global.name === "dark" ? "0 1px 2px rgba(0, 0, 0, 0.5)" : "none"');
 }
 </style>

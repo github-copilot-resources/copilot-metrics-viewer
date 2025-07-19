@@ -143,18 +143,18 @@ function formatNumber(num: number): string {
 }
 
 .section-title {
-  color: white !important;
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 2;
+  color: v-bind('isDarkTheme ? "#FFFFFF" : "#333333"') !important;
 }
 
 .custom-date-badge {
   display: inline-flex;
   align-items: center;
-  background-color: #000000;
-  color: #FFFFFF;
+  background-color: v-bind('isDarkTheme ? "#000000" : "#FFFFFF"');
+  color: v-bind('isDarkTheme ? "#FFFFFF" : "#333333"');
   font-weight: 700;
   border: 2px solid #8BE9FD;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
@@ -170,9 +170,9 @@ function formatNumber(num: number): string {
 }
 
 .date-text {
-  color: #FFFFFF;
+  color: v-bind('isDarkTheme ? "#FFFFFF" : "#333333"');
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  text-shadow: v-bind('isDarkTheme ? "0 1px 2px rgba(0, 0, 0, 0.8)" : "none"');
   letter-spacing: 0.5px;
   font-size: 0.9rem;
 }

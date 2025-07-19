@@ -124,7 +124,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, type PropType, shallowRef } from 'vue';
+import { defineComponent, ref, watch, type PropType, shallowRef, computed } from 'vue';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -390,7 +390,7 @@ export default defineComponent({
         ];
 
         // Optimized chart options with performance settings
-        const chartOptions = {
+        const chartOptions = computed(() => ({
             responsive: true,
             maintainAspectRatio: false,
             animation: {
@@ -401,43 +401,45 @@ export default defineComponent({
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Users with Activity'
+                        text: 'Users with Activity',
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333'
                     },
                     ticks: {
-                        color: '#BFBFBF'
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                     }
                 },
                 x: {
                     ticks: {
-                        color: '#BFBFBF'
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                     }
                 }
             },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Copilot Feature Usage Over Time'
+                    text: 'Copilot Feature Usage Over Time',
+                    color: props.isDarkTheme ? '#F8F8F2' : '#333333'
                 },
                 legend: {
                     display: true,
                     position: 'top' as const,
                     labels: {
-                        color: '#F8F8F2',
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333',
                         font: {
                             size: 12
                         }
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(30, 30, 30, 0.8)',
-                    titleColor: '#8BE9FD',
-                    bodyColor: '#F8F8F2',
+                    backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                    titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+                    bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
                     borderColor: 'rgba(100, 216, 203, 0.3)',
                     borderWidth: 1
                 }
@@ -450,9 +452,9 @@ export default defineComponent({
                     tension: 0.4 // Add curve to all line charts
                 }
             }
-        };
+        }));
 
-        const barChartOptions = {
+        const barChartOptions = computed(() => ({
             responsive: true,
             maintainAspectRatio: false,
             animation: {
@@ -463,43 +465,45 @@ export default defineComponent({
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Number of Models'
+                        text: 'Number of Models',
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333'
                     },
                     ticks: {
-                        color: '#BFBFBF'
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                     }
                 },
                 x: {
                     ticks: {
-                        color: '#BFBFBF'
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
                     },
                     grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                     }
                 }
             },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Model Usage Distribution'
+                    text: 'Model Usage Distribution',
+                    color: props.isDarkTheme ? '#F8F8F2' : '#333333'
                 },
                 legend: {
                     display: true,
                     position: 'top' as const,
                     labels: {
-                        color: '#F8F8F2',
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333',
                         font: {
                             size: 12
                         }
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(30, 30, 30, 0.8)',
-                    titleColor: '#8BE9FD',
-                    bodyColor: '#F8F8F2',
+                    backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                    titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+                    bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
                     borderColor: 'rgba(100, 216, 203, 0.3)',
                     borderWidth: 1
                 }
@@ -507,7 +511,7 @@ export default defineComponent({
             interaction: {
                 intersect: false
             }
-        };
+        }));
 
         return {
             stats,
@@ -530,18 +534,18 @@ export default defineComponent({
 }
 
 .chart-title {
-  color: #8BE9FD;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"');
   font-weight: 700;
   font-size: 1.5rem;
   margin: 16px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: v-bind('isDarkTheme ? "0 2px 4px rgba(0, 0, 0, 0.5)" : "none"');
   position: relative;
   z-index: 2;
 }
 
 .chart-container {
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;
@@ -555,27 +559,27 @@ export default defineComponent({
 
 .v-expansion-panel {
   margin-bottom: 8px;
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
 }
 
 :deep(.v-expansion-panel-title) {
-  color: #8BE9FD !important;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
 }
 
 :deep(.v-data-table) {
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   border-radius: 12px;
   overflow: hidden;
 }
 
 :deep(.v-data-table__thead) {
-  background-color: rgba(100, 216, 203, 0.1) !important;
+  background-color: v-bind('isDarkTheme ? "rgba(100, 216, 203, 0.1)" : "rgba(100, 216, 203, 0.05)"') !important;
 }
 
 :deep(.v-data-table__thead th) {
-  color: #8BE9FD !important;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
   font-weight: 600 !important;
   font-size: 0.8rem !important;
   text-transform: uppercase;
@@ -583,16 +587,16 @@ export default defineComponent({
 }
 
 :deep(.v-data-table__tbody tr) {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
 }
 
 :deep(.v-data-table__tbody td) {
-  color: #F8F8F2 !important;
+  color: v-bind('isDarkTheme ? "#F8F8F2" : "#333333"') !important;
   padding: 12px 16px;
 }
 
 :deep(.v-data-table__tbody tr:hover) {
-  background-color: rgba(100, 216, 203, 0.05) !important;
+  background-color: v-bind('isDarkTheme ? "rgba(100, 216, 203, 0.05)" : "rgba(100, 216, 203, 0.1)"') !important;
 }
 
 :deep(.chartjs-render-monitor) {

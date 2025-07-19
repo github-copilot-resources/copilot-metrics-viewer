@@ -97,7 +97,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef, watchEffect } from 'vue';
+import { defineComponent, ref, toRef, watchEffect, computed } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import {
   Chart as ChartJS,
@@ -174,7 +174,7 @@ export default defineComponent({
     //Total Active Users
     const totalActiveUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
 
-    const chartOptions = {
+    const chartOptions = computed(() => ({
       responsive: true,
       maintainAspectRatio: true,
       height: 300,
@@ -190,13 +190,13 @@ export default defineComponent({
       plugins: {
         legend: {
           labels: {
-            color: '#F8F8F2'  // Light text color for better readability
+            color: props.isDarkTheme ? '#F8F8F2' : '#333333'  // Text color based on theme
           }
         },
         tooltip: {
-          backgroundColor: 'rgba(30, 30, 30, 0.8)',
-          titleColor: '#8BE9FD',
-          bodyColor: '#F8F8F2',
+          backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+          titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+          bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
           borderColor: 'rgba(100, 216, 203, 0.3)',
           borderWidth: 1
         }
@@ -204,24 +204,24 @@ export default defineComponent({
       scales: {
         x: {
           ticks: {
-            color: '#BFBFBF'  // Light gray for better readability
+            color: props.isDarkTheme ? '#BFBFBF' : '#666666'  // Text color based on theme
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
+            color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
           }
         },
         y: {
           ticks: {
-            color: '#BFBFBF'  // Light gray for better readability
+            color: props.isDarkTheme ? '#BFBFBF' : '#666666'  // Text color based on theme
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
+            color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
           }
         }
       }
-    };
+    }));
 
-    const totalActiveUsersChartOptions = {
+    const totalActiveUsersChartOptions = computed(() => ({
       responsive: true,
       maintainAspectRatio: true,
       scales: {
@@ -229,31 +229,31 @@ export default defineComponent({
           beginAtZero: true,
           ticks: {
             stepSize: 1,
-            color: '#BFBFBF'  // Light gray for better readability
+            color: props.isDarkTheme ? '#BFBFBF' : '#666666'  // Text color based on theme
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
+            color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
           }
         },
         x: {
           ticks: {
-            color: '#BFBFBF'  // Light gray for better readability
+            color: props.isDarkTheme ? '#BFBFBF' : '#666666'  // Text color based on theme
           },
           grid: {
-            color: 'rgba(255, 255, 255, 0.1)'
+            color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
           }
         }
       },
       plugins: {
         legend: {
           labels: {
-            color: '#F8F8F2'  // Light text color for better readability
+            color: props.isDarkTheme ? '#F8F8F2' : '#333333'  // Text color based on theme
           }
         },
         tooltip: {
-          backgroundColor: 'rgba(30, 30, 30, 0.8)',
-          titleColor: '#8BE9FD',
-          bodyColor: '#F8F8F2',
+          backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+          titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+          bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
           borderColor: 'rgba(100, 216, 203, 0.3)',
           borderWidth: 1
         }
@@ -266,7 +266,7 @@ export default defineComponent({
           bottom: 50
         }
       },
-    };
+    }));
 
     // Watch for changes in metrics prop and recalculate all data
     watchEffect(() => {
@@ -444,31 +444,31 @@ export default defineComponent({
 
 <style scoped>
 .chart-title {
-  color: #8BE9FD;
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"');
   margin-bottom: 16px;
   font-weight: 700;
   font-size: 1.25rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: v-bind('isDarkTheme ? "0 2px 4px rgba(0, 0, 0, 0.5)" : "none"');
   position: relative;
   z-index: 2;
 }
 
 .tooltip-card {
-  background-color: rgba(30, 30, 30, 0.95) !important;
+  background-color: v-bind('isDarkTheme ? "rgba(30, 30, 30, 0.95)" : "rgba(255, 255, 255, 0.95)"') !important;
   border: 1px solid rgba(139, 233, 253, 0.3);
   max-width: 350px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: v-bind('isDarkTheme ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "0 4px 12px rgba(0, 0, 0, 0.1)"');
 }
 
 .tooltip-text {
-  color: #F8F8F2 !important;
+  color: v-bind('isDarkTheme ? "#F8F8F2" : "#333333"') !important;
   font-size: 0.875rem !important;
   line-height: 1.5;
 }
 
 .chart-container {
-  background-color: rgba(18, 18, 18, 0.8) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 32px;

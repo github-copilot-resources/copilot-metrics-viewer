@@ -69,14 +69,10 @@ function scrollToMetrics() {
   position: relative;
   overflow: hidden;
   border-radius: 16px;
-  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%);
+  background: v-bind('isDarkTheme ? "linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%)" : "linear-gradient(135deg, #26A69A 0%, #7B1FA2 100%)"');
   color: white;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: v-bind('isDarkTheme ? "0 8px 32px rgba(0, 0, 0, 0.3)" : "0 8px 32px rgba(0, 0, 0, 0.2)"');
   border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.theme--dark.welcome-banner {
-  background: linear-gradient(135deg, #64D8CB 0%, #9C64D8 100%);
 }
 
 .banner-overlay {
