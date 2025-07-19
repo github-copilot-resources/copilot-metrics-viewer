@@ -26,6 +26,8 @@
               <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
             </div>
 
+            <v-divider class="my-6"></v-divider>
+            
             <h2 class="chart-title">Total Active Copilot Chat Users</h2>
             <div class="chart-wrapper">
               <Bar :data="totalActiveCopilotChatUsersChartData" :options="totalActiveChatUsersChartOptions" />
@@ -93,41 +95,52 @@ setup(props) {
     //Total Copilot Chat Active Users
     const totalActiveCopilotChatUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
 
-    const totalActiveChatUsersChartOptions = {
-    responsive: true,
-    maintainAspectRatio: true,
-    scales: {
-        y: {
-        beginAtZero: true,
-        ticks: {
-            stepSize: 1
-        }
-        }
-    },
-    layout: {
-        padding: {
-        left: 50,
-        right: 50,
-        top: 50,
-        bottom: 50
-        }
-    },
-    };
-
+    // Use consistent chart options for both charts
     const chartOptions = {
         responsive: true,
-        maintainAspectRatio: true,
-        height: 300,
-        width: 300,
-        layout: {
-            padding: {
-            left: 150,
-            right: 150,
-            top: 20,
-            bottom: 40
+        maintainAspectRatio: false,
+        height: 400,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    color: '#F8F8F2',
+                    font: {
+                        size: 12
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(30, 30, 30, 0.8)',
+                titleColor: '#8BE9FD',
+                bodyColor: '#F8F8F2',
+                borderColor: 'rgba(100, 216, 203, 0.3)',
+                borderWidth: 1
             }
         },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: '#BFBFBF'
+                },
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            },
+            x: {
+                ticks: {
+                    color: '#BFBFBF'
+                },
+                grid: {
+                    color: 'rgba(255, 255, 255, 0.1)'
+                }
+            }
+        }
     };
+    
+    // Use the same options for both charts for consistent alignment
+    const totalActiveChatUsersChartOptions = { ...chartOptions };
 
     //Total Number Acceptances And Turns
     const totalNumberAcceptancesAndTurnsChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -204,6 +217,10 @@ setup(props) {
   margin-bottom: 32px;
   position: relative;
   height: 400px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 :deep(.chartjs-render-monitor) {
