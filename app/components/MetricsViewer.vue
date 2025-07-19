@@ -295,13 +295,19 @@ export default defineComponent({
           label: 'Total Suggestions',
           data: cumulativeSuggestionsData,
           backgroundColor: 'rgba(139, 233, 253, 0.3)',  // Cyan with transparency
-          borderColor: '#8BE9FD'  // Solid cyan
+          borderColor: '#8BE9FD',  // Solid cyan
+          borderWidth: 2,
+          tension: 0.4,  // Add curve to the line
+          fill: false
         },
         {
           label: 'Total Acceptance',
           data: cumulativeAcceptancesData,
           backgroundColor: 'rgba(156, 100, 216, 0.3)',  // Purple with transparency
-          borderColor: '#9C64D8'  // Solid purple
+          borderColor: '#9C64D8',  // Solid purple
+          borderWidth: 2,
+          tension: 0.4,  // Add curve to the line
+          fill: false
         },
       ]
     };
@@ -320,13 +326,19 @@ export default defineComponent({
           label: 'Total Lines Suggested',
           data: data.map((m: Metrics) => m.total_lines_suggested),
           backgroundColor: 'rgba(100, 216, 203, 0.3)',  // Teal with transparency
-          borderColor: '#64D8CB'  // Solid teal
+          borderColor: '#64D8CB',  // Solid teal
+          borderWidth: 2,
+          tension: 0.4,  // Add curve to the line
+          fill: false
         },
         {
           label: 'Total Lines Accepted',
           data: cumulativeLOCAcceptedData,
           backgroundColor: 'rgba(156, 100, 216, 0.3)',  // Purple with transparency
-          borderColor: '#9C64D8'  // Solid purple
+          borderColor: '#9C64D8',  // Solid purple
+          borderWidth: 2,
+          tension: 0.4,  // Add curve to the line
+          fill: false
         }
       ]
     };
@@ -345,13 +357,14 @@ export default defineComponent({
       labels: data.map((m: Metrics) => m.day),
       datasets: [
         {
-          type: 'line',
+          type: 'bar',
           label: 'Acceptance Rate by Lines',
           data: acceptanceRatesByLines,
           backgroundColor: 'rgba(139, 233, 253, 0.3)',  // Cyan with transparency
           borderColor: '#8BE9FD',  // Solid cyan
-          fill: false,
-          tension: 0.4  // Smooth curve
+          borderWidth: 2,
+          borderRadius: 4,
+          maxBarThickness: 40
         }
       ]
     };
@@ -360,13 +373,14 @@ export default defineComponent({
       labels: data.map((m: Metrics) => m.day),
       datasets: [
         {
-          type: 'line',
+          type: 'bar',
           label: 'Acceptance Rate by Count',
           data: acceptanceRatesByCount,
           backgroundColor: 'rgba(100, 216, 203, 0.3)',  // Teal with transparency
           borderColor: '#64D8CB',  // Solid teal
-          fill: false,
-          tension: 0.4  // Smooth curve
+          borderWidth: 2,
+          borderRadius: 4,
+          maxBarThickness: 40
         }
       ]
     };
@@ -393,7 +407,10 @@ export default defineComponent({
           label: 'Total Active Users',
           data: data.map((m: Metrics) => m.total_active_users),
           backgroundColor: 'rgba(156, 100, 216, 0.3)',  // Purple with transparency
-          borderColor: '#9C64D8'  // Solid purple
+          borderColor: '#9C64D8',  // Solid purple
+          borderWidth: 2,
+          borderRadius: 4,
+          maxBarThickness: 40
         }
       ]
     };

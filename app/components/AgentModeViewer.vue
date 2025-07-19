@@ -283,6 +283,48 @@ export default defineComponent({
                     const apiUrl = queryString ? `/api/github-stats?${queryString}` : '/api/github-stats';
 
                     const response = await $fetch(apiUrl) as GitHubStats;
+                    
+                    // Process the chart data to ensure consistent styling
+                    if (response.agentModeChartData && response.agentModeChartData.datasets) {
+                        response.agentModeChartData.datasets.forEach(dataset => {
+                            // Apply curved line styling to all line datasets
+                            dataset.tension = 0.4;
+                            dataset.borderWidth = 2;
+                            dataset.fill = false;
+                            
+                            // Apply consistent colors based on the dataset label
+                            if (dataset.label.includes('IDE Code')) {
+                                dataset.borderColor = '#8BE9FD';  // Cyan
+                                dataset.backgroundColor = 'rgba(139, 233, 253, 0.3)';
+                            } else if (dataset.label.includes('IDE Chat')) {
+                                dataset.borderColor = '#64D8CB';  // Teal
+                                dataset.backgroundColor = 'rgba(100, 216, 203, 0.3)';
+                            } else if (dataset.label.includes('GitHub.com Chat')) {
+                                dataset.borderColor = '#9C64D8';  // Purple
+                                dataset.backgroundColor = 'rgba(156, 100, 216, 0.3)';
+                            } else if (dataset.label.includes('PR')) {
+                                dataset.borderColor = '#FFB86C';  // Orange
+                                dataset.backgroundColor = 'rgba(255, 184, 108, 0.3)';
+                            }
+                        });
+                    }
+                    
+                    // Process the model usage chart data for consistent bar styling
+                    if (response.modelUsageChartData && response.modelUsageChartData.datasets) {
+                        response.modelUsageChartData.datasets.forEach(dataset => {
+                            // Apply consistent bar styling
+                            dataset.borderWidth = 2;
+                            dataset.borderRadius = 4;
+                            dataset.maxBarThickness = 40;
+                            
+                            // Apply consistent colors if not already set
+                            if (!dataset.backgroundColor) {
+                                dataset.backgroundColor = 'rgba(139, 233, 253, 0.3)';  // Cyan with transparency
+                                dataset.borderColor = '#8BE9FD';  // Solid cyan
+                            }
+                        });
+                    }
+                    
                     // Use Object.assign to maintain reactivity while updating properties
                     Object.assign(stats.value, response);
                     lastMetricsHash.value = currentHash;
@@ -298,6 +340,21 @@ export default defineComponent({
 
         // Watch for changes with improved performance
         watch(() => [props.originalMetrics, props.dateRangeDescription, props.dateRange], fetchStats, { immediate: true, deep: false });
+        
+        // Watch for changes in the agentModeChartData and apply consistent line styling
+        watch(() => stats.value.agentModeChartData, (chartData) => {
+            if (chartData && chartData.datasets && chartData.datasets.length > 0) {
+                // Apply consistent styling to each dataset
+                chartData.datasets.forEach(dataset => {
+                    if (dataset.type === 'line' || !dataset.type) {
+                        // Apply curved line styling to line charts
+                        dataset.tension = 0.4;
+                        dataset.borderWidth = 2;
+                        dataset.fill = false;
+                    }
+                });
+            }
+        }, { deep: true });
 
         // Static table headers (avoid recreating on every render)
         const codeCompletionHeaders = [
@@ -345,6 +402,20 @@ export default defineComponent({
                     title: {
                         display: true,
                         text: 'Users with Activity'
+                    },
+                    ticks: {
+                        color: '#BFBFBF'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#BFBFBF'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
                     }
                 }
             },
@@ -355,11 +426,29 @@ export default defineComponent({
                 },
                 legend: {
                     display: true,
-                    position: 'top' as const
+                    position: 'top' as const,
+                    labels: {
+                        color: '#F8F8F2',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+                    titleColor: '#8BE9FD',
+                    bodyColor: '#F8F8F2',
+                    borderColor: 'rgba(100, 216, 203, 0.3)',
+                    borderWidth: 1
                 }
             },
             interaction: {
                 intersect: false
+            },
+            elements: {
+                line: {
+                    tension: 0.4 // Add curve to all line charts
+                }
             }
         };
 
@@ -375,6 +464,20 @@ export default defineComponent({
                     title: {
                         display: true,
                         text: 'Number of Models'
+                    },
+                    ticks: {
+                        color: '#BFBFBF'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#BFBFBF'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
                     }
                 }
             },
@@ -385,7 +488,20 @@ export default defineComponent({
                 },
                 legend: {
                     display: true,
-                    position: 'top' as const
+                    position: 'top' as const,
+                    labels: {
+                        color: '#F8F8F2',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(30, 30, 30, 0.8)',
+                    titleColor: '#8BE9FD',
+                    bodyColor: '#F8F8F2',
+                    borderColor: 'rgba(100, 216, 203, 0.3)',
+                    borderWidth: 1
                 }
             },
             interaction: {

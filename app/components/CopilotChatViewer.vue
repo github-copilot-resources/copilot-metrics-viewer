@@ -136,6 +136,11 @@ setup(props) {
                     color: 'rgba(255, 255, 255, 0.1)'
                 }
             }
+        },
+        elements: {
+            line: {
+                tension: 0.4 // Add curve to all line charts
+            }
         }
     };
     
@@ -165,15 +170,20 @@ setup(props) {
         {
             label: 'Total Acceptances',
             data: cumulativeNumberAcceptancesData,
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)'
-
+            backgroundColor: 'rgba(100, 216, 203, 0.3)',
+            borderColor: '#64D8CB',
+            borderWidth: 2,
+            tension: 0.4,  // Add curve to the line
+            fill: false
         },
         {
             label: 'Total Turns',
             data: cumulativeNumberTurnsData,
-            backgroundColor: 'rgba(153, 102, 255, 0.2)',
-            borderColor: 'rgba(153, 102, 255, 1)'
+            backgroundColor: 'rgba(156, 100, 216, 0.3)',
+            borderColor: '#9C64D8',
+            borderWidth: 2,
+            tension: 0.4,  // Add curve to the line
+            fill: false
         }]
     };
 
@@ -183,8 +193,11 @@ setup(props) {
         {
             label: 'Total Active Copilot Chat Users',
             data: data.map((m: Metrics) => m.total_active_chat_users),
-            backgroundColor: 'rgba(0, 0, 139, 0.2)', // dark blue with 20% opacity
-            borderColor: 'rgba(255, 99, 132, 1)'
+            backgroundColor: 'rgba(139, 233, 253, 0.3)', // Cyan with transparency
+            borderColor: '#8BE9FD',
+            borderWidth: 2,
+            borderRadius: 4,
+            maxBarThickness: 40
         }]
     };
     
