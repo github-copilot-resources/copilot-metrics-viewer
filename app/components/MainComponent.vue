@@ -273,7 +273,7 @@ import ApiResponse from './ApiResponse.vue'
 import AgentModeViewer from './AgentModeViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import WelcomeBanner from './WelcomeBanner.vue'
-import StatsSummary from './StatsSummary.vue'
+
 import LoadingAnimation from './LoadingAnimation.vue'
 import DashboardLayout from './DashboardLayout.vue'
 import MetricCard from './MetricCard.vue'
@@ -293,7 +293,7 @@ export default defineNuxtComponent({
     AgentModeViewer,
     DateRangeSelector,
     WelcomeBanner,
-    StatsSummary,
+
     LoadingAnimation,
     DashboardLayout,
     MetricCard,
