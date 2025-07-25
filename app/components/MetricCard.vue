@@ -1,7 +1,7 @@
 <template>
   <v-card class="metric-card h-100" :class="{ 'theme--dark': isDarkTheme }">
     <div class="card-accent"></div>
-    <v-card-text class="d-flex flex-column h-100">
+    <v-card-text class="d-flex flex-column h-100 pa-5">
       <div class="d-flex align-center mb-4">
         <div class="icon-container" :class="`icon-${color}`">
           <v-icon :color="color">{{ icon }}</v-icon>
@@ -9,7 +9,7 @@
         <h3 class="text-subtitle-1 font-weight-medium ml-2 mb-0">{{ title }}</h3>
       </div>
       
-      <div class="metric-value mb-2">
+      <div class="metric-value mb-3 text-center">
         <span class="text-h4 font-weight-bold">{{ value }}</span>
         <span v-if="trend" class="trend-indicator ml-2" :class="trendClass">
           <v-icon size="small" class="mr-1">{{ trendIcon }}</v-icon>
@@ -17,7 +17,7 @@
         </span>
       </div>
       
-      <p class="text-caption text-medium-emphasis mb-0 mt-auto">{{ description }}</p>
+      <p class="text-caption text-medium-emphasis mb-0 mt-auto text-center">{{ description }}</p>
     </v-card-text>
   </v-card>
 </template>
@@ -74,6 +74,9 @@ const trendIcon = computed(() => {
   background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
   border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
   backdrop-filter: blur(10px);
+  width: 280px;
+  min-height: 180px;
+  margin: 0 auto;
 }
 
 .metric-card:hover {

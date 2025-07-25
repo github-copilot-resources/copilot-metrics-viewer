@@ -93,6 +93,7 @@ export default defineNuxtConfig({
       githubEnt: '',
       githubTeam: '',
       usingGithubAuth: false,
+      defaultTheme: 'dark',  // can be overridden by NUXT_PUBLIC_DEFAULT_THEME environment variable
       version,
       isPublicApp: false
     }

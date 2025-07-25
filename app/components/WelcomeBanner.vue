@@ -5,7 +5,7 @@
       <div class="d-flex flex-column flex-md-row align-md-center justify-space-between">
         <div class="banner-content">
           <h1 class="text-h4 font-weight-bold mb-2">{{ greeting }}, {{ userName || 'there' }}!</h1>
-          <p class="text-subtitle-1 mb-4">Welcome to the Copilot Metrics Dashboard for <strong>{{ orgName }}</strong></p>
+          <p class="text-subtitle-1 mb-4">Welcome to the Copilot Metrics Dashboard for {{ orgName }}</p>
           <p class="text-body-2 mb-6">
             Track your organization's GitHub Copilot usage, analyze trends, and optimize your development workflow.
           </p>

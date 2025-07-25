@@ -18,10 +18,16 @@
           prepend-inner-icon="mdi-calendar-start"
           color="secondary"
           :bg-color="$vuetify.theme.global.name === 'dark' ? 'rgba(139, 233, 253, 0.05)' : 'rgba(38, 166, 154, 0.05)'"
-          @update:model-value="updateDateRange"
+          @update:model-value="updateFromDate"
+          :max="maxFromDate"
+          :min="minFromDate"
           hide-details
           class="date-field"
-        />
+        >
+          <template v-slot:message>
+            <span v-if="fromDateMessage" class="date-message">{{ fromDateMessage }}</span>
+          </template>
+        </v-text-field>
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <v-text-field
@@ -33,10 +39,16 @@
           prepend-inner-icon="mdi-calendar-end"
           color="secondary"
           :bg-color="$vuetify.theme.global.name === 'dark' ? 'rgba(139, 233, 253, 0.05)' : 'rgba(38, 166, 154, 0.05)'"
-          @update:model-value="updateDateRange"
+          @update:model-value="updateToDate"
+          :max="maxToDate"
+          :min="minToDate"
           hide-details
           class="date-field"
-        />
+        >
+          <template v-slot:message>
+            <span v-if="toDateMessage" class="date-message">{{ toDateMessage }}</span>
+          </template>
+        </v-text-field>
       </v-col>
       <v-col cols="12" sm="6" md="3">
         <v-checkbox
@@ -65,27 +77,31 @@
           </template>
         </v-checkbox>
       </v-col>
-      <v-col cols="12" sm="6" md="3" class="d-flex align-center justify-end">
-        <v-btn
-          color="primary"
-          variant="flat"
-          size="large"
-          class="mr-3 days-28-button"
-          prepend-icon="mdi-refresh"
-          @click="resetToDefault"
-        >
-          Last 28 Days
-        </v-btn>
-        <v-btn
-          color="primary"
-          size="large"
-          :loading="loading"
-          prepend-icon="mdi-check"
-          @click="applyDateRange"
-          class="apply-button"
-        >
-          Apply
-        </v-btn>
+      <v-col cols="12" sm="6" md="3" class="d-flex flex-column">
+        <div class="d-flex justify-end">
+          <v-btn
+            color="primary"
+            variant="flat"
+            size="large"
+            class="mr-3 days-28-button"
+            prepend-icon="mdi-refresh"
+            @click="resetToDefault"
+          >
+            Last 28 Days
+          </v-btn>
+          <v-btn
+            color="primary"
+            size="large"
+            :loading="loading"
+            prepend-icon="mdi-check"
+            @click="applyDateRange"
+            class="apply-button"
+            :disabled="!!dateRangeError"
+          >
+            Apply
+          </v-btn>
+        </div>
+        <div v-if="dateRangeError" class="error-message text-right mt-2">{{ dateRangeError }}</div>
       </v-col>
     </v-row>
 
@@ -104,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 interface Props {
   loading?: boolean
@@ -132,7 +148,8 @@ const defaultFromDate = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000) // 
 const fromDate = ref(formatDate(defaultFromDate))
 const toDate = ref(formatDate(today))
 const excludeHolidays = ref(false)
-
+const fromDateMessage = ref('')
+const toDateMessage = ref('')
 
 function formatDate(date: Date): string {
   return date.toISOString().split('T')[0] || ''
@@ -141,6 +158,63 @@ function formatDate(date: Date): string {
 function parseDate(dateString: string): Date {
   return new Date(dateString + 'T00:00:00.000Z')
 }
+
+const dateRangeError = ref('');
+
+// Calculate min/max dates to enforce 90-day limit
+const maxFromDate = computed(() => {
+  if (!toDate.value) return ''
+  
+  // From date can't be later than the to date
+  return toDate.value
+})
+
+const minFromDate = computed(() => {
+  if (!toDate.value) return ''
+  
+  // Calculate the earliest allowed "from date" based on the 90-day limit
+  const to = parseDate(toDate.value)
+  const earliestDate = new Date(to)
+  earliestDate.setDate(to.getDate() - 89) // 90 days including the to date
+  return formatDate(earliestDate)
+})
+
+const maxToDate = computed(() => {
+  if (!fromDate.value) return ''
+  
+  // Calculate the latest allowed "to date" based on the 90-day limit
+  const from = parseDate(fromDate.value)
+  const latestDate = new Date(from)
+  latestDate.setDate(from.getDate() + 89) // 90 days including the from date
+  return formatDate(latestDate)
+})
+
+const minToDate = computed(() => {
+  if (!fromDate.value) return ''
+  
+  // To date can't be earlier than the from date
+  return fromDate.value
+})
+
+// Calculate the earliest allowed "from date" based on the selected "to date" and 90-day limit
+const earliestFromDate = computed(() => {
+  if (!toDate.value) return ''
+  
+  const to = parseDate(toDate.value)
+  const earliestDate = new Date(to)
+  earliestDate.setDate(to.getDate() - 89) // 90 days including the to date
+  return formatDate(earliestDate)
+})
+
+// Calculate the latest allowed "to date" based on the selected "from date" and 90-day limit
+const latestToDate = computed(() => {
+  if (!fromDate.value) return ''
+  
+  const from = parseDate(fromDate.value)
+  const latestDate = new Date(from)
+  latestDate.setDate(from.getDate() + 89) // 90 days including the from date
+  return formatDate(latestDate)
+})
 
 const dateRangeText = computed(() => {
   if (!fromDate.value || !toDate.value) {
@@ -151,6 +225,14 @@ const dateRangeText = computed(() => {
   const to = parseDate(toDate.value)
   const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
   const withoutHolidays = excludeHolidays.value ? ' (excluding holidays/weekends)' : ''
+
+  // Check if date range exceeds 90 days
+  if (diffDays > 90) {
+    dateRangeError.value = 'Date range cannot exceed 90 days';
+    return `Date range too large: ${diffDays} days (maximum: 90 days)`;
+  } else {
+    dateRangeError.value = '';
+  }
 
   if (diffDays === 1) {
     return `For ${from.toLocaleDateString()}${withoutHolidays}`
@@ -176,9 +258,65 @@ function isLast28Days(): boolean {
   )
 }
 
+function updateFromDate() {
+  if (fromDate.value && toDate.value) {
+    const from = parseDate(fromDate.value)
+    const to = parseDate(toDate.value)
+    
+    // Calculate the difference in days
+    const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    
+    // If the from date is after the to date, adjust the to date
+    if (from > to) {
+      toDate.value = fromDate.value
+    }
+    
+    // Show a helpful message about the date range limit
+    if (diffDays > 80) {
+      const daysLeft = 90 - diffDays
+      fromDateMessage.value = daysLeft <= 0 ? 
+        'Maximum range reached' : 
+        `${daysLeft} days left in range limit`
+    } else {
+      fromDateMessage.value = ''
+    }
+    
+    dateRangeError.value = ''
+  }
+}
+
+function updateToDate() {
+  if (fromDate.value && toDate.value) {
+    const from = parseDate(fromDate.value)
+    const to = parseDate(toDate.value)
+    
+    // Calculate the difference in days
+    const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    
+    // If the to date is before the from date, adjust the from date
+    if (to < from) {
+      fromDate.value = toDate.value
+    }
+    
+    // Show a helpful message about the date range limit
+    if (diffDays > 80) {
+      const daysLeft = 90 - diffDays
+      toDateMessage.value = daysLeft <= 0 ? 
+        'Maximum range reached' : 
+        `${daysLeft} days left in range limit`
+    } else {
+      toDateMessage.value = ''
+    }
+    
+    dateRangeError.value = ''
+  }
+}
+
 function updateDateRange() {
-  // This function is called when dates change, but we don't auto-apply
-  // User needs to click Apply button
+  if (fromDate.value && toDate.value) {
+    updateFromDate()
+    updateToDate()
+  }
 }
 
 function resetToDefault() {
@@ -202,6 +340,15 @@ function applyDateRange() {
     const temp = fromDate.value
     fromDate.value = toDate.value
     toDate.value = temp
+  }
+  
+  // Calculate the difference in days
+  const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+  
+  // Check if date range exceeds 90 days
+  if (diffDays > 90) {
+    dateRangeError.value = 'Date range cannot exceed 90 days'
+    return // Don't emit the update if the range is invalid
   }
   
   // Emit the date range change with holiday options
@@ -284,5 +431,25 @@ onMounted(() => {
   box-shadow: v-bind('$vuetify.theme.global.name === "dark" ? "0 2px 8px rgba(0, 0, 0, 0.3)" : "0 2px 8px rgba(0, 0, 0, 0.15)"') !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   text-shadow: v-bind('$vuetify.theme.global.name === "dark" ? "0 1px 2px rgba(0, 0, 0, 0.5)" : "none"');
+}
+
+.error-message {
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#FF5252" : "#F44336"');
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.date-message {
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#FFB86C" : "#FF9800"');
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: block;
+  margin-top: 4px;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.8; }
 }
 </style>

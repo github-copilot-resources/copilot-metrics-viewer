@@ -19,12 +19,13 @@
       
       <span v-if="mockedDataMessage" class="error-message text-caption px-2 py-1 rounded">{{ mockedDataMessage }}</span>
       <v-spacer />
-
-      <ThemeToggle 
+      
+      <!-- Theme toggle hidden for now -->
+      <!-- <ThemeToggle 
         class="ml-2" 
         :is-dark-theme="isDarkTheme" 
         @toggle="toggleTheme" 
-      />
+      /> -->
     </v-app-bar>
     
     <!-- Navigation drawer with hamburger menu -->
@@ -69,24 +70,8 @@
         
         <v-divider class="drawer-divider my-3"></v-divider>
         
-        <v-list-item
-          prepend-icon="mdi-cog-outline"
-          title="Settings"
-          class="drawer-item my-1"
-          rounded="lg"
-        >
-          <template v-slot:append>
-            <v-switch
-              v-model="isDarkTheme"
-              color="primary"
-              hide-details
-              inset
-              :label="isDarkTheme ? 'Dark' : 'Light'"
-              density="compact"
-              @change="toggleTheme"
-            ></v-switch>
-          </template>
-        </v-list-item>
+        <!-- Settings item removed as requested -->
+        <!-- Theme toggle functionality hidden for now -->
         
         <AuthState>
           <template #default="{ loggedIn }">
@@ -440,11 +425,22 @@ export default defineNuxtComponent({
     this.config = useRuntimeConfig();
   },
   async mounted() {
-    // Check system preference for dark mode
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (prefersDark) {
-      this.isDarkTheme = true;
-      this.$vuetify.theme.global.name = 'dark';
+    // Check for default theme from environment variable first
+    const config = useRuntimeConfig();
+    const defaultTheme = config.public.defaultTheme || 'dark';
+    
+    // If default theme is specified, use it
+    if (defaultTheme) {
+      this.isDarkTheme = defaultTheme === 'dark';
+      this.$vuetify.theme.global.name = defaultTheme;
+    } 
+    // Otherwise check system preference for dark mode
+    else {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        this.isDarkTheme = true;
+        this.$vuetify.theme.global.name = 'dark';
+      }
     }
     
     // Load initial data

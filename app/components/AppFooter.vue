@@ -122,8 +122,8 @@ const socialIcons = [
 
 <style scoped>
 .app-footer {
-  background-color: rgba(18, 18, 18, 0.95);
-  border-top: 1px solid rgba(139, 233, 253, 0.1);
+  background-color: v-bind('$vuetify.theme.global.name === "dark" ? "rgba(18, 18, 18, 0.95)" : "rgba(255, 255, 255, 0.95)"');
+  border-top: 1px solid v-bind('$vuetify.theme.global.name === "dark" ? "rgba(139, 233, 253, 0.1)" : "rgba(38, 166, 154, 0.1)"');
   padding: 48px 0 24px;
   position: relative;
   overflow: hidden;
@@ -136,38 +136,38 @@ const socialIcons = [
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8);
+  background: v-bind('$vuetify.theme.global.name === "dark" ? "linear-gradient(90deg, #8BE9FD, #64D8CB, #9C64D8)" : "linear-gradient(90deg, #4DD0E1, #26A69A, #7B1FA2)"');
   opacity: 0.5;
 }
 
 .footer-link {
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.7);
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.7)"');
   text-decoration: none;
   transition: all 0.3s;
   font-size: 0.875rem;
 }
 
 .footer-link:hover {
-  color: #8BE9FD;
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#8BE9FD" : "#26A69A"');
   text-decoration: none;
   transform: translateX(5px);
 }
 
 .footer-link .v-icon {
-  color: #64D8CB;
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#64D8CB" : "#26A69A"');
 }
 
 .text-h6 {
-  background: linear-gradient(90deg, #8BE9FD, #64D8CB);
+  background: v-bind('$vuetify.theme.global.name === "dark" ? "linear-gradient(90deg, #8BE9FD, #64D8CB)" : "linear-gradient(90deg, #4DD0E1, #26A69A)"');
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .text-subtitle-1 {
-  color: #8BE9FD !important;
+  color: v-bind('$vuetify.theme.global.name === "dark" ? "#8BE9FD" : "#26A69A"') !important;
 }
 
 @media (max-width: 768px) {

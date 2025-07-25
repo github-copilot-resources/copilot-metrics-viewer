@@ -38,9 +38,10 @@ body {
 /* Layout components */
 .tiles-container {
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
 .tiles-text {
