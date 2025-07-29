@@ -1,162 +1,68 @@
 <template>
     <div class="github-com-container">
-        <v-main class="p-1" style="min-height: 300px;">
-            <v-container style="min-height: 300px;" class="px-4 elevation-2">
-                <!-- Loading state -->
-                <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 300px;">
-                    <v-progress-circular indeterminate size="64" color="primary" />
-                </div>
+        <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 300px;">
+            <v-progress-circular indeterminate size="64" color="primary" />
+        </div>
 
-                <!-- Error state -->
-                <div v-else-if="error" class="d-flex justify-center align-center" style="min-height: 300px;">
-                    <v-alert type="error" class="mb-4">
-                        <v-alert-title>Error Loading Statistics</v-alert-title>
-                        {{ error }}
-                    </v-alert>
-                </div>
+        <div v-else-if="error" class="d-flex justify-center align-center" style="min-height: 300px;">
+            <v-alert type="error" class="mb-4">
+                <v-alert-title>Error Loading Statistics</v-alert-title>
+                {{ error }}
+            </v-alert>
+        </div>
 
-                <!-- Main content -->
-                <div v-else>
-                    <!-- Agent Mode Statistics Title -->
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                        <template #activator="{ props }">
-                            <h2 v-bind="props" class="mb-4">Copilot Statistics</h2>
-                        </template>
-                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
-                            <span class="text-caption" style="font-size: 10px !important;">
-                                This section displays statistics for different GitHub.com Copilot features and the
-                                models used by users.
-                            </span>
-                        </v-card>
-                    </v-tooltip>
-
-                    <!-- Date Range Information -->
-                    <v-card v-if="dateRangeDescription" flat class="pa-3 mb-4" color="blue-grey lighten-5">
-                        <div class="text-body-2 text-center">
-                            <v-icon left small>mdi-calendar-range</v-icon>
-                            {{ dateRangeDescription }}
-                        </div>
-                    </v-card>
-
-                    <!-- Agent Mode Overview Cards -->
-                    <v-row class="mb-4">
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="blue lighten-4">
-                                <v-card-title class="text-h6">
-                                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                                        <template #activator="{ props }">
-                                            <span v-bind="props">IDE Code Completions</span>
-                                        </template>
-                                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                                            <span class="text-caption" style="font-size: 10px !important;">
-                                                Statistics for code completions in integrated development environments.
-                                            </span>
-                                        </v-card>
-                                    </v-tooltip>
-                                </v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalIdeCodeCompletionUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalIdeCodeCompletionModels }} Models
-                                        Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="green lighten-4">
-                                <v-card-title class="text-h6">
-                                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                                        <template #activator="{ props }">
-                                            <span v-bind="props">IDE Chat</span>
-                                        </template>
-                                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                                            <span class="text-caption" style="font-size: 10px !important;">
-                                                Statistics for chat interactions in integrated development environments.
-                                            </span>
-                                        </v-card>
-                                    </v-tooltip>
-                                </v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalIdeChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalIdeChatModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="purple lighten-4">
-                                <v-card-title class="text-h6">
-                                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                                        <template #activator="{ props }">
-                                            <span v-bind="props">GitHub.com Chat</span>
-                                        </template>
-                                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                                            <span class="text-caption" style="font-size: 10px !important;">
-                                                Statistics for chat interactions on GitHub.com web interface.
-                                            </span>
-                                        </v-card>
-                                    </v-tooltip>
-                                </v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalDotcomChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalDotcomChatModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="orange lighten-4">
-                                <v-card-title class="text-h6">
-                                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                                        <template #activator="{ props }">
-                                            <span v-bind="props">GitHub.com PR Summaries</span>
-                                        </template>
-                                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                                            <span class="text-caption" style="font-size: 10px !important;">
-                                                Statistics for pull request summaries generated by Copilot on
-                                                GitHub.com.
-                                            </span>
-                                        </v-card>
-                                    </v-tooltip>
-                                </v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalPRSummariesCreated }}</div>
-                                    <div class="text-caption">Total PR Summaries Created</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalDotcomPRModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                    </v-row>
+        <div v-else>
+            <!-- Agent Mode Overview Cards -->
+            <div class="tiles-container">
+                <MetricCard
+                    title="IDE Code Completions"
+                    :value="stats.totalIdeCodeCompletionUsers.toString()"
+                    description="Total Users with Activity"
+                    icon="mdi-code-braces"
+                    color="primary"
+                    :is-dark-theme="isDarkTheme"
+                />
+                
+                <MetricCard
+                    title="IDE Chat"
+                    :value="stats.totalIdeChatUsers.toString()"
+                    description="Total Users with Activity"
+                    icon="mdi-chat"
+                    color="success"
+                    :is-dark-theme="isDarkTheme"
+                />
+                
+                <MetricCard
+                    title="GitHub.com Chat"
+                    :value="stats.totalDotcomChatUsers.toString()"
+                    description="Total Users with Activity"
+                    icon="mdi-web"
+                    color="info"
+                    :is-dark-theme="isDarkTheme"
+                />
+                
+                <MetricCard
+                    title="GitHub.com PR Summaries"
+                    :value="stats.totalPRSummariesCreated.toString()"
+                    description="Total PR Summaries Created"
+                    icon="mdi-source-pull"
+                    color="accent"
+                    :is-dark-theme="isDarkTheme"
+                />
+            </div>
+            
+            <v-main class="p-1" style="min-height: 300px;">
+                <v-container style="min-height: 300px;" class="px-4 elevation-2 chart-container">
 
                     <!-- Agent Mode Statistics Chart -->
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                        <template #activator="{ props }">
-                            <h2 v-bind="props" class="mb-1">Copilot Feature Usage Over Time</h2>
-                        </template>
-                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
-                            <span class="text-caption" style="font-size: 10px !important;">
-                                This chart shows the usage of different Copilot features over time.
-                            </span>
-                        </v-card>
-                    </v-tooltip>
-                    <div class="chart-container">
+                    <h2 class="chart-title">Copilot Feature Usage Over Time</h2>
+                    <div class="chart-wrapper">
                         <LineChart v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData"
                             :options="chartOptions" />
                     </div>
 
                     <!-- Models Used Section -->
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                        <template #activator="{ props }">
-                            <h2 v-bind="props" class="mb-4 mt-6">Models Used by Users</h2>
-                        </template>
-                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
-                            <span class="text-caption" style="font-size: 10px !important;">
-                                This section shows detailed information about the AI models used across different
-                                GitHub.com Copilot
-                                features.
-                            </span>
-                        </v-card>
-                    </v-tooltip>
+                    <h2 class="chart-title">Models Used by Users</h2>
 
                     <!-- Models by Agent Mode -->
                     <v-expansion-panels class="mb-4">
@@ -206,33 +112,24 @@
                     </v-expansion-panels>
 
                     <!-- Model Usage Summary Chart -->
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                        <template #activator="{ props }">
-                            <h2 v-bind="props" class="mb-1">Model Usage Distribution</h2>
-                        </template>
-                        <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 400px;">
-                            <span class="text-caption" style="font-size: 10px !important;">
-                                This chart shows the distribution of model usage across different GitHub.com Copilot
-                                features.
-                            </span>
-                        </v-card>
-                    </v-tooltip>
-                    <div class="chart-container">
+                    <h2 class="chart-title">Model Usage Distribution</h2>
+                    <div class="chart-wrapper">
                         <BarChart v-if="stats.modelUsageChartData.labels.length" :data="stats.modelUsageChartData"
                             :options="barChartOptions" />
                     </div>
-                </div>
-            </v-container>
-        </v-main>
+                </v-container>
+            </v-main>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, type PropType, shallowRef } from 'vue';
+import { defineComponent, ref, watch, type PropType, shallowRef, computed } from 'vue';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { Line as LineChart, Bar as BarChart } from 'vue-chartjs';
+import MetricCard from './MetricCard.vue';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -338,6 +235,10 @@ export default defineComponent({
         dateRangeDescription: {
             type: String,
             default: ''
+        },
+        isDarkTheme: {
+            type: Boolean,
+            default: false
         }
     },
     setup(props) {
@@ -382,6 +283,48 @@ export default defineComponent({
                     const apiUrl = queryString ? `/api/github-stats?${queryString}` : '/api/github-stats';
 
                     const response = await $fetch(apiUrl) as GitHubStats;
+                    
+                    // Process the chart data to ensure consistent styling
+                    if (response.agentModeChartData && response.agentModeChartData.datasets) {
+                        response.agentModeChartData.datasets.forEach(dataset => {
+                            // Apply curved line styling to all line datasets
+                            dataset.tension = 0.4;
+                            dataset.borderWidth = 2;
+                            dataset.fill = false;
+                            
+                            // Apply consistent colors based on the dataset label
+                            if (dataset.label.includes('IDE Code')) {
+                                dataset.borderColor = '#8BE9FD';  // Cyan
+                                dataset.backgroundColor = 'rgba(139, 233, 253, 0.3)';
+                            } else if (dataset.label.includes('IDE Chat')) {
+                                dataset.borderColor = '#64D8CB';  // Teal
+                                dataset.backgroundColor = 'rgba(100, 216, 203, 0.3)';
+                            } else if (dataset.label.includes('GitHub.com Chat')) {
+                                dataset.borderColor = '#9C64D8';  // Purple
+                                dataset.backgroundColor = 'rgba(156, 100, 216, 0.3)';
+                            } else if (dataset.label.includes('PR')) {
+                                dataset.borderColor = '#FFB86C';  // Orange
+                                dataset.backgroundColor = 'rgba(255, 184, 108, 0.3)';
+                            }
+                        });
+                    }
+                    
+                    // Process the model usage chart data for consistent bar styling
+                    if (response.modelUsageChartData && response.modelUsageChartData.datasets) {
+                        response.modelUsageChartData.datasets.forEach(dataset => {
+                            // Apply consistent bar styling
+                            dataset.borderWidth = 2;
+                            dataset.borderRadius = 4;
+                            dataset.maxBarThickness = 40;
+                            
+                            // Apply consistent colors if not already set
+                            if (!dataset.backgroundColor) {
+                                dataset.backgroundColor = 'rgba(139, 233, 253, 0.3)';  // Cyan with transparency
+                                dataset.borderColor = '#8BE9FD';  // Solid cyan
+                            }
+                        });
+                    }
+                    
                     // Use Object.assign to maintain reactivity while updating properties
                     Object.assign(stats.value, response);
                     lastMetricsHash.value = currentHash;
@@ -397,6 +340,21 @@ export default defineComponent({
 
         // Watch for changes with improved performance
         watch(() => [props.originalMetrics, props.dateRangeDescription, props.dateRange], fetchStats, { immediate: true, deep: false });
+        
+        // Watch for changes in the agentModeChartData and apply consistent line styling
+        watch(() => stats.value.agentModeChartData, (chartData) => {
+            if (chartData && chartData.datasets && chartData.datasets.length > 0) {
+                // Apply consistent styling to each dataset
+                chartData.datasets.forEach(dataset => {
+                    if (dataset.type === 'line' || !dataset.type) {
+                        // Apply curved line styling to line charts
+                        dataset.tension = 0.4;
+                        dataset.borderWidth = 2;
+                        dataset.fill = false;
+                    }
+                });
+            }
+        }, { deep: true });
 
         // Static table headers (avoid recreating on every render)
         const codeCompletionHeaders = [
@@ -432,7 +390,7 @@ export default defineComponent({
         ];
 
         // Optimized chart options with performance settings
-        const chartOptions = {
+        const chartOptions = computed(() => ({
             responsive: true,
             maintainAspectRatio: false,
             animation: {
@@ -443,26 +401,60 @@ export default defineComponent({
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Users with Activity'
+                        text: 'Users with Activity',
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333'
+                    },
+                    ticks: {
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
+                    },
+                    grid: {
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
+                    },
+                    grid: {
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                     }
                 }
             },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Copilot Feature Usage Over Time'
+                    text: 'Copilot Feature Usage Over Time',
+                    color: props.isDarkTheme ? '#F8F8F2' : '#333333'
                 },
                 legend: {
                     display: true,
-                    position: 'top' as const
+                    position: 'top' as const,
+                    labels: {
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                    titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+                    bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
+                    borderColor: 'rgba(100, 216, 203, 0.3)',
+                    borderWidth: 1
                 }
             },
             interaction: {
                 intersect: false
+            },
+            elements: {
+                line: {
+                    tension: 0.4 // Add curve to all line charts
+                }
             }
-        };
+        }));
 
-        const barChartOptions = {
+        const barChartOptions = computed(() => ({
             responsive: true,
             maintainAspectRatio: false,
             animation: {
@@ -473,24 +465,53 @@ export default defineComponent({
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Number of Models'
+                        text: 'Number of Models',
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333'
+                    },
+                    ticks: {
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
+                    },
+                    grid: {
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: props.isDarkTheme ? '#BFBFBF' : '#666666'
+                    },
+                    grid: {
+                        color: props.isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
                     }
                 }
             },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Model Usage Distribution'
+                    text: 'Model Usage Distribution',
+                    color: props.isDarkTheme ? '#F8F8F2' : '#333333'
                 },
                 legend: {
                     display: true,
-                    position: 'top' as const
+                    position: 'top' as const,
+                    labels: {
+                        color: props.isDarkTheme ? '#F8F8F2' : '#333333',
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: props.isDarkTheme ? 'rgba(30, 30, 30, 0.8)' : 'rgba(255, 255, 255, 0.9)',
+                    titleColor: props.isDarkTheme ? '#8BE9FD' : '#26A69A',
+                    bodyColor: props.isDarkTheme ? '#F8F8F2' : '#333333',
+                    borderColor: 'rgba(100, 216, 203, 0.3)',
+                    borderWidth: 1
                 }
             },
             interaction: {
                 intersect: false
             }
-        };
+        }));
 
         return {
             stats,
@@ -512,22 +533,73 @@ export default defineComponent({
     padding: 16px;
 }
 
-.v-card {
-    margin-bottom: 16px;
+.chart-title {
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"');
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 16px 0;
+  text-shadow: v-bind('isDarkTheme ? "0 2px 4px rgba(0, 0, 0, 0.5)" : "none"');
+  position: relative;
+  z-index: 2;
+}
+
+.chart-container {
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.chart-wrapper {
+  margin-bottom: 32px;
+  position: relative;
+  height: 400px;
 }
 
 .v-expansion-panel {
-    margin-bottom: 8px;
+  margin-bottom: 8px;
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
 }
 
-.v-data-table {
-    margin-top: 16px;
+:deep(.v-expansion-panel-title) {
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
 }
 
-/* Optimize chart rendering */
-.chart-container {
-    height: 400px;
-    width: 100%;
-    position: relative;
+:deep(.v-data-table) {
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.v-data-table__thead) {
+  background-color: v-bind('isDarkTheme ? "rgba(100, 216, 203, 0.1)" : "rgba(100, 216, 203, 0.05)"') !important;
+}
+
+:deep(.v-data-table__thead th) {
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+:deep(.v-data-table__tbody tr) {
+  border-bottom: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
+}
+
+:deep(.v-data-table__tbody td) {
+  color: v-bind('isDarkTheme ? "#F8F8F2" : "#333333"') !important;
+  padding: 12px 16px;
+}
+
+:deep(.v-data-table__tbody tr:hover) {
+  background-color: v-bind('isDarkTheme ? "rgba(100, 216, 203, 0.05)" : "rgba(100, 216, 203, 0.1)"') !important;
+}
+
+:deep(.chartjs-render-monitor) {
+  filter: drop-shadow(0 0 8px rgba(100, 216, 203, 0.2));
 }
 </style>

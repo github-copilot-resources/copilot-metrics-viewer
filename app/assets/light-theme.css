@@ -1,0 +1,310 @@
+/* Light Theme CSS Variables */
+.v-theme--light {
+  /* Light mode color palette */
+  --color-cyan-light: #4DD0E1;
+  --color-teal-light: #26A69A;
+  --color-purple-light: #7B1FA2;
+  --color-light-bg: #F5F7FA;
+  --color-card-bg-light: #FFFFFF;
+  --color-success-light: #4CAF50;
+  --color-warning-light: #FF9800;
+  --color-error-light: #F44336;
+  --color-text-light: #333333;
+  --color-text-muted-light: #666666;
+  
+  /* Light mode gradients */
+  --gradient-primary-light: linear-gradient(135deg, #26A69A 0%, #7B1FA2 100%);
+  --gradient-secondary-light: linear-gradient(135deg, #4DD0E1 0%, #26A69A 100%);
+  --gradient-accent-light: linear-gradient(135deg, #7B1FA2 0%, #4DD0E1 100%);
+  
+  /* Light mode shadows */
+  --shadow-sm-light: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md-light: 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg-light: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Light Theme Overrides */
+.v-theme--light .v-card {
+  background-color: var(--color-card-bg-light) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm-light) !important;
+}
+
+.v-theme--light .v-card:hover {
+  box-shadow: var(--shadow-md-light) !important;
+  border: 1px solid rgba(38, 166, 154, 0.2);
+}
+
+.v-theme--light .v-card__title {
+  color: var(--color-teal-light) !important;
+}
+
+.v-theme--light .v-tab {
+  color: var(--color-text-light) !important;
+}
+
+.v-theme--light .v-tab:hover::before {
+  background-color: rgba(38, 166, 154, 0.1) !important;
+}
+
+.v-theme--light .v-expansion-panel {
+  background-color: var(--color-card-bg-light) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm-light) !important;
+}
+
+.v-theme--light .v-expansion-panel-title {
+  color: var(--color-text-light) !important;
+}
+
+.v-theme--light .v-expansion-panel-title:hover .v-expansion-panel-title__overlay {
+  background-color: rgba(38, 166, 154, 0.1) !important;
+}
+
+.v-theme--light .v-expansion-panel-text__wrapper {
+  background-color: var(--color-card-bg-light) !important;
+}
+
+.v-theme--light .v-btn--elevated {
+  background: var(--gradient-primary-light) !important;
+}
+
+.v-theme--light .date-range-selector {
+  background-color: var(--color-card-bg-light);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm-light);
+}
+
+.v-theme--light .chart-container {
+  background-color: var(--color-card-bg-light);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm-light);
+}
+
+.v-theme--light .v-data-table {
+  background-color: var(--color-card-bg-light) !important;
+  box-shadow: var(--shadow-sm-light) !important;
+}
+
+.v-theme--light .v-data-table__thead {
+  background-color: rgba(38, 166, 154, 0.05);
+}
+
+.v-theme--light .v-data-table__th {
+  color: var(--color-teal-light) !important;
+}
+
+.v-theme--light .metric-card::before {
+  background: var(--gradient-primary-light);
+}
+
+.v-theme--light ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.v-theme--light ::-webkit-scrollbar-thumb {
+  background: var(--color-teal-light);
+}
+
+.v-theme--light ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyan-light);
+}
+
+.v-theme--light .text-primary {
+  color: var(--color-teal-light) !important;
+}
+
+.v-theme--light .text-secondary {
+  color: var(--color-cyan-light) !important;
+}
+
+.v-theme--light .text-accent {
+  color: var(--color-purple-light) !important;
+}
+
+.v-theme--light .text-success {
+  color: var(--color-success-light) !important;
+}
+
+.v-theme--light .text-warning {
+  color: var(--color-warning-light) !important;
+}
+
+.v-theme--light .text-error {
+  color: var(--color-error-light) !important;
+}
+
+.v-theme--light .bg-primary {
+  background-color: var(--color-teal-light) !important;
+}
+
+.v-theme--light .bg-secondary {
+  background-color: var(--color-cyan-light) !important;
+}
+
+.v-theme--light .bg-accent {
+  background-color: var(--color-purple-light) !important;
+}
+
+.v-theme--light .bg-gradient-primary {
+  background: var(--gradient-primary-light) !important;
+}
+
+.v-theme--light .bg-gradient-secondary {
+  background: var(--gradient-secondary-light) !important;
+}
+
+.v-theme--light .bg-gradient-accent {
+  background: var(--gradient-accent-light) !important;
+}
+
+.v-theme--light .v-chip {
+  background: var(--gradient-primary-light) !important;
+}
+
+.v-theme--light .v-progress-circular {
+  color: var(--color-teal-light) !important;
+}
+
+.v-theme--light .v-progress-linear {
+  background-color: rgba(38, 166, 154, 0.2) !important;
+}
+
+.v-theme--light .v-progress-linear__determinate {
+  background: var(--gradient-primary-light) !important;
+}
+
+.v-theme--light .v-switch__track {
+  background-color: rgba(38, 166, 154, 0.2) !important;
+}
+
+.v-theme--light .v-switch--active .v-switch__track {
+  background-color: var(--color-teal-light) !important;
+}
+
+/* Light theme specific styles for metric cards */
+.v-theme--light .metric-card {
+  background-color: white !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.v-theme--light .metric-card:hover {
+  box-shadow: 0 4px 12px rgba(38, 166, 154, 0.15) !important;
+  border: 1px solid rgba(38, 166, 154, 0.2);
+}
+
+.v-theme--light .card-accent {
+  background: linear-gradient(90deg, #4DD0E1, #26A69A, #7B1FA2) !important;
+}
+
+.v-theme--light .text-h4 {
+  background: linear-gradient(90deg, #4DD0E1, #26A69A, #7B1FA2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700 !important;
+}
+
+/* Light theme navigation drawer */
+.v-theme--light .navigation-drawer {
+  background-color: white !important;
+  border-right: 1px solid rgba(38, 166, 154, 0.2);
+}
+
+.v-theme--light .drawer-list {
+  background-color: white !important;
+}
+
+.v-theme--light .custom-menu-item {
+  color: #333333;
+}
+
+.v-theme--light .custom-menu-item:hover {
+  background-color: rgba(38, 166, 154, 0.05);
+}
+
+.v-theme--light .custom-menu-item-active {
+  background-color: #E8F5F5 !important;
+  border-left: 3px solid #26A69A;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.v-theme--light .custom-menu-item-active .menu-icon {
+  color: #26A69A;
+}
+
+.v-theme--light .custom-menu-item-active .menu-text {
+  color: #333333;
+  font-weight: 700;
+}
+
+.v-theme--light .drawer-header :deep(.v-list-item-title) {
+  color: #26A69A !important;
+}
+
+.v-theme--light .drawer-header :deep(.v-list-item-subtitle) {
+  color: rgba(0, 0, 0, 0.7) !important;
+}
+
+.v-theme--light .drawer-divider {
+  border-color: rgba(38, 166, 154, 0.1) !important;
+}
+
+/* Light theme chart styles */
+.v-theme--light .chart-title {
+  color: #26A69A;
+  text-shadow: none;
+}
+
+.v-theme--light .breakdown-title {
+  color: #26A69A;
+  text-shadow: none;
+}
+
+.v-theme--light .tooltip-card {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(38, 166, 154, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.v-theme--light .tooltip-text {
+  color: #333333 !important;
+}
+
+/* Light theme app header */
+.v-theme--light .app-header {
+  background: linear-gradient(135deg, #26A69A 0%, #7B1FA2 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.v-theme--light .app-header::after {
+  background: linear-gradient(90deg, #4DD0E1, #26A69A, #7B1FA2);
+}
+
+/* Light theme welcome banner */
+.v-theme--light .section-heading {
+  color: #333333;
+}
+
+.v-theme--light .section-title {
+  color: #333333 !important;
+  text-shadow: none;
+}
+
+.v-theme--light .custom-date-badge {
+  background-color: white;
+  color: #333333;
+  border: 2px solid #26A69A;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.v-theme--light .date-icon {
+  color: #26A69A;
+}
+
+.v-theme--light .date-text {
+  color: #333333;
+  text-shadow: none;
+}

@@ -1,0 +1,131 @@
+/* Fix data table footer and item count selection dropdown */
+.v-data-table-footer {
+  background-color: #1E1E1E !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.v-data-table-footer__items-per-page {
+  background-color: #1E1E1E !important;
+}
+
+/* Fix all dropdown menus and lists */
+.v-overlay__content,
+.v-menu__content,
+.v-list,
+.v-select__content,
+.v-select-list {
+  background-color: #1E1E1E !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Fix all list items in dropdowns */
+.v-list-item {
+  background-color: #1E1E1E !important;
+  color: #FFFFFF !important;
+}
+
+/* Fix the selected and active items */
+.v-list-item--active,
+.v-list-item--selected,
+.v-list-item--highlighted,
+.v-list-item.v-list-item--active,
+.v-list-item.v-list-item--selected {
+  background-color: #333333 !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+/* Fix hover state */
+.v-list-item:hover {
+  background-color: #333333 !important;
+  color: #8BE9FD !important;
+}
+
+/* Fix the dropdown fields */
+.v-field,
+.v-field--variant-filled,
+.v-field--variant-outlined,
+.v-field--variant-plain,
+.v-field--variant-underlined,
+.v-field--variant-solo,
+.v-field--variant-solo-filled,
+.v-field--variant-solo-inverted,
+.v-field--variant-solo-outlined {
+  background-color: #1E1E1E !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Fix input text color */
+.v-field__input,
+.v-select__selection,
+.v-select__selection-text {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+/* Fix dropdown arrow */
+.v-field__append-inner {
+  color: #8BE9FD !important;
+}
+
+/* Fix pagination text */
+.v-data-table-footer__pagination {
+  color: #FFFFFF !important;
+}
+
+/* Fix any white backgrounds */
+.v-theme--light.v-list,
+.v-theme--light .v-list,
+.v-theme--light.v-menu__content,
+.v-theme--light .v-menu__content,
+.v-theme--light.v-overlay__content,
+.v-theme--light .v-overlay__content {
+  background-color: #1E1E1E !important;
+  color: #FFFFFF !important;
+}
+
+/* Fix any white backgrounds in the dropdown - more specific selectors */
+.v-overlay__content > div,
+.v-menu__content > div,
+.v-list-item__underlay,
+.v-list-item__content,
+.v-list-item__prepend,
+.v-list-item__append,
+.v-list-item > *,
+.v-list > *,
+.v-select__content > *,
+.v-select-list > * {
+  background-color: #1E1E1E !important;
+  color: #FFFFFF !important;
+}
+
+/* Target the specific white box in the dropdown */
+.v-list-item__overlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* Fix any other potential white backgrounds */
+.v-overlay__scrim {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Fix the dropdown items container */
+.v-select__content .v-list {
+  background-color: #1E1E1E !important;
+  padding: 0 !important;
+}
+
+/* Fix the dropdown items */
+.v-select__content .v-list-item {
+  background-color: #1E1E1E !important;
+  color: #FFFFFF !important;
+  min-height: 40px !important;
+}
+
+/* Fix the selected dropdown item */
+.v-select__content .v-list-item--active {
+  background-color: #333333 !important;
+  color: #8BE9FD !important;
+}

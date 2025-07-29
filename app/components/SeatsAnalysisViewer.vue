@@ -1,115 +1,71 @@
 <template>
     <div class="tiles-container">
-        <v-card
-elevation="4" color="white" variant="elevated" class="mx-auto my-4"
-            style="width: 330px; height: 175px;">
-            <v-card-item class="d-flex justify-center align-center">
-                <div class="tiles-text">
-                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Total Assigned  </div>
-                      </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of Copilot seats assigned within the current organization/enterprise.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">
-                        Currently assigned seats
-                    </div>
-                    <p class="text-h4">{{ totalSeats.length }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
-
-        <v-card
-elevation="4" color="white" variant="elevated" class="mx-auto my-3"
-            style="width: 300px; height: 175px;">
-            <v-card-item class="d-flex justify-center align-center">
-                <div class="tiles-text">
-                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Assigned But Never Used</div>
-                      </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric shows seats that were assigned but never used within the current organization/enterprise. The assigned timestamp is also displayed in the chart.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">
-                        No show seats
-                    </div>
-                    <p class="text-h4">{{ noshowSeats }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
-            <v-card-item class="d-flex justify-center align-center">
-                <div class="tiles-text">
-                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 7 days </div>
-                      </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">Never used seats or seats used, but with no activity in the past 7 days.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">
-                        No use in the last 7 days
-                    </div>
-                    <p class="text-h4">{{ unusedSeatsInSevenDays }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
-            <v-card-item class="d-flex justify-center align-center">
-                <div class="tiles-text">
-                    <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 30 days </div>
-                      </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric represents seats with no activity in the last 30 days, including those never used.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">
-                        No use in the last 30 days
-                    </div>
-                    <p class="text-h4">{{ unusedSeatsInThirtyDays }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
+        <MetricCard
+          title="Total Assigned"
+          :value="totalSeats.length.toString()"
+          description="Currently assigned seats"
+          icon="mdi-account-multiple"
+          color="primary"
+          :is-dark-theme="isDarkTheme"
+        />
+        
+        <MetricCard
+          title="Assigned But Never Used"
+          :value="noshowSeats.toString()"
+          description="No show seats"
+          icon="mdi-account-off"
+          color="error"
+          :is-dark-theme="isDarkTheme"
+        />
+        
+        <MetricCard
+          title="No Activity in the Last 7 days"
+          :value="unusedSeatsInSevenDays.toString()"
+          description="No use in the last 7 days"
+          icon="mdi-calendar-week"
+          color="warning"
+          :is-dark-theme="isDarkTheme"
+        />
+        
+        <MetricCard
+          title="No Activity in the Last 30 days"
+          :value="unusedSeatsInThirtyDays.toString()"
+          description="No use in the last 30 days"
+          icon="mdi-calendar-month"
+          color="info"
+          :is-dark-theme="isDarkTheme"
+        />
     </div>
     
-    <div>
-        <v-main class="p-1" style="min-height: 300px;">
-            <v-container style="min-height: 300px;" class="px-4 elevation-2">
-                <br>
-                <h2>All assigned seats </h2>
-                <br>
-            <v-data-table :headers="headers" :items="totalSeats" :items-per-page="10" class="elevation-2">
+    <v-main class="p-1" style="min-height: 300px;">
+        <v-container style="min-height: 300px;" class="px-4 elevation-2 chart-container">
+            <h2 class="breakdown-title">All assigned seats</h2>
+            <v-data-table 
+              :headers="headers" 
+              :items="totalSeats" 
+              :items-per-page="10" 
+              class="data-table elevation-2"
+            >
                 <template #item="{ item, index }">
-                    <tr>
-                        <td>{{ index + 1 }}</td>
-                        <td>{{ item.login }}</td>
-                        <td>{{ item.id }}</td>
-                        <td>{{ item.team }}</td>
-                        <td>{{ item.created_at }}</td>
-                        <td>{{ item.last_activity_at }}</td>
-                        <td>{{ item.last_activity_editor }}</td>
+                    <tr class="data-table-row">
+                        <td class="data-table-cell">{{ index + 1 }}</td>
+                        <td class="data-table-cell">{{ item.login }}</td>
+                        <td class="data-table-cell">{{ item.id }}</td>
+                        <td class="data-table-cell">{{ item.team }}</td>
+                        <td class="data-table-cell">{{ item.created_at }}</td>
+                        <td class="data-table-cell">{{ item.last_activity_at }}</td>
+                        <td class="data-table-cell">{{ item.last_activity_editor }}</td>
                     </tr>
                 </template>
-                </v-data-table>
-            </v-container>
-        </v-main>
-    </div>
+            </v-data-table>
+        </v-container>
+    </v-main>
 </template>
   
 <script lang="ts">
   import { defineComponent, ref, watchEffect } from 'vue';
   import type { Seat } from '@/model/Seat';
+  import MetricCard from './MetricCard.vue';
   import {
     Chart as ChartJS,
     ArcElement,
@@ -142,6 +98,10 @@ props: {
             type: Array as () => Seat[],
             required: true,
             default: () => []  
+        },
+        isDarkTheme: {
+            type: Boolean,
+            default: false
         }
     },
 setup(props) {
@@ -220,3 +180,56 @@ data() {
   
 });
 </script>
+
+<style scoped>
+.breakdown-title {
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"');
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 16px 0;
+  text-shadow: v-bind('isDarkTheme ? "0 2px 4px rgba(0, 0, 0, 0.5)" : "none"');
+  position: relative;
+  z-index: 2;
+}
+
+.chart-container {
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+/* Data table styling for better readability */
+.data-table {
+  background-color: v-bind('isDarkTheme ? "rgba(18, 18, 18, 0.8)" : "rgba(255, 255, 255, 0.8)"') !important;
+  border: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.v-data-table__thead) {
+  background-color: v-bind('isDarkTheme ? "rgba(100, 216, 203, 0.1)" : "rgba(100, 216, 203, 0.05)"') !important;
+}
+
+:deep(.v-data-table__thead th) {
+  color: v-bind('isDarkTheme ? "#8BE9FD" : "#26A69A"') !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-table-row {
+  border-bottom: 1px solid v-bind('isDarkTheme ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)"');
+}
+
+.data-table-cell {
+  color: v-bind('isDarkTheme ? "#F8F8F2" : "#333333"') !important;
+  padding: 12px 16px;
+}
+
+:deep(.v-data-table__tbody tr:hover) {
+  background-color: v-bind('isDarkTheme ? "rgba(100, 216, 203, 0.05)" : "rgba(100, 216, 203, 0.1)"') !important;
+}
+</style>

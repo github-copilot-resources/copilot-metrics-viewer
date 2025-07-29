@@ -1,31 +1,35 @@
 <template>
   <v-app>
-    <v-main>
+    <v-main class="bg-background">
       <slot />
     </v-main>
-    <v-footer class="bg-indigo-lighten-1 text-center d-flex flex-column fixed-footer">
-      <div class="px-4 py-2 text-center w-100">
-        {{ new Date().getFullYear() }} — <strong><a href="https://github.com/github-copilot-resources/copilot-metrics-viewer" target="_blank" rel="noopener noreferrer" style="color: inherit;">Copilot Metrics Viewer</a></strong> — {{ version }}
-      </div>
-    </v-footer>
+    <AppFooter />
   </v-app>
 </template>
 
 <script lang="ts" setup>
+import AppFooter from '../components/AppFooter.vue';
+
 const config = useRuntimeConfig();
-const version = computed(() => config.public.version);
 const githubInfo = getDisplayName(config.public)
 useHead({
   title: githubInfo,
   meta: [
-    { name: 'description', content: 'Copilot Metrics Dashboard' }
+    { name: 'description', content: 'Copilot Metrics Dashboard - Track your organization\'s GitHub Copilot usage and optimize your development workflow' },
+    { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+    { name: 'theme-color', content: '#3F51B5' }
+  ],
+  link: [
+    { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+    { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+    { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap' }
   ]
 });
 </script>
 
 <style scoped>
-.fixed-footer {
-  height: 50px;
-  max-height: 50px;
+.bg-background {
+  background-color: var(--v-theme-background);
+  min-height: calc(100vh - 300px); /* Ensure content area is tall enough */
 }
 </style>

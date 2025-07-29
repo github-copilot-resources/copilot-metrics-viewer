@@ -1,0 +1,89 @@
+/* Direct fix for the white background in the dropdown */
+
+/* Target the specific element causing the white background */
+.v-list-item .v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item .v-list-item__overlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Target the specific element causing the white background */
+.v-list-item__bg {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Force dark background for list items */
+.v-list-item {
+  background-color: #1E1E1E !important;
+}
+
+/* Force dark background for active list items */
+.v-list-item--active {
+  background-color: #333333 !important;
+}
+
+/* Force white text for list items */
+.v-list-item__content {
+  color: white !important;
+}
+
+/* Target the specific element in the dropdown */
+.v-select__content .v-list-item .v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Target the specific element in the dropdown */
+.v-select__content .v-list-item .v-list-item__overlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Target the specific element in the dropdown */
+.v-select__content .v-list-item__bg {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Force dark background for dropdown menu */
+.v-select__content {
+  background-color: #1E1E1E !important;
+}
+
+/* Force dark background for list */
+.v-list {
+  background-color: #1E1E1E !important;
+}
+
+/* Target the specific element in the data table footer */
+.v-data-table-footer .v-select__content .v-list-item .v-list-item__underlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Target the specific element in the data table footer */
+.v-data-table-footer .v-select__content .v-list-item .v-list-item__overlay {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Target the specific element in the data table footer */
+.v-data-table-footer .v-select__content .v-list-item__bg {
+  background-color: transparent !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}

@@ -1,78 +1,419 @@
+/* Base styles */
+:root {
+  --transition-speed: 0.3s;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+  
+  /* Color palette based on the image */
+  --color-cyan: #8BE9FD;
+  --color-teal: #64D8CB;
+  --color-purple: #9C64D8;
+  --color-dark-bg: #121212;
+  --color-card-bg: #1E1E1E;
+  --color-success: #50FA7B;
+  --color-warning: #FFB86C;
+  --color-error: #FF5252;
+  --color-text: #F8F8F2;
+  --color-text-muted: #BFBFBF;
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--color-teal) 0%, var(--color-purple) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--color-cyan) 0%, var(--color-teal) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--color-purple) 0%, var(--color-cyan) 100%);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-dark-bg);
+  color: var(--color-text);
+}
+
+/* Layout components */
 .tiles-container {
-    display: flex;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-  .tiles-text {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 32px;
+}
 
-  .error-message {
-    color: red;
-  }
+.tiles-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
-  .spacing-10 {
-    margin-bottom: 10px;
-  }
+.content-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
 
-  .spacing-25 {
-    margin-bottom: 25px;
-  }
+/* Utility classes */
+.error-message {
+  color: var(--color-error);
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  background-color: rgba(255, 82, 82, 0.1);
+  margin: 8px 0;
+  display: inline-block;
+}
 
-  /* Fix tab hover styles - dark blue overlay using pseudo-element */
-  .v-tab {
-    position: relative !important;
+.spacing-10 {
+  margin-bottom: 10px;
+}
+
+.spacing-25 {
+  margin-bottom: 25px;
+}
+
+.text-capitalize {
+  text-transform: capitalize !important;
+}
+
+/* Card enhancements */
+.v-card {
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+  overflow: hidden;
+  border-radius: var(--border-radius-md) !important;
+  background-color: var(--color-card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(100, 216, 203, 0.2);
+}
+
+.v-card__title {
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--color-cyan) !important;
+}
+
+/* Tab styling */
+.v-tab {
+  position: relative !important;
+  text-transform: capitalize !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  transition: all var(--transition-speed) !important;
+  border-radius: 0 !important;
+  min-width: 100px;
+  color: var(--color-text) !important;
+}
+
+.v-tab:hover::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: rgba(100, 216, 203, 0.1) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.v-tab .v-tab__content {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* App bar styling */
+.app-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toolbar-title {
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Expansion panel enhancements */
+.v-expansion-panel {
+  border-radius: var(--border-radius-md) !important;
+  margin-bottom: 8px !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm) !important;
+  background-color: var(--color-card-bg) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.v-expansion-panel-title {
+  font-weight: 500 !important;
+  padding: 16px !important;
+  color: var(--color-text) !important;
+}
+
+.v-expansion-panel-title:hover .v-expansion-panel-title__overlay {
+  background-color: rgba(100, 216, 203, 0.1) !important;
+}
+
+.v-expansion-panel-text__wrapper {
+  padding: 16px !important;
+  background-color: var(--color-card-bg) !important;
+}
+
+/* Button enhancements */
+.v-btn {
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  transition: all var(--transition-speed) !important;
+  text-transform: none !important;
+}
+
+.v-btn--elevated {
+  box-shadow: var(--shadow-sm) !important;
+  background: var(--gradient-primary) !important;
+  color: white !important;
+}
+
+.v-btn--elevated:hover {
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-1px);
+}
+
+.v-btn:hover .v-btn__overlay {
+  opacity: 0.1 !important;
+}
+
+/* GitHub login button styling */
+.github-login-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+  margin-bottom: 32px;
+}
+
+.github-login-button {
+  display: flex;
+  align-items: center;
+  background: var(--gradient-primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: var(--border-radius-md);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all var(--transition-speed);
+  box-shadow: var(--shadow-sm);
+}
+
+.github-login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.1);
+}
+
+.github-login-button .v-icon {
+  margin-right: 8px;
+}
+
+/* User info styling */
+.user-info {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 24px;
+}
+
+.user-avatar {
+  margin-right: 8px;
+  margin-left: 8px;
+  border: 2px solid var(--color-cyan);
+}
+
+/* Organization info styling */
+.organization-info {
+  background-color: rgba(100, 216, 203, 0.05);
+  border-left: 4px solid var(--color-teal);
+  border-radius: var(--border-radius-sm);
+  margin: 16px 0;
+}
+
+/* Date range selector styling */
+.date-range-selector {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Chart enhancements */
+.chart-container {
+  background-color: var(--color-card-bg);
+  border-radius: var(--border-radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Data table styling */
+.v-data-table {
+  border-radius: var(--border-radius-md) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm) !important;
+  background-color: var(--color-card-bg) !important;
+}
+
+.v-data-table__thead {
+  background-color: rgba(100, 216, 203, 0.05);
+}
+
+.v-data-table__th {
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+  color: var(--color-cyan) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .content-container {
+    padding: 16px;
   }
   
-  .v-tab:hover::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    background-color: rgba(44, 32, 157, 0.557) !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
-  }
-
-  /* Ensure tab content is above overlay */
-  .v-tab .v-tab__content {
-    position: relative !important;
-    z-index: 2 !important;
-  }
-
-  /* Fix expansion panel title overlay on hover - gray overlay */
-  .v-expansion-panel-title:hover .v-expansion-panel-title__overlay {
-    display: block !important;
-    background-color: rgba(0, 0, 0, 0.04) !important;
-    opacity: 1 !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    pointer-events: none !important;
-  }
-
-  /* Fix button hover styles - light gray background */
-  .v-btn:hover {
-    background-color: rgba(63, 81, 181, 0.1) !important;
+  .tiles-container {
+    gap: 12px;
   }
   
-  .v-btn:hover .v-btn__overlay {
-    display: none !important;
+  .v-card {
+    border-radius: var(--border-radius-sm) !important;
   }
+}
 
-  /* Override Vuetify's default overlay behavior for tabs */
-  .v-tab.v-btn--variant-text .v-tab__overlay {
-    background: transparent !important;
-  }
+/* Glow effects for cards */
+.metric-card {
+  position: relative;
+  overflow: hidden;
+}
 
-  /* Override Vuetify's default overlay behavior for variant-text buttons in tabs */
-  .v-tab .v-btn--variant-text .v-btn__overlay {
-    background: transparent !important;
-  }
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--gradient-primary);
+  z-index: -1;
+  border-radius: calc(var(--border-radius-md) + 2px);
+  opacity: 0;
+  transition: opacity var(--transition-speed);
+}
+
+.metric-card:hover::before {
+  opacity: 0.7;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-teal);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyan);
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--color-teal) !important;
+}
+
+.text-secondary {
+  color: var(--color-cyan) !important;
+}
+
+.text-accent {
+  color: var(--color-purple) !important;
+}
+
+.text-success {
+  color: var(--color-success) !important;
+}
+
+.text-warning {
+  color: var(--color-warning) !important;
+}
+
+.text-error {
+  color: var(--color-error) !important;
+}
+
+/* Background colors */
+.bg-primary {
+  background-color: var(--color-teal) !important;
+}
+
+.bg-secondary {
+  background-color: var(--color-cyan) !important;
+}
+
+.bg-accent {
+  background-color: var(--color-purple) !important;
+}
+
+.bg-gradient-primary {
+  background: var(--gradient-primary) !important;
+}
+
+.bg-gradient-secondary {
+  background: var(--gradient-secondary) !important;
+}
+
+.bg-gradient-accent {
+  background: var(--gradient-accent) !important;
+}
+
+/* Chip styling */
+.v-chip {
+  background: var(--gradient-primary) !important;
+  color: white !important;
+}
+
+/* Progress indicators */
+.v-progress-circular {
+  color: var(--color-teal) !important;
+}
+
+.v-progress-linear {
+  background-color: rgba(100, 216, 203, 0.2) !important;
+}
+
+.v-progress-linear__determinate {
+  background: var(--gradient-primary) !important;
+}
+
+/* Switch styling */
+.v-switch__track {
+  background-color: rgba(100, 216, 203, 0.2) !important;
+}
+
+.v-switch--active .v-switch__track {
+  background-color: var(--color-teal) !important;
+}

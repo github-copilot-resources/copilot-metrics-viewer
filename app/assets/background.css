@@ -1,0 +1,147 @@
+/* Background styling for the entire application */
+body.v-theme--dark {
+  background-color: #121212;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(100, 216, 203, 0.05) 0%, transparent 30%),
+    radial-gradient(circle at 90% 80%, rgba(156, 100, 216, 0.05) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(139, 233, 253, 0.03) 0%, transparent 50%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+body.v-theme--light {
+  background-color: #F5F7FA;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(38, 166, 154, 0.05) 0%, transparent 30%),
+    radial-gradient(circle at 90% 80%, rgba(123, 31, 162, 0.05) 0%, transparent 30%),
+    radial-gradient(circle at 50% 50%, rgba(77, 208, 225, 0.03) 0%, transparent 50%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+/* Add subtle animated gradient to the main content area */
+.v-main {
+  position: relative;
+  overflow: hidden;
+}
+
+.v-theme--dark .v-main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(100, 216, 203, 0.02) 0%, 
+    rgba(139, 233, 253, 0.02) 50%, 
+    rgba(156, 100, 216, 0.02) 100%);
+  background-size: 400% 400%;
+  animation: gradientAnimation 15s ease infinite;
+  z-index: -1;
+}
+
+.v-theme--light .v-main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(38, 166, 154, 0.02) 0%, 
+    rgba(77, 208, 225, 0.02) 50%, 
+    rgba(123, 31, 162, 0.02) 100%);
+  background-size: 400% 400%;
+  animation: gradientAnimation 15s ease infinite;
+  z-index: -1;
+}
+
+@keyframes gradientAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Add subtle grid pattern overlay */
+.v-theme--dark .v-main::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.01) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.01) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: -1;
+}
+
+.v-theme--light .v-main::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(0, 0, 0, 0.01) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.01) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: -1;
+}
+
+/* Add glow effects to cards and important elements */
+.v-theme--dark .v-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+.v-theme--dark .v-card:hover {
+  box-shadow: 0 8px 30px rgba(100, 216, 203, 0.15) !important;
+}
+
+.v-theme--light .v-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+.v-theme--light .v-card:hover {
+  box-shadow: 0 8px 30px rgba(38, 166, 154, 0.15) !important;
+}
+
+/* Custom scrollbar for the entire site */
+.v-theme--dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.v-theme--dark ::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.v-theme--dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #64D8CB, #9C64D8);
+  border-radius: 5px;
+}
+
+.v-theme--dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #8BE9FD, #64D8CB);
+}
+
+.v-theme--light ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.v-theme--light ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.v-theme--light ::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #26A69A, #7B1FA2);
+  border-radius: 5px;
+}
+
+.v-theme--light ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #4DD0E1, #26A69A);
+}

@@ -1,0 +1,69 @@
+/* Target the specific white background in the dropdown */
+.v-list-item__underlay {
+  background-color: transparent !important;
+  display: none !important;
+}
+
+/* Target all possible elements that could have a white background */
+.v-list-item__bg {
+  background-color: transparent !important;
+  display: none !important;
+}
+
+/* Target the ripple effect which might be causing the white background */
+.v-ripple__container {
+  display: none !important;
+}
+
+/* Target any other potential elements */
+.v-list-item .v-overlay__content,
+.v-list-item .v-overlay,
+.v-list-item .v-ripple,
+.v-list-item .v-ripple__animation {
+  background-color: transparent !important;
+  display: none !important;
+}
+
+/* Force all list items to have the correct background */
+.v-list-item {
+  background-color: #1E1E1E !important;
+}
+
+/* Force selected items to have the correct background */
+.v-list-item--active {
+  background-color: #333333 !important;
+}
+
+/* Target the specific element that might be causing the white background */
+.v-list-item__overlay {
+  background-color: transparent !important;
+  display: none !important;
+}
+
+/* Target the v-select dropdown specifically */
+.v-select__content .v-list,
+.v-select__content .v-list-item,
+.v-select__content .v-list-item__overlay,
+.v-select__content .v-list-item__underlay {
+  background-color: #1E1E1E !important;
+}
+
+.v-select__content .v-list-item--active,
+.v-select__content .v-list-item--active .v-list-item__overlay,
+.v-select__content .v-list-item--active .v-list-item__underlay {
+  background-color: #333333 !important;
+}
+
+/* Target the white box specifically */
+.v-theme--light.v-list-item .v-list-item__overlay {
+  background-color: transparent !important;
+  display: none !important;
+}
+
+/* Target the white box in the data table footer */
+.v-data-table-footer .v-list-item__overlay,
+.v-data-table-footer .v-list-item__underlay,
+.v-data-table-footer .v-list-item__bg {
+  background-color: transparent !important;
+  display: none !important;
+}

@@ -53,6 +53,10 @@ export default defineComponent({
     seats: {
       type: Array,
       required: true
+    },
+    isDarkTheme: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -202,10 +206,10 @@ export default defineComponent({
   font-family: Roboto, sans-serif;
 }
 .copy-message.error {
-  color: red;
+  color: v-bind('isDarkTheme ? "#FF5252" : "#FF0000"');
 }
 .copy-message:not(.error) {
-  color: darkgreen;
+  color: v-bind('isDarkTheme ? "#50FA7B" : "#006400"');
 }
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.5s;

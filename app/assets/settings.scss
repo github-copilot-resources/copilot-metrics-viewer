@@ -1,10 +1,143 @@
-/**
- * src/styles/settings.scss
- *
- * Configures SASS variables and Vuetify overwrites
- */
+// Custom Vuetify SASS variables
+@use 'vuetify/settings' with (
+  // Global font settings
+  $body-font-family: ('Inter', sans-serif),
+  $heading-font-family: ('Inter', sans-serif),
+  
+  // Typography
+  $typography: (
+    'h1': (
+      'weight': 700,
+      'letter-spacing': -0.02em,
+    ),
+    'h2': (
+      'weight': 700,
+      'letter-spacing': -0.01em,
+    ),
+    'h3': (
+      'weight': 600,
+      'letter-spacing': -0.01em,
+    ),
+    'h4': (
+      'weight': 600,
+      'letter-spacing': -0.01em,
+    ),
+    'h5': (
+      'weight': 600,
+      'letter-spacing': -0.01em,
+    ),
+    'h6': (
+      'weight': 600,
+      'letter-spacing': -0.01em,
+    ),
+    'subtitle-1': (
+      'weight': 500,
+    ),
+    'subtitle-2': (
+      'weight': 500,
+    ),
+    'body-1': (
+      'weight': 400,
+    ),
+    'body-2': (
+      'weight': 400,
+    ),
+    'button': (
+      'weight': 500,
+      'letter-spacing': 0.01em,
+      'text-transform': none,
+    ),
+    'caption': (
+      'weight': 400,
+    ),
+    'overline': (
+      'weight': 500,
+      'letter-spacing': 0.05em,
+    ),
+  ),
+  
+  // Border radius
+  $border-radius-root: 8px,
+  
+  // Elevation (shadows)
+  $shadow-key-umbra-opacity: rgba(0, 0, 0, 0.1),
+  $shadow-key-penumbra-opacity: rgba(0, 0, 0, 0.12),
+  $shadow-key-ambient-opacity: rgba(0, 0, 0, 0.06),
+  
+  // Card specific
+  $card-border-radius: 12px,
+  $card-elevation: 2
+);
 
-// https://vuetifyjs.com/features/sass-variables/`
-// @use 'vuetify/settings' with (
-//   $color-pack: false
-// );
+// Custom CSS variables
+:root {
+  --primary-gradient: linear-gradient(135deg, #3F51B5 0%, #5C6BC0 100%);
+  --card-hover-transform: translateY(-2px);
+  --card-hover-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  --transition-speed: 0.3s;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --button-border-radius: 8px;
+  --expansion-panel-border-radius: 8px;
+  --data-table-border-radius: 8px;
+  --tabs-item-letter-spacing: 0;
+  --tabs-item-font-weight: 500;
+}
+
+// Global styles
+html {
+  scroll-behavior: smooth;
+}
+
+// Button styles
+.v-btn {
+  text-transform: none !important;
+}
+
+// Custom scrollbar
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+// Dark mode scrollbar
+.v-theme--dark ::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
+.v-theme--dark ::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+.v-theme--dark ::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+// Additional component styles
+.v-data-table {
+  border-radius: var(--border-radius-md) !important;
+  overflow: hidden;
+}
+
+.v-expansion-panel {
+  border-radius: var(--border-radius-md) !important;
+}
+
+.v-tabs .v-tab {
+  letter-spacing: 0 !important;
+  font-weight: 500 !important;
+}
