@@ -31,6 +31,8 @@
                       <v-chip
                         v-bind="props"
                         :text="item.raw.name"
+                        color="primary"
+                        variant="outlined"
                         closable
                       />
                     </template>
@@ -67,7 +69,7 @@
                   :key="team.slug"
                   :href="getTeamDetailUrl(team.slug)"
                   color="primary"
-                  variant="outlined"
+                  variant="tonal"
                   target="_blank"
                   link
                 >
@@ -223,31 +225,19 @@
         </v-container>
       </v-main>
 
-      <!-- Language and Editor Comparison Tables -->
+      <!-- Language and Editor Comparison Charts -->
       <v-container>
         <v-row>
           <v-col cols="12" md="6">
             <v-card class="pa-4">
               <v-card-title class="text-h6">Language Usage by Team</v-card-title>
               <v-card-text>
-                <v-table v-if="languageComparison.length > 0">
-                  <thead>
-                    <tr>
-                      <th>Language</th>
-                      <th>Team</th>
-                      <th>Acceptance Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="lang in languageComparison" :key="`${lang.team}-${lang.language}`">
-                      <td>{{ lang.language }}</td>
-                      <td>{{ lang.team }}</td>
-                      <td>{{ lang.acceptance_rate.toFixed(2) }}%</td>
-                    </tr>
-                  </tbody>
-                </v-table>
-                <div v-else class="text-center text-medium-emphasis">
-                  No language data available for selected teams
+                <div v-if="languageBarChartData.datasets.length > 0">
+                  <Bar :data="languageBarChartData" :options="barChartOptions" />
+                </div>
+                <div v-else class="text-center text-medium-emphasis py-8">
+                  <v-icon size="48" color="grey-lighten-1">mdi-chart-bar</v-icon>
+                  <p class="mt-2">No language data available for selected teams</p>
                 </div>
               </v-card-text>
             </v-card>
@@ -256,24 +246,12 @@
             <v-card class="pa-4">
               <v-card-title class="text-h6">Editor Usage by Team</v-card-title>
               <v-card-text>
-                <v-table v-if="editorComparison.length > 0">
-                  <thead>
-                    <tr>
-                      <th>Editor</th>
-                      <th>Team</th>
-                      <th>Active Users</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="editor in editorComparison" :key="`${editor.team}-${editor.editor}`">
-                      <td>{{ editor.editor }}</td>
-                      <td>{{ editor.team }}</td>
-                      <td>{{ editor.active_users }}</td>
-                    </tr>
-                  </tbody>
-                </v-table>
-                <div v-else class="text-center text-medium-emphasis">
-                  No editor data available for selected teams
+                <div v-if="editorBarChartData.datasets.length > 0">
+                  <Bar :data="editorBarChartData" :options="barChartOptions" />
+                </div>
+                <div v-else class="text-center text-medium-emphasis py-8">
+                  <v-icon size="48" color="grey-lighten-1">mdi-chart-bar</v-icon>
+                  <p class="mt-2">No editor data available for selected teams</p>
                 </div>
               </v-card-text>
             </v-card>
@@ -303,7 +281,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Line } from 'vue-chartjs'
+import { Line, Bar } from 'vue-chartjs'
 import type { Metrics } from '@/model/Metrics'
 import {
   Chart as ChartJS,
@@ -311,6 +289,7 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -321,6 +300,7 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
@@ -392,6 +372,10 @@ const githubPrChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [
 const languageComparison = ref<LanguageTeamData[]>([])
 const editorComparison = ref<EditorTeamData[]>([])
 
+// Bar chart data refs
+const languageBarChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] })
+const editorBarChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] })
+
 // Chart options
 const chartOptions = {
   responsive: true,
@@ -407,6 +391,25 @@ const chartOptions = {
       right: 50,
       top: 50,
       bottom: 50
+    }
+  }
+}
+
+// Bar chart options
+const barChartOptions = {
+  responsive: true,
+  maintainAspectRatio: true,
+  scales: {
+    y: {
+      beginAtZero: true
+    }
+  },
+  layout: {
+    padding: {
+      left: 20,
+      right: 20,
+      top: 20,
+      bottom: 20
     }
   }
 }
@@ -501,6 +504,53 @@ const generateMockEditorData = () => {
   return result
 }
 
+const generateBarChartData = () => {
+  // Generate language bar chart data
+  const languages = [...new Set(languageComparison.value.map(l => l.language))]
+  const teams = [...new Set(languageComparison.value.map(l => l.team))]
+  
+  const languageDatasets = teams.map((team, index) => {
+    const colorIndex = index % teamColors.length
+    return {
+      label: team,
+      data: languages.map(language => {
+        const langData = languageComparison.value.find(l => l.language === language && l.team === team)
+        return langData ? langData.acceptance_rate : 0
+      }),
+      backgroundColor: teamColors[colorIndex].border,
+      borderColor: teamColors[colorIndex].border,
+      borderWidth: 1
+    }
+  })
+  
+  languageBarChartData.value = {
+    labels: languages,
+    datasets: languageDatasets
+  }
+
+  // Generate editor bar chart data
+  const editors = [...new Set(editorComparison.value.map(e => e.editor))]
+  
+  const editorDatasets = teams.map((team, index) => {
+    const colorIndex = index % teamColors.length
+    return {
+      label: team,
+      data: editors.map(editor => {
+        const editorData = editorComparison.value.find(e => e.editor === editor && e.team === team)
+        return editorData ? editorData.active_users : 0
+      }),
+      backgroundColor: teamColors[colorIndex].border,
+      borderColor: teamColors[colorIndex].border,
+      borderWidth: 1
+    }
+  })
+  
+  editorBarChartData.value = {
+    labels: editors,
+    datasets: editorDatasets
+  }
+}
+
 // Chart colors for different teams
 const teamColors = [
   { bg: 'rgba(75, 192, 192, 0.2)', border: 'rgba(75, 192, 192, 1)' },
@@ -524,6 +574,8 @@ const updateChartData = () => {
     githubPrChartData.value = { labels: [], datasets: [] }
     languageComparison.value = []
     editorComparison.value = []
+    languageBarChartData.value = { labels: [], datasets: [] }
+    editorBarChartData.value = { labels: [], datasets: [] }
     return
   }
 
@@ -667,6 +719,9 @@ const updateChartData = () => {
   // Update comparison tables
   languageComparison.value = generateMockLanguageData()
   editorComparison.value = generateMockEditorData()
+  
+  // Generate bar chart data
+  generateBarChartData()
 }
 
 // Watch for changes in selected teams and update charts
