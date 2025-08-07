@@ -1,7 +1,7 @@
-import { requireAuthorization } from '~/server/modules/authorization'
-
 export default defineOAuthMicrosoftEventHandler({
   async onSuccess(event, { user, tokens }) {
+    const config = useRuntimeConfig(event)
+    
     await setUserSession(event, {
       user: {
         microsoftId: user.id,
@@ -15,8 +15,37 @@ export default defineOAuthMicrosoftEventHandler({
       }
     })
 
-    // Check authorization after setting user session
-    await requireAuthorization(event)
+    // Check authorization if configured
+    if (config.authorizedUsers && config.authorizedUsers.trim() !== '') {
+      const { user: sessionUser } = await getUserSession(event)
+      
+      if (!sessionUser) {
+        throw createError({
+          statusCode: 401,
+          statusMessage: 'Authentication required'
+        })
+      }
+
+      const username = sessionUser.login || sessionUser.name || sessionUser.email || sessionUser.microsoftId?.toString()
+      if (!username) {
+        throw createError({
+          statusCode: 401,
+          statusMessage: 'Unable to determine user identity'
+        })
+      }
+
+      const authorizedUsers = config.authorizedUsers
+        .split(',')
+        .map(user => user.trim().toLowerCase())
+        .filter(user => user.length > 0)
+
+      if (authorizedUsers.length > 0 && !authorizedUsers.includes(username.toLowerCase())) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Access denied. User not authorized to access this application.'
+        })
+      }
+    }
 
     return sendRedirect(event, '/')
   },

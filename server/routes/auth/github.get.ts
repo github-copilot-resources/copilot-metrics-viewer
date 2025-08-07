@@ -1,5 +1,4 @@
 import type { FetchError } from 'ofetch'
-import { requireAuthorization } from '~/server/modules/authorization'
 
 export default defineOAuthGitHubEventHandler({
   config: {
@@ -22,9 +21,36 @@ export default defineOAuthGitHubEventHandler({
       }
     })
 
-    // Check authorization after setting user session
-    if (config.githubAppId || config.authorizedUsers) {
-      await requireAuthorization(event)
+    // Check authorization if configured
+    if ((config.githubAppId || config.authorizedUsers) && config.authorizedUsers && config.authorizedUsers.trim() !== '') {
+      const { user: sessionUser } = await getUserSession(event)
+      
+      if (!sessionUser) {
+        throw createError({
+          statusCode: 401,
+          statusMessage: 'Authentication required'
+        })
+      }
+
+      const username = sessionUser.login || sessionUser.name || sessionUser.githubId?.toString()
+      if (!username) {
+        throw createError({
+          statusCode: 401,
+          statusMessage: 'Unable to determine user identity'
+        })
+      }
+
+      const authorizedUsers = config.authorizedUsers
+        .split(',')
+        .map(user => user.trim().toLowerCase())
+        .filter(user => user.length > 0)
+
+      if (authorizedUsers.length > 0 && !authorizedUsers.includes(username.toLowerCase())) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Access denied. User not authorized to access this application.'
+        })
+      }
     }
 
     // need to check if this is public app (no default org/team/ent)
