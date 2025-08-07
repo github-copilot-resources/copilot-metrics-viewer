@@ -75,6 +75,12 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     githubToken: '',
+    // GitHub App credentials for API calls (decoupled from user auth)
+    githubAppId: '',
+    githubAppPrivateKey: '',
+    githubAppInstallationId: '',
+    // Authorization settings
+    authorizedUsers: '',
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,
@@ -84,6 +90,15 @@ export default defineNuxtConfig({
       github: {
         clientId: '',
         clientSecret: ''
+      },
+      google: {
+        clientId: '',
+        clientSecret: ''
+      },
+      microsoft: {
+        clientId: '',
+        clientSecret: '',
+        tenant: ''
       }
     },
     public: {

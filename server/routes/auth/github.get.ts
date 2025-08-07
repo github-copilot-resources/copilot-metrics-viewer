@@ -1,4 +1,5 @@
-import type FetchError from 'ofetch';
+import type { FetchError } from 'ofetch'
+import { requireAuthorization } from '~/server/modules/authorization'
 
 export default defineOAuthGitHubEventHandler({
   config: {
@@ -12,14 +13,19 @@ export default defineOAuthGitHubEventHandler({
       user: {
         githubId: user.id,
         name: user.name,
+        login: user.login,
         avatarUrl: user.avatar_url
       },
       secure: {
         tokens,
         expires_at: new Date(Date.now() + tokens.expires_in * 1000)
       }
+    })
+
+    // Check authorization after setting user session
+    if (config.githubAppId || config.authorizedUsers) {
+      await requireAuthorization(event)
     }
-    )
 
     // need to check if this is public app (no default org/team/ent)
     if (config.public.isPublicApp) {
@@ -47,7 +53,7 @@ export default defineOAuthGitHubEventHandler({
 
         return sendRedirect(event, `/orgs/${organizations[0]}`);
       }
-      catch (error: FetchError) {
+      catch (error: unknown) {
         logger.error('Error fetching installations:', error);
       }
     }
@@ -57,6 +63,6 @@ export default defineOAuthGitHubEventHandler({
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {
     console.error('GitHub OAuth error:', error)
-    return sendRedirect(event, '/')
+    return sendRedirect(event, '/?error=GitHub authentication failed')
   },
 })

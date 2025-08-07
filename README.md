@@ -165,6 +165,8 @@ For more information see [Nuxt Sessions and Authentication](https://nuxt.com/doc
 
 #### NUXT_PUBLIC_USING_GITHUB_AUTH
 
+**Deprecated in v2.1.0+** - Use the new authentication scheme below for better security and flexibility.
+
 Default is `false`. When set to `true`, GitHub OAuth App Authentication will be performed to verify users' access to the dashboard.
 
 Variables required for GitHub Auth are:
@@ -174,6 +176,102 @@ Variables required for GitHub Auth are:
 
 >[!WARNING]
 > Only users with permissions (scopes listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN)) can view copilot metrics, GitHub uses the authenticated users permissions to make API calls for data.
+
+## New Authentication Schemes (v2.1.0+)
+
+Starting from version 2.1.0, the application supports decoupled authentication where user authentication is separate from GitHub API credentials. This provides better security and flexibility.
+
+### Authentication Methods
+
+The application supports multiple authentication schemes in order of priority:
+
+1. **GitHub App Authentication (Recommended)** - Uses GitHub App credentials for API calls, separate from user authentication
+2. **Personal Access Token** - Uses a fixed token for both authentication and API calls (legacy mode)
+3. **User OAuth Token** - Uses authenticated user's token for API calls (deprecated)
+
+### GitHub App Authentication (Recommended)
+
+This is the most secure approach where a GitHub App provides API access while users authenticate via various OAuth providers.
+
+**Required Environment Variables:**
+```bash
+# GitHub App for API calls (separate from user authentication)
+NUXT_GITHUB_APP_ID=your_github_app_id
+NUXT_GITHUB_APP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+NUXT_GITHUB_APP_INSTALLATION_ID=your_installation_id
+
+# Optional: Restrict access to specific users
+NUXT_AUTHORIZED_USERS=alice,bob,charlie
+```
+
+**Benefits:**
+- Decouples user authentication from GitHub API access
+- Users don't need GitHub API permissions
+- Supports multiple OAuth providers (GitHub, Google, Microsoft, etc.)
+- Better security through principle of least privilege
+
+### User Authorization
+
+When using GitHub App authentication, you can optionally restrict access using:
+
+- **NUXT_AUTHORIZED_USERS** - Comma-separated list of usernames authorized to access the dashboard
+  - If not set, all authenticated users are allowed
+  - Usernames are matched case-insensitively
+  - Works with any OAuth provider (uses `login`, `name`, or user ID)
+
+Example:
+```bash
+NUXT_AUTHORIZED_USERS=alice,bob@company.com,charlie
+```
+
+### Supported OAuth Providers
+
+The application supports 20+ OAuth providers through nuxt-auth-utils:
+
+- **GitHub** - `/auth/github`
+- **Google** - `/auth/google` 
+- **Microsoft** - `/auth/microsoft`
+- Auth0, AWS Cognito, Discord, Facebook, GitLab, LinkedIn, and more
+
+**Configuration Examples:**
+
+GitHub OAuth:
+```bash
+NUXT_OAUTH_GITHUB_CLIENT_ID=your_github_client_id
+NUXT_OAUTH_GITHUB_CLIENT_SECRET=your_github_client_secret
+```
+
+Google OAuth:
+```bash
+NUXT_OAUTH_GOOGLE_CLIENT_ID=your_google_client_id
+NUXT_OAUTH_GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+Microsoft OAuth:
+```bash
+NUXT_OAUTH_MICROSOFT_CLIENT_ID=your_microsoft_client_id
+NUXT_OAUTH_MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret
+NUXT_OAUTH_MICROSOFT_TENANT=your_tenant_id_or_common
+```
+
+### GitHub App Setup
+
+1. Create a GitHub App in your organization/enterprise settings
+2. Generate a private key and save it securely
+3. Install the app in your organization/enterprise
+4. Grant the following permissions:
+   - Repository: `metadata:read`
+   - Organization: `administration:read`, `billing:read`
+   - Enterprise: `administration:read`, `billing:read` (if using enterprise scope)
+
+### Migration from Legacy Authentication
+
+If you're currently using `NUXT_PUBLIC_USING_GITHUB_AUTH=true`, you can migrate to the new system:
+
+1. Set up a GitHub App (recommended) or keep using PAT
+2. Configure OAuth providers for user authentication
+3. Optionally set `NUXT_AUTHORIZED_USERS` for access control
+4. Remove `NUXT_PUBLIC_USING_GITHUB_AUTH` (will default to false)
 
 #### Support for HTTP Proxy HTTP_PROXY
 
