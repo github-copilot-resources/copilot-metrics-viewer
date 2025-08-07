@@ -11,11 +11,11 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-4"
                         <div v-bind="props" class="text-h6 mb-1">Total Assigned  </div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of Copilot seats assigned within the current organization/enterprise.</span>
+                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of Copilot seats assigned {{ isTeamView ? `to team "${currentTeam}"` : 'within the current organization/enterprise' }}.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">
-                        Currently assigned seats
+                        {{ isTeamView ? `Seats assigned to team "${currentTeam}"` : 'Currently assigned seats' }}
                     </div>
                     <p class="text-h4">{{ totalSeats.length }}</p>
                 </div>
@@ -33,7 +33,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                         <div v-bind="props" class="text-h6 mb-1">Assigned But Never Used</div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric shows seats that were assigned but never used within the current organization/enterprise. The assigned timestamp is also displayed in the chart.</span>
+                        <span class="text-caption" style="font-size: 10px !important;">This metric shows seats that were assigned but never used {{ isTeamView ? `within team "${currentTeam}"` : 'within the current organization/enterprise' }}. The assigned timestamp is also displayed in the chart.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">
@@ -108,7 +108,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, watchEffect } from 'vue';
+  import { defineComponent, ref, watchEffect, computed } from 'vue';
   import type { Seat } from '@/model/Seat';
   import {
     Chart as ChartJS,
@@ -156,14 +156,27 @@ setup(props) {
 
         watchEffect(() => {
             if (props.seats && Array.isArray(props.seats)) {
-                totalSeats.value = props.seats;
+                // Filter seats by team if we're on a team-specific route
+                const config = useRuntimeConfig();
+                const route = useRoute();
+                let filteredSeats = props.seats;
+                
+                // Check if we're on a team-specific URL
+                if (config.public.scope?.includes('team') && config.public.githubTeam) {
+                    const teamName = config.public.githubTeam;
+                    filteredSeats = props.seats.filter(seat => 
+                        seat.team && seat.team.toLowerCase() === teamName.toLowerCase()
+                    );
+                }
+                
+                totalSeats.value = filteredSeats;
 
                 const oneWeekAgo = new Date();
                 const thirtyDaysAgo = new Date();
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-                props.seats.forEach(seat => {
+                filteredSeats.forEach(seat => {
                     if(!seat.last_activity_at) {
                         noshowCount++;
                     } else {
@@ -197,11 +210,18 @@ setup(props) {
         unusedSeatsInSevenDays.value = unusedIn7Count;
         unusedSeatsInThirtyDays.value = unusedIn30Count;
 
+        // Add computed properties for team filtering info
+        const config = useRuntimeConfig();
+        const isTeamView = computed(() => config.public.scope?.includes('team') && config.public.githubTeam);
+        const currentTeam = computed(() => config.public.githubTeam || '');
+
         return {
             totalSeats,
             noshowSeats: noshowSeats,
             unusedSeatsInSevenDays: unusedSeatsInSevenDays,
-            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays
+            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays,
+            isTeamView,
+            currentTeam
         }
 },
 data() {
