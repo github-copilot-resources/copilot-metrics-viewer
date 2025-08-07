@@ -140,7 +140,8 @@
                         </v-card>
                     </v-tooltip>
                     <div class="chart-container">
-                        <LineChart v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData"
+                        <LineChart
+v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData"
                             :options="chartOptions" />
                     </div>
 
@@ -166,7 +167,8 @@
                                 IDE Code Completions Models ({{ stats.ideCodeCompletionModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
-                                <v-data-table :headers="codeCompletionHeaders" :items="stats.ideCodeCompletionModels"
+                                <v-data-table
+:headers="codeCompletionHeaders" :items="stats.ideCodeCompletionModels"
                                     class="elevation-1" item-key="name" />
                             </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -177,7 +179,8 @@
                                 IDE Chat Models ({{ stats.ideChatModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
-                                <v-data-table :headers="ideChatHeaders" :items="stats.ideChatModels" class="elevation-1"
+                                <v-data-table
+:headers="ideChatHeaders" :items="stats.ideChatModels" class="elevation-1"
                                     item-key="name" />
                             </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -188,7 +191,8 @@
                                 GitHub.com Chat Models ({{ stats.dotcomChatModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
-                                <v-data-table :headers="dotcomChatHeaders" :items="stats.dotcomChatModels"
+                                <v-data-table
+:headers="dotcomChatHeaders" :items="stats.dotcomChatModels"
                                     class="elevation-1" item-key="name" />
                             </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -199,7 +203,8 @@
                                 GitHub.com PR Summary Models ({{ stats.dotcomPRModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
-                                <v-data-table :headers="dotcomPRHeaders" :items="stats.dotcomPRModels"
+                                <v-data-table
+:headers="dotcomPRHeaders" :items="stats.dotcomPRModels"
                                     class="elevation-1" item-key="name" />
                             </v-expansion-panel-text>
                         </v-expansion-panel>
@@ -218,7 +223,8 @@
                         </v-card>
                     </v-tooltip>
                     <div class="chart-container">
-                        <BarChart v-if="stats.modelUsageChartData.labels.length" :data="stats.modelUsageChartData"
+                        <BarChart
+v-if="stats.modelUsageChartData.labels.length" :data="stats.modelUsageChartData"
                             :options="barChartOptions" />
                     </div>
                 </div>
