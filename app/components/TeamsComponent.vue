@@ -24,15 +24,21 @@
                     chips
                     clearable
                     variant="outlined"
+                    :menu-props="{
+                      contentClass: 'teams-select-menu',
+                      maxHeight: 360,
+                      scrim: false,
+                      closeOnContentClick: false,
+                      offset: 8
+                    }"
                     :hint="`Select multiple teams from your ${scopeType} to compare their metrics`"
                     persistent-hint
                   >
                     <template #chip="{ props, item }">
                       <v-chip
                         v-bind="props"
+                        class="select-chip"
                         :text="item.raw.name"
-                        color="primary"
-                        variant="outlined"
                         closable
                       />
                     </template>
@@ -68,8 +74,7 @@
                   v-for="team in selectedTeamObjects"
                   :key="team.slug"
                   :href="getTeamDetailUrl(team.slug)"
-                  color="primary"
-                  variant="tonal"
+                  class="selected-team-chip"
                   target="_blank"
                   link
                 >
@@ -232,7 +237,7 @@
             <v-card class="pa-4">
               <v-card-title class="text-h6">Language Usage by Team</v-card-title>
               <v-card-text>
-                <div v-if="languageBarChartData.datasets.length > 0">
+                <div v-if="languageBarChartData.datasets.length > 0" class="bar-chart-container">
                   <Bar :data="languageBarChartData" :options="barChartOptions" />
                 </div>
                 <div v-else class="text-center text-medium-emphasis py-8">
@@ -246,7 +251,7 @@
             <v-card class="pa-4">
               <v-card-title class="text-h6">Editor Usage by Team</v-card-title>
               <v-card-text>
-                <div v-if="editorBarChartData.datasets.length > 0">
+                <div v-if="editorBarChartData.datasets.length > 0" class="bar-chart-container">
                   <Bar :data="editorBarChartData" :options="barChartOptions" />
                 </div>
                 <div v-else class="text-center text-medium-emphasis py-8">
@@ -398,19 +403,24 @@ const chartOptions = {
 // Bar chart options
 const barChartOptions = {
   responsive: true,
-  maintainAspectRatio: true,
+  maintainAspectRatio: false,
   scales: {
     y: {
-      beginAtZero: true
+      beginAtZero: true,
+      ticks: { precision: 0 }
+    },
+    x: {
+      ticks: { maxRotation: 0, autoSkip: true }
     }
   },
+  plugins: {
+    legend: { position: 'top' as const }
+  },
   layout: {
-    padding: {
-      left: 20,
-      right: 20,
-      top: 20,
-      bottom: 20
-    }
+    padding: { left: 12, right: 12, top: 8, bottom: 8 }
+  },
+  elements: {
+    bar: { borderWidth: 1 }
   }
 }
 
@@ -729,6 +739,90 @@ watch(selectedTeams, updateChartData, { immediate: true })
 </script>
 
 <style scoped>
+:deep(.teams-select-menu) {
+  max-height: 360px;
+  overflow-y: auto;
+  background-color: var(--v-theme-surface, #fff) !important;
+  box-shadow: 0 6px 24px rgba(59, 75, 191, 0.15);
+  border: 1px solid var(--app-accent-weak);
+  z-index: 2000;
+  border-radius: 8px;
+  min-width: unset;
+}
+
+/* Ensure Bar charts scale correctly within their cards */
+.bar-chart-container {
+  position: relative;
+  width: 100%;
+  /* Responsive height: min 240px, prefer 40vh, cap at 380px */
+  height: clamp(240px, 40vh, 380px);
+}
+.bar-chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 960px) {
+  .bar-chart-container {
+    height: clamp(220px, 35vh, 340px);
+  }
+}
+
+/* Selected chips: light blue background, black text */
+:deep(.v-select .v-chip),
+:deep(.v-select .v-chip--selected) {
+  background-color: var(--app-accent-weak) !important;
+  color: #000 !important;
+  border-color: var(--app-accent-weak) !important;
+}
+:deep(.v-select .v-chip .v-chip__overlay),
+:deep(.v-select .v-chip--selected .v-chip__overlay) {
+  background: transparent !important;
+}
+:deep(.v-select .v-chip .v-chip__underlay),
+:deep(.v-select .v-chip--selected .v-chip__underlay) {
+  background-color: var(--app-accent-weak) !important;
+}
+:deep(.v-select .v-chip .v-icon),
+:deep(.v-select .v-chip--selected .v-icon) {
+  color: #000 !important;
+}
+:deep(.v-select .v-chip .v-chip__content),
+:deep(.v-select .v-chip--selected .v-chip__content) {
+  color: #000 !important;
+}
+
+/* Quick-links chips below: same readable palette */
+:deep(.selected-team-chip) {
+  background-color: var(--app-accent-weak) !important;
+  color: #000 !important;
+  border-color: var(--app-accent-weak) !important;
+}
+:deep(.selected-team-chip .v-chip__overlay) {
+  background: transparent !important;
+}
+:deep(.selected-team-chip .v-chip__underlay) {
+  background-color: var(--app-accent-weak) !important;
+}
+:deep(.selected-team-chip .v-icon) {
+  color: #000 !important;
+}
+:deep(.selected-team-chip .v-chip__content) {
+  color: #000 !important;
+}
+
+:deep(.teams-select-menu .v-list) {
+  padding: 8px 0;
+}
+
+:deep(.teams-select-menu .v-list-item) {
+  min-height: 40px;
+}
+
+:deep(.teams-select-menu .v-checkbox .v-selection-control) {
+  align-items: center;
+}
+
 .tiles-container {
   display: flex;
   flex-wrap: wrap;
