@@ -608,8 +608,8 @@ export default defineComponent({
                 // Traverse path for nested value
                 let val: unknown = usageDay
                 for (const segment of path) {
-                  // Dynamic traversal through nested objects; cast to indexable
-                  val = (val as Record<string, unknown> | undefined)?.[segment]
+                  // Dynamic traversal through nested objects using optional chaining
+                  val = val?.[segment]
                   if (val == null) break
                 }
                 return (typeof val === 'number') ? val : 0
