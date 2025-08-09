@@ -1,3 +1,20 @@
+/* App theme variables */
+:root {
+  /* Use Vuetify primary as the single source of truth for accent */
+  --app-accent: var(--v-theme-primary, #1976D2);
+  /* Fallback translucent variants (based on #1976D2) */
+  --app-accent-weak: rgba(25, 118, 210, 0.10);    /* subtle bg */
+  --app-accent-overlay: rgba(25, 118, 210, 0.12); /* tab overlay */
+}
+
+/* Prefer dynamic derivation when supported */
+@supports (color: color-mix(in srgb, red, transparent)) {
+  :root {
+    --app-accent-weak: color-mix(in srgb, var(--app-accent), transparent 90%);
+    --app-accent-overlay: color-mix(in srgb, var(--app-accent), transparent 88%);
+  }
+}
+
 .tiles-container {
     display: flex;
     justify-content: flex-start;
@@ -34,7 +51,7 @@
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background-color: rgba(44, 32, 157, 0.557) !important;
+  background-color: var(--app-accent-overlay) !important;
     pointer-events: none !important;
     z-index: 1 !important;
   }
@@ -60,7 +77,7 @@
 
   /* Fix button hover styles - light gray background */
   .v-btn:hover {
-    background-color: rgba(63, 81, 181, 0.1) !important;
+  background-color: var(--app-accent-weak) !important;
   }
   
   .v-btn:hover .v-btn__overlay {
@@ -75,4 +92,109 @@
   /* Override Vuetify's default overlay behavior for variant-text buttons in tabs */
   .v-tab .v-btn--variant-text .v-btn__overlay {
     background: transparent !important;
+  }
+
+  /* Teams dropdown menu: global surface fallback and panel styling */
+  .v-overlay__content.teams-select-menu {
+  background-color: var(--v-theme-surface, #fff) !important;
+  border: 1px solid var(--app-accent-weak);
+    box-shadow: 0 6px 24px rgba(56, 79, 184, 0.15);
+    border-radius: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+    min-width: 320px;
+    z-index: 2000;
+  }
+
+  /* Hover highlight inside teams dropdown aligns with tab/button accent */
+  .v-overlay__content.teams-select-menu .v-list-item:hover {
+    background-color: var(--app-accent-weak) !important;
+  }
+
+  /* Ensure readable black text and remove dark overlay on items */
+  .v-overlay__content.teams-select-menu .v-list-item,
+  .v-overlay__content.teams-select-menu .v-list-item .v-list-item-title,
+  .v-overlay__content.teams-select-menu .v-list-item .v-list-item-subtitle,
+  .v-overlay__content.teams-select-menu .v-list-item .v-icon,
+  .v-overlay__content.teams-select-menu .v-list-item .v-selection-control .v-icon {
+    color: #000 !important;
+  }
+  .v-overlay__content.teams-select-menu .v-list-item .v-list-item__overlay,
+  .v-overlay__content.teams-select-menu .v-list-item--active .v-list-item__overlay {
+    background: transparent !important;
+  }
+  /* Keep selected item highlighted with same light blue as hover */
+  .v-overlay__content.teams-select-menu .v-list-item--active {
+    background-color: var(--app-accent-weak) !important;
+  }
+
+  .v-overlay__content.teams-select-menu .v-list {
+    padding: 8px 0;
+  }
+
+  .v-overlay__content.teams-select-menu .v-list-item {
+    min-height: 40px;
+  }
+
+  /* Chips palette: light primary tint background + black text/icons */
+  .v-chip.select-chip,
+  .v-chip.selected-team-chip {
+    background-color: var(--app-accent-weak) !important;
+    color: #000 !important;
+    border-color: var(--app-accent-weak) !important;
+    background-image: none !important;
+  }
+  .v-chip.select-chip .v-chip__overlay,
+  .v-chip.selected-team-chip .v-chip__overlay {
+    background: transparent !important;
+  }
+  .v-chip.select-chip .v-chip__underlay,
+  .v-chip.selected-team-chip .v-chip__underlay {
+    background-color: var(--app-accent-weak) !important;
+  }
+  .v-chip.select-chip:hover .v-chip__overlay,
+  .v-chip.selected-team-chip:hover .v-chip__overlay {
+    background: transparent !important;
+  }
+  .v-chip.select-chip .v-icon,
+  .v-chip.selected-team-chip .v-icon,
+  .v-chip.select-chip .v-chip__content,
+  .v-chip.selected-team-chip .v-chip__content {
+    color: #000 !important;
+  }
+
+  /* Data table pagination & items-per-page menu styling */
+  /* Ensure pagination toolbar inherits surface background and consistent spacing */
+  .v-data-table .v-data-table-footer { 
+    background-color: var(--v-theme-surface, #fff) !important;
+  }
+
+  /* Items-per-page activator button */
+  .v-data-table .v-data-table-footer .v-field { 
+    min-width: 90px; 
+  }
+
+  /* Dropdown menu for items-per-page (was showing black background entries) */
+  .v-overlay__content .v-list-item[role="option"] { 
+    background: #fff !important; 
+    color: #000 !important; 
+  }
+  .v-overlay__content .v-list-item[role="option"] .v-list-item-title { 
+    color: #000 !important; 
+  }
+  .v-overlay__content .v-list-item[role="option"]:hover { 
+    background: var(--app-accent-weak) !important; 
+  }
+  .v-overlay__content .v-list-item[role="option"].v-list-item--active { 
+    background: var(--app-accent-weak) !important; 
+  }
+
+  /* Remove dark overlay layer inside those list items */
+  .v-overlay__content .v-list-item[role="option"] .v-list-item__overlay { 
+    background: transparent !important; 
+  }
+
+  /* Pagination buttons hover state unify with buttons */
+  .v-data-table .v-data-table-footer .v-btn:hover { 
+    background-color: var(--app-accent-weak) !important; 
   }

@@ -11,11 +11,11 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-4"
                         <div v-bind="props" class="text-h6 mb-1">Total Assigned  </div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of Copilot seats assigned within the current organization/enterprise.</span>
+                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of Copilot seats assigned {{ isTeamView ? `to team "${currentTeam}"` : 'within the current organization/enterprise' }}.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">
-                        Currently assigned seats
+                        {{ isTeamView ? `Seats assigned to team "${currentTeam}"` : 'Currently assigned seats' }}
                     </div>
                     <p class="text-h4">{{ totalSeats.length }}</p>
                 </div>
@@ -33,7 +33,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                         <div v-bind="props" class="text-h6 mb-1">Assigned But Never Used</div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric shows seats that were assigned but never used within the current organization/enterprise. The assigned timestamp is also displayed in the chart.</span>
+                        <span class="text-caption" style="font-size: 10px !important;">This metric shows seats that were assigned but never used {{ isTeamView ? `within team "${currentTeam}"` : 'within the current organization/enterprise' }}. The assigned timestamp is also displayed in the chart.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">
@@ -96,7 +96,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                         <td>{{ item.login }}</td>
                         <td>{{ item.id }}</td>
                         <td>{{ item.team }}</td>
-                        <td>{{ item.created_at }}</td>
+                        <td>{{ item.created_at }} {{ item.plan_type }}</td>
                         <td>{{ item.last_activity_at }}</td>
                         <td>{{ item.last_activity_editor }}</td>
                     </tr>
@@ -108,7 +108,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
 </template>
   
 <script lang="ts">
-  import { defineComponent, ref, watchEffect } from 'vue';
+  import { defineComponent, ref, watchEffect, computed } from 'vue';
   import type { Seat } from '@/model/Seat';
   import {
     Chart as ChartJS,
@@ -197,11 +197,18 @@ setup(props) {
         unusedSeatsInSevenDays.value = unusedIn7Count;
         unusedSeatsInThirtyDays.value = unusedIn30Count;
 
+        // Add computed properties for team filtering info
+        const config = useRuntimeConfig();
+        const isTeamView = computed(() => config.public.scope?.includes('team') && config.public.githubTeam);
+        const currentTeam = computed(() => config.public.githubTeam || '');
+
         return {
             totalSeats,
             noshowSeats: noshowSeats,
             unusedSeatsInSevenDays: unusedSeatsInSevenDays,
-            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays
+            unusedSeatsInThirtyDays: unusedSeatsInThirtyDays,
+            isTeamView,
+            currentTeam
         }
 },
 data() {

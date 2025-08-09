@@ -5,6 +5,7 @@ export class Seat {
     created_at: string;
     last_activity_at: string;
     last_activity_editor: string;
+    plan_type: string;
 
     constructor(data: any) {
         this.login = data.assignee ? data.assignee.login : 'deprecated';
@@ -13,6 +14,7 @@ export class Seat {
         this.created_at = data.created_at;
         this.last_activity_at = data.last_activity_at;
         this.last_activity_editor = data.last_activity_editor;
+        this.plan_type = data.plan_type;
     }
 }
 
