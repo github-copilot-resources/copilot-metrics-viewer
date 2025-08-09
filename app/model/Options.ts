@@ -335,7 +335,7 @@ export class Options {
                 throw new Error(`Invalid scope: ${this.scope}`);
         }
     }
-
+    
     /**
      * Get the Teams API URL based on scope and configuration
      */
@@ -356,6 +356,32 @@ export class Options {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
                 }
                 return `${baseUrl}/enterprises/${this.githubEnt}/teams`;
+
+            default:
+                throw new Error(`Invalid scope: ${this.scope}`);
+        }
+    }
+
+    /**
+     * Get the Teams API URL based on scope and configuration
+     */
+    getTeamMembersApiUrl(): string {
+        const baseUrl = 'https://api.github.com';
+
+        switch (this.scope) {
+            case 'team-organization':
+            case 'organization':
+                if (!this.githubOrg || !this.githubTeam) {
+                    throw new Error('GitHub organization and team must be set for organization scope');
+                }
+                return `${baseUrl}/orgs/${this.githubOrg}/teams/${this.githubTeam}/members`;
+
+            case 'team-enterprise':
+            case 'enterprise':
+                if (!this.githubEnt || !this.githubTeam) {
+                    throw new Error('GitHub enterprise and team must be set for enterprise scope');
+                }
+                return `${baseUrl}/enterprises/${this.githubEnt}/teams/${this.githubTeam}/members`;
 
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);
