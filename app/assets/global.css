@@ -162,3 +162,39 @@
   .v-chip.selected-team-chip .v-chip__content {
     color: #000 !important;
   }
+
+  /* Data table pagination & items-per-page menu styling */
+  /* Ensure pagination toolbar inherits surface background and consistent spacing */
+  .v-data-table .v-data-table-footer { 
+    background-color: var(--v-theme-surface, #fff) !important;
+  }
+
+  /* Items-per-page activator button */
+  .v-data-table .v-data-table-footer .v-field { 
+    min-width: 90px; 
+  }
+
+  /* Dropdown menu for items-per-page (was showing black background entries) */
+  .v-overlay__content .v-list-item[role="option"] { 
+    background: #fff !important; 
+    color: #000 !important; 
+  }
+  .v-overlay__content .v-list-item[role="option"] .v-list-item-title { 
+    color: #000 !important; 
+  }
+  .v-overlay__content .v-list-item[role="option"]:hover { 
+    background: var(--app-accent-weak) !important; 
+  }
+  .v-overlay__content .v-list-item[role="option"].v-list-item--active { 
+    background: var(--app-accent-weak) !important; 
+  }
+
+  /* Remove dark overlay layer inside those list items */
+  .v-overlay__content .v-list-item[role="option"] .v-list-item__overlay { 
+    background: transparent !important; 
+  }
+
+  /* Pagination buttons hover state unify with buttons */
+  .v-data-table .v-data-table-footer .v-btn:hover { 
+    background-color: var(--app-accent-weak) !important; 
+  }

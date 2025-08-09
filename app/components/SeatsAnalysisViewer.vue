@@ -96,7 +96,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                         <td>{{ item.login }}</td>
                         <td>{{ item.id }}</td>
                         <td>{{ item.team }}</td>
-                        <td>{{ item.created_at }}</td>
+                        <td>{{ item.created_at }} {{ item.plan_type }}</td>
                         <td>{{ item.last_activity_at }}</td>
                         <td>{{ item.last_activity_editor }}</td>
                     </tr>
@@ -156,6 +156,7 @@ setup(props) {
 
         watchEffect(() => {
             if (props.seats && Array.isArray(props.seats)) {
+                totalSeats.value = props.seats;
 
                 const oneWeekAgo = new Date();
                 const thirtyDaysAgo = new Date();
