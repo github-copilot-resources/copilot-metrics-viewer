@@ -128,16 +128,16 @@ export class Options {
             scope: (params.get('scope') as Scope) || undefined,
             locale: params.get('locale') || undefined
         });
-        
+
         // Only set boolean properties if they're explicitly provided
         if (params.has('isDataMocked')) {
             options.isDataMocked = params.get('isDataMocked') === 'true';
         }
-        
+
         if (params.has('excludeHolidays')) {
             options.excludeHolidays = params.get('excludeHolidays') === 'true';
         }
-        
+
         return options;
     }
 
@@ -151,16 +151,16 @@ export class Options {
             scope: (query.scope as Scope) || undefined,
             locale: query.locale as string | undefined
         });
-        
+
         // Only set boolean properties if they're explicitly provided
         if (query.isDataMocked !== undefined) {
             options.isDataMocked = query.isDataMocked === 'true';
         }
-        
+
         if (query.excludeHolidays !== undefined) {
             options.excludeHolidays = query.excludeHolidays === 'true';
         }
-        
+
         return options;
     }
 
@@ -209,7 +209,7 @@ export class Options {
      */
     toObject(): OptionsData {
         const result: OptionsData = {};
-        
+
         if (this.since !== undefined) result.since = this.since;
         if (this.until !== undefined) result.until = this.until;
         if (this.isDataMocked !== undefined) result.isDataMocked = this.isDataMocked;
@@ -219,7 +219,7 @@ export class Options {
         if (this.scope !== undefined) result.scope = this.scope;
         if (this.excludeHolidays !== undefined) result.excludeHolidays = this.excludeHolidays;
         if (this.locale !== undefined) result.locale = this.locale;
-        
+
         return result;
     }
 
@@ -287,7 +287,7 @@ export class Options {
                 if (!this.githubEnt || !this.githubTeam) {
                     throw new Error('GitHub enterprise and team must be set for team-enterprise scope');
                 }
-                url= `${baseUrl}/enterprises/${this.githubEnt}/team/${this.githubTeam}/copilot/metrics`;
+                url = `${baseUrl}/enterprises/${this.githubEnt}/team/${this.githubTeam}/copilot/metrics`;
                 break;
 
             case 'enterprise':
@@ -311,7 +311,7 @@ export class Options {
     }
 
     /**
-     * Get the API URL based on scope and configuration
+     * Get the Seats API URL based on scope and configuration
      */
     getSeatsApiUrl(): string {
         const baseUrl = 'https://api.github.com';
@@ -329,12 +329,37 @@ export class Options {
                 if (!this.githubEnt) {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
                 }
-                return`${baseUrl}/enterprises/${this.githubEnt}/copilot/billing/seats`;
+                return `${baseUrl}/enterprises/${this.githubEnt}/copilot/billing/seats`;
 
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);
         }
+    }
 
+    /**
+     * Get the Teams API URL based on scope and configuration
+     */
+    getTeamsApiUrl(): string {
+        const baseUrl = 'https://api.github.com';
+
+        switch (this.scope) {
+            case 'team-organization':
+            case 'organization':
+                if (!this.githubOrg) {
+                    throw new Error('GitHub organization must be set for organization scope');
+                }
+                return `${baseUrl}/orgs/${this.githubOrg}/teams`;
+
+            case 'team-enterprise':
+            case 'enterprise':
+                if (!this.githubEnt) {
+                    throw new Error('GitHub enterprise must be set for enterprise scope');
+                }
+                return `${baseUrl}/enterprises/${this.githubEnt}/teams`;
+
+            default:
+                throw new Error(`Invalid scope: ${this.scope}`);
+        }
     }
 
     /**
@@ -355,9 +380,9 @@ export class Options {
         }
     }
 
-        /**
-     * Get the mock data path based on scope
-     */
+    /**
+ * Get the mock data path based on scope
+ */
     getSeatsMockDataPath(): string {
         switch (this.scope) {
             case 'team-organization':

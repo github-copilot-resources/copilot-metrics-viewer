@@ -71,7 +71,7 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :date-range-description="dateRangeDescription" />
-            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" />
+            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" />
             <BreakdownComponent
 v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
               :date-range-description="dateRangeDescription" />
