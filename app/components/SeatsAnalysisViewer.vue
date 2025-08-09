@@ -156,27 +156,13 @@ setup(props) {
 
         watchEffect(() => {
             if (props.seats && Array.isArray(props.seats)) {
-                // Filter seats by team if we're on a team-specific route
-                const config = useRuntimeConfig();
-                const route = useRoute();
-                let filteredSeats = props.seats;
-                
-                // Check if we're on a team-specific URL
-                if (config.public.scope?.includes('team') && config.public.githubTeam) {
-                    const teamName = config.public.githubTeam;
-                    filteredSeats = props.seats.filter(seat => 
-                        seat.team && seat.team.toLowerCase() === teamName.toLowerCase()
-                    );
-                }
-                
-                totalSeats.value = filteredSeats;
 
                 const oneWeekAgo = new Date();
                 const thirtyDaysAgo = new Date();
                 oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-                filteredSeats.forEach(seat => {
+                props.seats.forEach(seat => {
                     if(!seat.last_activity_at) {
                         noshowCount++;
                     } else {
