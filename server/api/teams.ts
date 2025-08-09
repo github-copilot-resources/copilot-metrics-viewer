@@ -8,6 +8,7 @@ interface CacheData {
     valid_until: number
 }
 interface Team { name: string; slug: string; description: string }
+interface GitHubTeam { name: string; slug: string; description?: string }
 
 class TeamsError extends Error {
     statusCode: number
@@ -93,7 +94,6 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     let nextUrl: string | null = `${baseUrl}?per_page=100`
     let page = 1
 
-    interface GitHubTeam { name: string; slug: string; description?: string }
     while (nextUrl) {
         logger.info(`Fetching teams page ${page} from ${nextUrl}`)
         const res = await $fetch.raw(nextUrl, {
