@@ -55,7 +55,7 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     const config = useRuntimeConfig()
 
     // Fill missing scope/context from runtime config
-        if (!options.scope && config.public.scope) options.scope = config.public.scope as Scope
+    if (!options.scope && config.public.scope) options.scope = config.public.scope as Scope
     if (!options.githubOrg && config.public.githubOrg) options.githubOrg = config.public.githubOrg
     if (!options.githubEnt && config.public.githubEnt) options.githubEnt = config.public.githubEnt
 
@@ -93,8 +93,8 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     let nextUrl: string | null = `${baseUrl}?per_page=100`
     let page = 1
 
-        interface GitHubTeam { name: string; slug: string; description?: string }
-        while (nextUrl) {
+    interface GitHubTeam { name: string; slug: string; description?: string }
+    while (nextUrl) {
         logger.info(`Fetching teams page ${page} from ${nextUrl}`)
         const res = await $fetch.raw(nextUrl, {
             headers: event.context.headers
