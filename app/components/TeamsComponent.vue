@@ -283,6 +283,7 @@ import { defineComponent, ref, computed, watch, onMounted, type PropType } from 
 import { Line as LineChart, Bar as BarChart } from 'vue-chartjs'
 import { Options } from '@/model/Options'
 import type { ChartData, ChartDataset } from 'chart.js'
+import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -406,10 +407,14 @@ export default defineComponent({
     const loadTeamMetrics = async (teamSlugs: string[]) => {
       const route = useRoute();
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until);
-      const params = { ...options.toParams(), teams: teamSlugs.join(',') }
 
-      
-      return $fetch<TeamMetrics[]>('/api/team-metrics', { params })
+      options.githubTeam = teamSlugs.join(',');
+      const params = options.toParams();
+      const response = await $fetch<MetricsApiResponse>('/api/metrics', { params })
+      return response.metrics as TeamMetrics[]
+
+      // const params = { ...options.toParams(), teams: teamSlugs.join(',') }
+      // return $fetch<TeamMetrics[]>('/api/team-metrics', { params })
     }
 
     const loadTeamComparisons = async (teamSlugs: string[]) => {
@@ -722,5 +727,12 @@ export default defineComponent({
 
 .spacing-10 {
   height: 10px;
+}
+
+.bar-chart-container {
+  position: relative;
+  height: 320px; /* Increased height for better visibility */
+  /* Allow responsive shrink on very narrow screens */
+  max-height: 60vh;
 }
 </style>
