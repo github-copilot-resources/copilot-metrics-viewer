@@ -22,7 +22,7 @@ export default defineOAuthGitHubEventHandler({
     })
 
     // Check authorization if configured
-    if ((config.githubAppId || config.authorizedUsers) && config.authorizedUsers && config.authorizedUsers.trim() !== '') {
+    if (config.authorizedUsers && config.authorizedUsers.trim() !== '') {
       const { user: sessionUser } = await getUserSession(event)
       
       if (!sessionUser) {

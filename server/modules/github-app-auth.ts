@@ -7,6 +7,10 @@ interface GitHubAppConfig {
   installationId: string
 }
 
+// Token expiry constants
+const GITHUB_APP_TOKEN_EXPIRY_SECONDS = 3600 // 1 hour
+const TOKEN_EXPIRY_BUFFER_SECONDS = 300 // 5 minutes
+
 let cachedToken: { token: string; expiresAt: number } | null = null
 
 /**
@@ -63,7 +67,7 @@ export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Pr
 
   // Check if we have a cached token that's still valid (with 5 minute buffer)
   const now = Date.now() / 1000
-  if (cachedToken && cachedToken.expiresAt > now + 300) {
+  if (cachedToken && cachedToken.expiresAt > now + TOKEN_EXPIRY_BUFFER_SECONDS) {
     return cachedToken.token
   }
 
@@ -73,7 +77,7 @@ export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Pr
   // Cache the token (GitHub App installation tokens are valid for 1 hour)
   cachedToken = {
     token,
-    expiresAt: now + 3600 // 1 hour from now
+    expiresAt: now + GITHUB_APP_TOKEN_EXPIRY_SECONDS // 1 hour from now
   }
 
   return token

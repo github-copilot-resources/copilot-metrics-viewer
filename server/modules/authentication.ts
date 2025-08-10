@@ -37,10 +37,8 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
 
     // Priority 1: GitHub App authentication (preferred for decoupled auth)
     if (config.githubAppId && config.githubAppPrivateKey && config.githubAppInstallationId) {
-        // Check user authorization when using GitHub App
-        if (config.public.usingGithubAuth) {
-            await requireAuthorization(event);
-        }
+        // Always check user authorization when using GitHub App authentication
+        await requireAuthorization(event);
         return await buildGitHubAppHeaders(event);
     }
 
