@@ -1,6 +1,6 @@
 {
   "name": "copilot-metrics-viewer",
-  "version": "2.0.7",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -39,7 +39,7 @@
     "@playwright/test": "^1.49.1",
     "@types/webfontloader": "^1.6.38",
     "@vue/test-utils": "^2.4.6",
-    "esbuild": ">=0.25.7",
+    "esbuild": ">=0.25.8",
     "happy-dom": "^16.5.3",
     "playwright-core": "^1.49.1",
     "sass-embedded": "^1.80.3",

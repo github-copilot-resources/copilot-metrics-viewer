@@ -37,7 +37,9 @@ export default defineNuxtConfig({
     },
   },
 
-  css: [],
+  css: [
+    '@/assets/global.css'
+  ],
   modules: ['@nuxt/fonts', 'vuetify-nuxt-module', '@nuxt/eslint', 'nuxt-auth-utils'],
 
   vuetify: {
