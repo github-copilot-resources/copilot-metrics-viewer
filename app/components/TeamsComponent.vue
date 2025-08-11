@@ -454,12 +454,28 @@ export default defineComponent({
     }
 
     // Chart colors for different teams
+    // Expanded to 16 distinct color slots (keeping original first 5 unchanged).
+    // Palette aims for high contrast & colorblind-friendly variety (mix of Okabe-Ito & supplemental hues).
+    // If more than 16 teams are selected colors will repeat via modulo logic.
     const teamColors = [
-      { bg: 'rgba(75, 192, 192, 0.2)', border: 'rgba(75, 192, 192, 1)' },
-      { bg: 'rgba(153, 102, 255, 0.2)', border: 'rgba(153, 102, 255, 1)' },
-      { bg: 'rgba(255, 159, 64, 0.2)', border: 'rgba(255, 159, 64, 1)' },
-      { bg: 'rgba(255, 99, 132, 0.2)', border: 'rgba(255, 99, 132, 1)' },
-      { bg: 'rgba(54, 162, 235, 0.2)', border: 'rgba(54, 162, 235, 1)' }
+      // Original 5
+      { bg: 'rgba(75, 192, 192, 0.2)', border: 'rgba(75, 192, 192, 1)' },    // Teal
+      { bg: 'rgba(153, 102, 255, 0.2)', border: 'rgba(153, 102, 255, 1)' },  // Purple
+      { bg: 'rgba(255, 159, 64, 0.2)', border: 'rgba(255, 159, 64, 1)' },    // Orange
+      { bg: 'rgba(255, 99, 132, 0.2)', border: 'rgba(255, 99, 132, 1)' },    // Pink/Red
+      { bg: 'rgba(54, 162, 235, 0.2)', border: 'rgba(54, 162, 235, 1)' },    // Blue
+      // Added colors
+      { bg: 'rgba(0, 158, 115, 0.2)', border: 'rgba(0, 158, 115, 1)' },      // Bluish Green
+      { bg: 'rgba(240, 228, 66, 0.25)', border: 'rgba(240, 228, 66, 1)' },   // Yellow (slightly higher bg alpha for visibility)
+      { bg: 'rgba(213, 94, 0, 0.2)', border: 'rgba(213, 94, 0, 1)' },        // Vermillion
+      { bg: 'rgba(204, 121, 167, 0.25)', border: 'rgba(204, 121, 167, 1)' }, // Reddish Purple
+      { bg: 'rgba(128, 128, 128, 0.25)', border: 'rgba(128, 128, 128, 1)' }, // Gray
+      { bg: 'rgba(0, 114, 178, 0.2)', border: 'rgba(0, 114, 178, 1)' },      // Navy / Deep Blue
+      { bg: 'rgba(150, 75, 0, 0.25)', border: 'rgba(150, 75, 0, 1)' },       // Brown
+      { bg: 'rgba(102, 153, 0, 0.25)', border: 'rgba(102, 153, 0, 1)' },     // Olive Green
+      { bg: 'rgba(255, 0, 255, 0.15)', border: 'rgba(255, 0, 255, 1)' },     // Magenta
+      { bg: 'rgba(0, 206, 209, 0.2)', border: 'rgba(0, 206, 209, 1)' },      // Turquoise
+      { bg: 'rgba(112, 128, 144, 0.25)', border: 'rgba(112, 128, 144, 1)' }  // Slate
     ]
 
   const updateChartData = async () => {
