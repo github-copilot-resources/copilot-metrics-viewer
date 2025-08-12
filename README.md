@@ -7,9 +7,47 @@ _NOTE: For information on support and assistance, click [here](https://github.co
 
 This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28).
 
-## Video
+## Application Overview
 
-https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/bc7e2a16-cc73-43c4-887a-b50809c08533
+The GitHub Copilot Metrics Viewer provides comprehensive analytics through an intuitive dashboard interface:
+
+<p align="center">
+  <img width="800" alt="Main Dashboard Overview" src="./images/main-metrics-dashboard.png">
+</p>
+
+## New Features
+
+### Date Range Filtering (up to 100 days)
+Users can now filter metrics for custom date ranges up to 100 days, with an intuitive calendar picker interface. The system also supports excluding weekends and holidays from calculations.
+
+<p align="center">
+  <img width="800" alt="Date Range Filter" src="./images/date-range-filter.png">
+</p>
+
+### Teams Comparison
+Compare Copilot metrics across multiple teams within your organization to understand adoption patterns and identify high-performing teams.
+
+<p align="center">
+  <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">
+</p>
+
+### GitHub.com Integration & Model Analytics
+View comprehensive statistics for GitHub.com features including Chat, PR Summaries, and detailed model usage analytics. Each section provides expandable details showing model types, editors, and usage patterns.
+
+<p align="center">
+  <img width="800" alt="GitHub.com Tab" src="./images/github-com-tab.png">
+</p>
+
+<p align="center">
+  <img width="800" alt="Model Usage Details" src="./images/github-com-models-expanded.png">
+</p>
+
+### CSV Export Functionality
+Export your metrics data in multiple formats for further analysis or reporting. Options include summary reports, full detailed exports, and direct clipboard copying.
+
+<p align="center">
+  <img width="800" alt="CSV Export Options" src="./images/csv-export-functionality.png">
+</p>
 
 ## Charts
 
@@ -19,7 +57,7 @@ https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/332930
 
 Here are the key metrics visualized in these charts:
 <p align="center">
-  <img width="800" alt="image" src="./images/KeyMetrics.png">
+  <img width="800" alt="Key Metrics Overview" src="./images/main-metrics-dashboard.png">
 </p>
 
 1. **Acceptance Rate:** This metric represents the ratio of accepted lines and suggestions to the total suggested by GitHub Copilot. This rate is an indicator of the relevance and usefulness of Copilot's suggestions. However, as with any metric, it should be used with caution as developers use Copilot in many different ways (research, confirm, verify, etc., not always "inject").
@@ -50,31 +88,28 @@ Here are the key metrics visualized in these charts:
 
 Pie charts with the top 5 languages by accepted prompts and acceptance rate (by count/by lines) are displayed at the top.
 <p align="center">
-  <img width="800" alt="image" src="./images/Language_breakdown.png">
+  <img width="800" alt="Updated Language breakdown with charts and data table" src="./images/languages-breakdown.png">
 </p>
 
-The language breakdown analysis tab also displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the past 28 days. The entries are sorted by the number of _accepted lines of code descending_.
-<p align="center">
-  <img width="800" alt="image" src="./images/Language_breakdown_list.png">
-</p>
+The language breakdown analysis tab also displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the selected time period. The entries are sorted by the number of _accepted lines of code descending_.
 
 ## Copilot Chat Metrics
 
 <p align="center">
-  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/79867d5f-8933-4509-a58a-8c6deeb47536">
+  <img width="800" alt="Copilot Chat Metrics Dashboard" src="./images/copilot-chat-metrics.png">
 </p>
 
-1. **Cumulative Number of Turns:** This metric represents the total number of turns (interactions) with the Copilot over the past 28 days. A 'turn' includes both user inputs and Copilot's responses.
+1. **Cumulative Number of Turns:** This metric represents the total number of turns (interactions) with the Copilot over the selected time period. A 'turn' includes both user inputs and Copilot's responses.
 
-2. **Cumulative Number of Acceptances:** This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the past 28 days.
+2. **Cumulative Number of Acceptances:** This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the selected time period.
 
 3. **Total Turns | Total Acceptances Count:** This is a chart that displays the total number of turns and acceptances.
 
-4. **Total Active Copilot Chat Users:** A bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
+4. **Total Active Copilot Chat Users:** A bar chart that illustrates the total number of users who have actively interacted with Copilot over the selected time period.
 
 ## Seat Analysis
 <p align="center">
-  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/54096296/51747194-df30-4bfb-8849-54a0510fffcb">
+  <img width="800" alt="Seat Analysis Dashboard" src="./images/seat-analysis.png">
 </p>
 
 1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within the current organization/enterprise.
@@ -84,6 +119,33 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 3. **No Activity in the Last 7 Days:** Never used seats or seats used, but with no activity in the past 7 days.
 
 4. **No Activity in the Last 7 Days (including never used seats):** A table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
+
+## Advanced Features
+
+### Flexible Date Range Selection
+The application supports flexible date range selection allowing users to analyze metrics for any period up to 100 days. The date picker provides an intuitive calendar interface with options to exclude weekends and holidays from the analysis.
+
+### Data Export Capabilities
+Multiple export options are available in the API Response tab:
+- **Download CSV (Summary)**: Exports key metrics in a condensed format
+- **Download CSV (Full)**: Exports comprehensive detailed data
+- **Copy Metrics to Clipboard**: Quick copy functionality for immediate use
+- **Check Metric Data Quality**: Validates data integrity and completeness
+
+### Team Analytics
+Organizations can compare metrics across different teams to:
+- Identify high-performing teams
+- Understand adoption patterns
+- Share best practices across teams
+- Monitor team-specific engagement levels
+
+### Model Usage Analytics
+Detailed insights into AI model usage including:
+- IDE Code Completions by editor and model type
+- IDE Chat interactions and model preferences
+- GitHub.com Chat usage patterns
+- PR Summary generation statistics
+- Custom vs. default model adoption rates
 
 ## Setup Instructions
 
