@@ -1,12 +1,6 @@
 import { Options, type Scope } from '@/model/Options'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
-const cache = new Map<string, CacheData>()
-
-interface CacheData {
-    data: Team[]
-    valid_until: number
-}
 interface Team { name: string; slug: string; description: string }
 interface GitHubTeam { name: string; slug: string; description?: string }
 
@@ -72,16 +66,6 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
         return teams
     }
 
-    // Use cache if valid
-    if (cache.has(event.path)) {
-        const cachedData = cache.get(event.path)
-        if (cachedData && cachedData.valid_until > Math.floor(Date.now() / 1000)) {
-            logger.info(`Returning cached data for ${event.path}`)
-            return cachedData.data
-        }
-        cache.delete(event.path)
-    }
-
     if (!event.context.headers.has('Authorization')) {
         logger.error('No Authentication provided')
         throw new TeamsError('No Authentication provided', 401)
@@ -114,7 +98,5 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
         page += 1
     }
 
-    // Cache for 60 seconds
-    cache.set(event.path, { data: allTeams, valid_until: Math.floor(Date.now() / 1000) + 60 })
     return allTeams
 }
