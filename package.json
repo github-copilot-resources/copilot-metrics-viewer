@@ -18,9 +18,11 @@
   },
   "dependencies": {
     "@nuxt/eslint": "^0.7.4",
+    "@types/jsonwebtoken": "^9.0.10",
     "chart.js": "^4.4.7",
     "date-holidays": "^3.24.4",
     "eslint": "^9.32.0",
+    "jsonwebtoken": "^9.0.2",
     "nuxt": "^3.17.5",
     "nuxt-auth-utils": "^0.5.7",
     "roboto-fontface": "^0.10.0",
