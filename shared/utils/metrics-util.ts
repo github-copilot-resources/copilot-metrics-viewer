@@ -52,14 +52,18 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
     return usageData;
   }
 
-  if (cache.has(event.path)) {
-    const cachedData = cache.get(event.path);
+  // Create cache key that includes query parameters to differentiate between different date ranges
+  const queryString = new URLSearchParams(query as Record<string, string>).toString();
+  const cacheKey = queryString ? `${event.path}?${queryString}` : event.path;
+
+  if (cache.has(cacheKey)) {
+    const cachedData = cache.get(cacheKey);
     if (cachedData && cachedData.valid_until > Date.now() / 1000) {
-      logger.info(`Returning cached data for ${event.path}`);
+      logger.info(`Returning cached data for ${cacheKey}`);
       return cachedData.data;
     } else {
-      logger.info(`Cached data for ${event.path} is expired, fetching new data`);
-      cache.delete(event.path);
+      logger.info(`Cached data for ${cacheKey} is expired, fetching new data`);
+      cache.delete(cacheKey);
     }
   }
 
@@ -81,10 +85,12 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
     const filteredUsageData = filterHolidaysFromMetrics(usageData, options.excludeHolidays || false, options.locale);
     // metrics is the old API format
     const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
-    cache.set(event.path, { data: filteredUsageData, valid_until: validUntil });
+    cache.set(cacheKey, { data: filteredUsageData, valid_until: validUntil });
     return filteredUsageData;
   } catch (error: unknown) {
     logger.error('Error fetching metrics data:', error);
+    // Clear any cached data for this request to prevent stale data on retry
+    cache.delete(cacheKey);
     const errorMessage = error instanceof Error ? error.message : String(error);
     const statusCode = (error && typeof error === 'object' && 'statusCode' in error)
       ? (error as { statusCode: number }).statusCode

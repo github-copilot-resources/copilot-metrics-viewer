@@ -174,6 +174,8 @@ export default defineNuxtComponent({
       const config = useRuntimeConfig();
 
       this.isLoading = true;
+      // Clear previous API errors when making a new request
+      this.apiError = undefined;
 
       try {
         const options = Options.fromRoute(this.route, this.dateRange.since, this.dateRange.until);
