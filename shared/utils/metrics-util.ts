@@ -185,7 +185,7 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
     const dataIndex = index % originalData.length;
     const src = originalData[dataIndex];
     const newDate = date.toISOString().split('T')[0];
-    return { ...(src as CopilotMetrics), date: newDate } as CopilotMetrics;
+    return { ...src, date: newDate };
   });
   return result;
 }
