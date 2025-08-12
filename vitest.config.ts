@@ -5,6 +5,7 @@ export default defineVitestConfig({
   test: {
     exclude: ['**/node_modules/**', '**/e2e-tests/**'],
     environment: 'nuxt',
-    globals: true // Use describe, test/expect, etc. without importing
+  globals: true, // Use describe, test/expect, etc. without importing
+  setupFiles: ['./tests/test.setup.ts']
   }
 })

@@ -12,7 +12,6 @@ const cache = new Map<string, CacheData>();
 interface CacheData {
   data: CopilotMetrics[];
   valid_until: number;
-  auth_fingerprint: string; // hashed representation of Authorization header used to populate cache
 }
 
 class MetricsError extends Error {
@@ -112,7 +111,7 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
   // Attempt cache lookup with auth fingerprint validation
   const cachedData = cache.get(cacheKey);
   if (cachedData) {
-    if (cachedData.valid_until > Date.now() / 1000 && cachedData.auth_fingerprint === cacheKey.split(':')[0]) {
+    if (cachedData.valid_until > Date.now() / 1000) {
       logger.info(`Returning cached data for ${cacheKey}`);
       return cachedData.data;
     } else {
@@ -134,8 +133,7 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
     const filteredUsageData = filterHolidaysFromMetrics(usageData, options.excludeHolidays || false, options.locale);
     // metrics is the old API format
     const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
-  const authFingerprint: string = cacheKey.split(':', 1)[0] || '';
-  cache.set(cacheKey, { data: filteredUsageData, valid_until: validUntil, auth_fingerprint: authFingerprint });
+  cache.set(cacheKey, { data: filteredUsageData, valid_until: validUntil });
     return filteredUsageData;
   } catch (error: unknown) {
     logger.error('Error fetching metrics data:', error);
