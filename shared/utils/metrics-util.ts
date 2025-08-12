@@ -5,12 +5,14 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { getLocale } from "./getLocale";
 import { filterHolidaysFromMetrics, isHoliday, parseUtcDate } from '@/utils/dateUtils';
+import { createHash } from 'crypto';
 
 const cache = new Map<string, CacheData>();
 
 interface CacheData {
   data: CopilotMetrics[];
   valid_until: number;
+  auth_fingerprint: string; // hashed representation of Authorization header used to populate cache
 }
 
 class MetricsError extends Error {
@@ -22,6 +24,50 @@ class MetricsError extends Error {
     this.name = "MetricsError";
     this.statusCode = statusCode
   }
+}
+
+/**
+ * Builds a cache key for metrics data that is bound to the caller's Authorization header (hashed) + path + query.
+ * Exported for unit testing.
+ */
+type QueryParamValue = string | string[] | undefined;
+type QueryParams = Record<string, QueryParamValue>;
+
+export function buildMetricsCacheKey(path: string, query: QueryParams, authHeader: string): string {
+  // Split existing query params from provided path (if any)
+  const [rawPath, existingQueryString] = path.split('?');
+  const merged = new Map<string, string>();
+
+  // Add existing params first
+  if (existingQueryString) {
+    const existingParams = new URLSearchParams(existingQueryString);
+    existingParams.forEach((value, key) => {
+      merged.set(key, value);
+    });
+  }
+
+  // Merge in provided query object (overrides existing)
+  Object.entries(query).forEach(([k, v]) => {
+    if (v === undefined || v === null) return;
+    if (Array.isArray(v)) {
+      if (v.length === 0) return;
+      merged.set(k, v.join(','));
+    } else if (v !== '') {
+      merged.set(k, v);
+    }
+  });
+
+  // Build stable, sorted query string
+  const sortedKeys = Array.from(merged.keys()).sort();
+  const finalParams = new URLSearchParams();
+  sortedKeys.forEach(k => {
+    const val = merged.get(k);
+    if (val !== undefined) finalParams.set(k, val);
+  });
+  const finalQueryString = finalParams.toString();
+
+  const authFingerprint = createHash('sha256').update(authHeader).digest('hex').slice(0, 16); // short fingerprint
+  return `${authFingerprint}:${rawPath}${finalQueryString ? `?${finalQueryString}` : ''}`;
 }
 
 export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promise<CopilotMetrics[]> {
@@ -52,30 +98,33 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
     return usageData;
   }
 
-  // Create cache key that includes query parameters to differentiate between different date ranges
-  const queryString = new URLSearchParams(query as Record<string, string>).toString();
-  const cacheKey = queryString ? `${event.path}?${queryString}` : event.path;
+  // Authorization must be validated BEFORE any cache lookup to prevent leakage of cached data
+  const authHeader = event.context.headers.get('Authorization');
+  if (!authHeader) {
+    logger.error('No Authentication provided');
+    throw new MetricsError('No Authentication provided', 401);
+  }
 
-  if (cache.has(cacheKey)) {
-    const cachedData = cache.get(cacheKey);
-    if (cachedData && cachedData.valid_until > Date.now() / 1000) {
+  // Build auth-bound cache key
+  const path = event.path || '/api/metrics'; // fallback path (should always exist in practice)
+  const cacheKey = buildMetricsCacheKey(path, query as QueryParams, authHeader);
+
+  // Attempt cache lookup with auth fingerprint validation
+  const cachedData = cache.get(cacheKey);
+  if (cachedData) {
+    if (cachedData.valid_until > Date.now() / 1000 && cachedData.auth_fingerprint === cacheKey.split(':')[0]) {
       logger.info(`Returning cached data for ${cacheKey}`);
       return cachedData.data;
     } else {
-      logger.info(`Cached data for ${cacheKey} is expired, fetching new data`);
+      logger.info(`Cached data for ${cacheKey} is expired or fingerprint mismatch, fetching new data`);
       cache.delete(cacheKey);
     }
-  }
-
-  if (!event.context.headers.has('Authorization')) {
-    logger.error('No Authentication provided');
-    throw new MetricsError('No Authentication provided', 401);
   }
 
   logger.info(`Fetching metrics data from ${apiUrl}`);
 
   try {
-    const response = await $fetch(apiUrl, {
+  const response = await $fetch(apiUrl, {
       headers: event.context.headers
     }) as unknown[];
 
@@ -85,7 +134,8 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
     const filteredUsageData = filterHolidaysFromMetrics(usageData, options.excludeHolidays || false, options.locale);
     // metrics is the old API format
     const validUntil = Math.floor(Date.now() / 1000) + 5 * 60; // Cache for 5 minutes
-    cache.set(cacheKey, { data: filteredUsageData, valid_until: validUntil });
+  const authFingerprint: string = cacheKey.split(':', 1)[0] || '';
+  cache.set(cacheKey, { data: filteredUsageData, valid_until: validUntil, auth_fingerprint: authFingerprint });
     return filteredUsageData;
   } catch (error: unknown) {
     logger.error('Error fetching metrics data:', error);
@@ -131,17 +181,12 @@ function updateMockDataDates(originalData: CopilotMetrics[], since?: string, unt
   }
 
   // Update dates in the dataset, copying existing entries when needed
-  const result = dateRange.map((date, index) => {
-    // Use existing data entries, cycling through them
+  const result: CopilotMetrics[] = dateRange.map((date, index) => {
     const dataIndex = index % originalData.length;
-    const entry = { ...originalData[dataIndex] };
-
-    // Update the date
-    entry.date = date.toISOString().split('T')[0];
-
-    return entry;
+    const src = originalData[dataIndex];
+    const newDate = date.toISOString().split('T')[0];
+    return { ...(src as CopilotMetrics), date: newDate } as CopilotMetrics;
   });
-
   return result;
 }
 
