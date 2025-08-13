@@ -30,17 +30,19 @@ test.describe('Teams Comparison tests', () => {
         // Click on teams tab
         await dashboard.gotoTeamsTab();
 
-        // Wait for the team selection dropdown to be visible
-        const teamsDropdown = dashboard.page.locator('input[role="combobox"]').first();
+        // Wait for the team selection combobox to be visible
+        const teamsDropdown = dashboard.page.locator('[role="combobox"]').first();
         await expect(teamsDropdown).toBeVisible();
 
         // Click on the dropdown to open it
         await teamsDropdown.click();
 
-        // Wait for team options to appear and select first two teams
-        // Use specific team names from mock data
-        const theATeamOption = dashboard.page.getByText('The A Team');
-        const devTeamOption = dashboard.page.getByText('Development Team');
+        // Wait for the dropdown to expand and team options to appear
+        await expect(dashboard.page.locator('[role="listbox"]')).toBeVisible();
+
+        // Select teams using more specific selectors within the listbox
+        const theATeamOption = dashboard.page.locator('[role="listbox"]').getByText('The A Team').first();
+        const devTeamOption = dashboard.page.locator('[role="listbox"]').getByText('Development Team').first();
 
         await expect(theATeamOption).toBeVisible();
         await theATeamOption.click();
@@ -48,8 +50,11 @@ test.describe('Teams Comparison tests', () => {
         await expect(devTeamOption).toBeVisible(); 
         await devTeamOption.click();
 
-        // Click outside to close dropdown
+        // Click outside the dropdown to close it
         await dashboard.page.locator('body').click();
+
+        // Wait a moment for the UI to settle
+        await dashboard.page.waitForTimeout(1000);
 
         // Verify that teams are selected
         const selectedTeamsSection = dashboard.page.getByText('Selected Teams');
