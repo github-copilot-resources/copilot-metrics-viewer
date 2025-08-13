@@ -16,6 +16,7 @@ export class DashboardPage {
     readonly toolbarTitle: Locator;
 
     readonly teamTabLink: Locator;
+    readonly teamsTabLink: Locator;
     readonly orgTabLink: Locator;
     readonly enterpriseTabLink: Locator;
 
@@ -43,12 +44,13 @@ export class DashboardPage {
         this.githubTabLink = page.getByRole('tab', { name: 'github.com' })
 
         this.teamTabLink = page.getByRole('tab', { name: 'team' })
+        this.teamsTabLink = page.getByRole('tab', { name: 'teams' })
         this.orgTabLink = page.getByRole('tab', { name: 'organization' })
         this.enterpriseTabLink = page.getByRole('tab', { name: 'enterprise' })
     }
 
     async expectTeamsTabVisible() {
-        await expect(this.teamTabLink).toBeVisible();
+        await expect(this.teamsTabLink).toBeVisible();
     }
 
     async expectOrgTabVisible() {
@@ -104,6 +106,12 @@ export class DashboardPage {
     async gotoGitHubTab() {
         await this.githubTabLink.click();
         return new GitHubTab(this.page);
+    }
+
+    async gotoTeamsTab() {
+        await this.teamsTabLink.click();
+        // No specific page object for teams tab, just return this for fluent interface
+        return this;
     }
 
     async close() {
