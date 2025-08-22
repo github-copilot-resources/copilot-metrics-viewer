@@ -14,7 +14,8 @@
             <v-card-text>
               <v-row>
                 <v-col cols="12" md="8">
-                  <v-select v-model="selectedTeams" :items="availableTeams" item-value="slug"
+                  <v-select
+v-model="selectedTeams" :items="availableTeams" item-value="slug"
                     label="Select teams to compare" multiple chips clearable variant="outlined" :menu-props="{
                       contentClass: 'teams-select-menu',
                       maxHeight: 360,
@@ -31,7 +32,8 @@
                   </v-select>
                 </v-col>
                 <v-col cols="12" md="4" class="d-flex align-center">
-                  <v-btn v-if="selectedTeams.length > 0" color="primary" variant="outlined" size="small"
+                  <v-btn
+v-if="selectedTeams.length > 0" color="primary" variant="outlined" size="small"
                     @click="clearSelection">
                     Clear All
                   </v-btn>
@@ -51,7 +53,8 @@
             <v-card-title class="text-h6">Selected Teams</v-card-title>
             <v-card-text>
               <v-chip-group>
-                <v-chip v-for="team in selectedTeamObjects" :key="team.slug" :href="getTeamDetailUrl(team.slug)"
+                <v-chip
+v-for="team in selectedTeamObjects" :key="team.slug" :href="getTeamDetailUrl(team.slug)"
                   class="selected-team-chip" target="_blank" link>
                   {{ team.name }} - View Details
                   <v-icon end>mdi-open-in-new</v-icon>
@@ -67,7 +70,8 @@
     <div v-if="selectedTeams.length > 0">
       <!-- Summary Cards -->
       <div class="tiles-container">
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+        <v-card
+elevation="4" color="white" variant="elevated" class="mx-auto my-3"
           style="width: 300px; height: 175px;">
           <v-card-item>
             <div class="tiles-text">
@@ -87,7 +91,8 @@
           </v-card-item>
         </v-card>
 
-        <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+        <v-card
+elevation="4" color="white" variant="elevated" class="mx-auto my-3"
           style="width: 300px; height: 175px;">
           <v-card-item>
             <div class="tiles-text">
