@@ -42,29 +42,32 @@ test.describe('Teams Comparison tests', () => {
 
         // Select teams using more specific selectors within the listbox
         const theATeamOption = dashboard.page.locator('[role="listbox"]').getByText('The A Team').first();
-        const devTeamOption = dashboard.page.locator('[role="listbox"]').getByText('Development Team').first();
 
         await expect(theATeamOption).toBeVisible();
         await theATeamOption.click();
 
-        await expect(devTeamOption).toBeVisible(); 
+        await expect(teamsDropdown).toBeVisible();
+
+        const devTeamOption = dashboard.page.locator('[role="listbox"]').getByText('Development Team').first();
+
+        await expect(devTeamOption).toBeVisible();
         await devTeamOption.click();
 
         // Click outside the dropdown to close it
-        await dashboard.page.locator('body').click();
+        await teamsDropdown.click();
 
         // Wait a moment for the UI to settle
         await dashboard.page.waitForTimeout(1000);
 
         // Verify that teams are selected
-        const selectedTeamsSection = dashboard.page.getByText('Selected Teams');
+        const selectedTeamsSection = dashboard.page.getByText('Selected Teams', { exact: true })
         await expect(selectedTeamsSection).toBeVisible();
 
         // Verify that team metrics cards are visible
-        const teamsSelectedCard = dashboard.page.getByText('Teams Selected');
+        const teamsSelectedCard = dashboard.page.getByText('Teams Selected', { exact: true })
         await expect(teamsSelectedCard).toBeVisible();
 
-        const totalActiveUsersCard = dashboard.page.getByText('Total Active Users');
+        const totalActiveUsersCard = dashboard.page.locator('div.text-h6.mb-1', { hasText: 'Total Active Users' })
         await expect(totalActiveUsersCard).toBeVisible();
 
         // Verify that charts are displayed
@@ -75,9 +78,9 @@ test.describe('Teams Comparison tests', () => {
         await expect(editorUsageChart).toBeVisible();
 
         // Take a screenshot for documentation purposes
-        await dashboard.page.screenshot({ 
-            path: 'images/teams-comparison-test.png', 
-            fullPage: true 
+        await dashboard.page.screenshot({
+            path: 'images/teams-comparison-test.png',
+            fullPage: true
         });
     });
 
