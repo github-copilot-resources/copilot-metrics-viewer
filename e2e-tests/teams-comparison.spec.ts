@@ -78,10 +78,10 @@ test.describe('Teams Comparison tests', () => {
         await expect(editorUsageChart).toBeVisible();
 
         // Take a screenshot for documentation purposes
-        await dashboard.page.screenshot({
-            path: 'images/teams-comparison-test.png',
-            fullPage: true
-        });
+        // await dashboard.page.screenshot({
+        //     path: 'images/teams-comparison-test.png',
+        //     fullPage: true
+        // });
     });
 
     test('teams comparison empty state', tag, async () => {
