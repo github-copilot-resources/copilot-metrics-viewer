@@ -56,9 +56,6 @@ test.describe('Teams Comparison tests', () => {
         // Click outside the dropdown to close it
         await teamsDropdown.click();
 
-        // Wait a moment for the UI to settle
-        await dashboard.page.waitForTimeout(1000);
-
         // Verify that teams are selected
         const selectedTeamsSection = dashboard.page.getByText('Selected Teams', { exact: true })
         await expect(selectedTeamsSection).toBeVisible();
