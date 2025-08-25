@@ -1,5 +1,5 @@
 // @vitest-environment nuxt
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 describe('Metrics Cache Key Generation', () => {
   it('should create unique cache keys for different query parameters', () => {

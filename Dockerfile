@@ -53,7 +53,7 @@ USER node
 ENTRYPOINT [ "/entrypoint.sh" ]
 
 #----------------------------------- PW layer - not used in production
-FROM mcr.microsoft.com/playwright:v1.49.1 AS base-playwright
+FROM mcr.microsoft.com/playwright:v1.54.2 AS base-playwright
 
 WORKDIR /pw
 
@@ -66,9 +66,9 @@ COPY --chown=1000:1000 --from=base-prod /app /app
 COPY --chown=1000:1000 e2e-tests ./e2e-tests
 COPY --chown=1000:1000 playwright.config.ts playwright.docker.config.ts tsconfig.json package*.json ./
 
-RUN npm install --only=dev
+RUN NODE_ENV=development npm install
 
-ENTRYPOINT [ "npx", "playwright", "test", "-c", "playwright.docker.config.ts" ]
+ENTRYPOINT [ "npx", "playwright", "test", "-c", "playwright.docker.config.ts", "--workers", "2"]
 
 #-----------------------------------
 FROM base-${mode} AS final

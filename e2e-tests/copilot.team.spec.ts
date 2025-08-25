@@ -24,5 +24,5 @@ test('has title', tag, async () => {
 });
 
 test('team tab', tag, async () => {
-  await dashboard.expectTeamsTabVisible();
+  await dashboard.expectTeamTabVisible();
 });
