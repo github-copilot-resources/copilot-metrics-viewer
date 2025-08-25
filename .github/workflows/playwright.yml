@@ -53,6 +53,8 @@ jobs:
         retention-days: 30
 
   test-docker-playwright:
+    permissions:
+      contents: read
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
