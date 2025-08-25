@@ -36,6 +36,12 @@
       "githubEnt": {
         "value": "${NUXT_PUBLIC_GITHUB_ENT}"
       },
+      "basicAuthUsername": {
+        "value": "${NUXT_BASIC_AUTH_USERNAME}"
+      },
+      "basicAuthPassword": {
+        "value": "${NUXT_BASIC_AUTH_PASSWORD}"
+      },
       "principalId": {
         "value": "${AZURE_PRINCIPAL_ID}"
       }

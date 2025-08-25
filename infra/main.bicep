@@ -31,6 +31,14 @@ param githubTeam string
 @description('The name of the GitHub enterprise, required when scope is "enterprise"')
 param githubEnt string
 
+// Basic Authentication Parameters (optional - for additional access control)
+@secure()
+@description('Basic authentication username for app access (optional)')
+param basicAuthUsername string = ''
+@secure()
+@description('Basic authentication password for app access (optional)')
+param basicAuthPassword string = ''
+
 @description('Id of the user or app to assign application roles')
 param principalId string
 
@@ -43,8 +51,19 @@ var tags = {
   'azd-env-name': environmentName
 }
 
+
 var abbrs = loadJsonContent('./abbreviations.json')
-var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
+
+// Use custom resource naming for shared and app-specific resources
+// Shared resources: include 'shared' in the name
+var sharedToken = 'govinsights-shared-${environmentName}'
+// For container registry (alphanumeric, no dashes) - add unique suffix to avoid conflicts
+var sharedTokenAcr = 'crgovinsshrd${environmentName}${take(uniqueString(subscription().id, environmentName), 6)}'
+// For Key Vault (max 24 chars, alphanumeric and dashes only)
+var sharedTokenKv = 'kv-govins-shr-${environmentName}'
+// App-specific resources: include app name, business, and env
+var appName = 'copilot'
+var appToken = '${appName}-govinsights-${environmentName}'
 
 var settings = concat(
   [
@@ -112,62 +131,54 @@ var settings = concat(
           value: githubEnt
         }
       ]
+    : [],
+  !empty(basicAuthUsername) && !empty(basicAuthPassword)
+    ? [
+        {
+          name: 'NUXT_BASIC_AUTH_USERNAME'
+          value: basicAuthUsername
+          secret: true
+        }
+        {
+          name: 'NUXT_BASIC_AUTH_PASSWORD'
+          value: basicAuthPassword
+          secret: true
+        }
+        {
+          name: 'NUXT_PUBLIC_BASIC_AUTH_ENABLED'
+          value: 'true'
+        }
+      ]
     : []
 )
 
-resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
-  name: 'rg-${environmentName}'
-  location: location
-  tags: tags
+
+
+// Use existing resource group as required by IT
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' existing = {
+  name: 'GovInsights-DevCP-DEV-RG'
 }
 
+
+// --- Shared Resources ---
+
+// Log Analytics Workspace (shared)
 module monitoring './shared/monitoring.bicep' = {
   name: 'monitoring'
   params: {
     location: location
     tags: tags
-    logAnalyticsName: '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
-    applicationInsightsName: '${abbrs.insightsComponents}${resourceToken}'
+    logAnalyticsName: '${abbrs.operationalInsightsWorkspaces}${sharedToken}'
+    applicationInsightsName: '${abbrs.insightsComponents}${sharedToken}'
   }
   scope: rg
 }
 
-module dashboard './shared/dashboard-web.bicep' = {
-  name: 'dashboard'
-  params: {
-    name: '${abbrs.portalDashboards}${resourceToken}'
-    applicationInsightsName: monitoring.outputs.applicationInsightsName
-    location: location
-    tags: tags
-  }
-  scope: rg
-}
-
-module registry './shared/registry.bicep' = {
-  name: 'registry'
-  params: {
-    location: location
-    tags: tags
-    name: '${abbrs.containerRegistryRegistries}${resourceToken}'
-  }
-  scope: rg
-}
-
-module keyVault './shared/keyvault.bicep' = {
-  name: 'keyvault'
-  params: {
-    location: location
-    tags: tags
-    name: '${abbrs.keyVaultVaults}${resourceToken}'
-    principalId: principalId
-  }
-  scope: rg
-}
-
+// Container App Environment (shared)
 module appsEnv './shared/apps-env.bicep' = {
   name: 'apps-env'
   params: {
-    name: '${abbrs.appManagedEnvironments}${resourceToken}'
+    name: '${abbrs.appManagedEnvironments}${sharedToken}'
     location: location
     tags: tags
     applicationInsightsName: monitoring.outputs.applicationInsightsName
@@ -176,13 +187,39 @@ module appsEnv './shared/apps-env.bicep' = {
   scope: rg
 }
 
+// Container Registry (shared, alphanumeric)
+module registry './shared/registry.bicep' = {
+  name: 'registry'
+  params: {
+    location: location
+    tags: tags
+    name: '${abbrs.containerRegistryRegistries}${sharedTokenAcr}'
+  }
+  scope: rg
+}
+
+// Key Vault (shared)
+module keyVault './shared/keyvault.bicep' = {
+  name: 'keyvault'
+  params: {
+    location: location
+    tags: tags
+    name: sharedTokenKv
+    principalId: principalId
+  }
+  scope: rg
+}
+
+// --- App-Specific Resources ---
+
+// Container App (app-specific)
 module copilotMetricsViewer './app/copilot-metrics-viewer.bicep' = {
   name: 'copilot-metrics-viewer'
   params: {
-    name: '${abbrs.appContainerApps}copilot-metr-${resourceToken}'
+    name: '${abbrs.appContainerApps}${appToken}'
     location: location
     tags: tags
-    identityName: '${abbrs.managedIdentityUserAssignedIdentities}copilot-metr-${resourceToken}'
+    identityName: '${abbrs.managedIdentityUserAssignedIdentities}${appToken}'
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     containerAppsEnvironmentName: appsEnv.outputs.name
     containerRegistryName: registry.outputs.name
@@ -194,6 +231,22 @@ module copilotMetricsViewer './app/copilot-metrics-viewer.bicep' = {
   scope: rg
 }
 
+// Dashboard (app-specific)
+module dashboard './shared/dashboard-web.bicep' = {
+  name: 'dashboard'
+  params: {
+    name: '${abbrs.portalDashboards}${appToken}'
+    applicationInsightsName: monitoring.outputs.applicationInsightsName
+    location: location
+    tags: tags
+  }
+  scope: rg
+}
+
+
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = registry.outputs.loginServer
 output AZURE_KEY_VAULT_NAME string = keyVault.outputs.name
 output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
+
+
+

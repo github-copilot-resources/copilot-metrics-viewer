@@ -37,9 +37,7 @@ export default defineNuxtConfig({
     },
   },
 
-  css: [
-    '@/assets/global.css'
-  ],
+  css: [],
   modules: ['@nuxt/fonts', 'vuetify-nuxt-module', '@nuxt/eslint', 'nuxt-auth-utils'],
 
   vuetify: {
@@ -77,6 +75,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     githubToken: '',
+    basicAuthUsername: '',
+    basicAuthPassword: '',
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,
@@ -95,6 +95,7 @@ export default defineNuxtConfig({
       githubEnt: '',
       githubTeam: '',
       usingGithubAuth: false,
+      basicAuthEnabled: false,  // can be overridden by NUXT_PUBLIC_BASIC_AUTH_ENABLED environment variable
       version,
       isPublicApp: false
     }

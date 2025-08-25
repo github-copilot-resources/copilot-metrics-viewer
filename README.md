@@ -7,47 +7,9 @@ _NOTE: For information on support and assistance, click [here](https://github.co
 
 This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28).
 
-## Application Overview
+## Video
 
-The GitHub Copilot Metrics Viewer provides comprehensive analytics through an intuitive dashboard interface:
-
-<p align="center">
-  <img width="800" alt="Main Dashboard Overview" src="./images/main-metrics-dashboard.png">
-</p>
-
-## New Features
-
-### Date Range Filtering (up to 100 days)
-Users can now filter metrics for custom date ranges up to 100 days, with an intuitive calendar picker interface. The system also supports excluding weekends and holidays from calculations.
-
-<p align="center">
-  <img width="800" alt="Date Range Filter" src="./images/date-range-filter.png">
-</p>
-
-### Teams Comparison
-Compare Copilot metrics across multiple teams within your organization to understand adoption patterns and identify high-performing teams.
-
-<p align="center">
-  <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">
-</p>
-
-### GitHub.com Integration & Model Analytics
-View comprehensive statistics for GitHub.com features including Chat, PR Summaries, and detailed model usage analytics. Each section provides expandable details showing model types, editors, and usage patterns.
-
-<p align="center">
-  <img width="800" alt="GitHub.com Tab" src="./images/github-com-tab.png">
-</p>
-
-<p align="center">
-  <img width="800" alt="Model Usage Details" src="./images/github-com-models-expanded.png">
-</p>
-
-### CSV Export Functionality
-Export your metrics data in multiple formats for further analysis or reporting. Options include summary reports, full detailed exports, and direct clipboard copying.
-
-<p align="center">
-  <img width="800" alt="CSV Export Options" src="./images/csv-export-functionality.png">
-</p>
+https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/bc7e2a16-cc73-43c4-887a-b50809c08533
 
 ## Charts
 
@@ -57,7 +19,7 @@ Export your metrics data in multiple formats for further analysis or reporting. 
 
 Here are the key metrics visualized in these charts:
 <p align="center">
-  <img width="800" alt="Key Metrics Overview" src="./images/main-metrics-dashboard.png">
+  <img width="800" alt="image" src="./images/KeyMetrics.png">
 </p>
 
 1. **Acceptance Rate:** This metric represents the ratio of accepted lines and suggestions to the total suggested by GitHub Copilot. This rate is an indicator of the relevance and usefulness of Copilot's suggestions. However, as with any metric, it should be used with caution as developers use Copilot in many different ways (research, confirm, verify, etc., not always "inject").
@@ -88,28 +50,31 @@ Here are the key metrics visualized in these charts:
 
 Pie charts with the top 5 languages by accepted prompts and acceptance rate (by count/by lines) are displayed at the top.
 <p align="center">
-  <img width="800" alt="Updated Language breakdown with charts and data table" src="./images/languages-breakdown.png">
+  <img width="800" alt="image" src="./images/Language_breakdown.png">
 </p>
 
-The language breakdown analysis tab also displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the selected time period. The entries are sorted by the number of _accepted lines of code descending_.
+The language breakdown analysis tab also displays a table showing the Accepted Prompts, Accepted Lines of Code, and Acceptance Rate (%) for each language over the past 28 days. The entries are sorted by the number of _accepted lines of code descending_.
+<p align="center">
+  <img width="800" alt="image" src="./images/Language_breakdown_list.png">
+</p>
 
 ## Copilot Chat Metrics
 
 <p align="center">
-  <img width="800" alt="Copilot Chat Metrics Dashboard" src="./images/copilot-chat-metrics.png">
+  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/79867d5f-8933-4509-a58a-8c6deeb47536">
 </p>
 
-1. **Cumulative Number of Turns:** This metric represents the total number of turns (interactions) with the Copilot over the selected time period. A 'turn' includes both user inputs and Copilot's responses.
+1. **Cumulative Number of Turns:** This metric represents the total number of turns (interactions) with the Copilot over the past 28 days. A 'turn' includes both user inputs and Copilot's responses.
 
-2. **Cumulative Number of Acceptances:** This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the selected time period.
+2. **Cumulative Number of Acceptances:** This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the past 28 days.
 
 3. **Total Turns | Total Acceptances Count:** This is a chart that displays the total number of turns and acceptances.
 
-4. **Total Active Copilot Chat Users:** A bar chart that illustrates the total number of users who have actively interacted with Copilot over the selected time period.
+4. **Total Active Copilot Chat Users:** A bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.
 
 ## Seat Analysis
 <p align="center">
-  <img width="800" alt="Seat Analysis Dashboard" src="./images/seat-analysis.png">
+  <img width="800" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/54096296/51747194-df30-4bfb-8849-54a0510fffcb">
 </p>
 
 1. **Total Assigned:** This metric represents the total number of Copilot seats assigned within the current organization/enterprise.
@@ -120,74 +85,235 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 4. **No Activity in the Last 7 Days (including never used seats):** A table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
 
-## Advanced Features
+## Local Development Setup
 
-### Flexible Date Range Selection
-The application supports flexible date range selection allowing users to analyze metrics for any period up to 100 days. The date picker provides an intuitive calendar interface with options to exclude weekends and holidays from the analysis.
+### Prerequisites
 
-### Data Export Capabilities
-Multiple export options are available in the API Response tab:
-- **Download CSV (Summary)**: Exports key metrics in a condensed format
-- **Download CSV (Full)**: Exports comprehensive detailed data
-- **Copy Metrics to Clipboard**: Quick copy functionality for immediate use
-- **Check Metric Data Quality**: Validates data integrity and completeness
+Before running the application locally, ensure you have the following installed:
 
-### Team Analytics
-Organizations can compare metrics across different teams to:
-- Identify high-performing teams
-- Understand adoption patterns
-- Share best practices across teams
-- Monitor team-specific engagement levels
+```bash
+# Node.js 18 or higher
+node --version  # Should be 18.x or higher
+npm --version   # Should be 9.x or higher
 
-### Model Usage Analytics
-Detailed insights into AI model usage including:
-- IDE Code Completions by editor and model type
-- IDE Chat interactions and model preferences
-- GitHub.com Chat usage patterns
-- PR Summary generation statistics
-- Custom vs. default model adoption rates
+# Git (for cloning the repository)
+git --version
 
-## Setup Instructions
+# Optional: Docker (for containerized development)
+docker --version
+```
 
-In the `.env` file, you can configure several environment variables that control the behavior of the application.
+### Quick Start
 
-Public variables:
-- `NUXT_PUBLIC_IS_DATA_MOCKED`
-- `NUXT_PUBLIC_SCOPE`
-- `NUXT_PUBLIC_GITHUB_ENT`
-- `NUXT_PUBLIC_GITHUB_ORG`
-- `NUXT_PUBLIC_GITHUB_TEAM`
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/github-copilot-resources/copilot-metrics-viewer.git
+   cd copilot-metrics-viewer
+   ```
 
-can be overriden by route parameters, e.g.
-- `http://localhost:3000/enterprises/octo-demo-ent`
-- `http://localhost:3000/orgs/octo-demo-org`
-- `http://localhost:3000/orgs/octo-demo-org/teams/the-a-team`
-- `http://localhost:3000/enterprises/octo-demo-ent/teams/the-a-team`
-- `http://localhost:3000/orgs/mocked-org?mock=true`
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-#### NUXT_PUBLIC_SCOPE
+3. **Configure Environment Variables**
+   
+   Create a `.env` file in the project root:
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Or create manually with the following content:
+   cat > .env << 'EOF'
+   # GitHub Authentication (Required)
+   NUXT_GITHUB_TOKEN=your-github-pat-here
+   NUXT_SESSION_PASSWORD=your-secure-32-char-session-password-here
+   
+   # GitHub Organization Settings
+   NUXT_PUBLIC_SCOPE=organization
+   NUXT_PUBLIC_GITHUB_ORG=your-github-org
+   NUXT_PUBLIC_GITHUB_ENT=your-github-enterprise
+   NUXT_PUBLIC_GITHUB_TEAM=
+   
+   # Application Settings
+   NUXT_PUBLIC_USING_GITHUB_AUTH=false
+   NUXT_PUBLIC_IS_DATA_MOCKED=false
+   
+   # Optional: Basic Authentication
+   # NUXT_BASIC_AUTH_USERNAME=admin
+   # NUXT_BASIC_AUTH_PASSWORD=devpassword123
+   EOF
+   ```
 
-The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization', 'team-organization' or 'team-enterprise'.
+4. **Generate GitHub Personal Access Token**
+   
+   Create a GitHub PAT with the following scopes:
+   - `copilot`
+   - `manage_billing:copilot`
+   - `manage_billing:enterprise`
+   - `read:enterprise`
+   - `read:org`
+   
+   Add the token to your `.env` file as `NUXT_GITHUB_TOKEN=your-token-here`
 
-- If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
-- If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
-- If set to 'team', the application will target API calls to GitHub Team defined in the `NUXT_PUBLIC_GITHUB_TEAM` variable under `NUXT_PUBLIC_GITHUB_ORG` GitHub Organization.
+5. **Run the Development Server**
+   ```bash
+   npm run dev
+   ```
+   
+   The application will be available at `http://localhost:3000`
 
-For example, if you want to target the API calls to an organization, you would set `NUXT_PUBLIC_SCOPE=organization` in the `.env` file.
+### Development Features
 
->[!INFO]
-> Environment variables with `NUXT_PUBLIC` scope are available in the browser (are public).
-> See [Nuxt Runtime Config](https://nuxt.com/docs/guide/going-further/runtime-config) for details.
+- **Hot Reload**: Changes automatically refresh the browser
+- **Vue DevTools**: Browser extension for debugging Vue components
+- **API Debugging**: Console logs for GitHub API calls
+- **Mock Data Mode**: Test without real GitHub API calls
 
-````
-NUXT_PUBLIC_SCOPE=organization
+### Environment Variables Reference
 
-NUXT_PUBLIC_GITHUB_ORG=<YOUR-ORGANIZATION>
+#### Required Variables
 
-NUXT_PUBLIC_GITHUB_ENT=
-````
+- **`NUXT_GITHUB_TOKEN`**: GitHub Personal Access Token for API authentication
+- **`NUXT_SESSION_PASSWORD`**: 32+ character string for session encryption
 
-#### NUXT_PUBLIC_GITHUB_TEAM
+#### GitHub Configuration
+
+- **`NUXT_PUBLIC_SCOPE`**: API scope (`enterprise`, `organization`, or `team`)
+- **`NUXT_PUBLIC_GITHUB_ORG`**: GitHub organization name
+- **`NUXT_PUBLIC_GITHUB_ENT`**: GitHub enterprise name (if using enterprise scope)
+- **`NUXT_PUBLIC_GITHUB_TEAM`**: GitHub team name (if using team scope)
+
+#### Optional Features
+
+- **`NUXT_PUBLIC_IS_DATA_MOCKED`**: Set to `true` to use mock data instead of API calls
+- **`NUXT_PUBLIC_USING_GITHUB_AUTH`**: Enable GitHub OAuth authentication
+- **`NUXT_BASIC_AUTH_USERNAME`** / **`NUXT_BASIC_AUTH_PASSWORD`**: Enable basic authentication
+
+### URL Parameters and Routes
+
+You can override environment variables using URL parameters:
+
+```bash
+# Organization view
+http://localhost:3000/orgs/your-org-name
+
+# Enterprise view  
+http://localhost:3000/enterprises/your-enterprise-name
+
+# Team view
+http://localhost:3000/orgs/your-org-name/teams/your-team-name
+
+# Mock data mode (for testing)
+http://localhost:3000/orgs/any-org?mock=true
+```
+
+### Development Commands
+
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+
+# Run tests
+npm run test
+
+# Run end-to-end tests
+npm run test:e2e
+
+# Lint code
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# Type checking
+npm run typecheck
+```
+
+### Docker Development
+
+```bash
+# Build Docker image
+docker build -t copilot-metrics-viewer .
+
+# Run with environment file
+docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
+
+# Access at http://localhost:8080
+```
+
+### Testing with Mock Data
+
+For development and testing without consuming GitHub API quota:
+
+```bash
+# Enable mock data mode
+export NUXT_PUBLIC_IS_DATA_MOCKED=true
+
+# Start development server
+npm run dev
+
+# Or use URL parameter
+open http://localhost:3000?mock=true
+```
+
+### Troubleshooting
+
+**Authentication Issues:**
+- Verify your GitHub PAT has the correct scopes
+- Ensure the PAT is authorized for SAML SSO (if your org requires it)
+- Check that your organization/enterprise names are correct
+
+**API Rate Limits:**
+- Use mock data mode during development
+- Consider using GitHub OAuth instead of PAT for production
+
+**Session Errors:**
+- Ensure `NUXT_SESSION_PASSWORD` is at least 32 characters long
+- Use a cryptographically secure random string
+
+**Port Conflicts:**
+- The default port is 3000, change with: `npm run dev -- --port 3001`
+
+### Quick Development Reference
+
+```bash
+# Clone and setup
+git clone <repository-url>
+cd copilot-metrics-viewer
+npm install
+cp .env.example .env  # Then edit .env with your values
+
+# Development
+npm run dev           # Start dev server at http://localhost:3000
+npm run dev -- --port 3001  # Use different port
+npm run build         # Build for production
+npm run preview       # Preview production build
+
+# Testing
+npm run test          # Run unit tests
+npm run test:e2e      # Run end-to-end tests
+npm run lint          # Check code style
+npm run typecheck     # TypeScript checking
+
+# Docker
+docker build -t copilot-metrics-viewer .
+docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
+
+# Mock data (no API calls)
+NUXT_PUBLIC_IS_DATA_MOCKED=true npm run dev
+# Or visit: http://localhost:3000?mock=true
+```
+
+## Advanced Configuration
+
+### NUXT_PUBLIC_GITHUB_TEAM
 
 The `NUXT_PUBLIC_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Enterprise or Organization account.
 ‼️ Important ‼️ When this variable is set, all displayed metrics will pertain exclusively to the specified team. To view metrics for the entire Organization or Enterprise, remove this environment variable.
@@ -242,32 +368,6 @@ Variables required for GitHub Auth are:
 Solution supports HTTP Proxy settings when running in corporate environment. Simple set `HTTP_PROXY` environment variable.
 
 For custom CA use environment variable `CUSTOM_CA_PATH` to load the certificate into proxy agent options.
-
-## Install Dependencies
-
-```bash
-npm install
-```
-
-### Compiles and Runs the Application
-
-```bash
-npm run dev
-```
-
-### Docker Build
-
-```bash
-docker build -t copilot-metrics-viewer .
-```
-
-### Docker Run
-
-```bash
-docker run -p 8080:80 --env-file ./.env copilot-metrics-viewer
-```
-
-The application will be accessible at http://localhost:8080
 
 ## Health Check Endpoints
 

@@ -30,3 +30,6 @@ playwright-logs
 # Test results
 test-results
 results.xml
+
+# Deployment instructions (contains sensitive infrastructure details)
+AI-Instructions.md
