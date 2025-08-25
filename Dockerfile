@@ -68,7 +68,7 @@ COPY --chown=1000:1000 playwright.config.ts playwright.docker.config.ts tsconfig
 
 RUN NODE_ENV=development npm install
 
-ENTRYPOINT [ "npx", "playwright", "test", "-c", "playwright.docker.config.ts", "--workers", "4"]
+ENTRYPOINT [ "npx", "playwright", "test", "-c", "playwright.docker.config.ts", "--workers", "2"]
 
 #-----------------------------------
 FROM base-${mode} AS final
