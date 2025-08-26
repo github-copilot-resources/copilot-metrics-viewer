@@ -37,7 +37,7 @@
     "@playwright/test": "1.54.2",
     "@types/webfontloader": "^1.6.38",
     "@vue/test-utils": "^2.4.6",
-    "esbuild": ">=0.25.8",
+    "esbuild": ">=0.25.9",
     "happy-dom": "^16.5.3",
     "playwright-core": "1.54.2",
     "sass-embedded": "^1.80.3",
