@@ -51,7 +51,7 @@ function buildHeaders(token: string): Headers {
             This can happen when:
             1. First call to the API when client checks if user is authenticated - /api/_auth/session.
             2. When App is not configured correctly:
-             - For PAT, set NUXT_PUBLIC_GITHUB_TOKEN environment variable.
+             - For PAT, set NUXT_GITHUB_TOKEN environment variable.
              - For GitHub Auth - ensure NUXT_PUBLIC_USING_GITHUB_AUTH is set to true, NUXT_OAUTH_GITHUB_CLIENT_ID and NUXT_OAUTH_GITHUB_CLIENT_SECRET are provided and user is authenticated.`);
     }
 
