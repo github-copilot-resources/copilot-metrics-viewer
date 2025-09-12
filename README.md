@@ -158,7 +158,7 @@ Public variables:
 - `NUXT_PUBLIC_GITHUB_ORG`
 - `NUXT_PUBLIC_GITHUB_TEAM`
 
-can be overriden by route parameters, e.g.
+can be overridden by route parameters, e.g.
 - `http://localhost:3000/enterprises/octo-demo-ent`
 - `http://localhost:3000/orgs/octo-demo-org`
 - `http://localhost:3000/orgs/octo-demo-org/teams/the-a-team`
@@ -227,19 +227,19 @@ For more information see [Nuxt Sessions and Authentication](https://nuxt.com/doc
 
 #### NUXT_PUBLIC_USING_GITHUB_AUTH
 
-Default is `false`. When set to `true`, GitHub OAuth App Authentication will be performed to verify users' access to the dashboard. For this, a GitHub App must be registered and installed in the enterprise/org. See [Github App Registration](DEPLOYMENT.md#github-app-registration) for the steps to follow.
+Default is `false`. When set to `true`, GitHub OAuth App Authentication will be performed to verify users' access to the dashboard. For this, a GitHub App must be registered and installed in the enterprise/org. See [GitHub App Registration](DEPLOYMENT.md#github-app-registration) for the steps to follow.
 
 Variables required for GitHub Auth are:
 1. `NUXT_OAUTH_GITHUB_CLIENT_ID` - client ID of the GitHub App.
 2. `NUXT_OAUTH_GITHUB_CLIENT_SECRET` - client secret of the GitHub App.
-3. [Optional] `NUXT_OAUTH_GITHUB_CLIENT_SCOPE` for scope requests when using OAuth App instead of GitHub App. See [Github docs](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps) for details.
+3. [Optional] `NUXT_OAUTH_GITHUB_CLIENT_SCOPE` for scope requests when using OAuth App instead of GitHub App. See [GitHub docs](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps) for details.
 
 >[!WARNING]
 > Only users with permissions (scopes listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN)) can view copilot metrics, GitHub uses the authenticated users permissions to make API calls for data.
 
 #### HTTP_PROXY
 
-Solution supports HTTP Proxy settings when running in corporate environment. Simple set `HTTP_PROXY` environment variable.
+Solution supports HTTP Proxy settings when running in corporate environment. Simply set `HTTP_PROXY` environment variable.
 
 For custom CA use environment variable `CUSTOM_CA_PATH` to load the certificate into proxy agent options.
 
