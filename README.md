@@ -165,7 +165,7 @@ can be overriden by route parameters, e.g.
 - `http://localhost:3000/enterprises/octo-demo-ent/teams/the-a-team`
 - `http://localhost:3000/orgs/mocked-org?mock=true`
 
-#### NUXT_PUBLIC_SCOPE
+#### NUXT_PUBLIC_SCOPE (Required!)
 
 The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization', 'team-organization' or 'team-enterprise'.
 
@@ -227,21 +227,27 @@ For more information see [Nuxt Sessions and Authentication](https://nuxt.com/doc
 
 #### NUXT_PUBLIC_USING_GITHUB_AUTH
 
-Default is `false`. When set to `true`, GitHub OAuth App Authentication will be performed to verify users' access to the dashboard.
+Default is `false`. When set to `true`, GitHub OAuth App Authentication will be performed to verify users' access to the dashboard. For this, a GitHub App must be registered and installed in the enterprise/org. See [Github App Registration](DEPLOYMENT.md#github-app-registration) for the steps to follow.
 
 Variables required for GitHub Auth are:
-1. `NUXT_OAUTH_GITHUB_CLIENT_ID` - client ID of the GitHub App registered and installed in the enterprise/org with permissions listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN).
+1. `NUXT_OAUTH_GITHUB_CLIENT_ID` - client ID of the GitHub App.
 2. `NUXT_OAUTH_GITHUB_CLIENT_SECRET` - client secret of the GitHub App.
 3. [Optional] `NUXT_OAUTH_GITHUB_CLIENT_SCOPE` for scope requests when using OAuth App instead of GitHub App. See [Github docs](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps) for details.
 
 >[!WARNING]
 > Only users with permissions (scopes listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN)) can view copilot metrics, GitHub uses the authenticated users permissions to make API calls for data.
 
-#### Support for HTTP Proxy HTTP_PROXY
+#### HTTP_PROXY
 
 Solution supports HTTP Proxy settings when running in corporate environment. Simple set `HTTP_PROXY` environment variable.
 
 For custom CA use environment variable `CUSTOM_CA_PATH` to load the certificate into proxy agent options.
+
+#### NITRO_PORT
+
+Default is `80` in the [Dockerfile](Dockerfile). It defines the port number that Nitro (Nuxt’s server engine) will listen on.
+
+For example, it should be set to a number between 1024 and 49151 if the application is run as a non-root user.
 
 ## Install Dependencies
 
