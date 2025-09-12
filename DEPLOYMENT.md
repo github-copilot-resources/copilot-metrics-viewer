@@ -197,10 +197,9 @@ or navigate using UI:
 5. Set the scopes:
    - Select **Organization permissions**.
    - Under **GitHub Copilot Business**, select **Access: Read-only**.
-6. Click on 'Create GitHub App' and, in the following page, click on 'Generate a new client secret'. (IMPORTANT: _**Save it for later**_)
-7. Install the app in the organization:
+   - Under **Members**, select **Access: Read-only**.
+6. Click on 'Create GitHub App' and, in the following page, click on 'Generate a new client secret'.
+7. Note the `Client ID` and `Client Secret` (copy it to a secure location). This is required for the application to authenticate with GitHub.
+8. Install the app in the organization:
    - Go to "Install App".
    - Select your organization.
-8. Generate a new `Client Secret` and copy it to a secure location. This is required for the application to authenticate with GitHub.
-
-Note the `Client ID` and `Client Secret`.
