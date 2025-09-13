@@ -24,8 +24,9 @@ export default defineEventHandler(async (event) => {
     // Only apply authentication to API routes
     const url = event.node.req.url || '';
 
-    // Skip authentication for non-API routes
-    if (!url.startsWith('/api/')) {
+    const healthCheckPaths = ['/api/health', '/api/live', '/api/ready'];
+    // Skip authentication for non-API routes and health check endpoints
+    if (!url.startsWith('/api/') || healthCheckPaths.includes(url)) {
         return;
     }
 
