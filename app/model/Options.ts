@@ -6,6 +6,7 @@ import type { QueryObject } from 'ufo';
 import type { RouteLocationNormalizedLoadedGeneric } from 'vue-router';
 
 export type Scope = 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise';
+export type EnterpriseType = 'full' | 'copilot-only';
 
 export interface OptionsData {
     since?: string;
@@ -15,6 +16,7 @@ export interface OptionsData {
     githubEnt?: string;
     githubTeam?: string;
     scope?: Scope;
+    enterpriseType?: EnterpriseType;
     excludeHolidays?: boolean;
     locale?: string;
 }
@@ -25,6 +27,7 @@ export interface RuntimeConfig {
         githubOrg?: string;
         githubEnt?: string;
         githubTeam?: string;
+        enterpriseType?: string;
         isDataMocked?: boolean;
     };
 }
@@ -54,6 +57,7 @@ export class Options {
     public githubEnt?: string;
     public githubTeam?: string;
     public scope?: Scope;
+    public enterpriseType?: EnterpriseType;
     public excludeHolidays?: boolean;
     public locale?: string;
 
@@ -65,6 +69,7 @@ export class Options {
         this.githubEnt = data.githubEnt;
         this.githubTeam = data.githubTeam;
         this.scope = data.scope;
+        this.enterpriseType = data.enterpriseType;
         this.excludeHolidays = data.excludeHolidays;
         this.locale = data.locale;
     }
@@ -109,6 +114,7 @@ export class Options {
             if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
             if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
             if (config.public.githubTeam) options.githubTeam = config.public.githubTeam;
+            if (config.public.enterpriseType) options.enterpriseType = config.public.enterpriseType as EnterpriseType;
         }
 
         return options;
@@ -126,6 +132,7 @@ export class Options {
             githubEnt: params.get('githubEnt') || undefined,
             githubTeam: params.get('githubTeam') || undefined,
             scope: (params.get('scope') as Scope) || undefined,
+            enterpriseType: (params.get('enterpriseType') as EnterpriseType) || undefined,
             locale: params.get('locale') || undefined
         });
 
@@ -149,6 +156,7 @@ export class Options {
             githubEnt: query.githubEnt as string | undefined,
             githubTeam: query.githubTeam as string | undefined,
             scope: (query.scope as Scope) || undefined,
+            enterpriseType: (query.enterpriseType as EnterpriseType) || undefined,
             locale: query.locale as string | undefined
         });
 
@@ -184,6 +192,7 @@ export class Options {
         if (this.githubEnt) params.set('githubEnt', this.githubEnt);
         if (this.githubTeam) params.set('githubTeam', this.githubTeam);
         if (this.scope) params.set('scope', this.scope);
+        if (this.enterpriseType) params.set('enterpriseType', this.enterpriseType);
         if (this.excludeHolidays) params.set('excludeHolidays', 'true');
         if (this.locale) params.set('locale', this.locale);
 
@@ -199,6 +208,7 @@ export class Options {
         if (this.githubEnt) params.githubEnt = this.githubEnt;
         if (this.githubTeam) params.githubTeam = this.githubTeam;
         if (this.scope) params.scope = this.scope;
+        if (this.enterpriseType) params.enterpriseType = this.enterpriseType;
         if (this.excludeHolidays) params.excludeHolidays = String(this.excludeHolidays);
         if (this.locale) params.locale = this.locale;
         return params;
@@ -217,6 +227,7 @@ export class Options {
         if (this.githubEnt !== undefined) result.githubEnt = this.githubEnt;
         if (this.githubTeam !== undefined) result.githubTeam = this.githubTeam;
         if (this.scope !== undefined) result.scope = this.scope;
+        if (this.enterpriseType !== undefined) result.enterpriseType = this.enterpriseType;
         if (this.excludeHolidays !== undefined) result.excludeHolidays = this.excludeHolidays;
         if (this.locale !== undefined) result.locale = this.locale;
 
@@ -242,6 +253,7 @@ export class Options {
             githubEnt: other.githubEnt ?? this.githubEnt,
             githubTeam: other.githubTeam ?? this.githubTeam,
             scope: other.scope ?? this.scope,
+            enterpriseType: other.enterpriseType ?? this.enterpriseType,
             excludeHolidays: other.excludeHolidays ?? this.excludeHolidays,
             locale: other.locale ?? this.locale
         });
@@ -287,7 +299,23 @@ export class Options {
                 if (!this.githubEnt || !this.githubTeam) {
                     throw new Error('GitHub enterprise and team must be set for team-enterprise scope');
                 }
-                url = `${baseUrl}/enterprises/${this.githubEnt}/team/${this.githubTeam}/copilot/metrics`;
+                // For full enterprises, teams are organization-based, so we need to use org API
+                // For copilot-only enterprises, we use the enterprise team API
+                if (this.enterpriseType === 'full') {
+                    // We need to determine which organization the team belongs to
+                    // This will be handled by extracting org name from team slug format "org-name - team-name"
+                    const teamParts = this.githubTeam.split(' - ');
+                    if (teamParts.length >= 2) {
+                        const orgName = teamParts[0];
+                        const teamName = teamParts[1];
+                        url = `${baseUrl}/orgs/${orgName}/team/${teamName}/copilot/metrics`;
+                    } else {
+                        throw new Error('Team slug must be in format "org-name - team-name" for full enterprise scope');
+                    }
+                } else {
+                    // Default to copilot-only behavior
+                    url = `${baseUrl}/enterprises/${this.githubEnt}/team/${this.githubTeam}/copilot/metrics`;
+                }
                 break;
 
             case 'enterprise':
@@ -355,11 +383,32 @@ export class Options {
                 if (!this.githubEnt) {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
                 }
-                return `${baseUrl}/enterprises/${this.githubEnt}/teams`;
+                // For full enterprises, we need to get teams from organizations within the enterprise
+                // For copilot-only enterprises, we use the enterprise teams API
+                if (this.enterpriseType === 'full') {
+                    // This will be handled by the teams API to enumerate organizations first
+                    return `${baseUrl}/enterprises/${this.githubEnt}/organizations`;
+                } else {
+                    // Default to copilot-only behavior (enterprise teams API)
+                    return `${baseUrl}/enterprises/${this.githubEnt}/teams`;
+                }
 
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);
         }
+    }
+
+    /**
+     * Get the Enterprise Organizations API URL
+     */
+    getEnterpriseOrganizationsApiUrl(): string {
+        const baseUrl = 'https://api.github.com';
+        
+        if (!this.githubEnt) {
+            throw new Error('GitHub enterprise must be set');
+        }
+        
+        return `${baseUrl}/enterprises/${this.githubEnt}/organizations`;
     }
 
     /**
