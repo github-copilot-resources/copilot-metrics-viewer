@@ -25,7 +25,13 @@ Users can now filter metrics for custom date ranges up to 100 days, with an intu
 </p>
 
 ### Teams Comparison
-Compare Copilot metrics across multiple teams within your organization to understand adoption patterns and identify high-performing teams.
+Compare Copilot metrics across multiple teams within your organization or enterprise to understand adoption patterns and identify high-performing teams. 
+
+**Enterprise Support**: The application now supports both Full GitHub Enterprises and Copilot Business Only enterprises:
+- **Full Enterprises**: Teams are retrieved from all organizations within the enterprise
+- **Copilot Business Only**: Teams are retrieved using enterprise-level APIs
+
+Configure enterprise type using the `NUXT_PUBLIC_ENTERPRISE_TYPE` environment variable (`full` or `copilot-only`).
 
 <p align="center">
   <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">

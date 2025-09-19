@@ -132,6 +132,39 @@ docker run -it --rm -p 3000:80 \
 ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
+### Enterprise Type Configuration
+
+For enterprise deployments, you can specify the enterprise type to control how teams are retrieved and managed:
+
+**For Full GitHub Enterprises** (with repos, actions, copilot, etc):
+```bash
+docker run -it --rm -p 3000:80 \
+-e NUXT_PUBLIC_SCOPE=enterprise \
+-e NUXT_PUBLIC_GITHUB_ENT=<enterprise name> \
+-e NUXT_PUBLIC_ENTERPRISE_TYPE=full \
+-e NUXT_GITHUB_TOKEN=<github PAT> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>  \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
+```
+
+**For Copilot Business Only Enterprises** (default behavior):
+```bash
+docker run -it --rm -p 3000:80 \
+-e NUXT_PUBLIC_SCOPE=enterprise \
+-e NUXT_PUBLIC_GITHUB_ENT=<enterprise name> \
+-e NUXT_PUBLIC_ENTERPRISE_TYPE=copilot-only \
+-e NUXT_GITHUB_TOKEN=<github PAT> \
+-e NUXT_SESSION_PASSWORD=<random string - min 32 characters>  \
+ghcr.io/github-copilot-resources/copilot-metrics-viewer
+```
+
+**Environment Variable Details:**
+- `NUXT_PUBLIC_ENTERPRISE_TYPE`: Set to `full` for Full GitHub Enterprises or `copilot-only` for Copilot Business Only enterprises
+- Default value: `copilot-only` (maintains backward compatibility)
+- This affects how teams are retrieved in the TEAMS tab:
+  - `full`: Enumerates organizations within the enterprise and fetches teams from each organization
+  - `copilot-only`: Uses enterprise-level teams API (existing behavior)
+
 ## Health Check Endpoints for Kubernetes
 
 The application provides dedicated health check endpoints for Kubernetes deployments that avoid triggering GitHub API calls:

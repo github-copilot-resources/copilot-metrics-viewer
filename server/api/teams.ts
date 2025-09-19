@@ -1,8 +1,18 @@
-import { Options, type Scope } from '@/model/Options'
+import { Options, type Scope, type EnterpriseType } from '@/model/Options'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
 interface Team { name: string; slug: string; description: string }
 interface GitHubTeam { name: string; slug: string; description?: string }
+interface GraphQLOrganization { login: string; name: string; url: string }
+interface GraphQLResponse {
+    data: {
+        enterprise: {
+            organizations: {
+                nodes: GraphQLOrganization[]
+            }
+        }
+    }
+}
 
 class TeamsError extends Error {
     statusCode: number
@@ -53,6 +63,7 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     if (!options.scope && config.public.scope) options.scope = config.public.scope as Scope
     if (!options.githubOrg && config.public.githubOrg) options.githubOrg = config.public.githubOrg
     if (!options.githubEnt && config.public.githubEnt) options.githubEnt = config.public.githubEnt
+    if (!options.enterpriseType && config.public.enterpriseType) options.enterpriseType = config.public.enterpriseType as EnterpriseType
 
     if (options.isDataMocked) {
         logger.info('Using mocked data for teams')
@@ -75,27 +86,75 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     const baseUrl = options.getTeamsApiUrl()
 
     const allTeams: Team[] = []
-    let nextUrl: string | null = `${baseUrl}?per_page=100`
-    let page = 1
-
-    while (nextUrl) {
-        logger.info(`Fetching teams page ${page} from ${nextUrl}`)
-        const res = await $fetch.raw(nextUrl, {
-            headers: event.context.headers
-        })
-
-        const data = res._data as GitHubTeam[]
-        for (const t of data) {
-            const name: string = t.name
-            const slug: string = t.slug
-            const description: string = t.description || ''
-            if (name && slug) allTeams.push({ name, slug, description })
+    
+    // Handle enterprise scope with different enterprise types
+    if ((options.scope === 'enterprise' || options.scope === 'team-enterprise') && options.enterpriseType === 'full') {
+        // For full enterprises, we need to use GraphQL to enumerate organizations and get teams from each
+        logger.info(`Fetching organizations for full enterprise ${options.githubEnt} using GraphQL`)
+        
+        const graphqlQuery = {
+            query: `query { enterprise(slug: "${options.githubEnt}") { organizations(first: 100) { nodes { login name url } } } }`
         }
+        
+        const graphqlResponse = await $fetch<GraphQLResponse>('https://api.github.com/graphql', {
+            method: 'POST',
+            headers: event.context.headers,
+            body: JSON.stringify(graphqlQuery)
+        })
+        
+        const organizations = graphqlResponse.data.enterprise.organizations.nodes
+        logger.info(`Found ${organizations.length} organizations in enterprise`)
+        
+        // For each organization, fetch its teams
+        for (const org of organizations) {
+            const orgTeamsUrl = `https://api.github.com/orgs/${org.login}/teams`
+            let nextTeamsUrl: string | null = `${orgTeamsUrl}?per_page=100`
+            let teamsPage = 1
+            
+            while (nextTeamsUrl) {
+                logger.info(`Fetching teams page ${teamsPage} from ${nextTeamsUrl} for org ${org.login}`)
+                const teamsRes = await $fetch.raw(nextTeamsUrl, {
+                    headers: event.context.headers
+                })
+                
+                const teamsData = teamsRes._data as GitHubTeam[]
+                for (const t of teamsData) {
+                    const name: string = `${org.login} - ${t.name}`
+                    const slug: string = `${org.login} - ${t.slug}`
+                    const description: string = t.description || `Team ${t.name} from organization ${org.login}`
+                    if (t.name && t.slug) allTeams.push({ name, slug, description })
+                }
+                
+                const teamsLinkHeader = teamsRes.headers.get('link') || teamsRes.headers.get('Link')
+                const teamsLinks = parseLinkHeader(teamsLinkHeader)
+                nextTeamsUrl = teamsLinks['next'] || null
+                teamsPage += 1
+            }
+        }
+    } else {
+        // Handle organization scope or copilot-only enterprise scope (original logic)
+        let nextUrl: string | null = `${baseUrl}?per_page=100`
+        let page = 1
 
-        const linkHeader = res.headers.get('link') || res.headers.get('Link')
-        const links = parseLinkHeader(linkHeader)
-        nextUrl = links['next'] || null
-        page += 1
+        while (nextUrl) {
+            logger.info(`Fetching teams page ${page} from ${nextUrl}`)
+            const res = await $fetch.raw(nextUrl, {
+                headers: event.context.headers
+            })
+
+            const data = res._data as GitHubTeam[]
+            for (const t of data) {
+                const name: string = t.name
+                const slug: string = t.slug
+                const description: string = t.description || ''
+                if (name && slug) allTeams.push({ name, slug, description })
+            }
+
+            const linkHeader = res.headers.get('link') || res.headers.get('Link')
+            const links = parseLinkHeader(linkHeader)
+            nextUrl = links['next'] || null
+            page += 1
+        }
     }
 
     return allTeams
