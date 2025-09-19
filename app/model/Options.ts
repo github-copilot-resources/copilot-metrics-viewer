@@ -383,11 +383,11 @@ export class Options {
                 if (!this.githubEnt) {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
                 }
-                // For full enterprises, we need to get teams from organizations within the enterprise
+                // For full enterprises, teams are fetched via GraphQL + organization teams APIs
                 // For copilot-only enterprises, we use the enterprise teams API
                 if (this.enterpriseType === 'full') {
-                    // This will be handled by the teams API to enumerate organizations first
-                    return `${baseUrl}/enterprises/${this.githubEnt}/organizations`;
+                    // GraphQL will be used to get organizations, then org teams APIs
+                    return `${baseUrl}/graphql`;
                 } else {
                     // Default to copilot-only behavior (enterprise teams API)
                     return `${baseUrl}/enterprises/${this.githubEnt}/teams`;
@@ -396,19 +396,6 @@ export class Options {
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);
         }
-    }
-
-    /**
-     * Get the Enterprise Organizations API URL
-     */
-    getEnterpriseOrganizationsApiUrl(): string {
-        const baseUrl = 'https://api.github.com';
-        
-        if (!this.githubEnt) {
-            throw new Error('GitHub enterprise must be set');
-        }
-        
-        return `${baseUrl}/enterprises/${this.githubEnt}/organizations`;
     }
 
     /**

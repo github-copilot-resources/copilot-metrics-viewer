@@ -22,7 +22,7 @@ describe('Enterprise Type Support', () => {
       })
 
       expect(options.enterpriseType).toBe('full')
-      expect(options.getTeamsApiUrl()).toBe('https://api.github.com/enterprises/test-enterprise/organizations')
+      expect(options.getTeamsApiUrl()).toBe('https://api.github.com/graphql')
     })
 
     it('should default to copilot-only behavior when enterprise type not specified', () => {
@@ -117,20 +117,6 @@ describe('Enterprise Type Support', () => {
 
       const merged = options1.merge(options2)
       expect(merged.enterpriseType).toBe('full')
-    })
-
-    it('should handle enterprise organizations API URL', () => {
-      const options = new Options({
-        githubEnt: 'test-enterprise'
-      })
-
-      expect(options.getEnterpriseOrganizationsApiUrl()).toBe('https://api.github.com/enterprises/test-enterprise/organizations')
-    })
-
-    it('should throw error for enterprise organizations API without enterprise', () => {
-      const options = new Options()
-
-      expect(() => options.getEnterpriseOrganizationsApiUrl()).toThrow('GitHub enterprise must be set')
     })
   })
 })
