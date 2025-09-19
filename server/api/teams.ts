@@ -98,10 +98,7 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
         
         const graphqlResponse = await $fetch<GraphQLResponse>('https://api.github.com/graphql', {
             method: 'POST',
-            headers: {
-                ...event.context.headers,
-                'Content-Type': 'application/json'
-            },
+            headers: event.context.headers,
             body: JSON.stringify(graphqlQuery)
         })
         
