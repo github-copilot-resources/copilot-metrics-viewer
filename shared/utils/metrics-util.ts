@@ -262,8 +262,13 @@ function aggregateMetricsByDate(metrics: CopilotMetrics[]): CopilotMetrics[] {
       // Aggregate with existing metric for this date
       const existing = aggregated.get(date)!;
       
-      // Sum total_active_users
-      existing.total_active_users = (existing.total_active_users || 0) + (metric.total_active_users || 0);
+      // IMPORTANT: For total_active_users in multi-org scenarios, we take the MAX instead of SUM
+      // because users may be counted in multiple organizations (would cause double-counting)
+      // This gives us a conservative estimate of unique active users
+      existing.total_active_users = Math.max(
+        existing.total_active_users || 0, 
+        metric.total_active_users || 0
+      );
       
       // Merge copilot_ide_code_completions
       if (metric.copilot_ide_code_completions) {
