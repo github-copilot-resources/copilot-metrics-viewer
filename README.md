@@ -156,6 +156,7 @@ Public variables:
 - `NUXT_PUBLIC_SCOPE`
 - `NUXT_PUBLIC_GITHUB_ENT`
 - `NUXT_PUBLIC_GITHUB_ORG`
+- `NUXT_PUBLIC_GITHUB_ORGS`
 - `NUXT_PUBLIC_GITHUB_TEAM`
 
 can be overridden by route parameters, e.g.
@@ -167,11 +168,12 @@ can be overridden by route parameters, e.g.
 
 #### NUXT_PUBLIC_SCOPE (Required!)
 
-The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization', 'team-organization' or 'team-enterprise'.
+The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization', 'team-organization', 'team-enterprise', or 'multi-organization'.
 
 - If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
 - If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
-- If set to 'team', the application will target API calls to GitHub Team defined in the `NUXT_PUBLIC_GITHUB_TEAM` variable under `NUXT_PUBLIC_GITHUB_ORG` GitHub Organization.
+- If set to 'team-organization' or 'team-enterprise', the application will target API calls to GitHub Team defined in the `NUXT_PUBLIC_GITHUB_TEAM` variable under the respective organization or enterprise.
+- If set to 'multi-organization', the application will aggregate metrics from multiple organizations defined in `NUXT_PUBLIC_GITHUB_ORGS` (comma-separated list).
 
 For example, if you want to target the API calls to an organization, you would set `NUXT_PUBLIC_SCOPE=organization` in the `.env` file.
 
@@ -186,6 +188,22 @@ NUXT_PUBLIC_GITHUB_ORG=<YOUR-ORGANIZATION>
 
 NUXT_PUBLIC_GITHUB_ENT=
 ````
+
+#### NUXT_PUBLIC_GITHUB_ORGS (For Multi-Organization Support)
+
+The `NUXT_PUBLIC_GITHUB_ORGS` environment variable allows you to specify multiple GitHub organizations as a comma-separated list. When two or more organizations are provided, the application will automatically use the 'multi-organization' scope and aggregate metrics from all specified organizations.
+
+>[!TIP]
+> This is perfect for getting a combined view of Copilot usage across multiple organizations within your company.
+
+**Example for multiple organizations:**
+````
+NUXT_PUBLIC_GITHUB_ORGS=org1,org2,org3
+NUXT_PUBLIC_SCOPE=multi-organization
+````
+
+>[!NOTE]
+> When `NUXT_PUBLIC_GITHUB_ORGS` contains 2+ organizations, the scope will automatically be set to 'multi-organization' regardless of the `NUXT_PUBLIC_SCOPE` value.
 
 #### NUXT_PUBLIC_GITHUB_TEAM
 

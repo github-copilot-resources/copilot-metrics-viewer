@@ -104,8 +104,49 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
     throw new MetricsError('No Authentication provided', 401);
   }
 
-  // Build auth-bound cache key
-  const path = event.path || '/api/metrics'; // fallback path (should always exist in practice)
+  // Handle multi-organization scope
+  const isMultiOrg = Array.isArray(apiUrl);
+  if (isMultiOrg) {
+    logger.info(`Fetching metrics data from ${apiUrl.length} organizations`);
+    const allMetrics: CopilotMetrics[] = [];
+    
+    for (const url of apiUrl) {
+      const path = event.path || '/api/metrics';
+      const cacheKey = buildMetricsCacheKey(path, query as QueryParams, authHeader);
+      
+      // Check cache for this org
+      const cachedData = cache.get(cacheKey + ':' + url);
+      if (cachedData && cachedData.valid_until > Date.now() / 1000) {
+        logger.info(`Returning cached data for ${url}`);
+        allMetrics.push(...cachedData.data);
+        continue;
+      }
+
+      try {
+        const response = await $fetch(url, {
+          headers: event.context.headers
+        }) as unknown[];
+        
+        const usageData = ensureCopilotMetrics(response as CopilotMetrics[]);
+        const filteredUsageData = filterHolidaysFromMetrics(usageData, options.excludeHolidays || false, options.locale);
+        
+        // Cache each org's data separately
+        const validUntil = Math.floor(Date.now() / 1000) + 5 * 60;
+        cache.set(cacheKey + ':' + url, { data: filteredUsageData, valid_until: validUntil });
+        
+        allMetrics.push(...filteredUsageData);
+      } catch (error: unknown) {
+        logger.error(`Error fetching metrics for ${url}:`, error);
+        // Continue with other orgs even if one fails
+      }
+    }
+    
+    // Aggregate metrics by date
+    return aggregateMetricsByDate(allMetrics);
+  }
+
+  // Build auth-bound cache key for single org
+  const path = event.path || '/api/metrics';
   const cacheKey = buildMetricsCacheKey(path, query as QueryParams, authHeader);
 
   // Attempt cache lookup with auth fingerprint validation
@@ -203,3 +244,111 @@ function ensureCopilotMetrics(data: CopilotMetrics[]): CopilotMetrics[] {
     return item as CopilotMetrics;
   });
 };
+
+/**
+ * Aggregate metrics from multiple organizations by date
+ * Combines all metrics for the same date into a single entry
+ */
+function aggregateMetricsByDate(metrics: CopilotMetrics[]): CopilotMetrics[] {
+  const aggregated = new Map<string, CopilotMetrics>();
+
+  for (const metric of metrics) {
+    const date = metric.date;
+    
+    if (!aggregated.has(date)) {
+      // First metric for this date - clone it
+      aggregated.set(date, JSON.parse(JSON.stringify(metric)));
+    } else {
+      // Aggregate with existing metric for this date
+      const existing = aggregated.get(date)!;
+      
+      // Sum total_active_users
+      existing.total_active_users = (existing.total_active_users || 0) + (metric.total_active_users || 0);
+      
+      // Merge copilot_ide_code_completions
+      if (metric.copilot_ide_code_completions) {
+        if (!existing.copilot_ide_code_completions) {
+          existing.copilot_ide_code_completions = { editors: [], total_engaged_users: 0, languages: [] };
+        }
+        
+        existing.copilot_ide_code_completions.total_engaged_users = 
+          (existing.copilot_ide_code_completions.total_engaged_users || 0) + 
+          (metric.copilot_ide_code_completions.total_engaged_users || 0);
+        
+        // Merge editors, languages, and models
+        mergeBreakdowns(existing.copilot_ide_code_completions.editors || [], metric.copilot_ide_code_completions.editors || []);
+        mergeBreakdowns(existing.copilot_ide_code_completions.languages || [], metric.copilot_ide_code_completions.languages || []);
+      }
+      
+      // Merge copilot_ide_chat
+      if (metric.copilot_ide_chat) {
+        if (!existing.copilot_ide_chat) {
+          existing.copilot_ide_chat = { editors: [], total_engaged_users: 0 };
+        }
+        
+        existing.copilot_ide_chat.total_engaged_users = 
+          (existing.copilot_ide_chat.total_engaged_users || 0) + 
+          (metric.copilot_ide_chat.total_engaged_users || 0);
+        
+        mergeBreakdowns(existing.copilot_ide_chat.editors || [], metric.copilot_ide_chat.editors || []);
+      }
+      
+      // Merge copilot_dotcom_chat and copilot_dotcom_pull_requests similarly
+      if (metric.copilot_dotcom_chat) {
+        if (!existing.copilot_dotcom_chat) {
+          existing.copilot_dotcom_chat = { models: [], total_engaged_users: 0 };
+        }
+        
+        existing.copilot_dotcom_chat.total_engaged_users = 
+          (existing.copilot_dotcom_chat.total_engaged_users || 0) + 
+          (metric.copilot_dotcom_chat.total_engaged_users || 0);
+        
+        mergeBreakdowns(existing.copilot_dotcom_chat.models || [], metric.copilot_dotcom_chat.models || []);
+      }
+      
+      if (metric.copilot_dotcom_pull_requests) {
+        if (!existing.copilot_dotcom_pull_requests) {
+          existing.copilot_dotcom_pull_requests = { repositories: [], total_engaged_users: 0 };
+        }
+        
+        existing.copilot_dotcom_pull_requests.total_engaged_users = 
+          (existing.copilot_dotcom_pull_requests.total_engaged_users || 0) + 
+          (metric.copilot_dotcom_pull_requests.total_engaged_users || 0);
+        
+        mergeBreakdowns(existing.copilot_dotcom_pull_requests.repositories || [], metric.copilot_dotcom_pull_requests.repositories || []);
+      }
+    }
+  }
+
+  return Array.from(aggregated.values()).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Helper function to merge breakdown arrays (editors, languages, models, etc.)
+ * @param target - The target array to merge into
+ * @param source - The source array to merge from
+ */
+function mergeBreakdowns<T extends { name: string; [key: string]: any }>(target: T[], source: T[]): void {
+  for (const sourceItem of source) {
+    const targetItem = target.find(item => item.name === sourceItem.name);
+    
+    if (!targetItem) {
+      // New item - add a copy
+      target.push(JSON.parse(JSON.stringify(sourceItem)));
+    } else {
+      // Existing item - sum numeric properties
+      for (const key in sourceItem) {
+        if (key === 'name') continue;
+        
+        if (typeof sourceItem[key] === 'number') {
+          targetItem[key] = (targetItem[key] || 0) + sourceItem[key];
+        } else if (Array.isArray(sourceItem[key])) {
+          // Recursively merge nested arrays
+          if (!targetItem[key]) targetItem[key] = [];
+          mergeBreakdowns(targetItem[key], sourceItem[key]);
+        }
+      }
+    }
+  }
+}
+

@@ -141,6 +141,8 @@ export default defineNuxtComponent({
         case 'team-organization':
         case 'team-enterprise':
           return 'team';
+        case 'multi-organization':
+          return 'organizations';
         case 'organization':
         case 'enterprise':
           return itemName;
@@ -252,8 +254,8 @@ export default defineNuxtComponent({
   created() {
     this.tabItems.unshift(this.getDisplayTabName(this.itemName));
     
-    // Add teams tab for organization and enterprise scopes to allow team comparison
-    if (this.itemName === 'organization' || this.itemName === 'enterprise') {
+    // Add teams tab for organization, enterprise, and multi-organization scopes to allow team comparison
+    if (this.itemName === 'organization' || this.itemName === 'enterprise' || this.itemName === 'multi-organization') {
       this.tabItems.splice(1, 0, 'teams'); // Insert after the first tab
     }
     
