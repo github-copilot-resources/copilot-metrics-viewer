@@ -58,6 +58,13 @@ function calculateGitHubStats(metrics: CopilotMetrics[]): GitHubStats {
     totalPRSummariesCreated: 0
   });
 
+  // Calculate averages for user counts (divide by number of days with data)
+  const daysCount = metrics.length || 1;
+  totals.totalIdeCodeCompletionUsers = Math.round(totals.totalIdeCodeCompletionUsers / daysCount);
+  totals.totalIdeChatUsers = Math.round(totals.totalIdeChatUsers / daysCount);
+  totals.totalDotcomChatUsers = Math.round(totals.totalDotcomChatUsers / daysCount);
+  totals.totalDotcomPRUsers = Math.round(totals.totalDotcomPRUsers / daysCount);
+
   // Calculate unique models with optimized approach
   const modelSets = {
     ideCodeCompletion: new Set<string>(),
@@ -156,6 +163,23 @@ function calculateGitHubStats(metrics: CopilotMetrics[]): GitHubStats {
       });
     });
   }
+
+  // Convert summed user counts to averages for model details
+  modelMaps.ideCodeCompletion.forEach((value) => {
+    value.total_engaged_users = Math.round(value.total_engaged_users / daysCount);
+  });
+
+  modelMaps.ideChat.forEach((value) => {
+    value.total_engaged_users = Math.round(value.total_engaged_users / daysCount);
+  });
+
+  modelMaps.dotcomChat.forEach((value) => {
+    value.total_engaged_users = Math.round(value.total_engaged_users / daysCount);
+  });
+
+  modelMaps.dotcomPR.forEach((value) => {
+    value.total_engaged_users = Math.round(value.total_engaged_users / daysCount);
+  });
 
   // Chart data
   const labels = metrics.map(metric => metric.date);
