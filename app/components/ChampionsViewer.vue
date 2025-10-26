@@ -168,8 +168,22 @@
                   </v-chip>
                 </template>
 
+                <template #item.totalSuggestions="{ item }">
+                  <div class="d-flex align-center justify-center">
+                    <v-icon size="16" class="mr-1">mdi-code-braces</v-icon>
+                    {{ item.totalSuggestions.toLocaleString() }}
+                  </div>
+                </template>
+
+                <template #item.totalAcceptances="{ item }">
+                  <div class="d-flex align-center justify-center">
+                    <v-icon size="16" class="mr-1">mdi-check-circle</v-icon>
+                    {{ item.totalAcceptances.toLocaleString() }}
+                  </div>
+                </template>
+
                 <template #item.avgActiveUsers="{ item }">
-                  <div class="d-flex align-center">
+                  <div class="d-flex align-center justify-center">
                     <v-icon size="16" class="mr-1">mdi-account-group</v-icon>
                     {{ item.avgActiveUsers }}
                   </div>
@@ -225,6 +239,8 @@ interface Team {
 interface TeamWithMetrics extends Team {
   acceptanceRate: number
   avgActiveUsers: number
+  totalSuggestions: number
+  totalAcceptances: number
   rank: number
 }
 
@@ -251,6 +267,8 @@ export default defineComponent({
       { title: 'Rank', key: 'rank', sortable: true, width: '100px' },
       { title: 'Team Name', key: 'displayName', sortable: true },
       { title: 'Acceptance Rate', key: 'acceptanceRate', sortable: true, align: 'center' },
+      { title: 'Total Suggestions', key: 'totalSuggestions', sortable: true, align: 'center' },
+      { title: 'Total Acceptances', key: 'totalAcceptances', sortable: true, align: 'center' },
       { title: 'Avg Active Users', key: 'avgActiveUsers', sortable: true, align: 'center' },
       { title: 'Actions', key: 'actions', sortable: false, align: 'center' }
     ]
@@ -306,7 +324,7 @@ export default defineComponent({
       }))
     }
 
-    const loadMetricsForTeam = async (team: Team): Promise<{ acceptanceRate: number; avgActiveUsers: number }> => {
+    const loadMetricsForTeam = async (team: Team): Promise<{ acceptanceRate: number; avgActiveUsers: number; totalSuggestions: number; totalAcceptances: number }> => {
       const route = useRoute()
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
 
@@ -330,16 +348,15 @@ export default defineComponent({
         const metrics = (response.metrics as Metrics[]) || []
 
         if (metrics.length === 0) {
-          return { acceptanceRate: 0, avgActiveUsers: 0 }
+          return { acceptanceRate: 0, avgActiveUsers: 0, totalSuggestions: 0, totalAcceptances: 0 }
         }
 
-        // Calculate average acceptance rate across all days
-        const validRates = metrics
-          .map(m => m.acceptance_rate_by_count)
-          .filter(rate => rate !== null && rate !== undefined && !isNaN(rate))
-
-        const acceptanceRate = validRates.length > 0
-          ? validRates.reduce((sum, rate) => sum + rate, 0) / validRates.length
+        // Calculate acceptance rate using cumulative totals (same method as MetricsViewer)
+        const totalSuggestions = metrics.reduce((sum, m) => sum + (m.total_suggestions_count || 0), 0)
+        const totalAcceptances = metrics.reduce((sum, m) => sum + (m.total_acceptances_count || 0), 0)
+        
+        const acceptanceRate = totalSuggestions > 0
+          ? (totalAcceptances / totalSuggestions) * 100
           : 0
 
         // Calculate average active users excluding weekends
@@ -354,10 +371,10 @@ export default defineComponent({
           ? Math.round(weekdayUsers.reduce((sum, users) => sum + users, 0) / weekdayUsers.length)
           : 0
 
-        return { acceptanceRate, avgActiveUsers }
+        return { acceptanceRate, avgActiveUsers, totalSuggestions, totalAcceptances }
       } catch (error) {
         console.error(`Error loading metrics for team ${team.slug}:`, error)
-        return { acceptanceRate: 0, avgActiveUsers: 0 }
+        return { acceptanceRate: 0, avgActiveUsers: 0, totalSuggestions: 0, totalAcceptances: 0 }
       }
     }
 
@@ -368,11 +385,13 @@ export default defineComponent({
 
         const teamsData = await Promise.all(
           availableTeams.value.map(async team => {
-            const { acceptanceRate, avgActiveUsers } = await loadMetricsForTeam(team)
+            const { acceptanceRate, avgActiveUsers, totalSuggestions, totalAcceptances } = await loadMetricsForTeam(team)
             return {
               ...team,
               acceptanceRate,
               avgActiveUsers,
+              totalSuggestions,
+              totalAcceptances,
               rank: 0 // Will be set after sorting
             }
           })

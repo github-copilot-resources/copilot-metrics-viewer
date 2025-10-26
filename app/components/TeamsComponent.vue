@@ -740,18 +740,18 @@ export default defineComponent({
       })
       aggregatedTotalActiveUsers.value = Math.round(totalActive)
       
-      // Calculate average acceptance rate across all teams
+      // Calculate average acceptance rate across all teams using cumulative totals (same as MetricsViewer)
       let totalAcceptanceRate = 0
       let teamCount = 0
       perTeamData.forEach(teamData => {
         if (teamData.metrics.length) {
-          const validRates = teamData.metrics
-            .map(d => d.acceptance_rate_by_count)
-            .filter(rate => rate !== null && rate !== undefined && !isNaN(rate))
+          // Calculate using cumulative totals for this team
+          const totalSuggestions = teamData.metrics.reduce((sum, m) => sum + (m.total_suggestions_count || 0), 0)
+          const totalAcceptances = teamData.metrics.reduce((sum, m) => sum + (m.total_acceptances_count || 0), 0)
           
-          if (validRates.length > 0) {
-            const teamAvg = validRates.reduce((sum, rate) => sum + rate, 0) / validRates.length
-            totalAcceptanceRate += teamAvg
+          if (totalSuggestions > 0) {
+            const teamRate = (totalAcceptances / totalSuggestions) * 100
+            totalAcceptanceRate += teamRate
             teamCount++
           }
         }
