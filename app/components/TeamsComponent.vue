@@ -99,15 +99,36 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
               <div class="spacing-10" />
               <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
                 <template #activator="{ props }">
-                  <div v-bind="props" class="text-h6 mb-1">Total Active Users</div>
+                  <div v-bind="props" class="text-h6 mb-1">Avg Daily Active Users</div>
                 </template>
                 <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                  <span class="text-caption" style="font-size: 10px !important;">Combined total active users across all
-                    selected teams</span>
+                  <span class="text-caption" style="font-size: 10px !important;">Sum of average daily active users across all
+                    selected teams in the date range</span>
                 </v-card>
               </v-tooltip>
               <div class="text-caption">{{ dateRangeDesc }}</div>
               <p class="text-h4">{{ totalActiveUsers }}</p>
+            </div>
+          </v-card-item>
+        </v-card>
+
+        <v-card
+elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+          style="width: 300px; height: 175px;">
+          <v-card-item>
+            <div class="tiles-text">
+              <div class="spacing-10" />
+              <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                <template #activator="{ props }">
+                  <div v-bind="props" class="text-h6 mb-1">Avg Acceptance Rate</div>
+                </template>
+                <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                  <span class="text-caption" style="font-size: 10px !important;">Average acceptance rate by count across all
+                    selected teams in the date range</span>
+                </v-card>
+              </v-tooltip>
+              <div class="text-caption">{{ dateRangeDesc }}</div>
+              <p class="text-h4">{{ avgAcceptanceRate }}%</p>
             </div>
           </v-card-item>
         </v-card>
@@ -384,6 +405,10 @@ export default defineComponent({
   // Aggregate total active users across selected teams (latest day for each)
   const aggregatedTotalActiveUsers = ref(0)
   const totalActiveUsers = computed(() => aggregatedTotalActiveUsers.value)
+  
+  // Average acceptance rate across all selected teams
+  const aggregatedAvgAcceptanceRate = ref(0)
+  const avgAcceptanceRate = computed(() => aggregatedAvgAcceptanceRate.value.toFixed(1))
 
     const clearSelection = () => { selectedTeams.value = [] }
     const getTeamDetailUrl = (team: Team) => {
@@ -696,15 +721,42 @@ export default defineComponent({
       editorComparison.value = editorComp
       generateBarChartData()
 
-      // Update total active users (latest day per team)
+      // Update total active users (average across date range per team, excluding weekends)
       let totalActive = 0
       perTeamData.forEach(teamData => {
         if (teamData.metrics.length) {
-          const latest = [...teamData.metrics].sort((a, b) => a.day.localeCompare(b.day)).at(-1)
-          totalActive += latest?.total_active_users || 0
+          const weekdayUsers = teamData.metrics
+            .filter(d => {
+              const dayOfWeek = new Date(d.day).getDay()
+              return dayOfWeek !== 5 && dayOfWeek !== 6 // Exclude Friday (5) and Saturday (6)
+            })
+            .map(d => d.total_active_users || 0)
+          
+          if (weekdayUsers.length > 0) {
+            const avgActiveUsers = weekdayUsers.reduce((sum, users) => sum + users, 0) / weekdayUsers.length
+            totalActive += avgActiveUsers
+          }
         }
       })
-      aggregatedTotalActiveUsers.value = totalActive
+      aggregatedTotalActiveUsers.value = Math.round(totalActive)
+      
+      // Calculate average acceptance rate across all teams
+      let totalAcceptanceRate = 0
+      let teamCount = 0
+      perTeamData.forEach(teamData => {
+        if (teamData.metrics.length) {
+          const validRates = teamData.metrics
+            .map(d => d.acceptance_rate_by_count)
+            .filter(rate => rate !== null && rate !== undefined && !isNaN(rate))
+          
+          if (validRates.length > 0) {
+            const teamAvg = validRates.reduce((sum, rate) => sum + rate, 0) / validRates.length
+            totalAcceptanceRate += teamAvg
+            teamCount++
+          }
+        }
+      })
+      aggregatedAvgAcceptanceRate.value = teamCount > 0 ? totalAcceptanceRate / teamCount : 0
     }
 
     // Load teams on mount, then react to selection changes
@@ -739,6 +791,7 @@ export default defineComponent({
       selectedTeamObjects,
       scopeType,
   totalActiveUsers,
+      avgAcceptanceRate,
       clearSelection,
       getTeamDetailUrl,
       generateBarChartData,
