@@ -86,6 +86,9 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
+            <ChampionsViewer
+v-if="item === 'champions'" :date-range="dateRange"
+              :date-range-description="dateRangeDescription" />
           </v-card>
         </v-window-item>
         <v-alert
@@ -112,6 +115,7 @@ import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import TeamsComponent from './TeamsComponent.vue'
 import ApiResponse from './ApiResponse.vue'
 import AgentModeViewer from './AgentModeViewer.vue'
+import ChampionsViewer from './ChampionsViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -126,6 +130,7 @@ export default defineNuxtComponent({
     TeamsComponent,
     ApiResponse,
     AgentModeViewer,
+    ChampionsViewer,
     DateRangeSelector
   },
   methods: {
@@ -235,7 +240,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response', 'champions'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
