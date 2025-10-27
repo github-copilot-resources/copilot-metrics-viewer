@@ -110,12 +110,16 @@ export class Options {
         } else {
             // Use defaults from runtime config
             options.scope = (config.public.scope as Scope) || 'organization';
-            if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
-            if (config.public.githubOrgs) {
-                // Parse comma-separated list of organizations
-                options.githubOrgs = config.public.githubOrgs.split(',').map(org => org.trim()).filter(Boolean);
-                if (options.githubOrgs.length > 1) {
+            if (config.public.githubOrg) {
+                // Check if githubOrg contains comma-separated list
+                const orgs = config.public.githubOrg.split(',').map(org => org.trim()).filter(Boolean);
+                if (orgs.length > 1) {
+                    // Multi-organization mode
+                    options.githubOrgs = orgs;
                     options.scope = 'multi-organization';
+                } else {
+                    // Single organization
+                    options.githubOrg = orgs[0];
                 }
             }
             if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
