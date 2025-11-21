@@ -17,7 +17,7 @@ COPY --chown=1000:1000 . .
 RUN npm run build
 
 # Stage 2: Prepare the Node.js API
-FROM node:23-alpine AS base-prod
+FROM node:24-alpine AS base-prod
 
 WORKDIR /app
 COPY --chown=1000:1000 --from=build-stage /app/.output /app
