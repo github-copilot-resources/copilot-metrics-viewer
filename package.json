@@ -45,5 +45,8 @@
     "vitest": "^3.0.5",
     "vue-tsc": "^2.1.6",
     "vuetify-nuxt-module": "^0.18.3"
+  },
+  "overrides": {
+    "brace-expansion": "^2.0.2"
   }
 }
