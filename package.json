@@ -33,7 +33,7 @@
   "devDependencies": {
     "@mdi/font": "^7.4.47",
     "@nuxt/fonts": "^0.10.0",
-    "@nuxt/test-utils": "^3.15.4",
+    "@nuxt/test-utils": "^3.20.1",
     "@playwright/test": "1.54.2",
     "@types/webfontloader": "^1.6.38",
     "@vue/test-utils": "^2.4.6",
