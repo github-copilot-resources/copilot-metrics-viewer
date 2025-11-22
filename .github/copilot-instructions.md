@@ -1,8 +1,34 @@
+---
+name: copilot-metrics-viewer
+description: Nuxt 3 web application for GitHub Copilot usage metrics and analytics
+stack: Vue.js, TypeScript, Nuxt 3, Vuetify, Chart.js
+version: 2.1.0
+---
+
 # GitHub Copilot Metrics Viewer
 
 GitHub Copilot Metrics Viewer is a Nuxt 3 web application that displays GitHub Copilot usage metrics and analytics for organizations and enterprises. The application visualizes data from the GitHub Copilot Metrics API using Vue.js, TypeScript, Vuetify, and Chart.js.
 
 Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.
+
+## Security and Boundaries
+
+### Critical Rules
+- **NEVER commit secrets or credentials** to the repository
+- **NEVER modify `.env` file** - environment variables should only be documented, not changed
+- **DO NOT modify** the following without explicit approval:
+  - Production configuration files (azure.yaml, Dockerfile)
+  - GitHub workflows in `.github/workflows/`
+  - Security policies (SECURITY.md, CODE_OF_CONDUCT.md)
+  - License files (LICENSE.txt)
+- **ALWAYS validate** that changes don't introduce security vulnerabilities
+- **ALWAYS run security scanning** before finalizing changes
+
+### Safe Modification Areas
+- Application source code in `app/`, `server/`, `shared/`
+- Tests in `tests/` and `e2e-tests/`
+- Documentation files (README.md, CONTRIBUTING.md, DEPLOYMENT.md)
+- Configuration files specific to your changes
 
 ## Working Effectively
 
@@ -29,8 +55,9 @@ Always reference these instructions first and fallback to search or bash command
 ### Testing
 - **Unit tests**: `npm test` (using Vitest)
   - **NEVER CANCEL**: Takes 15 seconds to complete. Set timeout to 2+ minutes.
-  - Runs 83 tests, all should pass
+  - Runs 97 tests, all should pass
   - Uses mocked data environment
+  - Test files are located in `tests/` directory
 - **E2E tests**: `npm run test:e2e` (using Playwright)
   - **NOTE**: Playwright browser installation may fail in some environments due to download issues
   - Install browsers first: `npx playwright install` 
@@ -106,11 +133,26 @@ Always test these scenarios after making changes (use development mode for relia
 
 ### Always Run Before Committing
 1. **Build verification**: `npm run build` - Must complete successfully
-2. **Unit tests**: `npm test` - All 83 tests must pass
+2. **Unit tests**: `npm test` - All 97 tests must pass
 3. **Basic functionality**: Start dev server and verify health endpoints respond
 4. **Linting awareness**: Run `npm run lint` (expect existing errors, don't introduce new ones)
+5. **Security check**: Ensure no secrets or credentials are committed
 
 ## Common Tasks
+
+### Code Style and Conventions
+- **TypeScript**: Always use TypeScript for new code, with proper type annotations
+- **Vue Components**: Follow Vue 3 Composition API patterns
+- **File Naming**: 
+  - Components: PascalCase (e.g., `MetricsViewer.vue`)
+  - Utilities: camelCase (e.g., `dateUtils.ts`)
+  - Tests: Match source file with `.spec.ts` or `.nuxt.spec.ts` suffix
+- **Code Organization**:
+  - Keep components focused and single-purpose
+  - Extract reusable logic into composables or utilities
+  - Use TypeScript interfaces for data models in `app/model/`
+- **Comments**: Add comments only when necessary to explain complex logic
+- **Error Handling**: Always handle errors gracefully with user-friendly messages
 
 ### Repo Structure
 ```
