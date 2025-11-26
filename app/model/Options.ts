@@ -5,13 +5,14 @@
 import type { QueryObject } from 'ufo';
 import type { RouteLocationNormalizedLoadedGeneric } from 'vue-router';
 
-export type Scope = 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise';
+export type Scope = 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise' | 'multi-organization';
 
 export interface OptionsData {
     since?: string;
     until?: string;
     isDataMocked?: boolean;
     githubOrg?: string;
+    githubOrgs?: string[]; // Multiple organizations for multi-org scope
     githubEnt?: string;
     githubTeam?: string;
     scope?: Scope;
@@ -23,6 +24,7 @@ export interface RuntimeConfig {
     public: {
         scope?: string;
         githubOrg?: string;
+        githubOrgs?: string; // Comma-separated list of orgs
         githubEnt?: string;
         githubTeam?: string;
         isDataMocked?: boolean;
@@ -51,6 +53,7 @@ export class Options {
     public until?: string;
     public isDataMocked?: boolean;
     public githubOrg?: string;
+    public githubOrgs?: string[]; // Multiple organizations
     public githubEnt?: string;
     public githubTeam?: string;
     public scope?: Scope;
@@ -62,6 +65,7 @@ export class Options {
         this.until = data.until;
         this.isDataMocked = data.isDataMocked;
         this.githubOrg = data.githubOrg;
+        this.githubOrgs = data.githubOrgs;
         this.githubEnt = data.githubEnt;
         this.githubTeam = data.githubTeam;
         this.scope = data.scope;
@@ -106,7 +110,18 @@ export class Options {
         } else {
             // Use defaults from runtime config
             options.scope = (config.public.scope as Scope) || 'organization';
-            if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
+            if (config.public.githubOrg) {
+                // Check if githubOrg contains comma-separated list
+                const orgs = config.public.githubOrg.split(',').map(org => org.trim()).filter(Boolean);
+                if (orgs.length > 1) {
+                    // Multi-organization mode
+                    options.githubOrgs = orgs;
+                    options.scope = 'multi-organization';
+                } else {
+                    // Single organization
+                    options.githubOrg = orgs[0];
+                }
+            }
             if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
             if (config.public.githubTeam) options.githubTeam = config.public.githubTeam;
         }
@@ -119,10 +134,12 @@ export class Options {
      * Create Options from URLSearchParams
      */
     static fromURLSearchParams(params: URLSearchParams): Options {
+        const githubOrgsParam = params.get('githubOrgs');
         const options = new Options({
             since: params.get('since') || undefined,
             until: params.get('until') || undefined,
             githubOrg: params.get('githubOrg') || undefined,
+            githubOrgs: githubOrgsParam ? githubOrgsParam.split(',').map(org => org.trim()).filter(Boolean) : undefined,
             githubEnt: params.get('githubEnt') || undefined,
             githubTeam: params.get('githubTeam') || undefined,
             scope: (params.get('scope') as Scope) || undefined,
@@ -142,10 +159,16 @@ export class Options {
     }
 
     static fromQuery(query: QueryObject): Options {
+        const githubOrgsQuery = query.githubOrgs;
+        const githubOrgsArray = typeof githubOrgsQuery === 'string' 
+            ? githubOrgsQuery.split(',').map(org => org.trim()).filter(Boolean)
+            : Array.isArray(githubOrgsQuery) ? githubOrgsQuery : undefined;
+        
         const options = new Options({
             since: query.since as string | undefined,
             until: query.until as string | undefined,
             githubOrg: query.githubOrg as string | undefined,
+            githubOrgs: githubOrgsArray,
             githubEnt: query.githubEnt as string | undefined,
             githubTeam: query.githubTeam as string | undefined,
             scope: (query.scope as Scope) || undefined,
@@ -181,6 +204,7 @@ export class Options {
         if (this.until) params.set('until', this.until);
         if (this.isDataMocked) params.set('isDataMocked', 'true');
         if (this.githubOrg) params.set('githubOrg', this.githubOrg);
+        if (this.githubOrgs && this.githubOrgs.length > 0) params.set('githubOrgs', this.githubOrgs.join(','));
         if (this.githubEnt) params.set('githubEnt', this.githubEnt);
         if (this.githubTeam) params.set('githubTeam', this.githubTeam);
         if (this.scope) params.set('scope', this.scope);
@@ -196,6 +220,7 @@ export class Options {
         if (this.until) params.until = this.until;
         if (this.isDataMocked) params.isDataMocked = String(this.isDataMocked);
         if (this.githubOrg) params.githubOrg = this.githubOrg;
+        if (this.githubOrgs && this.githubOrgs.length > 0) params.githubOrgs = this.githubOrgs.join(',');
         if (this.githubEnt) params.githubEnt = this.githubEnt;
         if (this.githubTeam) params.githubTeam = this.githubTeam;
         if (this.scope) params.scope = this.scope;
@@ -214,6 +239,7 @@ export class Options {
         if (this.until !== undefined) result.until = this.until;
         if (this.isDataMocked !== undefined) result.isDataMocked = this.isDataMocked;
         if (this.githubOrg !== undefined) result.githubOrg = this.githubOrg;
+        if (this.githubOrgs !== undefined) result.githubOrgs = this.githubOrgs;
         if (this.githubEnt !== undefined) result.githubEnt = this.githubEnt;
         if (this.githubTeam !== undefined) result.githubTeam = this.githubTeam;
         if (this.scope !== undefined) result.scope = this.scope;
@@ -239,6 +265,7 @@ export class Options {
             until: other.until ?? this.until,
             isDataMocked: other.isDataMocked ?? this.isDataMocked,
             githubOrg: other.githubOrg ?? this.githubOrg,
+            githubOrgs: other.githubOrgs ?? this.githubOrgs,
             githubEnt: other.githubEnt ?? this.githubEnt,
             githubTeam: other.githubTeam ?? this.githubTeam,
             scope: other.scope ?? this.scope,
@@ -258,13 +285,14 @@ export class Options {
      * Check if GitHub organization/enterprise settings are configured
      */
     hasGitHubConfig(): boolean {
-        return Boolean(this.githubOrg || this.githubEnt);
+        return Boolean(this.githubOrg || this.githubOrgs?.length || this.githubEnt);
     }
 
     /**
-     * Get the API URL based on scope and configuration
+     * Get the API URL(s) based on scope and configuration
+     * Returns an array for multi-organization scope, single string otherwise
      */
-    getApiUrl(): string {
+    getApiUrl(): string | string[] {
         const baseUrl = 'https://api.github.com';
         let url = '';
 
@@ -297,6 +325,23 @@ export class Options {
                 url = `${baseUrl}/enterprises/${this.githubEnt}/copilot/metrics`;
                 break
 
+            case 'multi-organization':
+                if (!this.githubOrgs || this.githubOrgs.length === 0) {
+                    throw new Error('GitHub organizations must be set for multi-organization scope');
+                }
+                // Return array of URLs for each organization
+                const urls = this.githubOrgs.map(org => {
+                    let orgUrl = `${baseUrl}/orgs/${org}/copilot/metrics`;
+                    if (this.since || this.until) {
+                        const sinceParam = this.since ? `since=${encodeURIComponent(this.since)}` : '';
+                        const untilParam = this.until ? `until=${encodeURIComponent(this.until)}` : '';
+                        const params = [sinceParam, untilParam].filter(Boolean).join('&');
+                        orgUrl += params ? `?${params}` : '';
+                    }
+                    return orgUrl;
+                });
+                return urls;
+
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);
         }
@@ -311,9 +356,10 @@ export class Options {
     }
 
     /**
-     * Get the Seats API URL based on scope and configuration
+     * Get the Seats API URL(s) based on scope and configuration
+     * Returns an array for multi-organization scope, single string otherwise
      */
-    getSeatsApiUrl(): string {
+    getSeatsApiUrl(): string | string[] {
         const baseUrl = 'https://api.github.com';
 
         switch (this.scope) {
@@ -331,6 +377,12 @@ export class Options {
                 }
                 return `${baseUrl}/enterprises/${this.githubEnt}/copilot/billing/seats`;
 
+            case 'multi-organization':
+                if (!this.githubOrgs || this.githubOrgs.length === 0) {
+                    throw new Error('GitHub organizations must be set for multi-organization scope');
+                }
+                return this.githubOrgs.map(org => `${baseUrl}/orgs/${org}/copilot/billing/seats`);
+
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);
         }
@@ -338,8 +390,9 @@ export class Options {
     
     /**
      * Get the Teams API URL based on scope and configuration
+     * Returns an array for multi-organization scope, single string otherwise
      */
-    getTeamsApiUrl(): string {
+    getTeamsApiUrl(): string | string[] {
         const baseUrl = 'https://api.github.com';
 
         switch (this.scope) {
@@ -356,6 +409,12 @@ export class Options {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
                 }
                 return `${baseUrl}/enterprises/${this.githubEnt}/teams`;
+
+            case 'multi-organization':
+                if (!this.githubOrgs || this.githubOrgs.length === 0) {
+                    throw new Error('GitHub organizations must be set for multi-organization scope');
+                }
+                return this.githubOrgs.map(org => `${baseUrl}/orgs/${org}/teams`);
 
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);
@@ -440,6 +499,14 @@ export class Options {
         if (this.scope === 'organization' || this.scope === 'team-organization') {
             if (!this.githubOrg) {
                 errors.push('GitHub organization must be set for organization scopes');
+            }
+        }
+
+        if (this.scope === 'multi-organization') {
+            if (!this.githubOrgs || this.githubOrgs.length === 0) {
+                errors.push('GitHub organizations must be set for multi-organization scope');
+            } else if (this.githubOrgs.length < 2) {
+                errors.push('At least two organizations must be specified for multi-organization scope');
             }
         }
 

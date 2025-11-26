@@ -91,7 +91,7 @@ export default defineNuxtConfig({
     public: {
       isDataMocked: false,  // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
-      githubOrg: '',
+      githubOrg: '',  // can be a single org or comma-separated list for multi-org
       githubEnt: '',
       githubTeam: '',
       usingGithubAuth: false,
