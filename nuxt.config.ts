@@ -94,6 +94,7 @@ export default defineNuxtConfig({
       githubOrg: '',
       githubEnt: '',
       githubTeam: '',
+      enterpriseType: 'copilot-only',  // can be overridden by NUXT_PUBLIC_ENTERPRISE_TYPE environment variable
       usingGithubAuth: false,
       version,
       isPublicApp: false
