@@ -87,8 +87,34 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
         <v-main class="p-1" style="min-height: 300px;">
             <v-container style="min-height: 300px;" class="px-4 elevation-2">
                 <br>
-                <h2>All assigned seats </h2>
-                <br>
+                <div class="d-flex justify-space-between align-center mb-4">
+                    <h2>All assigned seats </h2>
+                    <v-menu>
+                        <template v-slot:activator="{ props }">
+                            <v-btn 
+                                color="primary" 
+                                variant="outlined" 
+                                prepend-icon="mdi-download"
+                                append-icon="mdi-chevron-down"
+                                size="small"
+                                v-bind="props"
+                            >
+                                Export All ({{ totalSeats.length }})
+                            </v-btn>
+                        </template>
+                        <v-list>
+                            <v-list-item @click="exportCSV" prepend-icon="mdi-file-delimited-outline">
+                                <v-list-item-title>Export as CSV</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item @click="exportJSON" prepend-icon="mdi-code-json">
+                                <v-list-item-title>Export as JSON</v-list-item-title>
+                            </v-list-item>
+                            <v-list-item @click="copyToClipboard" prepend-icon="mdi-content-copy">
+                                <v-list-item-title>Copy to Clipboard</v-list-item-title>
+                            </v-list-item>
+                        </v-list>
+                    </v-menu>
+                </div>
             <v-data-table :headers="headers" :items="totalSeats" :items-per-page="10" class="elevation-2">
                 <template #item="{ item, index }">
                     <tr>
@@ -110,6 +136,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
 <script lang="ts">
   import { defineComponent, ref, watchEffect, computed } from 'vue';
   import type { Seat } from '@/model/Seat';
+  import { exportToCSV, exportToJSON, copyTableToClipboard, formatFilename } from '@/utils/exportUtils';
   import {
     Chart as ChartJS,
     ArcElement,
@@ -202,13 +229,63 @@ setup(props) {
         const isTeamView = computed(() => config.public.scope?.includes('team') && config.public.githubTeam);
         const currentTeam = computed(() => config.public.githubTeam || '');
 
+        const exportCSV = () => {
+            const exportData = totalSeats.value.map((seat, index) => ({
+                'S.No': index + 1,
+                'Login': seat.login,
+                'GitHub ID': seat.id,
+                'Assigning Team': seat.team,
+                'Assigned Time': seat.created_at,
+                'Last Activity At': seat.last_activity_at,
+                'Last Activity Editor': seat.last_activity_editor,
+                'Plan Type': seat.plan_type
+            }));
+            
+            const filename = formatFilename('seats_analysis', 'csv');
+            exportToCSV(exportData, filename);
+        };
+
+        const exportJSON = () => {
+            const exportData = totalSeats.value.map((seat, index) => ({
+                serialNumber: index + 1,
+                login: seat.login,
+                githubId: seat.id,
+                assigningTeam: seat.team,
+                assignedTime: seat.created_at,
+                lastActivityAt: seat.last_activity_at,
+                lastActivityEditor: seat.last_activity_editor,
+                planType: seat.plan_type
+            }));
+            
+            const filename = formatFilename('seats_analysis', 'json');
+            exportToJSON(exportData, filename);
+        };
+
+        const copyToClipboard = async () => {
+            const exportData = totalSeats.value.map((seat, index) => ({
+                'S.No': index + 1,
+                'Login': seat.login,
+                'GitHub ID': seat.id,
+                'Assigning Team': seat.team,
+                'Assigned Time': seat.created_at,
+                'Last Activity At': seat.last_activity_at,
+                'Last Activity Editor': seat.last_activity_editor,
+                'Plan Type': seat.plan_type
+            }));
+            
+            await copyTableToClipboard(exportData);
+        };
+
         return {
             totalSeats,
             noshowSeats: noshowSeats,
             unusedSeatsInSevenDays: unusedSeatsInSevenDays,
             unusedSeatsInThirtyDays: unusedSeatsInThirtyDays,
             isTeamView,
-            currentTeam
+            currentTeam,
+            exportCSV,
+            exportJSON,
+            copyToClipboard
         }
 },
 data() {
