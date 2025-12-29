@@ -26,7 +26,7 @@ COPY --chown=1000:1000 --from=build-stage /app/.output /app
 EXPOSE 80
 
 # Set port to 80 for backwards compatibility
-ENV NITRO_PORT=80
+ENV NITRO_PORT=${NITRO_PORT:-80}
 
 # Re-map the environment variables for the Vue.js app for backwards compatibility
 RUN echo '#!/bin/sh' > /entrypoint.sh && \
