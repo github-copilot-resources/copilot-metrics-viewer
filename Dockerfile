@@ -53,7 +53,7 @@ USER node
 ENTRYPOINT [ "/entrypoint.sh" ]
 
 #----------------------------------- PW layer - not used in production
-FROM mcr.microsoft.com/playwright:v1.54.2 AS base-playwright
+FROM mcr.microsoft.com/playwright:v1.57.0 AS base-playwright
 
 WORKDIR /pw
 
