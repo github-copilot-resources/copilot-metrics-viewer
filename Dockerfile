@@ -6,7 +6,7 @@
 # build with 'docker build -t copilot-metrics .' for production
 ARG mode=prod
 
-FROM node:24-alpine AS build-stage
+FROM node:24-alpine3.23 AS build-stage
 
 USER node
 WORKDIR /app
@@ -17,7 +17,7 @@ COPY --chown=1000:1000 . .
 RUN npm run build
 
 # Stage 2: Prepare the Node.js API
-FROM node:24-alpine AS base-prod
+FROM node:24-alpine3.23 AS base-prod
 
 WORKDIR /app
 COPY --chown=1000:1000 --from=build-stage /app/.output /app
