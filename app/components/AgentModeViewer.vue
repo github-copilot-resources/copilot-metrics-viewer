@@ -167,6 +167,34 @@ v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData"
                                 IDE Code Completions Models ({{ stats.ideCodeCompletionModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
+                                <div class="d-flex justify-space-between align-center mb-4">
+                                    <h3>IDE Code Completion Models</h3>
+                                    <v-menu>
+                                        <template v-slot:activator="{ props }">
+                                            <v-btn 
+                                                color="primary" 
+                                                variant="outlined" 
+                                                prepend-icon="mdi-download"
+                                                append-icon="mdi-chevron-down"
+                                                size="small"
+                                                v-bind="props"
+                                            >
+                                                Export All ({{ stats.ideCodeCompletionModels.length }})
+                                            </v-btn>
+                                        </template>
+                                        <v-list>
+                                            <v-list-item @click="exportIdeCodeCompletionCSV" prepend-icon="mdi-file-delimited-outline">
+                                                <v-list-item-title>Export as CSV</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="exportIdeCodeCompletionJSON" prepend-icon="mdi-code-json">
+                                                <v-list-item-title>Export as JSON</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="copyIdeCodeCompletionToClipboard" prepend-icon="mdi-content-copy">
+                                                <v-list-item-title>Copy to Clipboard</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
+                                </div>
                                 <v-data-table
 :headers="codeCompletionHeaders" :items="stats.ideCodeCompletionModels"
                                     class="elevation-1" item-key="name" />
@@ -179,6 +207,34 @@ v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData"
                                 IDE Chat Models ({{ stats.ideChatModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
+                                <div class="d-flex justify-space-between align-center mb-4">
+                                    <h3>IDE Chat Models</h3>
+                                    <v-menu>
+                                        <template v-slot:activator="{ props }">
+                                            <v-btn 
+                                                color="primary" 
+                                                variant="outlined" 
+                                                prepend-icon="mdi-download"
+                                                append-icon="mdi-chevron-down"
+                                                size="small"
+                                                v-bind="props"
+                                            >
+                                                Export All ({{ stats.ideChatModels.length }})
+                                            </v-btn>
+                                        </template>
+                                        <v-list>
+                                            <v-list-item @click="exportIdeChatCSV" prepend-icon="mdi-file-delimited-outline">
+                                                <v-list-item-title>Export as CSV</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="exportIdeChatJSON" prepend-icon="mdi-code-json">
+                                                <v-list-item-title>Export as JSON</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="copyIdeChatToClipboard" prepend-icon="mdi-content-copy">
+                                                <v-list-item-title>Copy to Clipboard</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
+                                </div>
                                 <v-data-table
 :headers="ideChatHeaders" :items="stats.ideChatModels" class="elevation-1"
                                     item-key="name" />
@@ -191,6 +247,34 @@ v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData"
                                 GitHub.com Chat Models ({{ stats.dotcomChatModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
+                                <div class="d-flex justify-space-between align-center mb-4">
+                                    <h3>GitHub.com Chat Models</h3>
+                                    <v-menu>
+                                        <template v-slot:activator="{ props }">
+                                            <v-btn 
+                                                color="primary" 
+                                                variant="outlined" 
+                                                prepend-icon="mdi-download"
+                                                append-icon="mdi-chevron-down"
+                                                size="small"
+                                                v-bind="props"
+                                            >
+                                                Export All ({{ stats.dotcomChatModels.length }})
+                                            </v-btn>
+                                        </template>
+                                        <v-list>
+                                            <v-list-item @click="exportDotcomChatCSV" prepend-icon="mdi-file-delimited-outline">
+                                                <v-list-item-title>Export as CSV</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="exportDotcomChatJSON" prepend-icon="mdi-code-json">
+                                                <v-list-item-title>Export as JSON</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="copyDotcomChatToClipboard" prepend-icon="mdi-content-copy">
+                                                <v-list-item-title>Copy to Clipboard</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
+                                </div>
                                 <v-data-table
 :headers="dotcomChatHeaders" :items="stats.dotcomChatModels"
                                     class="elevation-1" item-key="name" />
@@ -203,6 +287,34 @@ v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData"
                                 GitHub.com PR Summary Models ({{ stats.dotcomPRModels.length }})
                             </v-expansion-panel-title>
                             <v-expansion-panel-text>
+                                <div class="d-flex justify-space-between align-center mb-4">
+                                    <h3>GitHub.com PR Summary Models</h3>
+                                    <v-menu>
+                                        <template v-slot:activator="{ props }">
+                                            <v-btn 
+                                                color="primary" 
+                                                variant="outlined" 
+                                                prepend-icon="mdi-download"
+                                                append-icon="mdi-chevron-down"
+                                                size="small"
+                                                v-bind="props"
+                                            >
+                                                Export All ({{ stats.dotcomPRModels.length }})
+                                            </v-btn>
+                                        </template>
+                                        <v-list>
+                                            <v-list-item @click="exportDotcomPRCSV" prepend-icon="mdi-file-delimited-outline">
+                                                <v-list-item-title>Export as CSV</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="exportDotcomPRJSON" prepend-icon="mdi-code-json">
+                                                <v-list-item-title>Export as JSON</v-list-item-title>
+                                            </v-list-item>
+                                            <v-list-item @click="copyDotcomPRToClipboard" prepend-icon="mdi-content-copy">
+                                                <v-list-item-title>Copy to Clipboard</v-list-item-title>
+                                            </v-list-item>
+                                        </v-list>
+                                    </v-menu>
+                                </div>
                                 <v-data-table
 :headers="dotcomPRHeaders" :items="stats.dotcomPRModels"
                                     class="elevation-1" item-key="name" />
@@ -239,6 +351,7 @@ import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { Line as LineChart, Bar as BarChart } from 'vue-chartjs';
+import { exportToCSV, exportToJSON, copyTableToClipboard, formatFilename } from '@/utils/exportUtils';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -498,6 +611,163 @@ export default defineComponent({
             }
         };
 
+        // Export functions for each table
+        const exportIdeCodeCompletionCSV = () => {
+            const exportData = stats.value.ideCodeCompletionModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Editor': model.editor || '',
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users
+            }));
+            const filename = formatFilename('ide_code_completion_models', 'csv');
+            exportToCSV(exportData, filename);
+        };
+
+        const exportIdeCodeCompletionJSON = () => {
+            const exportData = stats.value.ideCodeCompletionModels.map((model, index) => ({
+                serialNumber: index + 1,
+                modelName: model.name,
+                editor: model.editor || '',
+                type: model.model_type,
+                totalUsersWithActivity: model.total_engaged_users
+            }));
+            const filename = formatFilename('ide_code_completion_models', 'json');
+            exportToJSON(exportData, filename);
+        };
+
+
+        const copyIdeCodeCompletionToClipboard = async () => {
+            const exportData = stats.value.ideCodeCompletionModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Editor': model.editor || '',
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users
+            }));
+            await copyTableToClipboard(exportData);
+        };
+
+        const exportIdeChatCSV = () => {
+            const exportData = stats.value.ideChatModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Editor': model.editor || '',
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users,
+                'Total Chats': model.total_chats || 0,
+                'Insertions': model.total_chat_insertion_events || 0,
+                'Copy Events': model.total_chat_copy_events || 0
+            }));
+            const filename = formatFilename('ide_chat_models', 'csv');
+            exportToCSV(exportData, filename);
+        };
+
+        const exportIdeChatJSON = () => {
+            const exportData = stats.value.ideChatModels.map((model, index) => ({
+                serialNumber: index + 1,
+                modelName: model.name,
+                editor: model.editor || '',
+                type: model.model_type,
+                totalUsersWithActivity: model.total_engaged_users,
+                totalChats: model.total_chats || 0,
+                insertions: model.total_chat_insertion_events || 0,
+                copyEvents: model.total_chat_copy_events || 0
+            }));
+            const filename = formatFilename('ide_chat_models', 'json');
+            exportToJSON(exportData, filename);
+        };
+
+
+        const copyIdeChatToClipboard = async () => {
+            const exportData = stats.value.ideChatModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Editor': model.editor || '',
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users,
+                'Total Chats': model.total_chats || 0,
+                'Insertions': model.total_chat_insertion_events || 0,
+                'Copy Events': model.total_chat_copy_events || 0
+            }));
+            await copyTableToClipboard(exportData);
+        };
+
+        const exportDotcomChatCSV = () => {
+            const exportData = stats.value.dotcomChatModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users,
+                'Total Chats': model.total_chats || 0
+            }));
+            const filename = formatFilename('github_com_chat_models', 'csv');
+            exportToCSV(exportData, filename);
+        };
+
+        const exportDotcomChatJSON = () => {
+            const exportData = stats.value.dotcomChatModels.map((model, index) => ({
+                serialNumber: index + 1,
+                modelName: model.name,
+                type: model.model_type,
+                totalUsersWithActivity: model.total_engaged_users,
+                totalChats: model.total_chats || 0
+            }));
+            const filename = formatFilename('github_com_chat_models', 'json');
+            exportToJSON(exportData, filename);
+        };
+
+
+        const copyDotcomChatToClipboard = async () => {
+            const exportData = stats.value.dotcomChatModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users,
+                'Total Chats': model.total_chats || 0
+            }));
+            await copyTableToClipboard(exportData);
+        };
+
+        const exportDotcomPRCSV = () => {
+            const exportData = stats.value.dotcomPRModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Repository': model.repository || '',
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users,
+                'PR Summaries': model.total_pr_summaries_created || 0
+            }));
+            const filename = formatFilename('github_com_pr_summary_models', 'csv');
+            exportToCSV(exportData, filename);
+        };
+
+        const exportDotcomPRJSON = () => {
+            const exportData = stats.value.dotcomPRModels.map((model, index) => ({
+                serialNumber: index + 1,
+                modelName: model.name,
+                repository: model.repository || '',
+                type: model.model_type,
+                totalUsersWithActivity: model.total_engaged_users,
+                prSummaries: model.total_pr_summaries_created || 0
+            }));
+            const filename = formatFilename('github_com_pr_summary_models', 'json');
+            exportToJSON(exportData, filename);
+        };
+
+
+        const copyDotcomPRToClipboard = async () => {
+            const exportData = stats.value.dotcomPRModels.map((model, index) => ({
+                'S.No': index + 1,
+                'Model Name': model.name,
+                'Repository': model.repository || '',
+                'Type': model.model_type,
+                'Total Users with Activity': model.total_engaged_users,
+                'PR Summaries': model.total_pr_summaries_created || 0
+            }));
+            await copyTableToClipboard(exportData);
+        };
+
         return {
             stats,
             loading,
@@ -507,7 +777,19 @@ export default defineComponent({
             dotcomChatHeaders,
             dotcomPRHeaders,
             chartOptions,
-            barChartOptions
+            barChartOptions,
+            exportIdeCodeCompletionCSV,
+            exportIdeCodeCompletionJSON,
+            copyIdeCodeCompletionToClipboard,
+            exportIdeChatCSV,
+            exportIdeChatJSON,
+            copyIdeChatToClipboard,
+            exportDotcomChatCSV,
+            exportDotcomChatJSON,
+            copyDotcomChatToClipboard,
+            exportDotcomPRCSV,
+            exportDotcomPRJSON,
+            copyDotcomPRToClipboard
         };
     }
 });

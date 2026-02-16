@@ -75,12 +75,21 @@
     pointer-events: none !important;
   }
 
-  /* Fix button hover styles - light gray background */
-  .v-btn:hover {
-  background-color: var(--app-accent-weak) !important;
+  /* Fix button hover styles - light gray background (exclude primary outlined buttons) */
+  .v-btn:hover:not(.v-btn--variant-outlined) {
+    background-color: var(--app-accent-weak) !important;
   }
   
-  .v-btn:hover .v-btn__overlay {
+  .v-btn:hover:not(.v-btn--variant-outlined) .v-btn__overlay {
+    display: none !important;
+  }
+
+  /* Export button hover - use proper primary color with transparency */
+  .v-btn--variant-outlined.v-btn--color-primary:hover {
+    background-color: rgba(var(--v-theme-primary), 0.08) !important;
+  }
+  
+  .v-btn--variant-outlined.v-btn--color-primary:hover .v-btn__overlay {
     display: none !important;
   }
 
@@ -197,4 +206,38 @@
   /* Pagination buttons hover state unify with buttons */
   .v-data-table .v-data-table-footer .v-btn:hover { 
     background-color: var(--app-accent-weak) !important; 
+  }
+
+  /* Export dropdown menus - ensure readable styling consistent with pagination dropdowns */
+  .v-menu .v-list { 
+    background: var(--v-theme-surface, #fff) !important; 
+    border-radius: 8px;
+    box-shadow: 0 6px 24px rgba(56, 79, 184, 0.15);
+  }
+
+  .v-menu .v-list .v-list-item { 
+    background: var(--v-theme-surface, #fff) !important; 
+    color: var(--v-theme-on-surface, #000) !important; 
+    min-height: 40px;
+  }
+
+  .v-menu .v-list .v-list-item .v-list-item-title { 
+    color: var(--v-theme-on-surface, #000) !important; 
+  }
+
+  .v-menu .v-list .v-list-item .v-icon { 
+    color: var(--v-theme-on-surface, #000) !important; 
+  }
+
+  .v-menu .v-list .v-list-item:hover { 
+    background: var(--app-accent-weak) !important; 
+  }
+
+  .v-menu .v-list .v-list-item.v-list-item--active { 
+    background: var(--app-accent-weak) !important; 
+  }
+
+  /* Remove dark overlay layer inside export dropdown list items */
+  .v-menu .v-list .v-list-item .v-list-item__overlay { 
+    background: transparent !important; 
   }
