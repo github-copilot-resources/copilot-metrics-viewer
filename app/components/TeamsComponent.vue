@@ -15,7 +15,7 @@
               <v-row>
                 <v-col cols="12" md="8">
                   <v-autocomplete
-v-model="selectedTeams" :items="availableTeams" item-value="slug" item-title="name"
+v-model="selectedTeams" :items="availableTeams" item-value="uniqueId" item-title="displayName"
                     label="Search and select teams to compare" multiple chips clearable variant="outlined" :menu-props="{
                       contentClass: 'teams-select-menu',
                       maxHeight: 360,
@@ -24,10 +24,10 @@ v-model="selectedTeams" :items="availableTeams" item-value="slug" item-title="na
                       offset: 8
                     }" :hint="`Type to filter and select multiple teams from your ${scopeType} to compare their metrics`" persistent-hint>
                     <template #item="{ props, item }">
-                      <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description" />
+                      <v-list-item v-bind="props" :title="item.raw.displayName" :subtitle="item.raw.description" />
                     </template>
                     <template #chip="{ props, item }">
-                      <v-chip v-bind="props" class="select-chip" :text="item.raw.name" closable />
+                      <v-chip v-bind="props" class="select-chip" :text="item.raw.displayName" closable />
                     </template>
                   </v-autocomplete>
                 </v-col>
@@ -54,9 +54,9 @@ v-if="selectedTeams.length > 0" color="primary" variant="outlined" size="small"
             <v-card-text>
               <v-chip-group>
                 <v-chip
-v-for="team in selectedTeamObjects" :key="team.slug" :href="getTeamDetailUrl(team.slug)"
+v-for="team in selectedTeamObjects" :key="team.uniqueId" :href="getTeamDetailUrl(team)"
                   class="selected-team-chip" target="_blank" link>
-                  {{ team.name }} - View Details
+                  {{ team.displayName }} - View Details
                   <v-icon end>mdi-open-in-new</v-icon>
                 </v-chip>
               </v-chip-group>
@@ -99,15 +99,36 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
               <div class="spacing-10" />
               <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
                 <template #activator="{ props }">
-                  <div v-bind="props" class="text-h6 mb-1">Total Active Users</div>
+                  <div v-bind="props" class="text-h6 mb-1">Avg Daily Active Users</div>
                 </template>
                 <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                  <span class="text-caption" style="font-size: 10px !important;">Combined total active users across all
-                    selected teams</span>
+                  <span class="text-caption" style="font-size: 10px !important;">Sum of average daily active users across all
+                    selected teams in the date range</span>
                 </v-card>
               </v-tooltip>
               <div class="text-caption">{{ dateRangeDesc }}</div>
               <p class="text-h4">{{ totalActiveUsers }}</p>
+            </div>
+          </v-card-item>
+        </v-card>
+
+        <v-card
+elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+          style="width: 300px; height: 175px;">
+          <v-card-item>
+            <div class="tiles-text">
+              <div class="spacing-10" />
+              <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                <template #activator="{ props }">
+                  <div v-bind="props" class="text-h6 mb-1">Avg Acceptance Rate</div>
+                </template>
+                <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
+                  <span class="text-caption" style="font-size: 10px !important;">Average acceptance rate by count across all
+                    selected teams in the date range</span>
+                </v-card>
+              </v-tooltip>
+              <div class="text-caption">{{ dateRangeDesc }}</div>
+              <p class="text-h4">{{ avgAcceptanceRate }}%</p>
             </div>
           </v-card-item>
         </v-card>
@@ -320,6 +341,9 @@ interface Team {
   name: string
   slug: string
   description?: string
+  organization?: string // Track which org this team belongs to
+  uniqueId?: string // Unique identifier: org/slug or just slug
+  displayName?: string // Display name with org context if needed
 }
 
 interface LanguageTeamData { team: string; language: string; acceptance_rate: number }
@@ -372,22 +396,33 @@ export default defineComponent({
       elements: { bar: { borderWidth: 1 } }
     }
 
-    const selectedTeamObjects = computed(() => availableTeams.value.filter(team => selectedTeams.value.includes(team.slug)))
+    const selectedTeamObjects = computed(() => availableTeams.value.filter(team => selectedTeams.value.includes(team.uniqueId || team.slug)))
     const scopeType = computed(() => {
       const config = useRuntimeConfig()
+      if (config.public.scope === 'multi-organization') return 'organizations'
       return config.public.scope === 'enterprise' ? 'enterprise' : 'organization'
     })
   // Aggregate total active users across selected teams (latest day for each)
   const aggregatedTotalActiveUsers = ref(0)
   const totalActiveUsers = computed(() => aggregatedTotalActiveUsers.value)
+  
+  // Average acceptance rate across all selected teams
+  const aggregatedAvgAcceptanceRate = ref(0)
+  const avgAcceptanceRate = computed(() => aggregatedAvgAcceptanceRate.value.toFixed(1))
 
     const clearSelection = () => { selectedTeams.value = [] }
-    const getTeamDetailUrl = (teamSlug: string) => {
+    const getTeamDetailUrl = (team: Team) => {
       const config = useRuntimeConfig()
-      return config.public.scope === 'enterprise'
-        ? `/enterprises/${config.public.githubEnt}/teams/${teamSlug}`
-        : `/orgs/${config.public.githubOrg}/teams/${teamSlug}`
+      const org = team.organization || config.public.githubOrg
+      const ent = config.public.githubEnt
+      
+      if (config.public.scope === 'enterprise' || config.public.scope === 'team-enterprise') {
+        return `/enterprises/${ent}/teams/${team.slug}`
+      }
+      return `/orgs/${org}/teams/${team.slug}`
     }
+
+    const getTeamName = (uniqueId: string) => availableTeams.value.find(t => t.uniqueId === uniqueId)?.displayName || uniqueId
 
 
     const loadTeams = async () => {
@@ -396,16 +431,41 @@ export default defineComponent({
       const params = options.toParams();
 
       const teams = await $fetch<Team[]>('/api/teams', { params })
-      availableTeams.value = teams
+      
+      // Add uniqueId and displayName to each team
+      const config = useRuntimeConfig()
+      const isMultiOrg = config.public.scope === 'multi-organization'
+      
+      availableTeams.value = teams.map(team => ({
+        ...team,
+        uniqueId: team.organization ? `${team.organization}/${team.slug}` : team.slug,
+        displayName: team.organization && isMultiOrg ? `${team.name} (${team.organization})` : team.name
+      }))
     }
     // Load metrics for a single team via /api/metrics (old + new formats)
-    const loadMetricsForTeam = async (teamSlug: string) => {
+    const loadMetricsForTeam = async (teamUniqueId: string) => {
       const route = useRoute();
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until);
+      
+      // Find the team by uniqueId
+      const teamObj = availableTeams.value.find(t => t.uniqueId === teamUniqueId);
+      if (!teamObj) return { metrics: [], usage: [] };
+      
       // Force scope to team variant based on current broader scope
-      if (options.scope === 'enterprise') options.scope = 'team-enterprise';
-      else if (options.scope === 'organization') options.scope = 'team-organization';
-      options.githubTeam = teamSlug;
+      if (options.scope === 'enterprise') {
+        options.scope = 'team-enterprise';
+      } else if (options.scope === 'organization' || options.scope === 'multi-organization') {
+        options.scope = 'team-organization';
+        // For multi-organization, use the team's organization if available
+        if (teamObj.organization) {
+          options.githubOrg = teamObj.organization;
+        } else if (options.githubOrgs && options.githubOrgs.length > 0) {
+          // Fallback to first org if organization not tracked
+          options.githubOrg = options.githubOrgs[0];
+        }
+      }
+      
+      options.githubTeam = teamObj.slug;
       const params = options.toParams();
       const response = await $fetch<MetricsApiResponse>('/api/metrics', { params })
       return response;
@@ -414,14 +474,15 @@ export default defineComponent({
     const generateBarChartData = () => {
       // Generate language bar chart data
       const languages = [...new Set(languageComparison.value.map(l => l.language))]
-      const teams = [...new Set(languageComparison.value.map(l => l.team))]
+      const teamUniqueIds = [...new Set(languageComparison.value.map(l => l.team))]
 
-      const languageDatasets = teams.map((team, index) => {
+      const languageDatasets = teamUniqueIds.map((uniqueId, index) => {
+        const teamName = getTeamName(uniqueId)
         const colorIndex = index % teamColors.length
         return {
-          label: team,
+          label: teamName,
           data: languages.map(language => {
-            const langData = languageComparison.value.find(l => l.language === language && l.team === team)
+            const langData = languageComparison.value.find(l => l.language === language && l.team === uniqueId)
             return langData ? langData.acceptance_rate : 0
           }),
           backgroundColor: teamColors[colorIndex]!.border,
@@ -438,12 +499,13 @@ export default defineComponent({
       // Generate editor bar chart data
       const editors = [...new Set(editorComparison.value.map(e => e.editor))]
 
-      const editorDatasets = teams.map((team, index) => {
+      const editorDatasets = teamUniqueIds.map((uniqueId, index) => {
+        const teamName = getTeamName(uniqueId)
         const colorIndex = index % teamColors.length
         return {
-          label: team,
+          label: teamName,
           data: editors.map(editor => {
-            const editorData = editorComparison.value.find(e => e.editor === editor && e.team === team)
+            const editorData = editorComparison.value.find(e => e.editor === editor && e.team === uniqueId)
             return editorData ? editorData.active_users : 0
           }),
           backgroundColor: teamColors[colorIndex]!.border,
@@ -487,12 +549,12 @@ export default defineComponent({
       }
 
       // Fetch metrics for each selected team individually
-      const perTeamResponses = await Promise.all(selectedTeams.value.map(slug => loadMetricsForTeam(slug)))
+      const perTeamResponses = await Promise.all(selectedTeams.value.map(uniqueId => loadMetricsForTeam(uniqueId)))
 
       // Build a structure for quick lookup
-      interface PerTeamData { slug: string; metrics: Metrics[]; usage: CopilotMetrics[] }
+      interface PerTeamData { uniqueId: string; metrics: Metrics[]; usage: CopilotMetrics[] }
       const perTeamData: PerTeamData[] = perTeamResponses.map((resp, idx) => ({
-        slug: selectedTeams.value[idx]!,
+        uniqueId: selectedTeams.value[idx]!,
         metrics: (resp.metrics as Metrics[]) || [],
         usage: (resp.usage as CopilotMetrics[]) || []
       }))
@@ -504,12 +566,10 @@ export default defineComponent({
   perTeamData.forEach(t => t.usage.forEach((u) => { if (u.date) daySet.add(u.date) }))
       const days = Array.from(daySet).sort()
 
-      const getTeamName = (slug: string) => availableTeams.value.find(t => t.slug === slug)?.name || slug
-
       // Helper to create line datasets pulling from Metrics objects
       const createMetricsDatasets = (metricKey: LineMetricKey, label: string): ChartDataset<'line', number[]>[] => {
         return perTeamData.map((teamData, index) => {
-          const teamName = getTeamName(teamData.slug)
+          const teamName = getTeamName(teamData.uniqueId)
           const colorIndex = index % teamColors.length
           return {
             label: `${teamName} - ${label}`,
@@ -532,7 +592,7 @@ export default defineComponent({
       // Suggestions & Acceptances datasets
       const suggestionsDatasets: ChartDataset<'line', number[]>[] = []
       perTeamData.forEach((teamData, index) => {
-        const teamName = getTeamName(teamData.slug)
+        const teamName = getTeamName(teamData.uniqueId)
         const colorIndex = index % teamColors.length
         const suggestionsDataset: ChartDataset<'line', number[]> = {
           label: `${teamName} - Suggestions`,
@@ -567,7 +627,7 @@ export default defineComponent({
       // Lines suggested & accepted
       const linesDatasets: ChartDataset<'line', number[]>[] = []
       perTeamData.forEach((teamData, index) => {
-        const teamName = getTeamName(teamData.slug)
+        const teamName = getTeamName(teamData.uniqueId)
         const colorIndex = index % teamColors.length
         linesDatasets.push(
           {
@@ -603,7 +663,7 @@ export default defineComponent({
       // Feature usage charts derived from NEW usage format (CopilotMetrics)
       const createUsageDataset = (path: string[], label: string): ChartDataset<'line', number[]>[] => {
         return perTeamData.map((teamData, index) => {
-          const teamName = getTeamName(teamData.slug)
+          const teamName = getTeamName(teamData.uniqueId)
             const colorIndex = index % teamColors.length
             return {
               label: `${teamName} - ${label}`,
@@ -651,25 +711,52 @@ export default defineComponent({
         })
         Object.entries(langAgg).forEach(([language, vals]) => {
           const rate = vals.suggestions ? (vals.acceptances / vals.suggestions) * 100 : 0
-          langComp.push({ team: teamData.slug, language, acceptance_rate: rate })
+          langComp.push({ team: teamData.uniqueId, language, acceptance_rate: rate })
         })
         Object.entries(editorAgg).forEach(([editor, active]) => {
-          editorComp.push({ team: teamData.slug, editor, active_users: active })
+          editorComp.push({ team: teamData.uniqueId, editor, active_users: active })
         })
       })
       languageComparison.value = langComp
       editorComparison.value = editorComp
       generateBarChartData()
 
-      // Update total active users (latest day per team)
+      // Update total active users (average across date range per team, excluding weekends)
       let totalActive = 0
       perTeamData.forEach(teamData => {
         if (teamData.metrics.length) {
-          const latest = [...teamData.metrics].sort((a, b) => a.day.localeCompare(b.day)).at(-1)
-          totalActive += latest?.total_active_users || 0
+          const weekdayUsers = teamData.metrics
+            .filter(d => {
+              const dayOfWeek = new Date(d.day).getDay()
+              return dayOfWeek !== 5 && dayOfWeek !== 6 // Exclude Friday (5) and Saturday (6)
+            })
+            .map(d => d.total_active_users || 0)
+          
+          if (weekdayUsers.length > 0) {
+            const avgActiveUsers = weekdayUsers.reduce((sum, users) => sum + users, 0) / weekdayUsers.length
+            totalActive += avgActiveUsers
+          }
         }
       })
-      aggregatedTotalActiveUsers.value = totalActive
+      aggregatedTotalActiveUsers.value = Math.round(totalActive)
+      
+      // Calculate average acceptance rate across all teams using cumulative totals (same as MetricsViewer)
+      let totalAcceptanceRate = 0
+      let teamCount = 0
+      perTeamData.forEach(teamData => {
+        if (teamData.metrics.length) {
+          // Calculate using cumulative totals for this team
+          const totalSuggestions = teamData.metrics.reduce((sum, m) => sum + (m.total_suggestions_count || 0), 0)
+          const totalAcceptances = teamData.metrics.reduce((sum, m) => sum + (m.total_acceptances_count || 0), 0)
+          
+          if (totalSuggestions > 0) {
+            const teamRate = (totalAcceptances / totalSuggestions) * 100
+            totalAcceptanceRate += teamRate
+            teamCount++
+          }
+        }
+      })
+      aggregatedAvgAcceptanceRate.value = teamCount > 0 ? totalAcceptanceRate / teamCount : 0
     }
 
     // Load teams on mount, then react to selection changes
@@ -704,6 +791,7 @@ export default defineComponent({
       selectedTeamObjects,
       scopeType,
   totalActiveUsers,
+      avgAcceptanceRate,
       clearSelection,
       getTeamDetailUrl,
       generateBarChartData,
