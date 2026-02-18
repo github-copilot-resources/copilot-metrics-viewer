@@ -1,11 +1,23 @@
 _NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
+> **⚠️ IMPORTANT API MIGRATION NOTICE**
+> 
+> The legacy GitHub Copilot Metrics API will be shut down on **April 2, 2026**. This application is planning migration to the new [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics).
+> 
+> **Migration Status**: Design phase - Implementation NOT started
+> 
+> For more information:
+> - 📋 [Architecture Design Document](./API_MIGRATION_DESIGN.md) - Detailed technical design
+> - 🗓️ [Implementation Roadmap](./MIGRATION_ROADMAP.md) - Week-by-week implementation plan
+> - 📚 [API Quick Reference](./API_QUICK_REFERENCE.md) - Legacy vs New API comparison
+> - 📢 [GitHub Blog Announcement](https://github.blog/changelog/2026-01-29-closing-down-notice-of-legacy-copilot-metrics-apis/)
+
 # GitHub Copilot Metrics Viewer
 <p align="center">
   <img width="150" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/8473a694-217e-4aa2-a3c7-2222a321c336">
 </p>
 
-This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28).
+This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app currently utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28) (being deprecated April 2026).
 
 ## Application Overview
 
