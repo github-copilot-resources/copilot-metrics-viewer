@@ -17,11 +17,11 @@
     "test:e2e": "npx playwright test"
   },
   "dependencies": {
-    "@nuxt/eslint": "^0.7.4",
+    "@nuxt/eslint": "^1.15.1",
     "chart.js": "^4.4.7",
     "date-holidays": "^3.24.4",
-    "eslint": "^9.32.0",
-    "nuxt": "^3.19.0",
+    "eslint": "^10.0.0",
+    "nuxt": "^2.18.1",
     "nuxt-auth-utils": "^0.5.7",
     "roboto-fontface": "^0.10.0",
     "undici": ">=7.18.2",
@@ -33,17 +33,17 @@
   "devDependencies": {
     "@mdi/font": "^7.4.47",
     "@nuxt/fonts": "^0.13.0",
-    "@nuxt/test-utils": "^3.20.1",
+    "@nuxt/test-utils": "^3.8.1",
     "@playwright/test": "1.57.0",
     "@types/webfontloader": "^1.6.38",
-    "@vue/test-utils": "^2.4.6",
+    "@vue/test-utils": "^2.4.0",
     "esbuild": ">=0.25.11",
     "happy-dom": "^20.0.10",
     "playwright-core": "1.54.2",
     "sass-embedded": "^1.80.3",
     "typescript": "^5.6.3",
     "vitest": "^3.0.5",
-    "vue-tsc": "^2.1.6",
+    "vue-tsc": "^3.2.4",
     "vuetify-nuxt-module": "^0.19.5"
   },
   "overrides": {
