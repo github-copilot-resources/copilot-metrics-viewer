@@ -22,42 +22,55 @@ This document provides a detailed implementation roadmap for migrating from the 
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Phase 1: Database Infrastructure (Weeks 1-2)
+## Phase 1: Storage Infrastructure (Weeks 1-2)
 
-### Week 1: Database Setup
+### Week 1: Storage Abstraction Setup
 
-#### Day 1-2: Database Design & Setup
-- [ ] Review and finalize database schema
+#### Day 1-2: Storage Design & Configuration
+- [ ] Review storage abstraction approach using Nitro's unstorage
+- [ ] Configure storage drivers in nuxt.config.ts
 - [ ] Set up PostgreSQL development environment
-- [ ] Create database migration framework
-- [ ] Implement connection pooling
+- [ ] Create storage interface definitions
 
 **Deliverables**:
-- `server/db/schema.sql` - Initial schema
-- `server/db/connection.ts` - Connection pool
-- `server/db/migrations/001_initial_schema.sql`
+- `nuxt.config.ts` - Storage configuration with unstorage
+- `server/storage/types.ts` - Storage interface definitions
+- Development environment setup guide
 
 **Files to Create**:
 ```
 server/
-  db/
-    connection.ts          # Database connection pool setup
-    schema.sql            # Complete database schema
-    migrations/           # Migration scripts
-      001_initial_schema.sql
-      002_indexes.sql
+  storage/
+    types.ts              # Storage interface definitions
+    metrics-storage.ts    # Metrics storage implementation
+    seats-storage.ts      # Seats storage implementation
+    sync-storage.ts       # Sync status storage implementation
 ```
 
-#### Day 3-5: Repository Pattern Implementation
-- [ ] Create base repository interface
-- [ ] Implement MetricsRepository class
-- [ ] Implement SeatsRepository class
-- [ ] Implement SyncRepository class
-- [ ] Add unit tests for repositories
+#### Day 3-5: Storage Implementation
+- [ ] Implement storage abstraction layer
+- [ ] Create PostgreSQL-specific optimizations (optional)
+- [ ] Implement storage factory pattern
+- [ ] Add configuration for multiple storage backends (PostgreSQL, Redis, Filesystem, etc.)
+- [ ] Add unit tests for storage layer
 
 **Deliverables**:
-- `server/db/repositories/base-repository.ts`
-- `server/db/repositories/metrics-repository.ts`
+- `server/storage/metrics-storage.ts` - Metrics storage with unstorage
+- `server/storage/adapters/postgresql.ts` - PostgreSQL optimizations (optional)
+- `server/utils/storage-factory.ts` - Factory for storage instances
+- `.env.example` - Storage configuration examples
+- Unit tests for storage layer
+
+**Storage Interface Example**:
+```typescript
+// server/storage/types.ts
+export interface MetricsStorage {
+  saveMetrics(key: string, data: MetricsData): Promise<void>;
+  getMetrics(key: string): Promise<MetricsData | null>;
+  queryByDateRange(scope: string, start: string, end: string): Promise<MetricsData[]>;
+  // Uses Nitro's useStorage() under the hood
+}
+```
 - `server/db/repositories/seats-repository.ts`
 - `server/db/repositories/sync-repository.ts`
 - `tests/db/repositories/*.spec.ts`
@@ -320,47 +333,107 @@ if (ENABLE_HISTORICAL_MODE && dateRange > 7 days) {
 
 ### Week 9: Scheduler Implementation
 
-#### Day 1-3: Nitro Scheduled Task
-- [ ] Create scheduled task for daily sync
-- [ ] Implement task configuration
-- [ ] Add schedule parsing (cron format)
+#### Day 1-3: Core Sync Service (Deployment-Agnostic)
+- [ ] Implement core sync service logic
+- [ ] Make sync service work in both integrated and standalone modes
+- [ ] Add environment-based configuration
 - [ ] Implement task locking (prevent overlaps)
 - [ ] Add task monitoring and logging
 
 **Deliverables**:
-- `server/tasks/daily-sync.ts`
-- Task configuration in `nuxt.config.ts`
+- `server/services/sync-service.ts` - Core sync logic
+- Environment configuration for both modes
 - Task management utilities
 
-**Scheduled Task Logic**:
+#### Day 4-5: Deployment Options
+
+**Option A: Integrated Mode (Nitro Scheduled Task)**
+- [ ] Create Nitro scheduled task that calls sync service
+- [ ] Configure task schedule in nuxt.config.ts
+- [ ] Test integrated deployment
+
+**Deliverables**:
+- `server/tasks/daily-sync.ts` - Nitro scheduled task wrapper
+
 ```typescript
-// Daily sync task
+// server/tasks/daily-sync.ts
 export default defineTask({
   meta: {
     name: 'daily-sync',
     description: 'Sync Copilot metrics daily',
-    schedule: process.env.SYNC_SCHEDULE || '0 2 * * *' // 2 AM daily
+    schedule: process.env.SYNC_SCHEDULE || '0 2 * * *'
   },
   async run() {
-    // Get all scopes to sync
-    // For each scope, sync yesterday's data
-    // Update sync status
-    // Log results
+    const { runSyncJob } = await import('../services/sync-service');
+    await runSyncJob();
   }
 })
 ```
 
-#### Day 4-5: Alternative Scheduler Options
-- [ ] Document Kubernetes CronJob approach
-- [ ] Document GitHub Actions approach
-- [ ] Document cloud-specific schedulers
-- [ ] Create deployment examples
+**Option B: Separate Container Mode**
+- [ ] Create standalone entry point for sync job
+- [ ] Create Dockerfile.sync for separate container image
+- [ ] Create Kubernetes CronJob YAML
+- [ ] Create docker-compose.yml with separate sync service
+- [ ] Document deployment for both architectures
 
 **Deliverables**:
-- Kubernetes CronJob YAML template
-- GitHub Actions workflow example
-- Azure Functions example
-- AWS Lambda example
+- `server/sync-entry.ts` - Standalone entry point
+- `Dockerfile.sync` - Separate container image
+- `k8s/cronjob.yaml` - Kubernetes CronJob
+- `docker-compose.yml` - Dev environment with separate services
+
+```typescript
+// server/sync-entry.ts
+import { runSyncJob } from './services/sync-service';
+
+async function main() {
+  console.log('Starting sync job...');
+  await runSyncJob();
+  console.log('Sync job completed');
+  process.exit(0);
+}
+
+main().catch((error) => {
+  console.error('Sync job failed:', error);
+  process.exit(1);
+});
+```
+
+**Docker Compose Example**:
+```yaml
+# docker-compose.yml
+services:
+  web:
+    build: .
+    environment:
+      - SYNC_MODE=disabled  # No sync in web container
+  
+  sync:
+    build:
+      dockerfile: Dockerfile.sync
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    # Run on schedule or manually
+```
+
+**Kubernetes CronJob Example**:
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: copilot-metrics-sync
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: sync
+            image: copilot-metrics-sync:latest
+          restartPolicy: OnFailure
+```
 
 ### Week 10: Monitoring & Alerting
 

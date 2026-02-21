@@ -108,15 +108,82 @@ The application currently operates as a **stateless web application** with the f
 
 ## Database Design
 
-### Why PostgreSQL?
+### Storage Abstraction with Nitro Unstorage
+
+**Design Decision**: Use Nitro's [unstorage](https://unstorage.unjs.io/) abstraction layer for all persistence operations.
+
+#### Why Unstorage?
+
+1. **Database Agnostic** - Unified API works with PostgreSQL, Redis, MongoDB, filesystem, and more
+2. **Already in Codebase** - Existing TODO comment in `server/api/metrics.ts:5` references unstorage
+3. **Flexible Deployment** - Users can choose their preferred storage backend
+4. **Simple Configuration** - Change database by updating `nuxt.config.ts`, no code changes needed
+5. **Development Friendly** - Use filesystem or memory storage for local dev, production DB for deployment
+
+#### Storage Implementation Approach
+
+```typescript
+// server/storage/metrics-storage.ts
+// Abstract interface - storage-agnostic
+export interface MetricsStorage {
+  saveMetrics(key: string, data: MetricsData): Promise<void>;
+  getMetrics(key: string): Promise<MetricsData | null>;
+  queryMetricsByDateRange(scope: string, startDate: string, endDate: string): Promise<MetricsData[]>;
+  // ... other methods
+}
+
+// Implementation uses Nitro's useStorage()
+export function createMetricsStorage(): MetricsStorage {
+  const storage = useStorage('metrics'); // Configured in nuxt.config.ts
+  return {
+    async saveMetrics(key, data) {
+      await storage.setItem(key, data);
+    },
+    // ... other implementations
+  };
+}
+```
+
+#### Supported Storage Backends
+
+Users can configure any unstorage driver in `nuxt.config.ts`:
+
+```typescript
+export default defineNuxtConfig({
+  nitro: {
+    storage: {
+      metrics: {
+        driver: 'postgresql',  // or 'redis', 'mongodb', 'fs', etc.
+        connectionString: process.env.DATABASE_URL
+      }
+    }
+  }
+})
+```
+
+**Recommended Backends**:
+- **PostgreSQL** (recommended): Best for relational queries and JSONB support
+- **MongoDB**: Good for document-style storage
+- **Redis**: Fast for caching, less suitable for complex queries
+- **Filesystem**: Development and single-server deployments
+- **Cloudflare D1/KV**: Serverless deployments
+
+### Why PostgreSQL (Default Recommendation)?
+
+While the implementation supports multiple backends via unstorage, PostgreSQL is the recommended default:
 
 1. **Excellent JSON Support** - Native JSON/JSONB types for storing complex metrics
 2. **Time-Series Capabilities** - Built-in date/time functions and indexing
 3. **ACID Compliance** - Ensures data integrity
-4. **Wide Deployment Support** - Available in most cloud providers and on-premises
-5. **Open Source** - No licensing costs
+4. **Complex Queries** - SQL joins and aggregations for analytics
+5. **Wide Deployment Support** - Available in most cloud providers and on-premises
+6. **Open Source** - No licensing costs
+
+**Note**: While unstorage provides abstraction, PostgreSQL's advanced features (JSONB indexes, complex queries) make it the optimal choice for this use case. Other backends may require additional abstraction layers for equivalent functionality.
 
 ### Database Schema
+
+The following schema is designed for PostgreSQL but the storage interface abstracts implementation details:
 
 ```sql
 -- Main metrics table (stores daily aggregated metrics)
@@ -221,24 +288,51 @@ CREATE INDEX idx_sync_status ON sync_status(scope, scope_identifier, status, met
 
 ## Implementation Phases
 
-### Phase 1: Database Infrastructure (Week 1-2)
+### Phase 1: Storage Infrastructure (Week 1-2)
 
-**Goals**: Set up database and core data access layer
+**Goals**: Set up storage abstraction and data access layer using Nitro's unstorage
 
 **Tasks**:
-1. Add PostgreSQL dependency to project
-2. Create database connection configuration
-3. Implement database schema migrations
-4. Create Data Access Layer (DAL) with repository pattern
-5. Add database configuration to `.env` and documentation
+1. Configure Nitro storage with unstorage drivers
+2. Implement storage abstraction layer (database-agnostic)
+3. Create storage interface for metrics, seats, and sync status
+4. Implement PostgreSQL-specific optimizations (indexes, JSONB queries)
+5. Add configuration examples for multiple storage backends
+6. Add database configuration to `.env` and documentation
 
 **Deliverables**:
-- `server/db/schema.sql` - Database schema
-- `server/db/connection.ts` - Database connection pooling
-- `server/db/repositories/metrics-repository.ts` - Metrics CRUD operations
-- `server/db/repositories/seats-repository.ts` - Seats CRUD operations
-- `server/db/repositories/sync-repository.ts` - Sync status operations
-- Updated `.env.example` with database configuration
+- `server/storage/metrics-storage.ts` - Storage abstraction interface
+- `server/storage/adapters/postgresql.ts` - PostgreSQL-specific implementation (optional optimizations)
+- `nuxt.config.ts` - Storage configuration examples
+- `server/utils/storage-factory.ts` - Factory for creating storage instances
+- Updated `.env.example` with storage configuration
+- Documentation for configuring different storage backends
+
+**Storage Configuration Example**:
+```typescript
+// nuxt.config.ts
+export default defineNuxtConfig({
+  nitro: {
+    storage: {
+      // Metrics data storage
+      metrics: {
+        driver: 'postgresql',
+        connectionString: process.env.DATABASE_URL
+      },
+      // Alternative: Filesystem for development
+      // metrics: {
+      //   driver: 'fs',
+      //   base: './data/metrics'
+      // },
+      // Alternative: Redis for caching
+      // metrics: {
+      //   driver: 'redis',
+      //   url: process.env.REDIS_URL
+      // }
+    }
+  }
+})
+```
 
 ### Phase 2: New API Integration (Week 3-4)
 
@@ -295,27 +389,195 @@ CREATE INDEX idx_sync_status ON sync_status(scope, scope_identifier, status, met
 
 **Goals**: Automate daily data synchronization
 
-**Options**:
-1. **Simple Cron Job** (Recommended for MVP)
-   - Use Nitro's scheduled tasks
-   - Run daily at off-peak hours
-   - Simpler deployment
+**Deployment Options**:
 
-2. **External Scheduler** (For larger scale)
-   - Kubernetes CronJob
-   - GitHub Actions workflow
-   - Cloud provider scheduler (Azure Functions, AWS Lambda)
+The sync service can be deployed in two architectures:
+
+#### Option A: Integrated Sync (Simpler, Recommended for MVP)
+
+Sync runs as part of the main Nuxt application using Nitro's scheduled tasks:
+
+```typescript
+// server/tasks/daily-sync.ts
+export default defineTask({
+  meta: {
+    name: 'daily-sync',
+    description: 'Sync Copilot metrics daily',
+    schedule: '0 2 * * *' // 2 AM daily
+  },
+  async run() {
+    // Sync logic here
+  }
+})
+```
+
+**Pros**:
+- Simple deployment (single container)
+- No additional infrastructure
+- Shared codebase and dependencies
+
+**Cons**:
+- Sync job shares resources with web server
+- Cannot scale sync independently
+- Restart affects both web and sync
+
+#### Option B: Separate Sync Container (Recommended for Production)
+
+Sync runs as an independent container/job, sharing only the storage backend:
+
+**Architecture**:
+```
+┌─────────────────────┐     ┌─────────────────────┐
+│  Web Container      │     │  Sync Container     │
+│  (Nuxt App)         │     │  (Sync Job Only)    │
+│                     │     │                     │
+│  - API endpoints    │     │  - Sync service     │
+│  - Frontend         │     │  - Scheduled task   │
+│  - No sync logic    │     │  - No web server    │
+└──────────┬──────────┘     └──────────┬──────────┘
+           │                           │
+           └─────────┬─────────────────┘
+                     ▼
+           ┌─────────────────────┐
+           │  Shared Storage     │
+           │  (PostgreSQL/etc)   │
+           └─────────────────────┘
+```
+
+**Implementation**:
+
+1. **Create separate entry point** for sync job:
+```typescript
+// server/sync-entry.ts
+import { runSyncJob } from './services/sync-service';
+
+async function main() {
+  console.log('Starting sync job...');
+  await runSyncJob();
+  console.log('Sync job completed');
+  process.exit(0);
+}
+
+main().catch((error) => {
+  console.error('Sync job failed:', error);
+  process.exit(1);
+});
+```
+
+2. **Dockerfile for sync container**:
+```dockerfile
+# Dockerfile.sync
+FROM node:20-alpine
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --production
+
+COPY server/services ./server/services
+COPY server/storage ./server/storage
+COPY server/sync-entry.ts ./server/
+COPY shared ./shared
+
+CMD ["node", "server/sync-entry.ts"]
+```
+
+3. **Kubernetes CronJob**:
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: copilot-metrics-sync
+spec:
+  schedule: "0 2 * * *"  # 2 AM daily
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: sync
+            image: copilot-metrics-sync:latest
+            env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: database-url
+            - name: GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: github-token
+          restartPolicy: OnFailure
+```
+
+4. **Docker Compose (Development)**:
+```yaml
+# docker-compose.yml
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/metrics
+    depends_on:
+      - db
+  
+  sync:
+    build:
+      context: .
+      dockerfile: Dockerfile.sync
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/metrics
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    depends_on:
+      - db
+    # Run manually or with cron in production
+  
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=metrics
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+```
+
+**Pros**:
+- **Independent scaling**: Scale web and sync separately
+- **Resource isolation**: Sync doesn't impact web performance
+- **Better reliability**: Web stays up during sync failures
+- **Flexible scheduling**: Use Kubernetes CronJob, GitHub Actions, etc.
+- **Easier monitoring**: Separate logs and metrics per service
+
+**Cons**:
+- Slightly more complex deployment
+- Need to manage two containers
+- Shared storage must handle concurrent access
+
+**Recommendation**: Start with Option A (integrated) for MVP, migrate to Option B (separate container) for production deployments.
 
 **Tasks**:
-1. Implement scheduled task for daily sync
-2. Add configuration for sync schedule
-3. Implement monitoring and alerting
-4. Create health check for sync status
+1. Implement sync service core logic (works in both options)
+2. Create separate entry point for standalone sync job
+3. Add configuration for both deployment modes
+4. Create Dockerfile.sync for separate container
+5. Document both deployment approaches
+6. Implement monitoring and alerting
+7. Create health check for sync status
 
 **Deliverables**:
-- `server/tasks/daily-sync.ts` - Scheduled sync task
+- `server/services/sync-service.ts` - Core sync logic (deployment-agnostic)
+- `server/sync-entry.ts` - Standalone entry point for sync container
+- `server/tasks/daily-sync.ts` - Integrated Nitro scheduled task
+- `Dockerfile.sync` - Container image for sync job
+- `k8s/cronjob.yaml` - Kubernetes CronJob example
+- `docker-compose.yml` - Development setup with separate containers
 - Updated health check endpoints
-- Monitoring documentation
+- Monitoring documentation for both modes
 
 ### Phase 6: Testing & Documentation (Week 11-12)
 
@@ -420,20 +682,92 @@ Update `Dockerfile` to:
 
 ### Kubernetes Deployment
 
-1. **Database**: 
-   - Deploy PostgreSQL (or use managed service)
-   - Configure persistent volumes
-   - Set up backups
+Two deployment architectures are supported:
 
-2. **Application**:
-   - Deploy as StatefulSet or Deployment
-   - Configure database connection secrets
-   - Add init container for migrations
+#### Architecture A: Single Container (Simple)
 
-3. **Sync Job**:
-   - Deploy as CronJob
-   - Share database with main application
-   - Configure retry policy
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copilot-metrics-viewer
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+      - name: app
+        image: copilot-metrics-viewer:latest
+        env:
+        - name: SYNC_MODE
+          value: "integrated"  # Sync runs inside app
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: database-url
+```
+
+#### Architecture B: Separate Containers (Recommended for Production)
+
+**Main Application Deployment**:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copilot-metrics-viewer-web
+spec:
+  replicas: 3  # Scale web independently
+  template:
+    spec:
+      containers:
+      - name: web
+        image: copilot-metrics-viewer:latest
+        env:
+        - name: SYNC_MODE
+          value: "disabled"  # No sync in web pods
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: database-url
+```
+
+**Sync Job as CronJob** (as shown in Phase 5):
+```yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: copilot-metrics-sync
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: sync
+            image: copilot-metrics-sync:latest  # Built from Dockerfile.sync
+            env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: database-url
+          restartPolicy: OnFailure
+```
+
+**Benefits of Separate Containers**:
+- Web pods can scale horizontally (3+ replicas) without running duplicate sync jobs
+- Sync runs independently on schedule, doesn't compete for web resources
+- Sync failures don't affect web availability
+- Easier to monitor and debug separately
+
+**Database Configuration** (both architectures):
+- Deploy PostgreSQL (or use managed service like Azure Database, AWS RDS, GCP Cloud SQL)
+- Configure persistent volumes for data
+- Set up automated backups
+- Store connection string in Kubernetes secrets
 
 ### Cloud Provider Options
 
