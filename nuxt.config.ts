@@ -81,6 +81,11 @@ export default defineNuxtConfig({
         driver: 'fs',
         base: './.data/metrics'
       }
+    },
+    scheduledTasks: {
+      // Daily sync task - runs at 2 AM by default
+      // Can be customized via SYNC_SCHEDULE env var
+      '0 2 * * *': ['daily-metrics-sync']
     }
   },
   runtimeConfig: {
@@ -104,7 +109,10 @@ export default defineNuxtConfig({
       githubTeam: '',
       usingGithubAuth: false,
       version,
-      isPublicApp: false
+      isPublicApp: false,
+      // New API migration flags
+      useNewApi: false,  // Enable new async download API (NUXT_PUBLIC_USE_NEW_API)
+      enableHistoricalMode: false  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)
     }
   }
 })

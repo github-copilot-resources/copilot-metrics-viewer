@@ -1,0 +1,51 @@
+# Dockerfile for standalone sync job
+# This creates a lightweight container that only runs the sync service
+# Use this for Kubernetes CronJobs or scheduled container instances
+
+FROM node:20-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json ./
+RUN npm ci --production
+
+# Build stage - copy source files
+FROM base AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY nuxt.config.ts tsconfig.json ./
+RUN npm ci
+
+# Copy source code
+COPY server ./server
+COPY shared ./shared
+COPY app/model ./app/model
+COPY app/types ./app/types
+COPY app/utils ./app/utils
+
+# Production stage
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/app/model ./app/model
+COPY --from=builder /app/app/types ./app/types
+COPY --from=builder /app/app/utils ./app/utils
+COPY package.json ./
+
+# Create data directory for filesystem storage
+RUN mkdir -p ./.data/metrics && chown -R node:node ./.data
+
+USER node
+
+# Run sync entry point
+CMD ["node", "--import", "tsx", "server/sync-entry.ts"]

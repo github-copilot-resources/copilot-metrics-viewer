@@ -1,6 +1,7 @@
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import { getMetricsData } from '../../shared/utils/metrics-util';
+import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
 
 // TODO: use for storage https://unstorage.unjs.io/drivers/azure
 
@@ -9,8 +10,16 @@ export default defineEventHandler(async (event) => {
     const logger = console;
 
     try {
-        // usage is the new API Format
-        const usageData = await getMetricsData(event);
+        // Check if new API should be used
+        const config = useRuntimeConfig();
+        const useNewApi = config.public?.useNewApi === true || 
+                         config.public?.useNewApi === 'true' ||
+                         process.env.USE_NEW_API === 'true';
+
+        // Use new API version if enabled, otherwise use legacy
+        const usageData = useNewApi 
+            ? await getMetricsDataV2(event)
+            : await getMetricsData(event);
 
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
