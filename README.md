@@ -2,14 +2,23 @@ _NOTE: For information on support and assistance, click [here](https://github.co
 
 > **⚠️ IMPORTANT API MIGRATION NOTICE**
 > 
-> The legacy GitHub Copilot Metrics API will be shut down on **April 2, 2026**. This application is planning migration to the new [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics).
+> The legacy GitHub Copilot Metrics API will be shut down on **April 2, 2026**. This application now supports the new [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics).
 > 
-> **Migration Status**: Design phase - Implementation NOT started
+> **Migration Status**: ✅ **Implementation Complete** (Phases 1-5 of 6)
 > 
-> For more information:
-> - 📋 [Architecture Design Document](./API_MIGRATION_DESIGN.md) - Detailed technical design
-> - 🗓️ [Implementation Roadmap](./MIGRATION_ROADMAP.md) - Week-by-week implementation plan
+> **What's New**:
+> - ✅ New async file download API support
+> - ✅ Configurable storage backends (PostgreSQL, Redis, MongoDB, filesystem)
+> - ✅ Background data sync with scheduled tasks
+> - ✅ Backward compatible with legacy API (feature-flagged)
+> - ✅ Separate container deployment option
+>
+> **Getting Started**:
+> - 📖 [Migration Guide](./MIGRATION_GUIDE.md) - Step-by-step migration instructions
+> - 🧪 [Testing Guide](./TESTING_GUIDE.md) - How to test the migration
+> - 📋 [Architecture Design](./API_MIGRATION_DESIGN.md) - Technical design details
 > - 📚 [API Quick Reference](./API_QUICK_REFERENCE.md) - Legacy vs New API comparison
+> - 🗓️ [Implementation Roadmap](./MIGRATION_ROADMAP.md) - Development timeline
 > - 📢 [GitHub Blog Announcement](https://github.blog/changelog/2026-01-29-closing-down-notice-of-legacy-copilot-metrics-apis/)
 
 # GitHub Copilot Metrics Viewer
@@ -17,7 +26,12 @@ _NOTE: For information on support and assistance, click [here](https://github.co
   <img width="150" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/8473a694-217e-4aa2-a3c7-2222a321c336">
 </p>
 
-This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app currently utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28) (being deprecated April 2026).
+This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. 
+
+**API Support**:
+- Legacy API (default) - Works until April 2, 2026
+- New Usage Metrics API (opt-in) - Future-proof, async downloads
+- See [Migration Guide](./MIGRATION_GUIDE.md) for switching to new API
 
 ## Application Overview
 
