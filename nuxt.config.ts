@@ -74,6 +74,14 @@ export default defineNuxtConfig({
     plugins: [
       'plugins/http-agent',
     ],
+    storage: {
+      // Metrics storage using filesystem driver for development
+      // Can be changed to postgresql, redis, mongodb, etc. for production
+      metrics: {
+        driver: 'fs',
+        base: './.data/metrics'
+      }
+    }
   },
   runtimeConfig: {
     githubToken: '',
