@@ -253,6 +253,36 @@ kubectl apply -f k8s/cronjob.yaml
 kubectl create job --from=cronjob/copilot-metrics-sync manual-sync-$(date +%s)
 ```
 
+## Security Considerations
+
+### ⚠️ Admin API Endpoints
+
+**CRITICAL**: The `/api/admin/*` endpoints are NOT authenticated by default!
+
+These endpoints allow:
+- Triggering data synchronization (`/api/admin/sync`)
+- Viewing sync status (`/api/admin/sync-status`)
+
+**Required Actions**:
+1. **DO NOT expose admin endpoints publicly** without protection
+2. **Use one of these security measures**:
+   - Reverse proxy authentication (nginx basic auth, OAuth proxy)
+   - API gateway with authentication
+   - Firewall rules (allow only internal IPs)
+   - VPN or private network access only
+   - Kubernetes NetworkPolicy restricting access
+
+**Example nginx protection**:
+```nginx
+location /api/admin/ {
+    auth_basic "Admin Access";
+    auth_basic_user_file /etc/nginx/.htpasswd;
+    proxy_pass http://copilot-metrics-viewer:3000;
+}
+```
+
+**Future Enhancement**: Native authentication using `ADMIN_API_SECRET` will be added in a future version.
+
 ## Troubleshooting
 
 ### Issue: "useStorage is not defined"
