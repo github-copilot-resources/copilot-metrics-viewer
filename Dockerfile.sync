@@ -10,9 +10,9 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
-RUN npm ci --production
+RUN npm ci
 
-# Build stage - copy source files
+# Build stage - compile TypeScript
 FROM base AS builder
 WORKDIR /app
 
@@ -27,25 +27,31 @@ COPY app/model ./app/model
 COPY app/types ./app/types
 COPY app/utils ./app/utils
 
+# Compile TypeScript to JavaScript
+RUN npx tsc server/sync-entry.ts --outDir ./dist --module commonjs --esModuleInterop --skipLibCheck --resolveJsonModule
+
 # Production stage
 FROM base AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy dependencies
-COPY --from=deps /app/node_modules ./node_modules
+# Copy production dependencies only
+COPY package.json package-lock.json ./
+RUN npm ci --production --ignore-scripts
+
+# Copy compiled sync entry and source files
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/app/model ./app/model
 COPY --from=builder /app/app/types ./app/types
 COPY --from=builder /app/app/utils ./app/utils
-COPY package.json ./
 
 # Create data directory for filesystem storage
 RUN mkdir -p ./.data/metrics && chown -R node:node ./.data
 
 USER node
 
-# Run sync entry point
-CMD ["node", "--import", "tsx", "server/sync-entry.ts"]
+# Run compiled sync entry point
+CMD ["node", "dist/server/sync-entry.js"]

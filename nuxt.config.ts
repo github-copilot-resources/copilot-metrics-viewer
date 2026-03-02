@@ -84,8 +84,8 @@ export default defineNuxtConfig({
     },
     scheduledTasks: {
       // Daily sync task - runs at 2 AM by default
-      // Can be customized via SYNC_SCHEDULE env var
-      '0 2 * * *': ['daily-metrics-sync']
+      // Customize schedule via SYNC_SCHEDULE env var (cron format)
+      [process.env.SYNC_SCHEDULE ?? '0 2 * * *']: ['daily-metrics-sync']
     }
   },
   runtimeConfig: {

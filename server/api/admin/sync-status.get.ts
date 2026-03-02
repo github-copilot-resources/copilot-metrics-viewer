@@ -3,7 +3,7 @@
  * GET /api/admin/sync-status
  */
 
-import { getSyncStats, detectGaps } from '../../services/sync-service';
+import { getSyncStats } from '../../services/sync-service';
 import { getPendingSyncs, getFailedSyncs } from '../../storage/sync-storage';
 import { Options } from '@/model/Options';
 
@@ -46,11 +46,15 @@ export default defineEventHandler(async (event) => {
     const pending = await getPendingSyncs();
     const failed = await getFailedSyncs();
 
+    // Sort by creation date (most recent first)
+    pending.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    failed.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
     return {
       pending: pending.length,
       failed: failed.length,
-      pendingSyncs: pending.slice(0, 10), // Limit to 10 most recent
-      failedSyncs: failed.slice(0, 10)
+      pendingSyncs: pending.slice(0, 10), // 10 most recent pending
+      failedSyncs: failed.slice(0, 10) // 10 most recent failed
     };
 
   } catch (error: unknown) {

@@ -6,7 +6,7 @@
  * Can be disabled by setting SYNC_ENABLED=false
  */
 
-import { syncMetricsForDate, type SyncResult } from '../services/sync-service';
+import { syncMetricsForDate } from '../services/sync-service';
 
 export default defineTask({
   meta: {

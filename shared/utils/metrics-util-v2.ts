@@ -9,7 +9,7 @@ import { Options } from '@/model/Options';
 import { getLocale } from "./getLocale";
 import { filterHolidaysFromMetrics } from '@/utils/dateUtils';
 import { getMetricsData as getLegacyMetricsData } from './metrics-util';
-import { getMetrics, getMetricsByDateRange } from '../../server/storage/metrics-storage';
+import { getMetricsByDateRange } from '../../server/storage/metrics-storage';
 import { fetchMetricsForDate, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
 
 /**
@@ -72,7 +72,10 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   const authHeader = event.context.headers.get('Authorization');
   if (!authHeader && !options.isDataMocked) {
     logger.error('No Authentication provided');
-    throw new Error('No Authentication provided');
+    throw createError({
+      statusCode: 401,
+      statusMessage: 'No Authentication provided'
+    });
   }
 
   const identifier = options.githubOrg || options.githubEnt || '';
