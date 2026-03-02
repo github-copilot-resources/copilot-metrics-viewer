@@ -4,20 +4,11 @@
 
 FROM node:20-alpine AS base
 
-# Install dependencies only when needed
-FROM base AS deps
-WORKDIR /app
-
-# Copy package files
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# Build stage - compile TypeScript
+# Build stage - install all dependencies
 FROM base AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-COPY nuxt.config.ts tsconfig.json ./
 RUN npm ci
 
 # Copy source code
@@ -26,9 +17,7 @@ COPY shared ./shared
 COPY app/model ./app/model
 COPY app/types ./app/types
 COPY app/utils ./app/utils
-
-# Compile TypeScript to JavaScript
-RUN npx tsc server/sync-entry.ts --outDir ./dist --module commonjs --esModuleInterop --skipLibCheck --resolveJsonModule
+COPY nuxt.config.ts tsconfig.json ./
 
 # Production stage
 FROM base AS runner
@@ -36,22 +25,21 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy production dependencies only
+# Copy package files and install ALL dependencies (including tsx for runtime)
 COPY package.json package-lock.json ./
-RUN npm ci --production --ignore-scripts
+RUN npm ci
 
-# Copy compiled sync entry and source files
-COPY --from=builder /app/dist ./dist
+# Copy source files from builder
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/shared ./shared
-COPY --from=builder /app/app/model ./app/model
-COPY --from=builder /app/app/types ./app/types
-COPY --from=builder /app/app/utils ./app/utils
+COPY --from=builder /app/app ./app
+COPY --from=builder /app/nuxt.config.ts ./nuxt.config.ts
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
 # Create data directory for filesystem storage
 RUN mkdir -p ./.data/metrics && chown -R node:node ./.data
 
 USER node
 
-# Run compiled sync entry point
-CMD ["node", "dist/server/sync-entry.js"]
+# Run sync entry point with tsx for TypeScript support
+CMD ["npx", "tsx", "server/sync-entry.ts"]
