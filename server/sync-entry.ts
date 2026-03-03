@@ -10,10 +10,10 @@
  *   - NUXT_PUBLIC_GITHUB_ORG: GitHub organization slug
  *   - NUXT_PUBLIC_GITHUB_ENT: GitHub enterprise slug
  *   - NUXT_GITHUB_TOKEN: GitHub personal access token
- *   - SYNC_DAYS_BACK: Number of days to sync (default: 1)
+ *   - SYNC_DAYS_BACK: Number of days to sync (default: 28, uses bulk download)
  */
 
-import { syncMetricsForDate, syncMetricsForDateRange } from './services/sync-service';
+import { syncBulk, syncMetricsForDateRange } from './services/sync-service';
 
 async function runSync() {
   const logger = console;
@@ -24,7 +24,7 @@ async function runSync() {
   const githubEnt = process.env.NUXT_PUBLIC_GITHUB_ENT;
   const githubTeam = process.env.NUXT_PUBLIC_GITHUB_TEAM;
   const githubToken = process.env.NUXT_GITHUB_TOKEN;
-  const daysBack = parseInt(process.env.SYNC_DAYS_BACK || '1', 10);
+  const daysBack = parseInt(process.env.SYNC_DAYS_BACK || '28', 10);
 
   if (!githubToken) {
     logger.error('NUXT_GITHUB_TOKEN environment variable is required');
@@ -44,59 +44,23 @@ async function runSync() {
   };
 
   logger.info(`Starting sync for ${scope}:${identifier}`);
-  logger.info(`Syncing last ${daysBack} day(s)`);
+  logger.info(`Syncing last ${daysBack} day(s) via bulk download`);
 
   try {
-    if (daysBack === 1) {
-      // Sync just yesterday
-      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const date = yesterday.toISOString().split('T')[0];
+    // Use bulk download — one API call for up to 28 days
+    const result = await syncBulk(
+      scope as any,
+      identifier,
+      headers,
+      githubTeam || undefined
+    );
 
-      const result = await syncMetricsForDate({
-        scope: scope as any,
-        identifier,
-        date,
-        teamSlug: githubTeam || undefined,
-        headers
-      });
+    logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped`);
 
-      if (result.success) {
-        logger.info(`✓ Successfully synced ${date}`);
-      } else {
-        logger.error(`✗ Failed to sync ${date}: ${result.error}`);
-        process.exit(1);
-      }
-    } else {
-      // Sync date range
-      const endDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // Yesterday
-      const startDate = new Date(endDate.getTime() - (daysBack - 1) * 24 * 60 * 60 * 1000);
-
-      const startDateStr = startDate.toISOString().split('T')[0];
-      const endDateStr = endDate.toISOString().split('T')[0];
-
-      logger.info(`Syncing range: ${startDateStr} to ${endDateStr}`);
-
-      const results = await syncMetricsForDateRange(
-        scope as any,
-        identifier,
-        startDateStr,
-        endDateStr,
-        headers,
-        githubTeam || undefined
-      );
-
-      const successCount = results.filter(r => r.success).length;
-      const failureCount = results.filter(r => !r.success).length;
-
-      logger.info(`Sync completed: ${successCount} succeeded, ${failureCount} failed`);
-
-      if (failureCount > 0) {
-        logger.error('Some syncs failed:');
-        results.filter(r => !r.success).forEach(r => {
-          logger.error(`  ${r.date}: ${r.error}`);
-        });
-        process.exit(1);
-      }
+    if (result.errors.length > 0) {
+      logger.error('Some days failed:');
+      result.errors.forEach(e => logger.error(`  ${e.date}: ${e.error}`));
+      process.exit(1);
     }
 
     logger.info('Sync job completed successfully');

@@ -1,12 +1,12 @@
 /**
  * Daily sync scheduled task
- * Automatically syncs yesterday's metrics data
+ * Downloads the latest 28-day report and saves any new days to storage.
  * 
  * This task runs on a schedule defined by SYNC_SCHEDULE env var (default: 2 AM daily)
  * Can be disabled by setting SYNC_ENABLED=false
  */
 
-import { syncMetricsForDate } from '../services/sync-service';
+import { syncBulk } from '../services/sync-service';
 
 export default defineTask({
   meta: {
@@ -42,40 +42,33 @@ export default defineTask({
       return { result: 'error', reason: 'no_identifier' };
     }
 
-    // Sync yesterday's data (most recent available)
-    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const date = yesterday.toISOString().split('T')[0];
-
-    logger.info(`Starting daily sync for ${scope}:${identifier} on ${date}`);
+    logger.info(`Starting daily bulk sync for ${scope}:${identifier}`);
 
     try {
-      const result = await syncMetricsForDate({
+      const result = await syncBulk(
         scope,
         identifier,
-        date,
-        teamSlug: githubTeam || undefined,
-        headers: {
+        {
           'Authorization': `Bearer ${githubToken}`,
           'Accept': 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28'
-        }
-      });
+        },
+        githubTeam || undefined
+      );
 
-      logger.info(`Sync completed for ${date}:`, result);
+      logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped, ${result.errors.length} errors`);
 
       return {
-        result: 'success',
-        date,
+        result: result.success ? 'success' : 'partial',
         syncResult: result
       };
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`Sync failed for ${date}:`, errorMessage);
+      logger.error(`Sync failed:`, errorMessage);
 
       return {
         result: 'error',
-        date,
         error: errorMessage
       };
     }

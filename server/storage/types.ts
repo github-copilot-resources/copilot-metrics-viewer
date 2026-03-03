@@ -5,6 +5,7 @@
 
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { Seat } from '@/model/Seat';
+import type { ReportDayTotals } from '../services/github-copilot-usage-api';
 
 /**
  * Storage key builder for metrics
@@ -46,14 +47,18 @@ export interface SyncStatus {
 }
 
 /**
- * Stored metrics data with metadata
+ * Stored metrics data — stores the new API report format (ReportDayTotals)
+ * alongside the transformed CopilotMetrics for backward compatibility.
  */
 export interface StoredMetrics {
   scope: string;
   scopeIdentifier: string;
   teamSlug?: string;
   metricsDate: string;
+  /** Transformed CopilotMetrics for UI consumption */
   data: CopilotMetrics;
+  /** Raw report data from new API — richer, supports future aggregations */
+  reportData?: ReportDayTotals;
   createdAt: string;
   updatedAt: string;
 }

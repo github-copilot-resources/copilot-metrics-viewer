@@ -1,11 +1,16 @@
 /**
  * Data Sync Service
- * Orchestrates syncing metrics from GitHub API to storage
+ * Orchestrates syncing metrics from GitHub API to storage.
+ *
+ * Uses the new download-based Copilot Usage Metrics API:
+ *   - 28-day bulk download: one API call for up to 28 days of data
+ *   - Stores both raw ReportDayTotals (for future aggregation) and
+ *     transformed CopilotMetrics (for UI consumption)
  */
 
-import type { CopilotMetrics } from '@/model/Copilot_Metrics';
-import { fetchMetricsForDate, type MetricsReportRequest } from './github-copilot-usage-api';
-import { saveMetrics, hasMetrics, getMetrics } from '../storage/metrics-storage';
+import { fetchLatestReport, fetchReportForDate, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
+import { transformDayToMetrics } from './report-transformer';
+import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
 import { 
   createPendingSyncStatus, 
   markSyncInProgress, 
@@ -29,8 +34,88 @@ export interface SyncResult {
   metricsCount: number;
 }
 
+export interface BulkSyncResult {
+  success: boolean;
+  totalDays: number;
+  savedDays: number;
+  skippedDays: number;
+  errors: Array<{ date: string; error: string }>;
+}
+
 /**
- * Sync metrics for a single date
+ * Save a single day's report data to storage.
+ * Stores both the transformed CopilotMetrics and the raw ReportDayTotals.
+ */
+async function saveDayData(
+  scope: string,
+  identifier: string,
+  dayData: ReportDayTotals,
+  teamSlug?: string
+): Promise<void> {
+  const metrics = transformDayToMetrics(dayData);
+  await saveMetrics(scope, identifier, dayData.day, metrics, teamSlug, dayData);
+}
+
+/**
+ * Sync metrics using the 28-day bulk download.
+ * One API call fetches up to 28 days, then saves each day individually.
+ * Skips days that are already stored.
+ */
+export async function syncBulk(
+  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+  identifier: string,
+  headers: HeadersInit,
+  teamSlug?: string
+): Promise<BulkSyncResult> {
+  const logger = console;
+  const result: BulkSyncResult = {
+    success: true,
+    totalDays: 0,
+    savedDays: 0,
+    skippedDays: 0,
+    errors: [],
+  };
+
+  try {
+    const request: MetricsReportRequest = { scope, identifier, teamSlug };
+    logger.info(`Starting bulk sync for ${scope}:${identifier}`);
+
+    const report = await fetchLatestReport(request, headers);
+    result.totalDays = report.day_totals.length;
+    logger.info(`Downloaded report with ${result.totalDays} days (${report.report_start_day} to ${report.report_end_day})`);
+
+    for (const dayData of report.day_totals) {
+      try {
+        const exists = await hasMetrics(scope, identifier, dayData.day, teamSlug);
+        if (exists) {
+          result.skippedDays++;
+          continue;
+        }
+
+        await saveDayData(scope, identifier, dayData, teamSlug);
+        result.savedDays++;
+        logger.info(`Saved metrics for ${dayData.day}`);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        result.errors.push({ date: dayData.day, error: msg });
+        logger.error(`Failed to save ${dayData.day}: ${msg}`);
+      }
+    }
+
+    result.success = result.errors.length === 0;
+    logger.info(`Bulk sync complete: ${result.savedDays} saved, ${result.skippedDays} skipped, ${result.errors.length} errors`);
+    return result;
+
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`Bulk sync failed: ${msg}`);
+    return { ...result, success: false, errors: [{ date: 'bulk', error: msg }] };
+  }
+}
+
+/**
+ * Sync metrics for a single date using the 1-day endpoint.
+ * Used by daily cron job for yesterday's data.
  */
 export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResult> {
   const { scope, identifier, date, teamSlug, headers } = request;
@@ -41,78 +126,50 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
     const exists = await hasMetrics(scope, identifier, date, teamSlug);
     if (exists) {
       logger.info(`Metrics for ${date} already synced, skipping`);
-      return {
-        success: true,
-        date,
-        metricsCount: 1
-      };
+      return { success: true, date, metricsCount: 1 };
     }
 
-    // Create sync status
+    // Update sync status
     const syncStatus = await getSyncStatus(scope, identifier, date, teamSlug);
     if (!syncStatus) {
       await createPendingSyncStatus(scope, identifier, date, teamSlug);
     }
-
-    // Mark as in progress
     await markSyncInProgress(scope, identifier, date, teamSlug);
 
-    // Fetch from GitHub API
+    // Fetch from new API (1-day endpoint)
     logger.info(`Fetching metrics for ${scope}:${identifier} on ${date}`);
-    const metricsRequest: MetricsReportRequest = {
-      scope,
-      identifier,
-      date,
-      teamSlug
-    };
+    const apiRequest: MetricsReportRequest = { scope, identifier, teamSlug };
+    const report = await fetchReportForDate(apiRequest, headers, date);
 
-    const metricsArray = await fetchMetricsForDate(metricsRequest, headers);
-
-    // Handle NDJSON response - typically one object per day
-    // but the new API might return multiple entries
     let syncedCount = 0;
-    for (const metricsData of metricsArray) {
-      const metrics = metricsData as CopilotMetrics;
-      
-      // Verify the date matches
-      if (metrics.date === date) {
-        await saveMetrics(scope, identifier, date, metrics, teamSlug);
+    for (const dayData of report.day_totals) {
+      if (dayData.day === date) {
+        await saveDayData(scope, identifier, dayData, teamSlug);
         syncedCount++;
         logger.info(`Saved metrics for ${date}`);
       }
     }
 
-    // Mark as completed
     await markSyncCompleted(scope, identifier, date, teamSlug);
-
-    return {
-      success: true,
-      date,
-      metricsCount: syncedCount
-    };
+    return { success: true, date, metricsCount: syncedCount };
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error(`Failed to sync metrics for ${date}:`, errorMessage);
 
-    // Mark as failed
     try {
       await markSyncFailed(scope, identifier, date, errorMessage, teamSlug);
     } catch (statusError) {
       logger.error('Failed to update sync status:', statusError);
     }
 
-    return {
-      success: false,
-      date,
-      error: errorMessage,
-      metricsCount: 0
-    };
+    return { success: false, date, error: errorMessage, metricsCount: 0 };
   }
 }
 
 /**
- * Sync metrics for a date range
+ * Sync metrics for a date range.
+ * Uses 28-day bulk download and filters to the requested range.
  */
 export async function syncMetricsForDateRange(
   scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
@@ -122,24 +179,30 @@ export async function syncMetricsForDateRange(
   headers: HeadersInit,
   teamSlug?: string
 ): Promise<SyncResult[]> {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const logger = console;
+
+  // Use bulk download (28-day) and filter to requested range
+  const request: MetricsReportRequest = { scope, identifier, teamSlug };
+  const report = await fetchLatestReport(request, headers);
+
   const results: SyncResult[] = [];
+  for (const dayData of report.day_totals) {
+    if (dayData.day < startDate || dayData.day > endDate) continue;
 
-  const current = new Date(start);
-  while (current <= end) {
-    const dateStr = current.toISOString().split('T')[0];
-    
-    const result = await syncMetricsForDate({
-      scope,
-      identifier,
-      date: dateStr,
-      teamSlug,
-      headers
-    });
+    try {
+      const exists = await hasMetrics(scope, identifier, dayData.day, teamSlug);
+      if (exists) {
+        results.push({ success: true, date: dayData.day, metricsCount: 1 });
+        continue;
+      }
 
-    results.push(result);
-    current.setDate(current.getDate() + 1);
+      await saveDayData(scope, identifier, dayData, teamSlug);
+      results.push({ success: true, date: dayData.day, metricsCount: 1 });
+      logger.info(`Saved metrics for ${dayData.day}`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      results.push({ success: false, date: dayData.day, error: msg, metricsCount: 0 });
+    }
   }
 
   return results;
@@ -163,11 +226,9 @@ export async function detectGaps(
   while (current <= end) {
     const dateStr = current.toISOString().split('T')[0];
     const exists = await hasMetrics(scope, identifier, dateStr, teamSlug);
-    
     if (!exists) {
       missingDates.push(dateStr);
     }
-    
     current.setDate(current.getDate() + 1);
   }
 
@@ -175,7 +236,7 @@ export async function detectGaps(
 }
 
 /**
- * Sync only missing dates (gap filling)
+ * Sync only missing dates using bulk download.
  */
 export async function syncGaps(
   scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
@@ -192,18 +253,24 @@ export async function syncGaps(
     return [];
   }
 
-  console.log(`Found ${missingDates.length} missing dates, syncing...`);
+  console.log(`Found ${missingDates.length} missing dates, syncing via bulk download...`);
+
+  // Use bulk download and filter to missing dates
+  const request: MetricsReportRequest = { scope, identifier, teamSlug };
+  const report = await fetchLatestReport(request, headers);
+  const missingSet = new Set(missingDates);
 
   const results: SyncResult[] = [];
-  for (const date of missingDates) {
-    const result = await syncMetricsForDate({
-      scope,
-      identifier,
-      date,
-      teamSlug,
-      headers
-    });
-    results.push(result);
+  for (const dayData of report.day_totals) {
+    if (!missingSet.has(dayData.day)) continue;
+
+    try {
+      await saveDayData(scope, identifier, dayData, teamSlug);
+      results.push({ success: true, date: dayData.day, metricsCount: 1 });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      results.push({ success: false, date: dayData.day, error: msg, metricsCount: 0 });
+    }
   }
 
   return results;
@@ -228,28 +295,20 @@ export async function getSyncStats(
   const end = new Date(endDate);
   let totalDays = 0;
   let syncedDays = 0;
-
-  const current = new Date(start);
   const missingDates: string[] = [];
 
+  const current = new Date(start);
   while (current <= end) {
     totalDays++;
     const dateStr = current.toISOString().split('T')[0];
     const exists = await hasMetrics(scope, identifier, dateStr, teamSlug);
-    
     if (exists) {
       syncedDays++;
     } else {
       missingDates.push(dateStr);
     }
-    
     current.setDate(current.getDate() + 1);
   }
 
-  return {
-    totalDays,
-    syncedDays,
-    missingDays: totalDays - syncedDays,
-    missingDates
-  };
+  return { totalDays, syncedDays, missingDays: totalDays - syncedDays, missingDates };
 }

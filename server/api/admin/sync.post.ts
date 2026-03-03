@@ -3,7 +3,7 @@
  * POST /api/admin/sync
  */
 
-import { syncMetricsForDate, syncMetricsForDateRange, syncGaps } from '../../services/sync-service';
+import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk } from '../../services/sync-service';
 import { Options } from '@/model/Options';
 
 export default defineEventHandler(async (event) => {
@@ -113,6 +113,22 @@ export default defineEventHandler(async (event) => {
           successCount,
           failureCount,
           results
+        };
+      }
+
+      case 'sync-bulk': {
+        // Bulk download latest 28-day report and store all new days
+        logger.info(`Running bulk sync for ${options.scope}:${options.githubOrg || options.githubEnt}`);
+        const bulkResult = await syncBulk(
+          options.scope!,
+          options.githubOrg || options.githubEnt || 'unknown',
+          headers,
+          options.githubTeam
+        );
+
+        return {
+          action: 'sync-bulk',
+          ...bulkResult
         };
       }
 
