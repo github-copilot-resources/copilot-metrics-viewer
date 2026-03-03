@@ -138,10 +138,10 @@ describe('API Migration Integration', () => {
       expect(requiredVars).toContain('NUXT_GITHUB_TOKEN');
     });
 
-    it('should support FORCE_LEGACY_API flag to skip new API', () => {
-      const forceLegacy = process.env.FORCE_LEGACY_API === 'true';
-      // Default should be false
-      expect(forceLegacy).toBe(false);
+    it('should support COPILOT_METRICS_API env var for API mode', () => {
+      // Default should be 'new' (not legacy)
+      const mode = process.env.COPILOT_METRICS_API?.toLowerCase();
+      expect(mode).not.toBe('legacy');
     });
   });
 });
