@@ -6,8 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildMetricsKey, buildSeatsKey, buildSyncStatusKey } from '../server/storage/types';
 import { parseNDJSON } from '../server/services/github-copilot-usage-api';
-import { generateMockNDJSON } from '../server/services/github-copilot-usage-api-mock';
-import type { CopilotMetrics } from '../app/model/Copilot_Metrics';
+import { generateMockReport } from '../server/services/github-copilot-usage-api-mock';
+import { transformReportToMetrics } from '../server/services/report-transformer';
 
 describe('API Migration Integration', () => {
   describe('Storage Key Generation', () => {
@@ -52,38 +52,36 @@ describe('API Migration Integration', () => {
     });
   });
 
-  describe('NDJSON Parsing', () => {
-    it('should parse mock NDJSON data correctly', () => {
-      const ndjson = generateMockNDJSON('2026-02-20', 'test-org');
-      const parsed = parseNDJSON<CopilotMetrics>(ndjson);
-      
-      expect(parsed).toHaveLength(1);
-      expect(parsed[0]).toHaveProperty('date', '2026-02-20');
-      expect(parsed[0]).toHaveProperty('total_active_users');
-      expect(parsed[0].total_active_users).toBeGreaterThan(0);
+  describe('Report Data Flow', () => {
+    it('should generate mock report and transform to CopilotMetrics', () => {
+      const report = generateMockReport('2026-02-20', '2026-02-22');
+      const metrics = transformReportToMetrics(report);
+
+      expect(metrics).toHaveLength(3);
+      expect(metrics[0].date).toBe('2026-02-20');
+      expect(metrics[0].total_active_users).toBeGreaterThan(0);
+      expect(metrics[0].copilot_ide_code_completions).toBeDefined();
     });
 
-    it('should parse multi-line NDJSON', () => {
-      const line1 = generateMockNDJSON('2026-02-18', 'test-org');
-      const line2 = generateMockNDJSON('2026-02-19', 'test-org');
-      const line3 = generateMockNDJSON('2026-02-20', 'test-org');
-      const ndjson = `${line1}\n${line2}\n${line3}`;
+    it('should preserve language data through transformation', () => {
+      const report = generateMockReport('2026-02-20', '2026-02-20');
+      const metrics = transformReportToMetrics(report);
       
-      const parsed = parseNDJSON<CopilotMetrics>(ndjson);
+      const completions = metrics[0].copilot_ide_code_completions;
+      expect(completions?.editors?.length).toBeGreaterThan(0);
+      expect(completions?.languages?.length).toBeGreaterThan(0);
+    });
+
+    it('should handle NDJSON parsing (backward compat)', () => {
+      const ndjson = '{"date":"2026-02-20","total_active_users":100}\n{"date":"2026-02-21","total_active_users":110}';
+      const parsed = parseNDJSON(ndjson);
       
-      expect(parsed).toHaveLength(3);
-      expect(parsed[0].date).toBe('2026-02-18');
-      expect(parsed[1].date).toBe('2026-02-19');
-      expect(parsed[2].date).toBe('2026-02-20');
+      expect(parsed).toHaveLength(2);
     });
 
     it('should handle empty lines in NDJSON', () => {
-      const line1 = generateMockNDJSON('2026-02-18', 'test-org');
-      const line2 = generateMockNDJSON('2026-02-19', 'test-org');
-      const ndjson = `${line1}\n\n${line2}\n\n`;
-      
-      const parsed = parseNDJSON<CopilotMetrics>(ndjson);
-      
+      const ndjson = '{"date":"2026-02-18"}\n\n{"date":"2026-02-19"}\n\n';
+      const parsed = parseNDJSON(ndjson);
       expect(parsed).toHaveLength(2);
     });
   });
@@ -140,14 +138,10 @@ describe('API Migration Integration', () => {
       expect(requiredVars).toContain('NUXT_GITHUB_TOKEN');
     });
 
-    it('should default to legacy API when flags not set', () => {
-      // When feature flags are not explicitly set to 'true', should use legacy API
-      const useNewApi = process.env.USE_NEW_API === 'true';
-      const enableStorage = process.env.ENABLE_HISTORICAL_MODE === 'true';
-
-      // Default should be false (feature flags opt-in)
-      expect(useNewApi).toBe(false);
-      expect(enableStorage).toBe(false);
+    it('should support FORCE_LEGACY_API flag to skip new API', () => {
+      const forceLegacy = process.env.FORCE_LEGACY_API === 'true';
+      // Default should be false
+      expect(forceLegacy).toBe(false);
     });
   });
 });

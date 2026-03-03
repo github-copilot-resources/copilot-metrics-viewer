@@ -1,6 +1,9 @@
 /**
- * Enhanced metrics utility with support for new API and storage
- * This extends the existing metrics-util.ts to support the new async API
+ * Enhanced metrics utility with support for new Copilot Usage Metrics API
+ * 
+ * The new API (download-based reports) is the PRIMARY source.
+ * Falls back to legacy /copilot/metrics API on failure.
+ * Legacy API shuts down April 2, 2026.
  */
 
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
@@ -10,7 +13,8 @@ import { getLocale } from "./getLocale";
 import { filterHolidaysFromMetrics } from '@/utils/dateUtils';
 import { getMetricsData as getLegacyMetricsData } from './metrics-util';
 import { getMetricsByDateRange } from '../../server/storage/metrics-storage';
-import { fetchMetricsForDate, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
+import { fetchLatestReport, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
+import { transformReportToMetrics } from '../../server/services/report-transformer';
 
 /**
  * Check if storage mode is enabled
@@ -23,13 +27,10 @@ function isStorageModeEnabled(): boolean {
 }
 
 /**
- * Check if new API should be used
+ * Check if legacy API should be forced (skip new API)
  */
-function shouldUseNewApi(): boolean {
-  const config = useRuntimeConfig();
-  return config.public?.useNewApi === true ||
-         config.public?.useNewApi === 'true' ||
-         process.env.USE_NEW_API === 'true';
+function shouldForceLegacyApi(): boolean {
+  return process.env.FORCE_LEGACY_API === 'true';
 }
 
 /**
@@ -40,24 +41,23 @@ function getDaysBetween(start: string, end: string): number {
   const endDate = new Date(end);
   const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays + 1; // Include both start and end dates
+  return diffDays + 1;
 }
 
 /**
- * Enhanced version of getMetricsData that supports both legacy and new API
+ * Enhanced version of getMetricsData that uses the new download-based API by default.
  * 
  * Decision tree:
  * 1. If mocked data requested → use mock files (existing behavior)
  * 2. If storage mode enabled and date range > 7 days → try storage first
- * 3. If new API enabled → use new async download API
- * 4. Otherwise → fall back to legacy API (existing behavior)
+ * 3. Try new download-based API (28-day report) → transform to CopilotMetrics
+ * 4. On failure → fall back to legacy API
  */
 export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Promise<CopilotMetrics[]> {
   const logger = console;
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 
-  // Extract locale from headers if not provided in query
   if (!options.locale) {
     options.locale = getLocale(event);
   }
@@ -84,7 +84,6 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   if (isStorageModeEnabled() && options.since && options.until) {
     const days = getDaysBetween(options.since, options.until);
     
-    // For larger date ranges, prefer storage
     if (days > 7) {
       logger.info(`Storage mode: Querying storage for ${days} days`);
       
@@ -99,84 +98,59 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 
         if (storedMetrics.length > 0) {
           logger.info(`Retrieved ${storedMetrics.length} days from storage`);
-          
-          // Filter holidays if requested
-          const filtered = filterHolidaysFromMetrics(
+          return filterHolidaysFromMetrics(
             storedMetrics,
             options.excludeHolidays || false,
             options.locale
           );
-          
-          return filtered;
         } else {
           logger.info('No data in storage, falling back to API');
         }
       } catch (error) {
         logger.error('Storage query failed, falling back to API:', error);
-        // Fall through to API fetch
       }
     }
   }
 
-  // 3. Use new API if enabled
-  if (shouldUseNewApi()) {
-    logger.info('Using new Copilot Usage Metrics API');
-    
+  // 3. Try new download-based API (unless legacy is forced)
+  if (!shouldForceLegacyApi()) {
     try {
-      const results: CopilotMetrics[] = [];
-      
-      // If date range specified, fetch each day
-      if (options.since && options.until) {
-        const start = new Date(options.since);
-        const end = new Date(options.until);
-        
-        const current = new Date(start);
-        while (current <= end) {
-          const dateStr = current.toISOString().split('T')[0];
-          
-          const request: MetricsReportRequest = {
-            scope: options.scope!,
-            identifier,
-            date: dateStr,
-            teamSlug: options.githubTeam
-          };
-          
-          const dayMetrics = await fetchMetricsForDate(request, event.context.headers);
-          results.push(...(dayMetrics as CopilotMetrics[]));
-          
-          current.setDate(current.getDate() + 1);
-        }
-      } else {
-        // Single day (today or until date)
-        const date = options.until || new Date().toISOString().split('T')[0];
-        
-        const request: MetricsReportRequest = {
-          scope: options.scope!,
-          identifier,
-          date,
-          teamSlug: options.githubTeam
-        };
-        
-        const dayMetrics = await fetchMetricsForDate(request, event.context.headers);
-        results.push(...(dayMetrics as CopilotMetrics[]));
+      logger.info('Using new Copilot Usage Metrics API (download-based)');
+
+      const request: MetricsReportRequest = {
+        scope: options.scope!,
+        identifier,
+        teamSlug: options.githubTeam
+      };
+
+      const report = await fetchLatestReport(request, event.context.headers);
+      let metrics = transformReportToMetrics(report);
+
+      // Filter by date range if specified
+      if (options.since || options.until) {
+        metrics = metrics.filter(m => {
+          if (options.since && m.date < options.since) return false;
+          if (options.until && m.date > options.until) return false;
+          return true;
+        });
       }
 
       // Filter holidays if requested
       const filtered = filterHolidaysFromMetrics(
-        results,
+        metrics,
         options.excludeHolidays || false,
         options.locale
       );
 
+      logger.info(`New API: Got ${filtered.length} days of metrics`);
       return filtered;
-      
+
     } catch (error) {
-      logger.error('New API failed, falling back to legacy:', error);
-      // Fall through to legacy API
+      logger.warn('New API failed, falling back to legacy:', error instanceof Error ? error.message : error);
     }
   }
 
-  // 4. Fall back to legacy API (existing implementation)
-  logger.info('Using legacy Copilot Metrics API');
+  // 4. Fall back to legacy API
+  logger.info('Using legacy Copilot Metrics API (deprecated April 2, 2026)');
   return await getLegacyMetricsData(event);
 }
