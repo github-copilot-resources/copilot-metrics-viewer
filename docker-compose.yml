@@ -83,6 +83,49 @@ services:
     profiles:
       - test
 
+  # Playwright E2E tests — full pipeline: sync → DB → dashboard
+  # Step 1: docker compose run --rm sync-seed   (writes mock data to shared volume)
+  # Step 2: docker compose run --rm playwright-storage   (reads from shared volume)
+  playwright-storage:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        mode: playwright
+    environment:
+      - NUXT_PUBLIC_IS_DATA_MOCKED=false
+      - NUXT_PUBLIC_SCOPE=organization
+      - NUXT_PUBLIC_GITHUB_ORG=storage-test-org
+      - NUXT_SESSION_PASSWORD=at_least_32_characters_long_password_here
+      - ENABLE_HISTORICAL_MODE=true
+      - NITRO_PORT=3000
+    entrypoint: ["npx", "playwright", "test", "-c", "playwright.docker.config.ts", "--workers", "1", "--grep", "@storage"]
+    volumes:
+      - ./test-results:/test-results
+      - sync_data:/app/.data
+    profiles:
+      - test
+
+  # Seed storage with mock data (for storage pipeline E2E test)
+  sync-seed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        mode: playwright
+    environment:
+      - NUXT_PUBLIC_IS_DATA_MOCKED=true
+      - NUXT_PUBLIC_SCOPE=organization
+      - NUXT_PUBLIC_GITHUB_ORG=storage-test-org
+      - NUXT_SESSION_PASSWORD=at_least_32_characters_long_password_here
+      - ENABLE_HISTORICAL_MODE=true
+      - NITRO_PORT=3000
+    entrypoint: ["npx", "playwright", "test", "-c", "playwright.docker.config.ts", "--workers", "1", "--grep", "@seed"]
+    volumes:
+      - sync_data:/app/.data
+    profiles:
+      - test
+
 volumes:
   postgres_data:
   sync_data:

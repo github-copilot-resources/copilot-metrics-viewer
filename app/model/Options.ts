@@ -79,8 +79,9 @@ export class Options {
         if (since) options.since = since;
         if (until) options.until = until;
 
-        // Handle mocking
-        if (route.query.mock || config.public.isDataMocked) {
+        // Handle mocking — must explicitly be true/truthy string, not just any non-empty value
+        const isMocked = config.public.isDataMocked === true || config.public.isDataMocked === 'true';
+        if (route.query.mock || isMocked) {
             options.isDataMocked = true;
         }
 

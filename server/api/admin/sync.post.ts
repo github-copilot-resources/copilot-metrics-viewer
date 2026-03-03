@@ -5,6 +5,7 @@
 
 import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk } from '../../services/sync-service';
 import { Options } from '@/model/Options';
+import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 
 export default defineEventHandler(async (event) => {
   const logger = console;
@@ -31,13 +32,13 @@ export default defineEventHandler(async (event) => {
     const date = params.date as string | undefined;
     const action = params.action as string || 'sync-date';
 
-    // Prepare headers for GitHub API calls
-    const headers = event.context.headers;
-    if (!headers.has('Authorization')) {
-      // In mock mode, Authorization is optional
-      if (!options.isDataMocked) {
-        return new Response('Authorization header required', { status: 401 });
-      }
+    // Check if mock mode is enabled via env var
+    const mockEnabled = isMockMode();
+
+    // Prepare headers for GitHub API calls (middleware may have skipped admin routes)
+    const headers = event.context.headers || new Headers();
+    if (!headers.has('Authorization') && !mockEnabled) {
+      return new Response('Authorization header required', { status: 401 });
     }
 
     // Handle different sync actions
