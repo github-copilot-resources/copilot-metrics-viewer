@@ -55,7 +55,7 @@ export default defineConfig<ConfigOptions>({
     },
   ],
   webServer: {
-    command: 'node /app/server/index.mjs',
+    command: 'NITRO_PORT=3000 node /app/server/index.mjs',
     url: 'http://127.0.0.1:3000',
     cwd: '/app',
     reuseExistingServer: false,
