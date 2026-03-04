@@ -23,7 +23,7 @@
             <v-card>
               <v-card-item class="d-flex justify-center align-center">
                 <div class="spacing-25"/>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted suggestions (prompts)</div>
+                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted code completions</div>
                 <div style="width: 300px; height: 300px;">
                   <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
                 </div>
@@ -256,8 +256,8 @@ export default defineComponent({
     headers() {
       return [
         { title: `${this.breakdownDisplayName} Name`, key: 'name' },
-        { title: 'Accepted Prompts', key: 'acceptedPrompts' },
-        { title: 'Suggested Prompts', key: 'suggestedPrompts' },
+        { title: 'Accepted Completions', key: 'acceptedPrompts' },
+        { title: 'Code Completions', key: 'suggestedPrompts' },
         { title: 'Accepted Lines of Code', key: 'acceptedLinesOfCode' },
         { title: 'Suggested Lines of Code', key: 'suggestedLinesOfCode' },
         { title: 'Acceptance Rate by Count (%)', key: 'acceptanceRateByCount' },

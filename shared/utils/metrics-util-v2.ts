@@ -8,16 +8,22 @@
 
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import type { H3Event, EventHandlerRequest } from 'h3';
+import type { ReportDayTotals } from '../../server/services/github-copilot-usage-api';
 import { Options } from '@/model/Options';
 import { getLocale } from "./getLocale";
 import { filterHolidaysFromMetrics } from '@/utils/dateUtils';
 import { getMetricsData as getLegacyMetricsData } from './metrics-util';
-import { getMetricsByDateRange, saveMetrics } from '../../server/storage/metrics-storage';
+import { getMetricsByDateRange, getReportDataByDateRange, saveMetrics } from '../../server/storage/metrics-storage';
 import { fetchLatestReport, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
 import { transformReportToMetrics } from '../../server/services/report-transformer';
 import { isMockMode } from '../../server/services/github-copilot-usage-api-mock';
 
 type ApiMode = 'new' | 'legacy';
+
+export interface MetricsDataResult {
+  metrics: CopilotMetrics[];
+  reportData: ReportDayTotals[];
+}
 
 /**
  * Get the configured API mode
@@ -44,7 +50,7 @@ function isStorageModeEnabled(): boolean {
 async function fetchFromNewApi(
   options: Options,
   headers: Headers
-): Promise<CopilotMetrics[]> {
+): Promise<MetricsDataResult> {
   const identifier = options.githubOrg || options.githubEnt || '';
 
   const request: MetricsReportRequest = {
@@ -55,6 +61,7 @@ async function fetchFromNewApi(
 
   const report = await fetchLatestReport(request, headers);
   let metrics = transformReportToMetrics(report);
+  let reportData = report.day_totals;
 
   // Filter by date range if specified
   if (options.since || options.until) {
@@ -63,9 +70,14 @@ async function fetchFromNewApi(
       if (options.until && m.date > options.until) return false;
       return true;
     });
+    reportData = reportData.filter(d => {
+      if (options.since && d.day < options.since) return false;
+      if (options.until && d.day > options.until) return false;
+      return true;
+    });
   }
 
-  return metrics;
+  return { metrics, reportData };
 }
 
 /**
@@ -79,7 +91,7 @@ async function fetchFromNewApi(
  * Mock mode never touches DB or real API.
  * Historical mode always uses DB, syncing missing data automatically.
  */
-export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Promise<CopilotMetrics[]> {
+export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Promise<MetricsDataResult> {
   const logger = console;
   const query = getQuery(event);
   const options = Options.fromQuery(query);
@@ -92,7 +104,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   //    Controlled by NUXT_PUBLIC_IS_DATA_MOCKED env var, not per-request params
   if (isMockMode()) {
     logger.info('Using mocked data mode');
-    return await getLegacyMetricsData(event);
+    const metrics = await getLegacyMetricsData(event);
+    return { metrics, reportData: [] };
   }
 
   const identifier = options.githubOrg || options.githubEnt || '';
@@ -115,11 +128,16 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 
       if (storedMetrics.length > 0) {
         logger.info(`Retrieved ${storedMetrics.length} days from DB`);
-        return filterHolidaysFromMetrics(
+        // Also get report data from DB
+        const reportData = await getReportDataByDateRange(
+          options.scope!, identifier, startDate, endDate, options.githubTeam
+        );
+        const filteredMetrics = filterHolidaysFromMetrics(
           storedMetrics,
           options.excludeHolidays || false,
           options.locale
         );
+        return { metrics: filteredMetrics, reportData };
       }
 
       // DB empty — sync on miss: fetch from API, store, return
@@ -132,12 +150,13 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
         });
       }
 
-      const metrics = await fetchAndStore(options, event.context.headers);
-      return filterHolidaysFromMetrics(
-        metrics,
+      const result = await fetchAndStore(options, event.context.headers);
+      const filteredMetrics = filterHolidaysFromMetrics(
+        result.metrics,
         options.excludeHolidays || false,
         options.locale
       );
+      return { metrics: filteredMetrics, reportData: result.reportData };
     } catch (error) {
       // If it's already an H3 error (like 401), re-throw
       if (error && typeof error === 'object' && 'statusCode' in error) throw error;
@@ -161,19 +180,16 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   const apiMode = getApiMode();
   logger.info(`Using ${apiMode} Copilot Metrics API (direct, no DB)`);
 
-  let metrics: CopilotMetrics[];
-
   if (apiMode === 'legacy') {
-    metrics = await getLegacyMetricsData(event);
-  } else {
-    metrics = await fetchFromNewApi(options, event.context.headers);
+    const metrics = await getLegacyMetricsData(event);
+    return { metrics: filterHolidaysFromMetrics(metrics, options.excludeHolidays || false, options.locale), reportData: [] };
   }
 
-  return filterHolidaysFromMetrics(
-    metrics,
-    options.excludeHolidays || false,
-    options.locale
-  );
+  const result = await fetchFromNewApi(options, event.context.headers);
+  return {
+    metrics: filterHolidaysFromMetrics(result.metrics, options.excludeHolidays || false, options.locale),
+    reportData: result.reportData
+  };
 }
 
 /**
@@ -183,7 +199,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 async function fetchAndStore(
   options: Options,
   headers: Headers
-): Promise<CopilotMetrics[]> {
+): Promise<MetricsDataResult> {
   const logger = console;
   const identifier = options.githubOrg || options.githubEnt || '';
 
@@ -195,6 +211,7 @@ async function fetchAndStore(
 
   const report = await fetchLatestReport(request, headers);
   let metrics = transformReportToMetrics(report);
+  let reportData = report.day_totals;
 
   // Store each day to DB
   for (let i = 0; i < report.day_totals.length; i++) {
@@ -222,7 +239,12 @@ async function fetchAndStore(
       if (options.until && m.date > options.until) return false;
       return true;
     });
+    reportData = reportData.filter(d => {
+      if (options.since && d.day < options.since) return false;
+      if (options.until && d.day > options.until) return false;
+      return true;
+    });
   }
 
-  return metrics;
+  return { metrics, reportData };
 }

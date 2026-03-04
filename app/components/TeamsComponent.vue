@@ -129,15 +129,13 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
           </v-tooltip>
           <LineChart :data="acceptanceRateCountChartData" :options="chartOptions" />
 
-          <!-- Total Suggestions and Acceptances Chart -->
+          <!-- Total Code Completions and Acceptances Chart -->
           <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
-              <h2 v-bind="props" class="mb-1">Total Suggestions Count | Total Acceptances Count</h2>
+              <h2 v-bind="props" class="mb-1">Total Code Completions | Total Accepted</h2>
             </template>
             <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Total suggestions and acceptances count
-                over
-                time for selected teams</span>
+              <span class="text-caption" style="font-size: 10px !important;">Total code completion events and accepted completions over time for selected teams</span>
             </v-card>
           </v-tooltip>
           <LineChart :data="suggestionsAcceptancesChartData" :options="chartOptions" />
@@ -535,7 +533,7 @@ export default defineComponent({
         const teamName = getTeamName(teamData.slug)
         const colorIndex = index % teamColors.length
         const suggestionsDataset: ChartDataset<'line', number[]> = {
-          label: `${teamName} - Suggestions`,
+          label: `${teamName} - Code Completions`,
           data: days.map(day => {
             const dayData = teamData.metrics.find((d) => d.day === day)
             return dayData ? (dayData.total_suggestions_count || 0) : 0
@@ -545,7 +543,7 @@ export default defineComponent({
           tension: 0.1
         }
         const acceptancesDataset: ChartDataset<'line', number[]> = {
-          label: `${teamName} - Acceptances`,
+          label: `${teamName} - Accepted`,
           data: days.map(day => {
             const dayData = teamData.metrics.find((d) => d.day === day)
             return dayData ? (dayData.total_acceptances_count || 0) : 0

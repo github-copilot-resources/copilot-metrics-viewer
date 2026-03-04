@@ -68,6 +68,28 @@ export async function getReportData(
 }
 
 /**
+ * Get raw report data for a date range — returns ReportDayTotals[] for new API consumers
+ */
+export async function getReportDataByDateRange(
+  scope: string,
+  scopeIdentifier: string,
+  startDate: string,
+  endDate: string,
+  teamSlug?: string
+): Promise<ReportDayTotals[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT report_data FROM metrics
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3
+       AND metrics_date BETWEEN $4 AND $5
+       AND report_data IS NOT NULL
+     ORDER BY metrics_date ASC`,
+    [scope, scopeIdentifier, teamSlug || '', startDate, endDate]
+  );
+  return rows.map(r => r.report_data);
+}
+
+/**
  * Get metrics for a date range — single SQL query instead of N file reads
  */
 export async function getMetricsByDateRange(query: DateRangeQuery): Promise<CopilotMetrics[]> {

@@ -4,10 +4,22 @@
  *
  * New API: { day_totals: [{ day, totals_by_ide, totals_by_feature, totals_by_language_feature, ... }] }
  * Old API: [{ date, copilot_ide_code_completions: { editors: [{ models: [{ languages }] }] }, ... }]
+ *
+ * Key mapping notes:
+ * - code_generation_activity_count → total_code_suggestions (activities, not individual suggestions)
+ * - code_acceptance_activity_count → total_code_acceptances (activities, not individual acceptances)
+ * - Must filter by feature ('code_completion' for completions, 'chat_*' for chat, etc.)
+ * - loc_added_sum includes ALL features; must scope to specific feature for accurate LOC
  */
 
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { OrgReport, ReportDayTotals } from './github-copilot-usage-api';
+
+const COMPLETION_FEATURES = ['code_completion'];
+const CHAT_FEATURES = [
+  'chat_panel_agent_mode', 'chat_panel_ask_mode', 'chat_panel_edit_mode',
+  'chat_panel_custom_mode', 'chat_panel_unknown_mode', 'chat_inline',
+];
 
 /**
  * Transform an entire OrgReport into an array of CopilotMetrics records.
@@ -33,55 +45,72 @@ export function transformDayToMetrics(day: ReportDayTotals): CopilotMetrics {
 
 /**
  * Build copilot_ide_code_completions from report data.
- * Maps totals_by_language_feature (feature=code_completion) into editors → models → languages.
+ * Only uses 'code_completion' feature for accurate suggestion/acceptance counts.
  */
 function buildCodeCompletions(day: ReportDayTotals) {
-  const completionFeatures = ['code_completion'];
-  const langFeatures = day.totals_by_language_feature.filter(
-    lf => completionFeatures.includes(lf.feature)
+  // Language breakdown scoped to code_completion feature only
+  const completionLangs = (day.totals_by_language_feature || []).filter(
+    lf => COMPLETION_FEATURES.includes(lf.feature)
   );
-  const langModels = day.totals_by_language_model;
 
-  // Group by IDE: each IDE gets one "default" model with language breakdowns
-  const editors = day.totals_by_ide.map(ide => {
-    // Build language breakdown from totals_by_language_feature for code_completion
-    const languages = langFeatures.map(lf => ({
-      name: lf.language,
-      total_engaged_users: 0,
-      total_code_suggestions: lf.code_generation_activity_count,
-      total_code_acceptances: lf.code_acceptance_activity_count,
-      total_code_lines_suggested: lf.loc_suggested_to_add_sum,
-      total_code_lines_accepted: lf.loc_added_sum,
-    }));
+  // Model breakdown scoped to code_completion feature only
+  const completionModels = (day.totals_by_model_feature || []).filter(
+    mf => COMPLETION_FEATURES.includes(mf.feature)
+  );
 
-    // Build model breakdown from totals_by_language_model
-    const modelNames = [...new Set(langModels.map(lm => lm.model))];
+  // Build one editor entry per IDE, with model → language nesting
+  const editors = (day.totals_by_ide || []).map(ide => {
+    // Build models from model_feature data (code_completion only)
+    const modelNames = [...new Set(completionModels.map(m => m.model))];
     const models = modelNames.map(modelName => {
-      const modelLangs = langModels.filter(lm => lm.model === modelName);
-      return {
-        name: modelName,
-        is_custom_model: modelName !== 'default',
-        custom_model_training_date: null as string | null,
-        total_engaged_users: 0,
-        languages: modelLangs.map(ml => ({
+      const modelData = completionModels.find(m => m.model === modelName);
+      // Get per-language data for this model from totals_by_language_model
+      const modelLangs = (day.totals_by_language_model || []).filter(
+        lm => lm.model === modelName
+      );
+
+      const languages = modelLangs.length > 0
+        ? modelLangs.map(ml => ({
           name: ml.language,
           total_engaged_users: 0,
           total_code_suggestions: ml.code_generation_activity_count,
           total_code_acceptances: ml.code_acceptance_activity_count,
           total_code_lines_suggested: ml.loc_suggested_to_add_sum,
           total_code_lines_accepted: ml.loc_added_sum,
-        })),
+        }))
+        : completionLangs.map(lf => ({
+          name: lf.language,
+          total_engaged_users: 0,
+          total_code_suggestions: lf.code_generation_activity_count,
+          total_code_acceptances: lf.code_acceptance_activity_count,
+          total_code_lines_suggested: lf.loc_suggested_to_add_sum,
+          total_code_lines_accepted: lf.loc_added_sum,
+        }));
+
+      return {
+        name: modelName,
+        is_custom_model: false,
+        custom_model_training_date: null as string | null,
+        total_engaged_users: 0,
+        languages,
       };
     });
 
-    // If no models found, create a default one with language data
-    if (models.length === 0 && languages.length > 0) {
+    // Fallback: if no model data, create a 'default' model from language features
+    if (models.length === 0 && completionLangs.length > 0) {
       models.push({
         name: 'default',
         is_custom_model: false,
         custom_model_training_date: null,
         total_engaged_users: 0,
-        languages,
+        languages: completionLangs.map(lf => ({
+          name: lf.language,
+          total_engaged_users: 0,
+          total_code_suggestions: lf.code_generation_activity_count,
+          total_code_acceptances: lf.code_acceptance_activity_count,
+          total_code_lines_suggested: lf.loc_suggested_to_add_sum,
+          total_code_lines_accepted: lf.loc_added_sum,
+        })),
       });
     }
 
@@ -92,8 +121,8 @@ function buildCodeCompletions(day: ReportDayTotals) {
     };
   });
 
-  // Build top-level language summary
-  const languageSummary = langFeatures.map(lf => ({
+  // Language summary from code_completion feature
+  const languageSummary = completionLangs.map(lf => ({
     name: lf.language,
     total_engaged_users: 0,
   }));
@@ -107,32 +136,46 @@ function buildCodeCompletions(day: ReportDayTotals) {
 
 /**
  * Build copilot_ide_chat from report data.
- * Maps chat features (chat_panel_agent_mode, chat_panel_ask_mode, etc.) into IDE chat structure.
+ * Maps chat_panel_* and chat_inline features from totals_by_feature.
  */
 function buildIdeChat(day: ReportDayTotals) {
-  const chatFeatures = ['chat_panel_agent_mode', 'chat_panel_ask_mode', 'chat_panel_custom_mode'];
-  const chatData = day.totals_by_feature.filter(f => chatFeatures.includes(f.feature));
+  // Chat model breakdown from model_feature data (chat features only)
+  const chatModelFeatures = (day.totals_by_model_feature || []).filter(
+    mf => CHAT_FEATURES.includes(mf.feature)
+  );
 
-  const totalChats = chatData.reduce((sum, f) => sum + f.user_initiated_interaction_count, 0);
-
-  const editors = day.totals_by_ide.map(ide => {
-    // Build models from totals_by_model_feature for chat features
-    const chatModelFeatures = day.totals_by_model_feature.filter(
-      mf => chatFeatures.includes(mf.feature)
-    );
+  const editors = (day.totals_by_ide || []).map(ide => {
+    // Aggregate by model across all chat features
     const modelNames = [...new Set(chatModelFeatures.map(mf => mf.model))];
-
     const models = modelNames.map(modelName => {
       const modelFeats = chatModelFeatures.filter(mf => mf.model === modelName);
       return {
         name: modelName,
-        is_custom_model: modelName !== 'default',
+        is_custom_model: false,
         total_engaged_users: 0,
         total_chats: modelFeats.reduce((s, f) => s + f.user_initiated_interaction_count, 0),
-        total_chat_copy_events: 0,
+        total_chat_copy_events: modelFeats.reduce((s, f) => s + f.code_acceptance_activity_count, 0),
         total_chat_insertion_events: 0,
       };
     });
+
+    // Fallback: if no model data, create one from feature totals
+    if (models.length === 0) {
+      const chatFeatures = (day.totals_by_feature || []).filter(
+        f => CHAT_FEATURES.includes(f.feature)
+      );
+      const totalChats = chatFeatures.reduce((s, f) => s + f.user_initiated_interaction_count, 0);
+      if (totalChats > 0) {
+        models.push({
+          name: 'default',
+          is_custom_model: false,
+          total_engaged_users: 0,
+          total_chats: totalChats,
+          total_chat_copy_events: chatFeatures.reduce((s, f) => s + f.code_acceptance_activity_count, 0),
+          total_chat_insertion_events: 0,
+        });
+      }
+    }
 
     return {
       name: ide.ide,
@@ -149,7 +192,7 @@ function buildIdeChat(day: ReportDayTotals) {
 
 /**
  * Build copilot_dotcom_chat from report data.
- * The new API doesn't separate dotcom chat, so we return an empty structure.
+ * The new API doesn't separate dotcom chat from IDE chat, so we return empty.
  */
 function buildDotcomChat(_day: ReportDayTotals) {
   return {
@@ -160,7 +203,9 @@ function buildDotcomChat(_day: ReportDayTotals) {
 
 /**
  * Build copilot_dotcom_pull_requests from report data.
- * The new API doesn't have per-repository PR data, so we return an empty structure.
+ * The new API has a top-level `pull_requests` object, but we can't map it
+ * into per-repository breakdowns. Return empty for now — PR data will be
+ * shown in a dedicated new component.
  */
 function buildPullRequests(_day: ReportDayTotals) {
   return {

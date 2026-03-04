@@ -53,6 +53,34 @@ export interface ReportDayTotals {
   loc_suggested_to_delete_sum: number;
   loc_added_sum: number;
   loc_deleted_sum: number;
+  pull_requests?: ReportPullRequests;
+  daily_active_cli_users?: number;
+  totals_by_cli?: ReportCliTotals;
+}
+
+export interface ReportPullRequests {
+  total_created: number;
+  total_reviewed: number;
+  total_merged: number;
+  median_minutes_to_merge?: number;
+  total_suggestions: number;
+  total_applied_suggestions: number;
+  total_created_by_copilot: number;
+  total_reviewed_by_copilot: number;
+  total_merged_created_by_copilot: number;
+  median_minutes_to_merge_copilot_authored?: number;
+  total_copilot_suggestions: number;
+  total_copilot_applied_suggestions: number;
+}
+
+export interface ReportCliTotals {
+  session_count: number;
+  request_count: number;
+  token_usage?: {
+    output_tokens_sum: number;
+    prompt_tokens_sum: number;
+    avg_tokens_per_request: number;
+  };
 }
 
 export interface ReportIdeTotals {

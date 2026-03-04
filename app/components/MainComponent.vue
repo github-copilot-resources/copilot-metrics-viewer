@@ -81,6 +81,8 @@ v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
             <CopilotChatViewer
 v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
+            <AgentActivityViewer v-if="item === 'agent activity'" :report-data="reportData" :date-range-description="dateRangeDescription" />
+            <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
@@ -102,6 +104,7 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
+import type { ReportDayTotals } from "../../server/services/github-copilot-usage-api";
 import type { H3Error } from 'h3'
 
 //Components
@@ -112,6 +115,8 @@ import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import TeamsComponent from './TeamsComponent.vue'
 import ApiResponse from './ApiResponse.vue'
 import AgentModeViewer from './AgentModeViewer.vue'
+import AgentActivityViewer from './AgentActivityViewer.vue'
+import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -126,6 +131,8 @@ export default defineNuxtComponent({
     TeamsComponent,
     ApiResponse,
     AgentModeViewer,
+    AgentActivityViewer,
+    PullRequestViewer,
     DateRangeSelector
   },
   methods: {
@@ -194,6 +201,7 @@ export default defineNuxtComponent({
 
         this.metrics = response.metrics || [];
         this.originalMetrics = response.usage || [];
+        this.reportData = response.reportData || [];
         this.metricsReady = true;
 
         if (config.public.scope && config.public.scope.includes('team') && this.metrics.length === 0 && !this.apiError) {
@@ -233,13 +241,14 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
       metricsReady: false,
       metrics: [] as Metrics[],
       originalMetrics: [] as CopilotMetrics[],
+      reportData: [] as ReportDayTotals[],
       seatsReady: false,
       seats: [] as Seat[],
       apiError: undefined as string | undefined,

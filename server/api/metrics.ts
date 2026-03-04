@@ -8,12 +8,12 @@ export default defineEventHandler(async (event) => {
 
     try {
         // Always use v2 handler which tries new API first, falls back to legacy
-        const usageData = await getMetricsDataV2(event);
+        const { metrics: usageData, reportData } = await getMetricsDataV2(event);
 
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
 
-        const result = { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        const result = { metrics: metricsData, usage: usageData, reportData } as MetricsApiResponse;
         return result;
     } catch (error: unknown) {
         logger.error('Error fetching metrics data:', error);

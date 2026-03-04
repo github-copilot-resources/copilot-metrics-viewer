@@ -6,10 +6,10 @@
                     <div class="spacing-25"/>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
                       <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Turns</div>
+                        <div v-bind="props" class="text-h6 mb-1">Cumulative Chat Interactions</div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of turns (interactions) with the Copilot over the past 28 days. A 'turn' includes both user inputs and Copilot's responses.</span>
+                        <span class="text-caption" style="font-size: 10px !important;">Total number of user-initiated chat interactions across all modes (agent, ask, edit, custom, inline). Each interaction is one user prompt sent to Copilot.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">{{ dateRangeDescription }}</div>
@@ -24,10 +24,10 @@
                     <div class="spacing-10"/>
                     <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
                       <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Cumulative Number of Acceptances</div>
+                        <div v-bind="props" class="text-h6 mb-1">Cumulative Code Actions</div>
                       </template>
                       <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">This metric shows the total number of lines of code suggested by Copilot that have been accepted by users over the past 28 days.</span>
+                        <span class="text-caption" style="font-size: 10px !important;">Total number of code actions taken from chat responses — includes applying code to file, inserting at cursor, and using the Copy button.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">{{ dateRangeDescription }}</div>
@@ -42,10 +42,10 @@
 
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
               <template #activator="{ props }">
-                <h2 v-bind="props" class="mb-1">Total Acceptances | Total Turns Count</h2>
+                <h2 v-bind="props" class="mb-1">Code Actions | Chat Interactions</h2>
               </template>
               <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">This is a chart that displays the total number of turns and acceptances.</span>
+                <span class="text-caption" style="font-size: 10px !important;">Daily count of chat interactions (user prompts) and code actions (apply, insert, copy from chat responses).</span>
               </v-card>
             </v-tooltip>
             <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
@@ -175,14 +175,14 @@ setup(props) {
     labels: data.map((m: Metrics)  => m.day),
         datasets: [
         {
-            label: 'Total Acceptances',
+            label: 'Code Actions',
             data: cumulativeNumberAcceptancesData,
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             borderColor: 'rgba(75, 192, 192, 1)'
 
         },
         {
-            label: 'Total Turns',
+            label: 'Chat Interactions',
             data: cumulativeNumberTurnsData,
             backgroundColor: 'rgba(153, 102, 255, 0.2)',
             borderColor: 'rgba(153, 102, 255, 1)'
