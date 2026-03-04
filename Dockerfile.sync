@@ -2,7 +2,7 @@
 # This creates a lightweight container that only runs the sync service
 # Use this for Kubernetes CronJobs or scheduled container instances
 
-FROM node:20-alpine AS base
+FROM node:24-alpine3.23 AS base
 
 # Build stage - install all dependencies
 FROM base AS builder
