@@ -64,28 +64,16 @@ function buildCodeCompletions(day: ReportDayTotals) {
     const modelNames = [...new Set(completionModels.map(m => m.model))];
     const models = modelNames.map(modelName => {
       const modelData = completionModels.find(m => m.model === modelName);
-      // Get per-language data for this model from totals_by_language_model
-      const modelLangs = (day.totals_by_language_model || []).filter(
-        lm => lm.model === modelName
-      );
-
-      const languages = modelLangs.length > 0
-        ? modelLangs.map(ml => ({
-          name: ml.language,
-          total_engaged_users: 0,
-          total_code_suggestions: ml.code_generation_activity_count,
-          total_code_acceptances: ml.code_acceptance_activity_count,
-          total_code_lines_suggested: ml.loc_suggested_to_add_sum,
-          total_code_lines_accepted: ml.loc_added_sum,
-        }))
-        : completionLangs.map(lf => ({
-          name: lf.language,
-          total_engaged_users: 0,
-          total_code_suggestions: lf.code_generation_activity_count,
-          total_code_acceptances: lf.code_acceptance_activity_count,
-          total_code_lines_suggested: lf.loc_suggested_to_add_sum,
-          total_code_lines_accepted: lf.loc_added_sum,
-        }));
+      // totals_by_language_model has no feature field, so we can't filter it.
+      // Use totals_by_language_feature (code_completion filtered) for per-language LOC.
+      const languages = completionLangs.map(lf => ({
+        name: lf.language,
+        total_engaged_users: 0,
+        total_code_suggestions: lf.code_generation_activity_count,
+        total_code_acceptances: lf.code_acceptance_activity_count,
+        total_code_lines_suggested: lf.loc_suggested_to_add_sum,
+        total_code_lines_accepted: lf.loc_added_sum,
+      }));
 
       return {
         name: modelName,
