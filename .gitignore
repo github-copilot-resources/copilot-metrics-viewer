@@ -29,4 +29,5 @@ playwright-logs
 
 # Test results
 test-results
+test-results-old
 results.xml
