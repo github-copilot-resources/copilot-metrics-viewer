@@ -143,7 +143,7 @@ function buildIdeChat(day: ReportDayTotals) {
         total_engaged_users: 0,
         total_chats: modelFeats.reduce((s, f) => s + f.user_initiated_interaction_count, 0),
         total_chat_copy_events: modelFeats.reduce((s, f) => s + f.code_acceptance_activity_count, 0),
-        total_chat_insertion_events: 0,
+        total_chat_insertion_events: modelFeats.reduce((s, f) => s + f.code_generation_activity_count, 0),
       };
     });
 
@@ -160,7 +160,7 @@ function buildIdeChat(day: ReportDayTotals) {
           total_engaged_users: 0,
           total_chats: totalChats,
           total_chat_copy_events: chatFeatures.reduce((s, f) => s + f.code_acceptance_activity_count, 0),
-          total_chat_insertion_events: 0,
+          total_chat_insertion_events: chatFeatures.reduce((s, f) => s + f.code_generation_activity_count, 0),
         });
       }
     }
@@ -173,7 +173,7 @@ function buildIdeChat(day: ReportDayTotals) {
   });
 
   return {
-    total_engaged_users: 0,
+    total_engaged_users: day.monthly_active_chat_users || 0,
     editors,
   };
 }
