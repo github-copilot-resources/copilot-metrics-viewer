@@ -98,6 +98,11 @@ function mockMetrics(date: string): CopilotMetrics {
   } as CopilotMetrics;
 }
 
+// Minimal ReportDayTotals fixture for hasMetrics (requires report_data IS NOT NULL)
+function mockReportData(date: string): any {
+  return { day: date, daily_active_users: 50, totals_by_ide: [], totals_by_feature: [] };
+}
+
 describe('PostgreSQL Storage Layer', () => {
   beforeAll(async () => {
     await setupSchema();
@@ -163,12 +168,12 @@ describe('PostgreSQL Storage Layer', () => {
 
     it('should check existence with hasMetrics', async () => {
       expect(await hasMetrics('organization', 'test-org', '2026-02-15')).toBe(false);
-      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'));
+      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'), undefined, mockReportData('2026-02-15'));
       expect(await hasMetrics('organization', 'test-org', '2026-02-15')).toBe(true);
     });
 
     it('should delete metrics', async () => {
-      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'));
+      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'), undefined, mockReportData('2026-02-15'));
       expect(await hasMetrics('organization', 'test-org', '2026-02-15')).toBe(true);
 
       await deleteMetrics('organization', 'test-org', '2026-02-15');
@@ -176,9 +181,9 @@ describe('PostgreSQL Storage Layer', () => {
     });
 
     it('should isolate by scope and identifier', async () => {
-      await saveMetrics('organization', 'org-a', '2026-02-15', mockMetrics('2026-02-15'));
-      await saveMetrics('organization', 'org-b', '2026-02-15', mockMetrics('2026-02-15'));
-      await saveMetrics('enterprise', 'org-a', '2026-02-15', mockMetrics('2026-02-15'));
+      await saveMetrics('organization', 'org-a', '2026-02-15', mockMetrics('2026-02-15'), undefined, mockReportData('2026-02-15'));
+      await saveMetrics('organization', 'org-b', '2026-02-15', mockMetrics('2026-02-15'), undefined, mockReportData('2026-02-15'));
+      await saveMetrics('enterprise', 'org-a', '2026-02-15', mockMetrics('2026-02-15'), undefined, mockReportData('2026-02-15'));
 
       expect(await hasMetrics('organization', 'org-a', '2026-02-15')).toBe(true);
       expect(await hasMetrics('organization', 'org-b', '2026-02-15')).toBe(true);
@@ -187,8 +192,8 @@ describe('PostgreSQL Storage Layer', () => {
     });
 
     it('should isolate by team slug', async () => {
-      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'));
-      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'), 'team-a');
+      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'), undefined, mockReportData('2026-02-15'));
+      await saveMetrics('organization', 'test-org', '2026-02-15', mockMetrics('2026-02-15'), 'team-a', mockReportData('2026-02-15'));
 
       expect(await hasMetrics('organization', 'test-org', '2026-02-15')).toBe(true);
       expect(await hasMetrics('organization', 'test-org', '2026-02-15', 'team-a')).toBe(true);

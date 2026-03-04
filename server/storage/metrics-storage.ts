@@ -117,6 +117,7 @@ export async function hasMetrics(
   const { rows } = await pool.query(
     `SELECT 1 FROM metrics
      WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4
+       AND report_data IS NOT NULL
      LIMIT 1`,
     [scope, scopeIdentifier, teamSlug || '', metricsDate]
   );
