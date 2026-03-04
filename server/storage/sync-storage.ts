@@ -1,16 +1,35 @@
 /**
  * Sync status storage implementation using Nitro's unstorage
- * Tracks the status of data synchronization jobs
+ * Tracks the status of data synchronization jobs.
+ * Works in both Nitro server context and standalone (tsx) environments.
  */
 
 import type { SyncStatus } from './types';
 import { buildSyncStatusKey } from './types';
+import { createStorage } from 'unstorage';
+import fsDriver from 'unstorage/drivers/fs';
+
+let _standaloneStorage: ReturnType<typeof createStorage> | null = null;
+
+function getStorage() {
+  if (typeof useStorage === 'function') {
+    try {
+      return useStorage('metrics');
+    } catch { /* fall through */ }
+  }
+  if (!_standaloneStorage) {
+    _standaloneStorage = createStorage({
+      driver: fsDriver({ base: './.data/metrics' }),
+    });
+  }
+  return _standaloneStorage;
+}
 
 /**
  * Save or update sync status
  */
 export async function saveSyncStatus(status: SyncStatus): Promise<void> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const key = buildSyncStatusKey(
     status.scope,
     status.scopeIdentifier,
@@ -30,7 +49,7 @@ export async function getSyncStatus(
   metricsDate: string,
   teamSlug?: string
 ): Promise<SyncStatus | null> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const key = buildSyncStatusKey(scope, scopeIdentifier, metricsDate, teamSlug);
   
   return await storage.getItem<SyncStatus>(key);
@@ -125,7 +144,7 @@ export async function markSyncFailed(
  * Get all pending syncs
  */
 export async function getPendingSyncs(): Promise<SyncStatus[]> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const keys = await storage.getKeys('sync:');
   const results: SyncStatus[] = [];
   
@@ -143,7 +162,7 @@ export async function getPendingSyncs(): Promise<SyncStatus[]> {
  * Get all failed syncs
  */
 export async function getFailedSyncs(): Promise<SyncStatus[]> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const keys = await storage.getKeys('sync:');
   const results: SyncStatus[] = [];
   

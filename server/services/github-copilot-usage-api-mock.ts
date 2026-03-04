@@ -234,6 +234,12 @@ export function mockDownloadReport(downloadUrl: string, orgIdentifier: string): 
  * Check if we're in mock mode
  */
 export function isMockMode(): boolean {
-  const config = useRuntimeConfig();
-  return config.public.isDataMocked === true || config.public.isDataMocked === 'true';
+  // Support both Nitro runtime config and standalone (tsx) environments
+  if (typeof useRuntimeConfig === 'function') {
+    try {
+      const config = useRuntimeConfig();
+      return config.public.isDataMocked === true || config.public.isDataMocked === 'true';
+    } catch { /* fall through to env var check */ }
+  }
+  return process.env.NUXT_PUBLIC_IS_DATA_MOCKED === 'true';
 }

@@ -106,6 +106,9 @@ services:
       - NUXT_GITHUB_TOKEN=${NUXT_GITHUB_TOKEN:-}
       # Disable built-in scheduled sync (run separately via sync service)
       - SYNC_ENABLED=false
+    # Mount shared volume for historical mode (reads metrics stored by sync service)
+    volumes:
+      - sync_data:/app/.data
     # Note: DB is only needed when ENABLE_HISTORICAL_MODE=true.
     # For direct API or mock mode, just run: docker compose up web
 

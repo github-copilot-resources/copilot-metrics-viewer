@@ -1,12 +1,34 @@
 /**
  * Metrics storage implementation using Nitro's unstorage
- * Provides database-agnostic persistence for metrics data
+ * Provides database-agnostic persistence for metrics data.
+ * Works in both Nitro server context and standalone (tsx) environments.
  */
 
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { StoredMetrics, DateRangeQuery } from './types';
 import type { ReportDayTotals } from '../services/github-copilot-usage-api';
 import { buildMetricsKey } from './types';
+import { createStorage } from 'unstorage';
+import fsDriver from 'unstorage/drivers/fs';
+
+// Standalone storage instance for non-Nitro environments (e.g., sync-entry.ts)
+let _standaloneStorage: ReturnType<typeof createStorage> | null = null;
+
+function getStorage() {
+  // Prefer Nitro's useStorage when available (auto-imported in Nitro context)
+  if (typeof useStorage === 'function') {
+    try {
+      return useStorage('metrics');
+    } catch { /* fall through */ }
+  }
+  // Standalone fallback: filesystem driver matching nuxt.config.ts storage config
+  if (!_standaloneStorage) {
+    _standaloneStorage = createStorage({
+      driver: fsDriver({ base: './.data/metrics' }),
+    });
+  }
+  return _standaloneStorage;
+}
 
 /**
  * Save metrics data to storage.
@@ -20,7 +42,7 @@ export async function saveMetrics(
   teamSlug?: string,
   reportData?: ReportDayTotals
 ): Promise<void> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
   
   const storedMetrics: StoredMetrics = {
@@ -46,7 +68,7 @@ export async function getMetrics(
   metricsDate: string,
   teamSlug?: string
 ): Promise<CopilotMetrics | null> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
   
   const stored = await storage.getItem<StoredMetrics>(key);
@@ -62,7 +84,7 @@ export async function getReportData(
   metricsDate: string,
   teamSlug?: string
 ): Promise<ReportDayTotals | null> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
   
   const stored = await storage.getItem<StoredMetrics>(key);
@@ -103,7 +125,7 @@ export async function hasMetrics(
   metricsDate: string,
   teamSlug?: string
 ): Promise<boolean> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
   return await storage.hasItem(key);
 }
@@ -117,7 +139,7 @@ export async function deleteMetrics(
   metricsDate: string,
   teamSlug?: string
 ): Promise<void> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
   await storage.removeItem(key);
 }
@@ -126,6 +148,6 @@ export async function deleteMetrics(
  * Get all keys for metrics (useful for listing/debugging)
  */
 export async function listMetricsKeys(): Promise<string[]> {
-  const storage = useStorage('metrics');
+  const storage = getStorage();
   return await storage.getKeys('metrics:');
 }
