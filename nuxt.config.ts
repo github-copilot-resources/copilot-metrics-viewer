@@ -104,7 +104,7 @@ export default defineNuxtConfig({
       version,
       isPublicApp: false,
       // New API migration flags
-      useNewApi: false,  // Enable new async download API (NUXT_PUBLIC_USE_NEW_API)
+      useLegacyApi: false,  // Set true to use deprecated /copilot/metrics API (USE_LEGACY_API)
       enableHistoricalMode: false  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)
     }
   }

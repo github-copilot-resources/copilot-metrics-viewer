@@ -96,10 +96,10 @@ describe('API Migration Integration', () => {
       expect(requiredVars).toContain('NUXT_GITHUB_TOKEN');
     });
 
-    it('should support COPILOT_METRICS_API env var for API mode', () => {
-      // Default should be 'new' (not legacy)
-      const mode = process.env.COPILOT_METRICS_API?.toLowerCase();
-      expect(mode).not.toBe('legacy');
+    it('should default to new API (USE_LEGACY_API not set or false)', () => {
+      // Default is new API — USE_LEGACY_API must be explicitly "true" for legacy
+      const useLegacy = process.env.USE_LEGACY_API?.toLowerCase() === 'true';
+      expect(useLegacy).toBe(false);
     });
   });
 });

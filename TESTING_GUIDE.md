@@ -21,7 +21,7 @@ curl http://localhost:3000/api/metrics?mock=true&scope=organization&githubOrg=te
 # Configure environment
 cp .env.example .env
 # Edit .env and set:
-# - NUXT_PUBLIC_USE_NEW_API=true
+# - USE_LEGACY_API=false
 # - NUXT_GITHUB_TOKEN=your_token_here
 
 # Start dev server
@@ -35,7 +35,7 @@ curl "http://localhost:3000/api/metrics?scope=organization&githubOrg=your-org"
 
 ```bash
 # Configure environment
-# - NUXT_PUBLIC_USE_NEW_API=true
+# - USE_LEGACY_API=false
 # - NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true
 # - NUXT_GITHUB_TOKEN=your_token_here
 
@@ -117,7 +117,7 @@ npm run dev
 
 ```bash
 # Configure for legacy API
-NUXT_PUBLIC_USE_NEW_API=false
+USE_LEGACY_API=true
 NUXT_PUBLIC_IS_DATA_MOCKED=false
 NUXT_GITHUB_TOKEN=your_token
 
@@ -130,7 +130,7 @@ npm run dev
 
 ```bash
 # Configure for new API
-NUXT_PUBLIC_USE_NEW_API=true
+USE_LEGACY_API=false
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false
 NUXT_GITHUB_TOKEN=your_token
 
@@ -146,7 +146,7 @@ npm run dev
 
 ```bash
 # Configure for new API + storage
-NUXT_PUBLIC_USE_NEW_API=true
+USE_LEGACY_API=false
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true
 NUXT_GITHUB_TOKEN=your_token
 

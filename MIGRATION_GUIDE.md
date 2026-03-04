@@ -18,7 +18,7 @@ This guide provides step-by-step instructions for migrating your GitHub Copilot 
 
 **Steps**:
 1. Update to this version
-2. Set `NUXT_PUBLIC_USE_NEW_API=true` in `.env`
+2. Set `USE_LEGACY_API=false` in `.env`
 3. Test with your GitHub token
 4. Deploy
 
@@ -30,7 +30,7 @@ This guide provides step-by-step instructions for migrating your GitHub Copilot 
 **Configuration**:
 ```bash
 # .env
-NUXT_PUBLIC_USE_NEW_API=true
+USE_LEGACY_API=false
 NUXT_GITHUB_TOKEN=your_token_here
 # Leave ENABLE_HISTORICAL_MODE=false
 ```
@@ -56,7 +56,7 @@ NUXT_GITHUB_TOKEN=your_token_here
 **Configuration**:
 ```bash
 # .env
-NUXT_PUBLIC_USE_NEW_API=true
+USE_LEGACY_API=false
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true
 NUXT_GITHUB_TOKEN=your_token_here
 
@@ -107,7 +107,7 @@ No additional setup needed. Data stored in `./.data/metrics`.
 
 ```bash
 # .env additions
-NUXT_PUBLIC_USE_NEW_API=false  # Start with legacy
+USE_LEGACY_API=true  # Start with legacy
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false
 ```
 
@@ -158,7 +158,7 @@ curl http://localhost:3000/orgs/test-org?mock=true
 
 ```bash
 # Update .env
-NUXT_PUBLIC_USE_NEW_API=true
+USE_LEGACY_API=false
 
 # Restart application
 npm run dev
@@ -349,7 +349,7 @@ If issues occur, rollback is simple:
 
 ```bash
 # Disable new API
-NUXT_PUBLIC_USE_NEW_API=false
+USE_LEGACY_API=true
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false
 SYNC_ENABLED=false
 

@@ -1,9 +1,12 @@
 /**
- * Enhanced metrics utility with support for new Copilot Usage Metrics API
- * 
- * Controlled by COPILOT_METRICS_API env var:
- *   "new"    (default) — uses the download-based reports API
- *   "legacy" — uses the deprecated /copilot/metrics REST API (shuts down April 2, 2026)
+ * Enhanced metrics utility — uses the new Copilot Usage Metrics API by default.
+ *
+ * The new download-based reports API is the default and ONLY path unless
+ * USE_LEGACY_API=true is explicitly set. This ensures the new implementation
+ * is fully exercised and no silent fallback to legacy code occurs.
+ *
+ * Legacy API shuts down April 2, 2026. Set USE_LEGACY_API=true only if you
+ * have a specific reason to use the deprecated /copilot/metrics REST endpoint.
  */
 
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
@@ -18,20 +21,17 @@ import { fetchLatestReport, type MetricsReportRequest } from '../../server/servi
 import { transformReportToMetrics } from '../../server/services/report-transformer';
 import { isMockMode } from '../../server/services/github-copilot-usage-api-mock';
 
-type ApiMode = 'new' | 'legacy';
-
 export interface MetricsDataResult {
   metrics: CopilotMetrics[];
   reportData: ReportDayTotals[];
 }
 
 /**
- * Get the configured API mode
+ * Returns true ONLY when USE_LEGACY_API is explicitly set to "true".
+ * Default behavior is new API — no legacy calls unless opted in.
  */
-function getApiMode(): ApiMode {
-  const mode = process.env.COPILOT_METRICS_API?.toLowerCase();
-  if (mode === 'legacy') return 'legacy';
-  return 'new';
+function isLegacyMode(): boolean {
+  return process.env.USE_LEGACY_API?.toLowerCase() === 'true';
 }
 
 /**
@@ -103,21 +103,18 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   // 1. Mock mode — return immediately, no DB, no API
   //    Controlled by NUXT_PUBLIC_IS_DATA_MOCKED env var, not per-request params
   if (isMockMode()) {
-    const apiMode = getApiMode();
-    if (apiMode === 'new') {
-      // Exercise the full mock pipeline: requestDownloadLinks → downloadReport (HTTP) → transform
-      // Mock download links point to localhost static files in public/mock-data/new-api/
-      logger.info('Using mocked data mode (new API format via HTTP download)');
-      const identifier = options.githubOrg || options.githubEnt || 'mock-org';
-      const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
-      const report = await fetchLatestReport({ scope, identifier }, new Headers());
-      const metrics = transformReportToMetrics(report);
-      return { metrics, reportData: report.day_totals };
+    if (isLegacyMode()) {
+      logger.info('Using mocked data mode (legacy format — USE_LEGACY_API=true)');
+      const metrics = await getLegacyMetricsData(event);
+      return { metrics, reportData: [] };
     }
-    // Legacy mock mode — use old JSON files
-    logger.info('Using mocked data mode (legacy format)');
-    const metrics = await getLegacyMetricsData(event);
-    return { metrics, reportData: [] };
+    // Default: exercise full new-API mock pipeline
+    logger.info('Using mocked data mode (new API format via HTTP download)');
+    const identifier = options.githubOrg || options.githubEnt || 'mock-org';
+    const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
+    const report = await fetchLatestReport({ scope, identifier }, new Headers());
+    const metrics = transformReportToMetrics(report);
+    return { metrics, reportData: report.day_totals };
   }
 
   const identifier = options.githubOrg || options.githubEnt || '';
@@ -189,14 +186,13 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     });
   }
 
-  const apiMode = getApiMode();
-  logger.info(`Using ${apiMode} Copilot Metrics API (direct, no DB)`);
-
-  if (apiMode === 'legacy') {
+  if (isLegacyMode()) {
+    logger.info('Using legacy Copilot Metrics API (USE_LEGACY_API=true, direct, no DB)');
     const metrics = await getLegacyMetricsData(event);
     return { metrics: filterHolidaysFromMetrics(metrics, options.excludeHolidays || false, options.locale), reportData: [] };
   }
 
+  logger.info('Using new Copilot Metrics API (direct, no DB)');
   const result = await fetchFromNewApi(options, event.context.headers);
   return {
     metrics: filterHolidaysFromMetrics(result.metrics, options.excludeHolidays || false, options.locale),

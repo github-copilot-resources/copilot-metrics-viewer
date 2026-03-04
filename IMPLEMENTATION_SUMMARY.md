@@ -47,7 +47,7 @@ server/storage/
 - ✅ NDJSON file download and parsing
 - ✅ Mock API implementation for testing
 - ✅ Support for single-day and date-range fetches
-- ✅ Feature flag for new API (`USE_NEW_API`)
+- ✅ Feature flag: `USE_LEGACY_API=true` to opt into deprecated API
 - ✅ Comprehensive test suite (9 tests)
 
 **Files Created**:
@@ -124,7 +124,7 @@ nuxt.config.ts (added feature flag config)
 - Made migration completely opt-in via feature flags
 
 **Feature Flags**:
-- `USE_NEW_API` - Enable new async download API
+- `USE_LEGACY_API` - Set to "true" to use deprecated /copilot/metrics API
 - `ENABLE_HISTORICAL_MODE` - Enable storage queries
 
 **Backward Compatibility**: 100% - existing deployments work unchanged
@@ -254,7 +254,7 @@ All new code scanned and verified secure:
 
 ```bash
 # New API Migration Flags
-NUXT_PUBLIC_USE_NEW_API=false          # Enable new async download API
+USE_LEGACY_API=false                    # New API is default; set true for legacy
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false  # Enable storage queries
 
 # Sync Configuration

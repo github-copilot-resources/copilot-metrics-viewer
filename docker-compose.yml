@@ -55,7 +55,7 @@
 #   NUXT_PUBLIC_IS_DATA_MOCKED  — "true" for mock data, "false" for real API
 #   NUXT_GITHUB_TOKEN           — GitHub PAT (fine-grained, "Copilot metrics" permission)
 #   ENABLE_HISTORICAL_MODE      — "true" to read from DB with sync-on-miss
-#   COPILOT_METRICS_API         — "new" (default, download API) or "legacy" (deprecated)
+#   USE_LEGACY_API              — set to "true" to use deprecated /copilot/metrics endpoint
 #   NUXT_SESSION_PASSWORD       — Session secret (min 32 chars, auto-set below)
 #   DATABASE_URL                — PostgreSQL connection string (auto-set for docker-compose)
 #
@@ -101,7 +101,7 @@ services:
       - NUXT_PUBLIC_IS_DATA_MOCKED=${NUXT_PUBLIC_IS_DATA_MOCKED:-true}
       - NUXT_SESSION_PASSWORD=${NUXT_SESSION_PASSWORD:-at_least_32_characters_long_password_here}
       # API mode: "new" (download-based, default) or "legacy" (deprecated April 2026)
-      - COPILOT_METRICS_API=${COPILOT_METRICS_API:-new}
+      - USE_LEGACY_API=${USE_LEGACY_API:-false}
       - ENABLE_HISTORICAL_MODE=${ENABLE_HISTORICAL_MODE:-false}
       # GitHub token — required unless using mock data
       - NUXT_GITHUB_TOKEN=${NUXT_GITHUB_TOKEN:-}
@@ -125,7 +125,7 @@ services:
       - NUXT_PUBLIC_GITHUB_ORG=${NUXT_PUBLIC_GITHUB_ORG:-your-org}
       - NUXT_GITHUB_TOKEN=${NUXT_GITHUB_TOKEN:-}
       - NUXT_PUBLIC_IS_DATA_MOCKED=${NUXT_PUBLIC_IS_DATA_MOCKED:-false}
-      - COPILOT_METRICS_API=${COPILOT_METRICS_API:-new}
+      - USE_LEGACY_API=${USE_LEGACY_API:-false}
       - DATABASE_URL=postgresql://metrics_user:metrics_password@db:5432/copilot_metrics
       - SYNC_ENABLED=true
     depends_on:
