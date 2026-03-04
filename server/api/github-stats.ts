@@ -1,5 +1,5 @@
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
-import { getMetricsData } from '../../shared/utils/metrics-util';
+import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
 
 interface GitHubStats {
   totalIdeCodeCompletionUsers: number;
@@ -21,7 +21,7 @@ interface GitHubStats {
 
 export default defineEventHandler(async (event) => {
   try {
-    const metricsData = await getMetricsData(event);
+    const { metrics: metricsData } = await getMetricsDataV2(event);
     // Calculate GitHub.com statistics
     const stats = calculateGitHubStats(metricsData);
     return stats;
