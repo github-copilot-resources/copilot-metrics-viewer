@@ -141,17 +141,17 @@ The included `docker-compose.yml` provides a complete local setup with PostgreSQ
 **With mock data** (no GitHub token needed):
 
 ```bash
-docker compose up web db
+docker compose up web
 # Open http://localhost:3000/orgs/your-org?mock=true
 ```
 
-**With real GitHub data:**
+**With real GitHub data** (direct API, no DB):
 
 ```bash
 export NUXT_GITHUB_TOKEN=github_pat_...    # Fine-grained PAT with "Copilot metrics" permission
 export NUXT_PUBLIC_GITHUB_ORG=your-org
 export NUXT_PUBLIC_IS_DATA_MOCKED=false
-docker compose up web db
+docker compose up web
 # Open http://localhost:3000/orgs/your-org
 ```
 
@@ -166,6 +166,8 @@ docker compose up web db
 # First request auto-syncs from API to DB; subsequent requests read from DB
 # Open http://localhost:3000/orgs/your-org
 ```
+
+> **Note:** The `db` service is only needed with `ENABLE_HISTORICAL_MODE=true`. In mock or direct API mode, `docker compose up web` is sufficient.
 
 ### Running the Sync Service
 

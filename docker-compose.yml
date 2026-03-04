@@ -10,14 +10,14 @@
 # ─── Quick Start ─────────────────────────────────────────────────────────────
 #
 #   Run the app with mock data (no GitHub token needed):
-#     docker compose up web db
+#     docker compose up web
 #     → Open http://localhost:3000/orgs/your-org?mock=true
 #
-#   Run the app with real GitHub data:
+#   Run the app with real GitHub data (direct API, no DB):
 #     export NUXT_GITHUB_TOKEN=github_pat_...
 #     export NUXT_PUBLIC_GITHUB_ORG=your-org
 #     export NUXT_PUBLIC_IS_DATA_MOCKED=false
-#     docker compose up web db
+#     docker compose up web
 #     → Open http://localhost:3000/orgs/your-org
 #
 #   Run the app with historical mode (DB-backed, sync-on-miss):
@@ -106,9 +106,8 @@ services:
       - NUXT_GITHUB_TOKEN=${NUXT_GITHUB_TOKEN:-}
       # Disable built-in scheduled sync (run separately via sync service)
       - SYNC_ENABLED=false
-    depends_on:
-      db:
-        condition: service_healthy
+    # Note: DB is only needed when ENABLE_HISTORICAL_MODE=true.
+    # For direct API or mock mode, just run: docker compose up web
 
   # ─── Sync Service ───────────────────────────────────────────────────────
   # Standalone container that downloads metrics from GitHub API and stores
