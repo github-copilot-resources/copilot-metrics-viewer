@@ -36,9 +36,5 @@ COPY --from=builder /app/app ./app
 COPY --from=builder /app/nuxt.config.ts ./nuxt.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-# Create data directory for filesystem storage
-RUN mkdir -p ./.data/metrics
-
 # Run sync entry point with tsx for TypeScript support
-# Note: Runs as root for volume write access (batch job, not a web server)
 CMD ["npx", "tsx", "server/sync-entry.ts"]

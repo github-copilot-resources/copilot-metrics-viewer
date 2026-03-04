@@ -1,38 +1,17 @@
 /**
- * Metrics storage implementation using Nitro's unstorage
- * Provides database-agnostic persistence for metrics data.
- * Works in both Nitro server context and standalone (tsx) environments.
+ * Metrics storage implementation backed by PostgreSQL.
+ * Provides persistence for daily Copilot usage metrics.
  */
 
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
-import type { StoredMetrics, DateRangeQuery } from './types';
+import type { DateRangeQuery } from './types';
 import type { ReportDayTotals } from '../services/github-copilot-usage-api';
-import { buildMetricsKey } from './types';
-import { createStorage } from 'unstorage';
-import fsDriver from 'unstorage/drivers/fs';
-
-// Standalone storage instance for non-Nitro environments (e.g., sync-entry.ts)
-let _standaloneStorage: ReturnType<typeof createStorage> | null = null;
-
-function getStorage() {
-  // Prefer Nitro's useStorage when available (auto-imported in Nitro context)
-  if (typeof useStorage === 'function') {
-    try {
-      return useStorage('metrics');
-    } catch { /* fall through */ }
-  }
-  // Standalone fallback: filesystem driver matching nuxt.config.ts storage config
-  if (!_standaloneStorage) {
-    _standaloneStorage = createStorage({
-      driver: fsDriver({ base: './.data/metrics' }),
-    });
-  }
-  return _standaloneStorage;
-}
+import { getPool } from './db';
 
 /**
  * Save metrics data to storage.
  * Stores both the CopilotMetrics (for UI) and raw ReportDayTotals (for aggregation).
+ * Uses upsert — safe to call multiple times for the same day.
  */
 export async function saveMetrics(
   scope: string,
@@ -42,21 +21,14 @@ export async function saveMetrics(
   teamSlug?: string,
   reportData?: ReportDayTotals
 ): Promise<void> {
-  const storage = getStorage();
-  const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
-  
-  const storedMetrics: StoredMetrics = {
-    scope,
-    scopeIdentifier,
-    teamSlug,
-    metricsDate,
-    data,
-    reportData,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  
-  await storage.setItem(key, storedMetrics);
+  const pool = getPool();
+  await pool.query(
+    `INSERT INTO metrics (scope, identifier, team_slug, metrics_date, data, report_data)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (scope, identifier, team_slug, metrics_date)
+     DO UPDATE SET data = $5, report_data = $6, updated_at = NOW()`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate, JSON.stringify(data), reportData ? JSON.stringify(reportData) : null]
+  );
 }
 
 /**
@@ -68,11 +40,13 @@ export async function getMetrics(
   metricsDate: string,
   teamSlug?: string
 ): Promise<CopilotMetrics | null> {
-  const storage = getStorage();
-  const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
-  
-  const stored = await storage.getItem<StoredMetrics>(key);
-  return stored ? stored.data : null;
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT data FROM metrics
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate]
+  );
+  return rows.length > 0 ? rows[0].data : null;
 }
 
 /**
@@ -84,36 +58,28 @@ export async function getReportData(
   metricsDate: string,
   teamSlug?: string
 ): Promise<ReportDayTotals | null> {
-  const storage = getStorage();
-  const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
-  
-  const stored = await storage.getItem<StoredMetrics>(key);
-  return stored?.reportData ?? null;
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT report_data FROM metrics
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate]
+  );
+  return rows.length > 0 ? rows[0].report_data : null;
 }
 
 /**
- * Get metrics for a date range
+ * Get metrics for a date range — single SQL query instead of N file reads
  */
 export async function getMetricsByDateRange(query: DateRangeQuery): Promise<CopilotMetrics[]> {
-  const { scope, scopeIdentifier, teamSlug, startDate, endDate } = query;
-  
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const results: CopilotMetrics[] = [];
-  
-  const current = new Date(start);
-  while (current <= end) {
-    const dateStr = current.toISOString().split('T')[0];
-    const metrics = await getMetrics(scope, scopeIdentifier, dateStr, teamSlug);
-    
-    if (metrics) {
-      results.push(metrics);
-    }
-    
-    current.setDate(current.getDate() + 1);
-  }
-  
-  return results;
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT data FROM metrics
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3
+       AND metrics_date BETWEEN $4 AND $5
+     ORDER BY metrics_date ASC`,
+    [query.scope, query.scopeIdentifier, query.teamSlug || '', query.startDate, query.endDate]
+  );
+  return rows.map(r => r.data);
 }
 
 /**
@@ -125,9 +91,14 @@ export async function hasMetrics(
   metricsDate: string,
   teamSlug?: string
 ): Promise<boolean> {
-  const storage = getStorage();
-  const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
-  return await storage.hasItem(key);
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT 1 FROM metrics
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4
+     LIMIT 1`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate]
+  );
+  return rows.length > 0;
 }
 
 /**
@@ -139,15 +110,30 @@ export async function deleteMetrics(
   metricsDate: string,
   teamSlug?: string
 ): Promise<void> {
-  const storage = getStorage();
-  const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
-  await storage.removeItem(key);
+  const pool = getPool();
+  await pool.query(
+    `DELETE FROM metrics
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate]
+  );
 }
 
 /**
- * Get all keys for metrics (useful for listing/debugging)
+ * Count stored metrics for a scope (useful for sync-status)
  */
-export async function listMetricsKeys(): Promise<string[]> {
-  const storage = getStorage();
-  return await storage.getKeys('metrics:');
+export async function countMetrics(
+  scope: string,
+  scopeIdentifier: string,
+  startDate: string,
+  endDate: string,
+  teamSlug?: string
+): Promise<number> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS count FROM metrics
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3
+       AND metrics_date BETWEEN $4 AND $5`,
+    [scope, scopeIdentifier, teamSlug || '', startDate, endDate]
+  );
+  return rows[0].count;
 }

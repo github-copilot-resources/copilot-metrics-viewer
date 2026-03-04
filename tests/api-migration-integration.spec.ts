@@ -1,56 +1,14 @@
 /**
  * Integration tests for new API migration features
- * Tests actual functionality of the storage layer, sync service, and API integration
+ * Tests actual functionality of the report transformer, NDJSON parsing, and API integration
  */
 
 import { describe, it, expect } from 'vitest';
-import { buildMetricsKey, buildSeatsKey, buildSyncStatusKey } from '../server/storage/types';
 import { parseNDJSON } from '../server/services/github-copilot-usage-api';
 import { generateMockReport } from '../server/services/github-copilot-usage-api-mock';
 import { transformReportToMetrics } from '../server/services/report-transformer';
 
 describe('API Migration Integration', () => {
-  describe('Storage Key Generation', () => {
-    it('should generate consistent metrics keys', () => {
-      const key1 = buildMetricsKey('organization', 'test-org', '2026-02-20');
-      const key2 = buildMetricsKey('organization', 'test-org', '2026-02-20');
-      
-      expect(key1).toBe(key2);
-      expect(key1).toBe('metrics:organization:test-org:2026-02-20');
-    });
-
-    it('should generate different keys for different scopes', () => {
-      const key1 = buildMetricsKey('organization', 'test-org', '2026-02-20');
-      const key2 = buildMetricsKey('enterprise', 'test-ent', '2026-02-20');
-
-      expect(key1).not.toBe(key2);
-      expect(key1).toContain('organization');
-      expect(key2).toContain('enterprise');
-    });
-
-    it('should include team slug in key when provided', () => {
-      const withoutTeam = buildMetricsKey('organization', 'test-org', '2026-02-20');
-      const withTeam = buildMetricsKey('organization', 'test-org', '2026-02-20', 'test-team');
-
-      expect(withTeam).toContain('team:test-team');
-      expect(withoutTeam).not.toContain('team:');
-      expect(withTeam).not.toBe(withoutTeam);
-    });
-
-    it('should generate seats keys correctly', () => {
-      const key = buildSeatsKey('organization', 'test-org', '2026-02-20');
-      
-      expect(key).toBe('seats:organization:test-org:2026-02-20');
-      expect(key).toContain('seats:');
-    });
-
-    it('should generate sync status keys correctly', () => {
-      const key = buildSyncStatusKey('organization', 'test-org', '2026-02-20');
-      
-      expect(key).toBe('sync:organization:test-org:2026-02-20');
-      expect(key).toContain('sync:');
-    });
-  });
 
   describe('Report Data Flow', () => {
     it('should generate mock report and transform to CopilotMetrics', () => {

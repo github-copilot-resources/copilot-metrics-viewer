@@ -1,43 +1,27 @@
 /**
- * Sync status storage implementation using Nitro's unstorage
+ * Sync status storage implementation backed by PostgreSQL.
  * Tracks the status of data synchronization jobs.
- * Works in both Nitro server context and standalone (tsx) environments.
  */
 
 import type { SyncStatus } from './types';
-import { buildSyncStatusKey } from './types';
-import { createStorage } from 'unstorage';
-import fsDriver from 'unstorage/drivers/fs';
-
-let _standaloneStorage: ReturnType<typeof createStorage> | null = null;
-
-function getStorage() {
-  if (typeof useStorage === 'function') {
-    try {
-      return useStorage('metrics');
-    } catch { /* fall through */ }
-  }
-  if (!_standaloneStorage) {
-    _standaloneStorage = createStorage({
-      driver: fsDriver({ base: './.data/metrics' }),
-    });
-  }
-  return _standaloneStorage;
-}
+import { getPool } from './db';
 
 /**
- * Save or update sync status
+ * Save or update sync status (upsert)
  */
 export async function saveSyncStatus(status: SyncStatus): Promise<void> {
-  const storage = getStorage();
-  const key = buildSyncStatusKey(
-    status.scope,
-    status.scopeIdentifier,
-    status.metricsDate,
-    status.teamSlug
+  const pool = getPool();
+  await pool.query(
+    `INSERT INTO sync_status (scope, identifier, team_slug, metrics_date, status, error_message, attempt_count, last_attempt_at, completed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (scope, identifier, team_slug, metrics_date)
+     DO UPDATE SET status = $5, error_message = $6, attempt_count = $7, last_attempt_at = $8, completed_at = $9`,
+    [
+      status.scope, status.scopeIdentifier, status.teamSlug || '',
+      status.metricsDate, status.status, status.errorMessage ?? null,
+      status.attemptCount, status.lastAttemptAt ?? null, status.completedAt ?? null
+    ]
   );
-  
-  await storage.setItem(key, status);
 }
 
 /**
@@ -49,10 +33,16 @@ export async function getSyncStatus(
   metricsDate: string,
   teamSlug?: string
 ): Promise<SyncStatus | null> {
-  const storage = getStorage();
-  const key = buildSyncStatusKey(scope, scopeIdentifier, metricsDate, teamSlug);
-  
-  return await storage.getItem<SyncStatus>(key);
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT scope, identifier, team_slug, metrics_date, status, error_message,
+            attempt_count, last_attempt_at, completed_at, created_at
+     FROM sync_status
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate]
+  );
+  if (rows.length === 0) return null;
+  return rowToSyncStatus(rows[0]);
 }
 
 /**
@@ -73,7 +63,6 @@ export async function createPendingSyncStatus(
     attemptCount: 0,
     createdAt: new Date().toISOString(),
   };
-  
   await saveSyncStatus(status);
   return status;
 }
@@ -87,16 +76,13 @@ export async function markSyncInProgress(
   metricsDate: string,
   teamSlug?: string
 ): Promise<void> {
-  const status = await getSyncStatus(scope, scopeIdentifier, metricsDate, teamSlug);
-  if (!status) {
-    throw new Error('Sync status not found');
-  }
-  
-  status.status = 'in_progress';
-  status.attemptCount += 1;
-  status.lastAttemptAt = new Date().toISOString();
-  
-  await saveSyncStatus(status);
+  const pool = getPool();
+  const { rowCount } = await pool.query(
+    `UPDATE sync_status SET status = 'in_progress', attempt_count = attempt_count + 1, last_attempt_at = NOW()
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate]
+  );
+  if (rowCount === 0) throw new Error('Sync status not found');
 }
 
 /**
@@ -108,15 +94,13 @@ export async function markSyncCompleted(
   metricsDate: string,
   teamSlug?: string
 ): Promise<void> {
-  const status = await getSyncStatus(scope, scopeIdentifier, metricsDate, teamSlug);
-  if (!status) {
-    throw new Error('Sync status not found');
-  }
-  
-  status.status = 'completed';
-  status.completedAt = new Date().toISOString();
-  
-  await saveSyncStatus(status);
+  const pool = getPool();
+  const { rowCount } = await pool.query(
+    `UPDATE sync_status SET status = 'completed', completed_at = NOW()
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate]
+  );
+  if (rowCount === 0) throw new Error('Sync status not found');
 }
 
 /**
@@ -129,49 +113,49 @@ export async function markSyncFailed(
   errorMessage: string,
   teamSlug?: string
 ): Promise<void> {
-  const status = await getSyncStatus(scope, scopeIdentifier, metricsDate, teamSlug);
-  if (!status) {
-    throw new Error('Sync status not found');
-  }
-  
-  status.status = 'failed';
-  status.errorMessage = errorMessage;
-  
-  await saveSyncStatus(status);
+  const pool = getPool();
+  const { rowCount } = await pool.query(
+    `UPDATE sync_status SET status = 'failed', error_message = $5
+     WHERE scope = $1 AND identifier = $2 AND team_slug = $3 AND metrics_date = $4`,
+    [scope, scopeIdentifier, teamSlug || '', metricsDate, errorMessage]
+  );
+  if (rowCount === 0) throw new Error('Sync status not found');
 }
 
 /**
  * Get all pending syncs
  */
 export async function getPendingSyncs(): Promise<SyncStatus[]> {
-  const storage = getStorage();
-  const keys = await storage.getKeys('sync:');
-  const results: SyncStatus[] = [];
-  
-  for (const key of keys) {
-    const status = await storage.getItem<SyncStatus>(key);
-    if (status && status.status === 'pending') {
-      results.push(status);
-    }
-  }
-  
-  return results;
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT * FROM sync_status WHERE status = 'pending' ORDER BY created_at DESC`
+  );
+  return rows.map(rowToSyncStatus);
 }
 
 /**
  * Get all failed syncs
  */
 export async function getFailedSyncs(): Promise<SyncStatus[]> {
-  const storage = getStorage();
-  const keys = await storage.getKeys('sync:');
-  const results: SyncStatus[] = [];
-  
-  for (const key of keys) {
-    const status = await storage.getItem<SyncStatus>(key);
-    if (status && status.status === 'failed') {
-      results.push(status);
-    }
-  }
-  
-  return results;
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT * FROM sync_status WHERE status = 'failed' ORDER BY created_at DESC`
+  );
+  return rows.map(rowToSyncStatus);
+}
+
+// Map DB row to SyncStatus interface
+function rowToSyncStatus(row: Record<string, unknown>): SyncStatus {
+  return {
+    scope: row.scope as string,
+    scopeIdentifier: row.identifier as string,
+    teamSlug: (row.team_slug as string) || undefined,
+    metricsDate: (row.metrics_date as Date).toISOString().split('T')[0],
+    status: row.status as SyncStatus['status'],
+    errorMessage: row.error_message as string | undefined,
+    attemptCount: row.attempt_count as number,
+    lastAttemptAt: row.last_attempt_at ? (row.last_attempt_at as Date).toISOString() : undefined,
+    completedAt: row.completed_at ? (row.completed_at as Date).toISOString() : undefined,
+    createdAt: (row.created_at as Date).toISOString(),
+  };
 }

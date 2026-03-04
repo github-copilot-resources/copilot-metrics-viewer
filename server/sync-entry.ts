@@ -11,9 +11,12 @@
  *   - NUXT_PUBLIC_GITHUB_ENT: GitHub enterprise slug
  *   - NUXT_GITHUB_TOKEN: GitHub personal access token
  *   - SYNC_DAYS_BACK: Number of days to sync (default: 28, uses bulk download)
+ *   - DATABASE_URL: PostgreSQL connection string (or use PG* env vars)
  */
 
-import { syncBulk, syncMetricsForDateRange } from './services/sync-service';
+import { syncBulk } from './services/sync-service';
+import { initSchema } from './storage/db';
+import { closePool } from './storage/db';
 
 async function runSync() {
   const logger = console;
@@ -43,10 +46,14 @@ async function runSync() {
     'X-GitHub-Api-Version': '2022-11-28'
   };
 
-  logger.info(`Starting sync for ${scope}:${identifier}`);
-  logger.info(`Syncing last ${daysBack} day(s) via bulk download`);
-
   try {
+    // Initialize database schema
+    logger.info('Initializing database schema...');
+    await initSchema();
+
+    logger.info(`Starting sync for ${scope}:${identifier}`);
+    logger.info(`Syncing last ${daysBack} day(s) via bulk download`);
+
     // Use bulk download — one API call for up to 28 days
     const result = await syncBulk(
       scope as any,
@@ -60,15 +67,15 @@ async function runSync() {
     if (result.errors.length > 0) {
       logger.error('Some days failed:');
       result.errors.forEach(e => logger.error(`  ${e.date}: ${e.error}`));
-      process.exit(1);
     }
 
     logger.info('Sync job completed successfully');
-    process.exit(0);
 
   } catch (error) {
     logger.error('Sync job failed:', error);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    await closePool();
   }
 }
 

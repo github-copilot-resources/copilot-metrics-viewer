@@ -13,7 +13,12 @@ import { generateMockReport, mockRequestDownloadLinks, mockDownloadReport } from
 import { transformReportToMetrics, transformDayToMetrics } from '../server/services/report-transformer';
 import type { OrgReport, ReportDayTotals, MetricsReportRequest } from '../server/services/github-copilot-usage-api';
 import type { StoredMetrics } from '../server/storage/types';
-import { buildMetricsKey } from '../server/storage/types';
+
+// Build a storage key for the in-memory mock (mirrors old key-value approach)
+function buildKey(scope: string, identifier: string, date: string, team?: string): string {
+  const teamPart = team ? `:team:${team}` : '';
+  return `metrics:${scope}:${identifier}${teamPart}:${date}`;
+}
 
 // --- Mock storage layer ---
 // Since unstorage (useStorage) requires Nitro runtime, we mock it in-memory.
@@ -21,7 +26,7 @@ const storageMap = new Map<string, unknown>();
 
 vi.mock('../server/storage/metrics-storage', () => ({
   saveMetrics: vi.fn(async (scope: string, scopeIdentifier: string, metricsDate: string, data: any, teamSlug?: string, reportData?: any) => {
-    const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
+    const key = buildKey(scope, scopeIdentifier, metricsDate, teamSlug);
     storageMap.set(key, {
       scope,
       scopeIdentifier,
@@ -34,17 +39,17 @@ vi.mock('../server/storage/metrics-storage', () => ({
     });
   }),
   getMetrics: vi.fn(async (scope: string, scopeIdentifier: string, metricsDate: string, teamSlug?: string) => {
-    const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
+    const key = buildKey(scope, scopeIdentifier, metricsDate, teamSlug);
     const stored = storageMap.get(key) as StoredMetrics | undefined;
     return stored ? stored.data : null;
   }),
   getReportData: vi.fn(async (scope: string, scopeIdentifier: string, metricsDate: string, teamSlug?: string) => {
-    const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
+    const key = buildKey(scope, scopeIdentifier, metricsDate, teamSlug);
     const stored = storageMap.get(key) as StoredMetrics | undefined;
     return stored?.reportData ?? null;
   }),
   hasMetrics: vi.fn(async (scope: string, scopeIdentifier: string, metricsDate: string, teamSlug?: string) => {
-    const key = buildMetricsKey(scope, scopeIdentifier, metricsDate, teamSlug);
+    const key = buildKey(scope, scopeIdentifier, metricsDate, teamSlug);
     return storageMap.has(key);
   }),
   getMetricsByDateRange: vi.fn(async (query: any) => {
@@ -54,7 +59,7 @@ vi.mock('../server/storage/metrics-storage', () => ({
     const current = new Date(start);
     while (current <= end) {
       const dateStr = current.toISOString().split('T')[0];
-      const key = buildMetricsKey(query.scope, query.scopeIdentifier, dateStr, query.teamSlug);
+      const key = buildKey(query.scope, query.scopeIdentifier, dateStr, query.teamSlug);
       const stored = storageMap.get(key) as StoredMetrics | undefined;
       if (stored) results.push(stored.data);
       current.setDate(current.getDate() + 1);
@@ -173,7 +178,7 @@ describe('Sync Service & Storage', () => {
 
     it('should skip already-synced dates', async () => {
       // Pre-populate
-      const key = buildMetricsKey('organization', 'test-org', '2026-02-15');
+      const key = buildKey('organization', 'test-org', '2026-02-15');
       storageMap.set(key, { data: { date: '2026-02-15' } });
 
       const result = await syncMetricsForDate({
@@ -221,7 +226,7 @@ describe('Sync Service & Storage', () => {
 
     it('should skip already-synced dates in range', async () => {
       // Pre-populate some dates
-      const key1 = buildMetricsKey('organization', 'test-org', '2026-02-01');
+      const key1 = buildKey('organization', 'test-org', '2026-02-01');
       storageMap.set(key1, { data: { date: '2026-02-01' } });
 
       const results = await syncMetricsForDateRange(
@@ -243,8 +248,8 @@ describe('Sync Service & Storage', () => {
   describe('detectGaps', () => {
     it('should find missing dates', async () => {
       // Store only Feb 1 and Feb 3
-      const key1 = buildMetricsKey('organization', 'test-org', '2026-02-01');
-      const key3 = buildMetricsKey('organization', 'test-org', '2026-02-03');
+      const key1 = buildKey('organization', 'test-org', '2026-02-01');
+      const key3 = buildKey('organization', 'test-org', '2026-02-03');
       storageMap.set(key1, { data: {} });
       storageMap.set(key3, { data: {} });
 
@@ -253,8 +258,8 @@ describe('Sync Service & Storage', () => {
     });
 
     it('should return empty when no gaps exist', async () => {
-      const key1 = buildMetricsKey('organization', 'test-org', '2026-02-01');
-      const key2 = buildMetricsKey('organization', 'test-org', '2026-02-02');
+      const key1 = buildKey('organization', 'test-org', '2026-02-01');
+      const key2 = buildKey('organization', 'test-org', '2026-02-02');
       storageMap.set(key1, { data: {} });
       storageMap.set(key2, { data: {} });
 
@@ -266,7 +271,7 @@ describe('Sync Service & Storage', () => {
   describe('syncGaps', () => {
     it('should fill missing dates using bulk download', async () => {
       // Store Feb 1 only
-      const key1 = buildMetricsKey('organization', 'test-org', '2026-02-01');
+      const key1 = buildKey('organization', 'test-org', '2026-02-01');
       storageMap.set(key1, { data: {} });
 
       const results = await syncGaps(
@@ -285,7 +290,7 @@ describe('Sync Service & Storage', () => {
       // Fill all dates
       for (let d = 1; d <= 3; d++) {
         const dateStr = `2026-02-0${d}`;
-        const key = buildMetricsKey('organization', 'test-org', dateStr);
+        const key = buildKey('organization', 'test-org', dateStr);
         storageMap.set(key, { data: {} });
       }
 
@@ -304,8 +309,8 @@ describe('Sync Service & Storage', () => {
   describe('getSyncStats', () => {
     it('should return correct statistics', async () => {
       // Store 2 of 3 dates
-      const key1 = buildMetricsKey('organization', 'test-org', '2026-02-01');
-      const key3 = buildMetricsKey('organization', 'test-org', '2026-02-03');
+      const key1 = buildKey('organization', 'test-org', '2026-02-01');
+      const key3 = buildKey('organization', 'test-org', '2026-02-03');
       storageMap.set(key1, { data: {} });
       storageMap.set(key3, { data: {} });
 

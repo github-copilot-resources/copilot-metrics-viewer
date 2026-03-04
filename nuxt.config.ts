@@ -73,15 +73,8 @@ export default defineNuxtConfig({
   nitro: {
     plugins: [
       'plugins/http-agent',
+      'plugins/db-init',
     ],
-    storage: {
-      // Metrics storage using filesystem driver for development
-      // Can be changed to postgresql, redis, mongodb, etc. for production
-      metrics: {
-        driver: 'fs',
-        base: './.data/metrics'
-      }
-    },
     scheduledTasks: {
       // Daily sync task - runs at 2 AM by default
       // Customize schedule via SYNC_SCHEDULE env var (cron format)

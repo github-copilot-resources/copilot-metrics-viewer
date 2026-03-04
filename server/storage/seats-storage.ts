@@ -1,13 +1,12 @@
 /**
- * Seats storage implementation using Nitro's unstorage
+ * Seats storage implementation backed by PostgreSQL.
  */
 
 import type { Seat } from '@/model/Seat';
-import type { StoredSeats } from './types';
-import { buildSeatsKey } from './types';
+import { getPool } from './db';
 
 /**
- * Save seats data to storage
+ * Save seats data to storage (upsert)
  */
 export async function saveSeats(
   scope: string,
@@ -15,19 +14,14 @@ export async function saveSeats(
   snapshotDate: string,
   seats: Seat[]
 ): Promise<void> {
-  const storage = useStorage('metrics');
-  const key = buildSeatsKey(scope, scopeIdentifier, snapshotDate);
-  
-  const storedSeats: StoredSeats = {
-    scope,
-    scopeIdentifier,
-    snapshotDate,
-    seats,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  
-  await storage.setItem(key, storedSeats);
+  const pool = getPool();
+  await pool.query(
+    `INSERT INTO seats (scope, identifier, snapshot_date, seats)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (scope, identifier, snapshot_date)
+     DO UPDATE SET seats = $4, updated_at = NOW()`,
+    [scope, scopeIdentifier, snapshotDate, JSON.stringify(seats)]
+  );
 }
 
 /**
@@ -38,11 +32,12 @@ export async function getSeats(
   scopeIdentifier: string,
   snapshotDate: string
 ): Promise<Seat[] | null> {
-  const storage = useStorage('metrics');
-  const key = buildSeatsKey(scope, scopeIdentifier, snapshotDate);
-  
-  const stored = await storage.getItem<StoredSeats>(key);
-  return stored ? stored.seats : null;
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT seats FROM seats WHERE scope = $1 AND identifier = $2 AND snapshot_date = $3`,
+    [scope, scopeIdentifier, snapshotDate]
+  );
+  return rows.length > 0 ? rows[0].seats : null;
 }
 
 /**
@@ -52,20 +47,13 @@ export async function getLatestSeats(
   scope: string,
   scopeIdentifier: string
 ): Promise<Seat[] | null> {
-  const storage = useStorage('metrics');
-  const prefix = `seats:${scope}:${scopeIdentifier}:`;
-  const keys = await storage.getKeys(prefix);
-  
-  if (keys.length === 0) {
-    return null;
-  }
-  
-  // Sort keys to get the most recent date
-  keys.sort().reverse();
-  const latestKey = keys[0];
-  
-  const stored = await storage.getItem<StoredSeats>(latestKey);
-  return stored ? stored.seats : null;
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT seats FROM seats WHERE scope = $1 AND identifier = $2
+     ORDER BY snapshot_date DESC LIMIT 1`,
+    [scope, scopeIdentifier]
+  );
+  return rows.length > 0 ? rows[0].seats : null;
 }
 
 /**
@@ -76,7 +64,10 @@ export async function hasSeats(
   scopeIdentifier: string,
   snapshotDate: string
 ): Promise<boolean> {
-  const storage = useStorage('metrics');
-  const key = buildSeatsKey(scope, scopeIdentifier, snapshotDate);
-  return await storage.hasItem(key);
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT 1 FROM seats WHERE scope = $1 AND identifier = $2 AND snapshot_date = $3 LIMIT 1`,
+    [scope, scopeIdentifier, snapshotDate]
+  );
+  return rows.length > 0;
 }

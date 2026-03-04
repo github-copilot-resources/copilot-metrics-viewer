@@ -6,6 +6,11 @@
 
 import { isMockMode, mockRequestDownloadLinks, mockDownloadReport } from './github-copilot-usage-api-mock';
 
+// Import $fetch for standalone (non-Nitro) environments
+// In Nitro context, $fetch is auto-imported; this is a no-op there
+import { $fetch as _ofetch } from 'ofetch';
+const _fetch = typeof $fetch !== 'undefined' ? $fetch : _ofetch;
+
 // --- API Response Types ---
 
 /** Response from the download links endpoints */
@@ -159,7 +164,7 @@ export async function requestDownloadLinks(
   }
 
   const url = buildReportUrl(request, reportType, day);
-  const response = await $fetch<DownloadLinksResponse>(url, {
+  const response = await _fetch<DownloadLinksResponse>(url, {
     headers: {
       ...Object.fromEntries(
         headers instanceof Headers ? headers.entries() : Object.entries(headers)
@@ -182,8 +187,8 @@ export async function downloadReport(
     return mockDownloadReport(downloadUrl, orgIdentifier || 'mock-org');
   }
 
-  const response = await $fetch<OrgReport>(downloadUrl, {
-    // Signed URLs don't need authorization
+  const response = await _fetch<OrgReport>(downloadUrl, {
+    responseType: 'json',
   });
   return response;
 }
