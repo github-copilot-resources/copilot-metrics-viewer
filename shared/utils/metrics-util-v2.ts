@@ -105,12 +105,12 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   if (isMockMode()) {
     const apiMode = getApiMode();
     if (apiMode === 'new') {
-      // Use new mock data format through transformer (same code path as production)
-      logger.info('Using mocked data mode (new API format)');
-      const { generateMockReport } = await import('../../server/services/github-copilot-usage-api-mock');
-      const endDay = options.until || new Date().toISOString().split('T')[0];
-      const startDay = options.since || new Date(Date.now() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-      const report = generateMockReport(startDay, endDay);
+      // Exercise the full mock pipeline: requestDownloadLinks → downloadReport (HTTP) → transform
+      // Mock download links point to localhost static files in public/mock-data/new-api/
+      logger.info('Using mocked data mode (new API format via HTTP download)');
+      const identifier = options.githubOrg || options.githubEnt || 'mock-org';
+      const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
+      const report = await fetchLatestReport({ scope, identifier }, new Headers());
       const metrics = transformReportToMetrics(report);
       return { metrics, reportData: report.day_totals };
     }

@@ -4,7 +4,7 @@
  * See: https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics
  */
 
-import { isMockMode, mockRequestDownloadLinks, mockDownloadReport } from './github-copilot-usage-api-mock';
+import { isMockMode, mockRequestDownloadLinks } from './github-copilot-usage-api-mock';
 
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
@@ -211,10 +211,6 @@ export async function downloadReport(
   downloadUrl: string,
   orgIdentifier?: string
 ): Promise<OrgReport> {
-  if (isMockMode()) {
-    return mockDownloadReport(downloadUrl, orgIdentifier || 'mock-org');
-  }
-
   const response = await _fetch<OrgReport>(downloadUrl, {
     responseType: 'json',
   });

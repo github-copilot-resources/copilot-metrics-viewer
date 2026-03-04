@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { generateMockReport, mockRequestDownloadLinks, mockDownloadReport } from '../server/services/github-copilot-usage-api-mock';
+import { generateMockReport, mockRequestDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
 import { transformReportToMetrics, transformDayToMetrics } from '../server/services/report-transformer';
 import type { OrgReport, ReportDayTotals, MetricsReportRequest } from '../server/services/github-copilot-usage-api';
 import type { StoredMetrics } from '../server/storage/types';
@@ -82,12 +82,10 @@ vi.mock('../server/services/github-copilot-usage-api', async (importOriginal) =>
   return {
     ...actual,
     fetchLatestReport: vi.fn(async (request: MetricsReportRequest, _headers: HeadersInit) => {
-      const linksResp = mockRequestDownloadLinks(request, '28-day');
-      return mockDownloadReport(linksResp.download_links[0], request.identifier);
+      return generateMockReport('2026-02-05', '2026-03-04');
     }),
     fetchReportForDate: vi.fn(async (request: MetricsReportRequest, _headers: HeadersInit, day: string) => {
-      const linksResp = mockRequestDownloadLinks(request, '1-day', day);
-      return mockDownloadReport(linksResp.download_links[0], request.identifier);
+      return generateMockReport(day, day);
     }),
   };
 });
@@ -377,7 +375,7 @@ describe('Storage Round-Trip', () => {
 
 describe('Transformer Round-Trip', () => {
   it('should transform mock report data into valid CopilotMetrics', () => {
-    const report = generateMockReport('2026-02-01', '2026-02-05');
+    const report = generateMockReport('2026-02-10', '2026-02-14');
     const metrics = transformReportToMetrics(report);
 
     expect(metrics).toHaveLength(5);
@@ -394,7 +392,7 @@ describe('Transformer Round-Trip', () => {
   });
 
   it('should preserve IDE names from report', () => {
-    const report = generateMockReport('2026-02-01', '2026-02-01');
+    const report = generateMockReport('2026-02-10', '2026-02-10');
     const metrics = transformReportToMetrics(report);
     const day = report.day_totals[0];
 
@@ -405,7 +403,7 @@ describe('Transformer Round-Trip', () => {
   });
 
   it('should map code_completion language features', () => {
-    const report = generateMockReport('2026-02-01', '2026-02-01');
+    const report = generateMockReport('2026-02-10', '2026-02-10');
     const day = report.day_totals[0];
     const metrics = transformDayToMetrics(day);
 
@@ -417,7 +415,7 @@ describe('Transformer Round-Trip', () => {
   });
 
   it('should map chat features to IDE chat', () => {
-    const report = generateMockReport('2026-02-01', '2026-02-01');
+    const report = generateMockReport('2026-02-10', '2026-02-10');
     const metrics = transformReportToMetrics(report);
 
     // IDE chat should have editors

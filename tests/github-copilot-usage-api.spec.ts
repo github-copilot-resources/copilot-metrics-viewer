@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseNDJSON } from '../server/services/github-copilot-usage-api';
 import type { ReportDayTotals } from '../server/services/github-copilot-usage-api';
-import { generateMockReport, mockRequestDownloadLinks, mockDownloadReport } from '../server/services/github-copilot-usage-api-mock';
+import { generateMockReport, mockRequestDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
 import { transformReportToMetrics, transformDayToMetrics } from '../server/services/report-transformer';
 
 describe('GitHub Copilot Usage API', () => {
@@ -67,7 +67,7 @@ describe('GitHub Copilot Usage API', () => {
       );
 
       expect(response.download_links).toHaveLength(1);
-      expect(response.download_links[0]).toContain('test-org');
+      expect(response.download_links[0]).toContain('organization-28-day-report.json');
       expect(response.report_start_day).toBeTruthy();
       expect(response.report_end_day).toBeTruthy();
     });
@@ -80,6 +80,7 @@ describe('GitHub Copilot Usage API', () => {
       );
 
       expect(response.download_links).toHaveLength(1);
+      expect(response.download_links[0]).toContain('organization-1-day-report.json');
       expect(response.report_day).toBe('2026-02-20');
     });
 
@@ -89,12 +90,11 @@ describe('GitHub Copilot Usage API', () => {
         '28-day'
       );
 
-      expect(response.download_links[0]).toContain('test-enterprise');
-      expect(response.download_links[0]).toContain('enterprise');
+      expect(response.download_links[0]).toContain('enterprise-28-day-report.json');
     });
 
-    it('should return valid report from mock download', () => {
-      const report = mockDownloadReport('https://example.com/28-day', 'test-org');
+    it('should generate valid report from file', () => {
+      const report = generateMockReport('2026-02-20', '2026-02-28');
 
       expect(report.day_totals.length).toBeGreaterThan(0);
       expect(report.organization_id).toBeTruthy();
