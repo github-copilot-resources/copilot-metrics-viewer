@@ -132,6 +132,89 @@ docker run -it --rm -p 3000:80 \
 ghcr.io/github-copilot-resources/copilot-metrics-viewer
 ```
 
+## Scenario 4: Docker Compose (Local Development & Testing)
+
+The included `docker-compose.yml` provides a complete local setup with PostgreSQL, the web app, a sync service, and Playwright E2E test runners.
+
+### Running the App Locally
+
+**With mock data** (no GitHub token needed):
+
+```bash
+docker compose up web db
+# Open http://localhost:3000/orgs/your-org?mock=true
+```
+
+**With real GitHub data:**
+
+```bash
+export NUXT_GITHUB_TOKEN=github_pat_...    # Fine-grained PAT with "Copilot metrics" permission
+export NUXT_PUBLIC_GITHUB_ORG=your-org
+export NUXT_PUBLIC_IS_DATA_MOCKED=false
+docker compose up web db
+# Open http://localhost:3000/orgs/your-org
+```
+
+**With historical mode** (DB-backed with sync-on-miss):
+
+```bash
+export NUXT_GITHUB_TOKEN=github_pat_...
+export NUXT_PUBLIC_GITHUB_ORG=your-org
+export NUXT_PUBLIC_IS_DATA_MOCKED=false
+export ENABLE_HISTORICAL_MODE=true
+docker compose up web db
+# First request auto-syncs from API to DB; subsequent requests read from DB
+# Open http://localhost:3000/orgs/your-org
+```
+
+### Running the Sync Service
+
+The sync service downloads metrics from the GitHub API and stores them to a shared filesystem volume. Run it on-demand to populate the database:
+
+```bash
+export NUXT_GITHUB_TOKEN=github_pat_...
+export NUXT_PUBLIC_GITHUB_ORG=your-org
+docker compose run --rm sync
+```
+
+### Running E2E Tests
+
+**Mock data tests** (all 123 tests across 3 browsers):
+
+```bash
+docker compose run --rm playwright
+# Results saved to ./test-results/
+```
+
+**Storage pipeline tests** (full sync → DB → dashboard):
+
+```bash
+# Phase 1: Seed the database with mock data
+docker compose run --rm sync-seed
+
+# Phase 2: Verify dashboard reads from DB (no GitHub token)
+docker compose run --rm playwright-storage
+```
+
+### Services Overview
+
+| Service              | Purpose                                          | Profile  |
+|----------------------|--------------------------------------------------|----------|
+| `db`                 | PostgreSQL 15 for metrics storage                | default  |
+| `web`                | Main Nuxt 3 dashboard (port 3000)                | default  |
+| `sync`               | Standalone sync service (API → filesystem)       | default  |
+| `playwright`         | E2E tests with mock data (3 browsers)            | test     |
+| `sync-seed`          | Seeds DB with mock data for storage pipeline     | test     |
+| `playwright-storage` | E2E tests reading from DB, no token needed       | test     |
+
+### Stopping and Cleaning Up
+
+```bash
+docker compose down              # Stop all services
+docker compose down -v           # Stop and remove volumes (delete all data)
+docker volume rm copilot-metrics-viewer-main_sync_data  # Remove sync data only
+```
+
 ## Health Check Endpoints for Kubernetes
 
 The application provides dedicated health check endpoints for Kubernetes deployments that avoid triggering GitHub API calls:

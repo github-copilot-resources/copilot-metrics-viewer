@@ -1,8 +1,70 @@
-# Docker Compose configuration for development
-# Includes separate services for web, sync, and database
+# =============================================================================
+# Docker Compose — Copilot Metrics Viewer
+# =============================================================================
+#
+# This file supports two main use cases:
+#
+#   1. LOCAL DEVELOPMENT — Run the app with a database for realistic testing
+#   2. TESTING — Run Playwright E2E tests (mock mode and full storage pipeline)
+#
+# ─── Quick Start ─────────────────────────────────────────────────────────────
+#
+#   Run the app with mock data (no GitHub token needed):
+#     docker compose up web db
+#     → Open http://localhost:3000/orgs/your-org?mock=true
+#
+#   Run the app with real GitHub data:
+#     export NUXT_GITHUB_TOKEN=github_pat_...
+#     export NUXT_PUBLIC_GITHUB_ORG=your-org
+#     export NUXT_PUBLIC_IS_DATA_MOCKED=false
+#     docker compose up web db
+#     → Open http://localhost:3000/orgs/your-org
+#
+#   Run the app with historical mode (DB-backed, sync-on-miss):
+#     export NUXT_GITHUB_TOKEN=github_pat_...
+#     export NUXT_PUBLIC_GITHUB_ORG=your-org
+#     export NUXT_PUBLIC_IS_DATA_MOCKED=false
+#     export ENABLE_HISTORICAL_MODE=true
+#     docker compose up web db
+#     → First request auto-syncs from API to DB; subsequent requests read from DB
+#
+#   Run a one-time sync to populate the database:
+#     docker compose run --rm sync
+#
+# ─── Testing ─────────────────────────────────────────────────────────────────
+#
+#   Run all Playwright E2E tests (mock data, 3 browsers):
+#     docker compose run --rm playwright
+#
+#   Run full storage pipeline E2E test (sync → DB → dashboard):
+#     docker compose run --rm sync-seed           # Phase 1: seed DB with mock data
+#     docker compose run --rm playwright-storage  # Phase 2: verify dashboard reads from DB
+#
+# ─── Services Overview ───────────────────────────────────────────────────────
+#
+#   db                 — PostgreSQL 15 (data persistence)
+#   web                — Main app (Nuxt 3, port 3000 → container port 80)
+#   sync               — Standalone sync service (downloads metrics → filesystem)
+#   playwright         — E2E tests with mock data (test profile)
+#   sync-seed          — Seeds DB with mock data for storage E2E (test profile)
+#   playwright-storage — E2E tests reading from DB, no GitHub token (test profile)
+#
+# ─── Environment Variables ───────────────────────────────────────────────────
+#
+#   NUXT_PUBLIC_GITHUB_ORG      — Target GitHub organization
+#   NUXT_PUBLIC_IS_DATA_MOCKED  — "true" for mock data, "false" for real API
+#   NUXT_GITHUB_TOKEN           — GitHub PAT (fine-grained, "Copilot metrics" permission)
+#   ENABLE_HISTORICAL_MODE      — "true" to read from DB with sync-on-miss
+#   COPILOT_METRICS_API         — "new" (default, download API) or "legacy" (deprecated)
+#   NUXT_SESSION_PASSWORD       — Session secret (min 32 chars, auto-set below)
+#
+# =============================================================================
 
 services:
-  # PostgreSQL database (optional - use for production-like testing)
+  # ─── Database ────────────────────────────────────────────────────────────
+  # PostgreSQL for persistent metrics storage.
+  # Used by: web (when ENABLE_HISTORICAL_MODE=true), sync service.
+  # Data persisted in the postgres_data volume.
   db:
     image: postgres:15-alpine
     environment:
@@ -19,7 +81,13 @@ services:
       timeout: 5s
       retries: 5
 
-  # Main web application
+  # ─── Web Application ────────────────────────────────────────────────────
+  # Main Nuxt 3 dashboard. Accessible at http://localhost:3000.
+  # Modes:
+  #   - Mock data:       IS_DATA_MOCKED=true (default, no token needed)
+  #   - Direct API:      IS_DATA_MOCKED=false, token required
+  #   - Historical (DB): IS_DATA_MOCKED=false, ENABLE_HISTORICAL_MODE=true
+  #                      Reads from DB, auto-syncs missing data from API.
   web:
     build:
       context: .
@@ -27,26 +95,25 @@ services:
     ports:
       - "3000:80"
     environment:
-      # App configuration
       - NUXT_PUBLIC_SCOPE=organization
       - NUXT_PUBLIC_GITHUB_ORG=${NUXT_PUBLIC_GITHUB_ORG:-your-org}
       - NUXT_PUBLIC_IS_DATA_MOCKED=${NUXT_PUBLIC_IS_DATA_MOCKED:-true}
       - NUXT_SESSION_PASSWORD=${NUXT_SESSION_PASSWORD:-at_least_32_characters_long_password_here}
-      
-      # API mode: "new" (default, download-based) or "legacy" (deprecated, shuts down April 2026)
+      # API mode: "new" (download-based, default) or "legacy" (deprecated April 2026)
       - COPILOT_METRICS_API=${COPILOT_METRICS_API:-new}
       - ENABLE_HISTORICAL_MODE=${ENABLE_HISTORICAL_MODE:-false}
-      
-      # GitHub token (required unless using mock data)
+      # GitHub token — required unless using mock data
       - NUXT_GITHUB_TOKEN=${NUXT_GITHUB_TOKEN:-}
-      
-      # Disable sync in web container (run separately via sync service)
+      # Disable built-in scheduled sync (run separately via sync service)
       - SYNC_ENABLED=false
     depends_on:
       db:
         condition: service_healthy
 
-  # Sync service (downloads metrics and stores to filesystem)
+  # ─── Sync Service ───────────────────────────────────────────────────────
+  # Standalone container that downloads metrics from GitHub API and stores
+  # them to the shared filesystem volume. Run on-demand or via cron.
+  # Usage: docker compose run --rm sync
   sync:
     build:
       context: .
@@ -63,9 +130,11 @@ services:
         condition: service_healthy
     volumes:
       - sync_data:/app/.data
-    # Run manually: docker compose run sync
 
-  # Playwright E2E tests (mock mode)
+  # ─── E2E Tests (Mock Mode) ──────────────────────────────────────────────
+  # Runs all Playwright E2E tests using mock data (no GitHub token needed).
+  # Tests run across 3 browsers: chromium, firefox, webkit.
+  # Usage: docker compose run --rm playwright
   playwright:
     build:
       context: .
@@ -83,9 +152,16 @@ services:
     profiles:
       - test
 
-  # Playwright E2E tests — full pipeline: sync → DB → dashboard
-  # Step 1: docker compose run --rm sync-seed   (writes mock data to shared volume)
-  # Step 2: docker compose run --rm playwright-storage   (reads from shared volume)
+  # ─── E2E Tests: Storage Pipeline ────────────────────────────────────────
+  # Two-phase E2E test verifying the full data pipeline:
+  #   Phase 1 (sync-seed):          Writes mock data to shared volume
+  #   Phase 2 (playwright-storage): Reads from volume, no GitHub token
+  #
+  # Usage:
+  #   docker compose run --rm sync-seed           # Phase 1
+  #   docker compose run --rm playwright-storage  # Phase 2
+  #
+  # The two services share the sync_data volume. Phase 1 must run first.
   playwright-storage:
     build:
       context: .
@@ -106,7 +182,6 @@ services:
     profiles:
       - test
 
-  # Seed storage with mock data (for storage pipeline E2E test)
   sync-seed:
     build:
       context: .
@@ -126,6 +201,9 @@ services:
     profiles:
       - test
 
+# ─── Volumes ───────────────────────────────────────────────────────────────
+# postgres_data — PostgreSQL data directory
+# sync_data    — Shared filesystem storage for metrics (used by sync and E2E tests)
 volumes:
   postgres_data:
   sync_data:
