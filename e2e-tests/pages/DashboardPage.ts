@@ -146,7 +146,13 @@ export class DashboardPage {
 
     async gotoGitHubTab() {
         await this.githubTabLink.click();
-        return new GitHubTab(this.page);
+        const tab = new GitHubTab(this.page);
+        // Wait for the github-stats data to load — look for "Copilot Statistics" title
+        // and at least one overview card to have content
+        await tab.statisticsTitle.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+        // Wait for at least one card with non-zero content or "All Models"
+        await this.page.locator('.v-card-title').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        return tab;
     }
 
     async gotoTeamsTab() {
