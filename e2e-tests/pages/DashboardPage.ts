@@ -10,7 +10,9 @@ export class DashboardPage {
     readonly page: Page;
 
     readonly acceptanceRateByCountLabel: Locator;
+    readonly acceptanceRateByCountValue: Locator;
     readonly totalCountOfSuggestionsLabel: Locator;
+    readonly totalCountOfSuggestionsValue: Locator;
     readonly totalLinesSuggestedLabel: Locator;
     readonly totalLinesSuggestedValue: Locator;
     readonly toolbarTitle: Locator;
@@ -33,9 +35,17 @@ export class DashboardPage {
         this.acceptanceRateByCountLabel = page.getByText(
             "Acceptance Rate (by count)"
         );
+        this.acceptanceRateByCountValue = page
+            .locator(".v-card-item")
+            .filter({ has: page.getByText("Acceptance Rate (by count)") })
+            .locator(".text-h4");
         this.totalCountOfSuggestionsLabel = page.getByText(
-            "Total count of Suggestions (Prompts)"
+            "Total Code Completions", { exact: true }
         );
+        this.totalCountOfSuggestionsValue = page
+            .locator(".v-card-item")
+            .filter({ has: page.getByText("Total Code Completions", { exact: true }) })
+            .locator(".text-h4");
         this.totalLinesSuggestedLabel = page.getByRole("heading", {
             name: "Total Lines Suggested | Total",
         });
@@ -89,6 +99,24 @@ export class DashboardPage {
         const linesAccepted = await this.totalLinesSuggestedValue.textContent();
         expect(linesAccepted).toBeDefined();
         expect(parseInt(linesAccepted as string)).toBeGreaterThan(0);
+    }
+
+    async expectAcceptanceRateReasonable() {
+        const rateText = await this.acceptanceRateByCountValue.textContent();
+        expect(rateText).toBeDefined();
+        const rate = parseFloat((rateText as string).replace('%', ''));
+        // Acceptance rate should be between 5% and 80% for realistic data
+        // The old bug showed 0.4% — this catches that regression
+        expect(rate).toBeGreaterThanOrEqual(5);
+        expect(rate).toBeLessThanOrEqual(80);
+    }
+
+    async expectSuggestionCountReasonable() {
+        const countText = await this.totalCountOfSuggestionsValue.textContent();
+        expect(countText).toBeDefined();
+        const count = parseInt((countText as string).replace(/,/g, ''));
+        // Should have some completions, but not inflated by agent_edit
+        expect(count).toBeGreaterThan(0);
     }
 
     async gotoLanguagesTab() {

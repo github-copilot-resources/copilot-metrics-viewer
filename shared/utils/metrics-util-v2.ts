@@ -103,7 +103,19 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   // 1. Mock mode — return immediately, no DB, no API
   //    Controlled by NUXT_PUBLIC_IS_DATA_MOCKED env var, not per-request params
   if (isMockMode()) {
-    logger.info('Using mocked data mode');
+    const apiMode = getApiMode();
+    if (apiMode === 'new') {
+      // Use new mock data format through transformer (same code path as production)
+      logger.info('Using mocked data mode (new API format)');
+      const { generateMockReport } = await import('../../server/services/github-copilot-usage-api-mock');
+      const endDay = options.until || new Date().toISOString().split('T')[0];
+      const startDay = options.since || new Date(Date.now() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const report = generateMockReport(startDay, endDay);
+      const metrics = transformReportToMetrics(report);
+      return { metrics, reportData: report.day_totals };
+    }
+    // Legacy mock mode — use old JSON files
+    logger.info('Using mocked data mode (legacy format)');
     const metrics = await getLegacyMetricsData(event);
     return { metrics, reportData: [] };
   }

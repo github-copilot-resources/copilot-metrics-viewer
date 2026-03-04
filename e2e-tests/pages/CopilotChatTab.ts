@@ -7,7 +7,7 @@ export class CopilotChatTab {
 
     constructor(page: Page) {
         this.page = page;
-        this.cumulativeNumberOfTurnsLabel = page.getByText('Cumulative Number of Turns')
+        this.cumulativeNumberOfTurnsLabel = page.getByText('Cumulative Chat Interactions')
         this.cumulativeNumberOfTurnsValue = page.locator('.v-card-item').filter({ has: this.cumulativeNumberOfTurnsLabel }).locator('.text-h4')
 
     }

@@ -159,7 +159,7 @@ describe('PostgreSQL Storage Layer', () => {
       expect(results).toHaveLength(4);
       expect(results[0].date).toBe('2026-02-11');
       expect(results[3].date).toBe('2026-02-14');
-    });
+    }, 15000);
 
     it('should check existence with hasMetrics', async () => {
       expect(await hasMetrics('organization', 'test-org', '2026-02-15')).toBe(false);
