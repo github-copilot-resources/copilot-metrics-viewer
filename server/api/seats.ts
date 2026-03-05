@@ -107,6 +107,11 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!event.context.headers.has('Authorization')) {
+    // In historical mode, seats data is optional — return empty array
+    if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+      logger.info('No auth available in historical mode, returning empty seats');
+      return [];
+    }
     logger.error('No Authentication provided');
     return new Response('No Authentication provided', { status: 401 });
   }
