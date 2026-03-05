@@ -127,6 +127,7 @@ jobs:
         NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
         NUXT_PUBLIC_GITHUB_ORG=storage-test-org \
         NUXT_PUBLIC_IS_DATA_MOCKED=true \
+        ENABLE_HISTORICAL_MODE=true \
         DATABASE_URL=postgresql://testuser:testpass@localhost:5432/copilot_metrics \
         node .output/server/index.mjs &
         SERVER_PID=$!

@@ -1,13 +1,14 @@
 /**
  * Nitro plugin to initialize the PostgreSQL schema on server startup.
- * Only runs when ENABLE_HISTORICAL_MODE is enabled.
+ * Runs when ENABLE_HISTORICAL_MODE is enabled or DATABASE_URL is set.
  */
 
 import { initSchema } from '../storage/db';
 
 export default defineNitroPlugin(async () => {
   const isHistorical = process.env.ENABLE_HISTORICAL_MODE === 'true';
-  if (!isHistorical) return;
+  const hasDatabase = !!process.env.DATABASE_URL;
+  if (!isHistorical && !hasDatabase) return;
 
   const maxRetries = 10;
   const baseDelay = 2000; // 2 seconds
