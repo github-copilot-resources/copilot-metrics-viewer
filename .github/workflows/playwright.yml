@@ -58,7 +58,7 @@ jobs:
           NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
           NUXT_PUBLIC_GITHUB_ORG=octodemo \
           NUXT_PUBLIC_IS_DATA_MOCKED=true \
-          RUN_COMMAND='npm run preview' npm run test:e2e
+          RUN_COMMAND='npm run preview' npx playwright test --grep-invert "@seed|@storage"
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
@@ -86,10 +86,83 @@ jobs:
           -e NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
           -e NUXT_PUBLIC_GITHUB_ORG=octodemo \
           -e NUXT_PUBLIC_IS_DATA_MOCKED=true \
-          app:pw
+          app:pw npx playwright test --grep-invert "@seed|@storage"
     - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: playwright-report-docker
         path: test-results-docker/
+        retention-days: 30
+
+  test-storage-pipeline:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: copilot_metrics
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Build the app
+      run: npm run build
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+    - name: "Phase 1: Seed DB with mock data"
+      run: |
+        NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
+        NUXT_PUBLIC_GITHUB_ORG=storage-test-org \
+        NUXT_PUBLIC_IS_DATA_MOCKED=true \
+        DATABASE_URL=postgresql://testuser:testpass@localhost:5432/copilot_metrics \
+        node .output/server/index.mjs &
+        SERVER_PID=$!
+
+        # Wait for server to be ready
+        for i in $(seq 1 30); do
+          curl -sf http://localhost:3000/api/health > /dev/null 2>&1 && break
+          sleep 1
+        done
+
+        CI=true npx playwright test --grep "@seed" --project=chromium
+
+        kill $SERVER_PID
+        wait $SERVER_PID 2>/dev/null || true
+    - name: "Phase 2: Verify dashboard reads from DB"
+      run: |
+        NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
+        NUXT_PUBLIC_GITHUB_ORG=storage-test-org \
+        NUXT_PUBLIC_IS_DATA_MOCKED=false \
+        ENABLE_HISTORICAL_MODE=true \
+        DATABASE_URL=postgresql://testuser:testpass@localhost:5432/copilot_metrics \
+        node .output/server/index.mjs &
+        SERVER_PID=$!
+
+        for i in $(seq 1 30); do
+          curl -sf http://localhost:3000/api/health > /dev/null 2>&1 && break
+          sleep 1
+        done
+
+        CI=true npx playwright test --grep "@storage" --project=chromium
+
+        kill $SERVER_PID
+        wait $SERVER_PID 2>/dev/null || true
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report-storage
+        path: playwright-report/
         retention-days: 30
