@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: copilot-metrics-viewer
+  namespace: default
+  labels:
+    app: copilot-metrics-viewer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: copilot-metrics-viewer
+  template:
+    metadata:
+      labels:
+        app: copilot-metrics-viewer
+    spec:
+      containers:
+      - name: web
+        image: ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+        env:
+        # Scope configuration
+        - name: NUXT_PUBLIC_SCOPE
+          value: "organization"
+        
+        # GitHub configuration
+        - name: NUXT_PUBLIC_GITHUB_ORG
+          value: "your-org"
+        
+        # - name: NUXT_PUBLIC_GITHUB_ENT
+        #   value: "your-enterprise"
+        
+        # - name: NUXT_PUBLIC_GITHUB_TEAM
+        #   value: "your-team"
+        
+        # GitHub token (from secret)
+        - name: NUXT_GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: copilot-metrics-secrets
+              key: github-token
+        
+        # Session password (from secret)
+        - name: NUXT_SESSION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: copilot-metrics-secrets
+              key: session-password
+        
+        # Historical mode with PostgreSQL
+        - name: ENABLE_HISTORICAL_MODE
+          value: "true"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: copilot-metrics-secrets
+              key: database-url
+        
+        # Disable built-in sync (use CronJob instead)
+        - name: SYNC_ENABLED
+          value: "false"
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        livenessProbe:
+          httpGet:
+            path: /api/live
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        
+        readinessProbe:
+          httpGet:
+            path: /api/ready
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: copilot-metrics-viewer
+  namespace: default
+spec:
+  selector:
+    app: copilot-metrics-viewer
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+# Secret example (create separately with actual values)
+# kubectl create secret generic copilot-metrics-secrets \
+#   --from-literal=github-token="ghp_your_token_here" \
+#   --from-literal=session-password="at_least_32_characters_long_random_string" \
+#   --from-literal=database-url="postgresql://user:pass@host:5432/copilot_metrics"

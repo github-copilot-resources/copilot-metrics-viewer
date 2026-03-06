@@ -169,6 +169,54 @@
                                     },
                                     "infoMessages": [],
                                     "visible": true
+                                },
+                                {
+                                    "name": "sync-docker-image",
+                                    "type": "Microsoft.Common.TextBox",
+                                    "label": "Sync service docker image",
+                                    "subLabel": "",
+                                    "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer-sync:latest",
+                                    "toolTip": "Docker image for sync service - use default or replace with your own",
+                                    "constraints": {
+                                        "required": false,
+                                        "validations": []
+                                    },
+                                    "infoMessages": [],
+                                    "visible": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "databaseSection",
+                            "label": "Database",
+                            "type": "Microsoft.Common.Section",
+                            "elements": [
+                                {
+                                    "name": "infoBoxDatabase",
+                                    "type": "Microsoft.Common.InfoBox",
+                                    "options": {
+                                        "text": "PostgreSQL is required for storing historical Copilot metrics. A Burstable B1ms server (~$12/month) will be provisioned with a daily sync job.",
+                                        "style": "Info"
+                                    }
+                                },
+                                {
+                                    "name": "postgresAdminPassword",
+                                    "type": "Microsoft.Common.PasswordBox",
+                                    "label": {
+                                        "password": "PostgreSQL Admin Password",
+                                        "confirmPassword": "Confirm password"
+                                    },
+                                    "defaultValue": "",
+                                    "toolTip": "Password for the PostgreSQL administrator account (min 8 characters, must include uppercase, lowercase, and number)",
+                                    "constraints": {
+                                        "required": true,
+                                        "regex": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,128}$",
+                                        "validationMessage": "Password must be 8-128 characters and contain uppercase, lowercase, and a number"
+                                    },
+                                    "options": {
+                                        "hideConfirmation": false
+                                    },
+                                    "visible": true
                                 }
                             ]
                         },
@@ -218,6 +266,8 @@
                 "github-organization": "[steps('basics').ghSection.github-organization]",
                 "github-enterprise": "[steps('basics').ghSection.github-enterprise]",
                 "metrics-viewer-docker-image": "[steps('basics').dockerSection.metrics-viewer-docker-image]",
+                "sync-docker-image": "[steps('basics').dockerSection.sync-docker-image]",
+                "postgresAdminPassword": "[steps('basics').databaseSection.postgresAdminPassword]",
                 "subnetId": "[steps('basics').networkSection.subnetId]"
             }
         }

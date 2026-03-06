@@ -11,6 +11,9 @@
       "copilotMetricsViewerExists": {
         "value": "${SERVICE_COPILOT_METRICS_VIEWER_RESOURCE_EXISTS=false}"
       },
+      "copilotMetricsSyncExists": {
+        "value": "${SERVICE_COPILOT_METRICS_SYNC_RESOURCE_EXISTS=false}"
+      },
       "githubClientId":{ 
         "value": "${NUXT_OAUTH_GITHUB_CLIENT_ID}",
         "metadata": {
@@ -23,6 +26,9 @@
       },
       "sessionPassword": {
         "value": "$(secretOrRandomPassword)"
+      },
+      "githubPAT": {
+        "value": "${NUXT_GITHUB_TOKEN}"
       },
       "githubScope": {
         "value": "${NUXT_PUBLIC_SCOPE}"
@@ -38,6 +44,9 @@
       },
       "principalId": {
         "value": "${AZURE_PRINCIPAL_ID}"
+      },
+      "postgresAdminPassword": {
+        "value": "$(secretOrRandomPassword ${POSTGRES_ADMIN_PASSWORD})"
       }
     }
 }

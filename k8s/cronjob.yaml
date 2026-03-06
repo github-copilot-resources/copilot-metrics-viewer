@@ -18,8 +18,8 @@ spec:
           restartPolicy: OnFailure
           containers:
           - name: sync
-            image: copilot-metrics-sync:latest
-            imagePullPolicy: IfNotPresent
+            image: ghcr.io/github-copilot-resources/copilot-metrics-viewer-sync:latest
+            imagePullPolicy: Always
             env:
             # Scope configuration
             - name: NUXT_PUBLIC_SCOPE
@@ -43,15 +43,17 @@ spec:
                   key: github-token
             
             # Sync configuration
+            - name: SYNC_ENABLED
+              value: "true"
             - name: SYNC_DAYS_BACK
               value: "1"  # Sync yesterday only
             
-            # Storage configuration (if using PostgreSQL)
-            # - name: DATABASE_URL
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: copilot-metrics-secrets
-            #       key: database-url
+            # PostgreSQL storage
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: copilot-metrics-secrets
+                  key: database-url
             
             resources:
               requests:
@@ -62,11 +64,7 @@ spec:
                 cpu: "500m"
 ---
 # Secret example (create separately with actual values)
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: copilot-metrics-secrets
-# type: Opaque
-# stringData:
-#   github-token: "ghp_your_token_here"
-#   database-url: "postgresql://user:pass@host:5432/dbname"
+# kubectl create secret generic copilot-metrics-secrets \
+#   --from-literal=github-token="ghp_your_token_here" \
+#   --from-literal=session-password="at_least_32_characters_long_random_string" \
+#   --from-literal=database-url="postgresql://user:pass@host:5432/copilot_metrics"
