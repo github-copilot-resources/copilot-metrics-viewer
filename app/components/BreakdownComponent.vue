@@ -57,8 +57,27 @@
         </v-row>
 
         <br>
-        <h2>{{ breakdownDisplayNamePlural }} Breakdown </h2>
-        <br>
+        <div class="d-flex justify-space-between align-center mb-4">
+          <h2>{{ breakdownDisplayNamePlural }} Breakdown</h2>
+          <v-menu>
+            <template v-slot:activator="{ props }">
+              <v-btn color="primary" variant="outlined" prepend-icon="mdi-download" append-icon="mdi-chevron-down" size="small" v-bind="props">
+                Export All ({{ breakdownList.length }})
+              </v-btn>
+            </template>
+            <v-list>
+              <v-list-item @click="exportCSV" prepend-icon="mdi-file-delimited-outline">
+                <v-list-item-title>Export as CSV</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="exportJSON" prepend-icon="mdi-code-json">
+                <v-list-item-title>Export as JSON</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="copyToClipboard" prepend-icon="mdi-content-copy">
+                <v-list-item-title>Copy to Clipboard</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </div>
 
         <v-data-table :headers="headers" :items="breakdownList" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
             <template #item="{item}">
@@ -83,6 +102,7 @@ import { defineComponent, ref, toRef, watch } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Breakdown } from '@/model/Breakdown';
 import { Pie } from 'vue-chartjs'
+import { exportToCSV, exportToJSON, copyTableToClipboard, formatFilename } from '@/utils/exportUtils';
 
 import {
   Chart as ChartJS,
@@ -265,7 +285,19 @@ export default defineComponent({
       ];
     },
   },
-  
+  methods: {
+    exportCSV() {
+      const filename = formatFilename(`${this.breakdownDisplayNamePlural.toLowerCase()}_breakdown`, 'csv');
+      exportToCSV(this.breakdownList, filename);
+    },
+    exportJSON() {
+      const filename = formatFilename(`${this.breakdownDisplayNamePlural.toLowerCase()}_breakdown`, 'json');
+      exportToJSON(this.breakdownList, filename);
+    },
+    async copyToClipboard() {
+      await copyTableToClipboard(this.breakdownList);
+    }
+  },
 
 });
 </script>
