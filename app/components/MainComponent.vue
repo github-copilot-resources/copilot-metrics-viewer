@@ -86,6 +86,9 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
+            <ChampionsViewer
+v-if="item === 'champions'" :date-range="dateRange"
+              :date-range-description="dateRangeDescription" />
           </v-card>
         </v-window-item>
         <v-alert
@@ -112,6 +115,7 @@ import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import TeamsComponent from './TeamsComponent.vue'
 import ApiResponse from './ApiResponse.vue'
 import AgentModeViewer from './AgentModeViewer.vue'
+import ChampionsViewer from './ChampionsViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -126,6 +130,7 @@ export default defineNuxtComponent({
     TeamsComponent,
     ApiResponse,
     AgentModeViewer,
+    ChampionsViewer,
     DateRangeSelector
   },
   methods: {
@@ -141,6 +146,8 @@ export default defineNuxtComponent({
         case 'team-organization':
         case 'team-enterprise':
           return 'team';
+        case 'multi-organization':
+          return 'organizations';
         case 'organization':
         case 'enterprise':
           return itemName;
@@ -233,7 +240,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response', 'champions'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
@@ -252,8 +259,8 @@ export default defineNuxtComponent({
   created() {
     this.tabItems.unshift(this.getDisplayTabName(this.itemName));
     
-    // Add teams tab for organization and enterprise scopes to allow team comparison
-    if (this.itemName === 'organization' || this.itemName === 'enterprise') {
+    // Add teams tab for organization, enterprise, and multi-organization scopes to allow team comparison
+    if (this.itemName === 'organization' || this.itemName === 'enterprise' || this.itemName === 'multi-organization') {
       this.tabItems.splice(1, 0, 'teams'); // Insert after the first tab
     }
     

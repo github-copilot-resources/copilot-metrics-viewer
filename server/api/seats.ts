@@ -114,6 +114,62 @@ export default defineEventHandler(async (event) => {
   // if scope is team - get team members
   const teamMembers: TeamMember[] = await fetchAllTeamMembers(options, event.context.headers);
 
+  // Handle multi-organization scope
+  const isMultiOrg = Array.isArray(apiUrl);
+  let allSeats: Seat[] = [];
+
+  if (isMultiOrg) {
+    logger.info(`Fetching seats data from ${apiUrl.length} organizations`);
+    
+    for (const url of apiUrl) {
+      try {
+        let page = 1;
+        const perPage = 100;
+        
+        logger.info(`Fetching seats from ${url}`);
+        let response = await $fetch(url, {
+          headers: event.context.headers,
+          params: {
+            per_page: perPage,
+            page: page
+          }
+        }) as { seats: unknown[], total_seats: number };
+
+        let orgSeats = response.seats.map((item: unknown) => new Seat(item));
+        const totalSeats = response.total_seats;
+        const totalPages = Math.ceil(totalSeats / perPage);
+
+        // Fetch remaining pages for this org
+        for (page = 2; page <= totalPages; page++) {
+          response = await $fetch(url, {
+            headers: event.context.headers,
+            params: {
+              per_page: perPage,
+              page: page
+            }
+          }) as { seats: unknown[], total_seats: number };
+
+          orgSeats = orgSeats.concat(response.seats.map((item: unknown) => new Seat(item)));
+        }
+
+        allSeats = allSeats.concat(orgSeats);
+      } catch (error: unknown) {
+        logger.error(`Error fetching seats for ${url}:`, error);
+        // Continue with other orgs even if one fails
+      }
+    }
+
+    // Deduplicate across all organizations
+    const deduplicatedSeats = deduplicateSeats(allSeats);
+    
+    if (teamMembers.length > 0) {
+      return deduplicatedSeats.filter(seat => teamMembers.some(member => member.id === seat.id));
+    }
+
+    return deduplicatedSeats;
+  }
+
+  // Single organization logic
   const perPage = 100;
   let page = 1;
   let response;

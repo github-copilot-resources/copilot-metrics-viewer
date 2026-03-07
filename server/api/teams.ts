@@ -1,7 +1,12 @@
 import { Options, type Scope } from '@/model/Options'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
-interface Team { name: string; slug: string; description: string }
+interface Team { 
+    name: string; 
+    slug: string; 
+    description: string;
+    organization?: string; // Track which org this team belongs to for multi-org scenarios
+}
 interface GitHubTeam { name: string; slug: string; description?: string }
 
 class TeamsError extends Error {
@@ -74,6 +79,54 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     // Build base URL based on scope
     const baseUrl = options.getTeamsApiUrl()
 
+    // Handle multi-organization scope
+    const isMultiOrg = Array.isArray(baseUrl)
+    
+    if (isMultiOrg) {
+        logger.info(`Fetching teams from ${baseUrl.length} organizations`)
+        const allTeams: Team[] = []
+        
+        // Extract organization names from the URLs or use githubOrgs
+        const orgNames = options.githubOrgs || []
+        
+        for (let i = 0; i < baseUrl.length; i++) {
+            const url = baseUrl[i];
+            const orgName = orgNames[i] || ''; // Track which org this is
+            let nextUrl: string | null = `${url}?per_page=100`
+            let page = 1
+
+            while (nextUrl) {
+                logger.info(`Fetching teams page ${page} from ${url}`)
+                const res = await $fetch.raw(nextUrl, {
+                    headers: event.context.headers
+                })
+
+                const data = res._data as GitHubTeam[]
+                for (const t of data) {
+                    const name: string = t.name
+                    const slug: string = t.slug
+                    const description: string = t.description || ''
+                    if (name && slug) {
+                        allTeams.push({ 
+                            name, 
+                            slug, 
+                            description,
+                            organization: orgName // Track which org this team belongs to
+                        })
+                    }
+                }
+
+                const linkHeader = res.headers.get('link') || res.headers.get('Link')
+                const links = parseLinkHeader(linkHeader)
+                nextUrl = links['next'] || null
+                page += 1
+            }
+        }
+        
+        return allTeams
+    }
+
+    // Single organization/enterprise logic
     const allTeams: Team[] = []
     let nextUrl: string | null = `${baseUrl}?per_page=100`
     let page = 1

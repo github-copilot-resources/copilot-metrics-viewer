@@ -49,14 +49,14 @@
                                         </template>
                                         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
                                             <span class="text-caption" style="font-size: 10px !important;">
-                                                Statistics for code completions in integrated development environments.
+                                                Average daily users for code completions in integrated development environments.
                                             </span>
                                         </v-card>
                                     </v-tooltip>
                                 </v-card-title>
                                 <v-card-text>
                                     <div class="text-h4 mb-2">{{ stats.totalIdeCodeCompletionUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
+                                    <div class="text-caption">Average Daily Users with Activity</div>
                                     <div class="text-subtitle2 mt-2">{{ stats.totalIdeCodeCompletionModels }} Models
                                         Used</div>
                                 </v-card-text>
@@ -71,14 +71,14 @@
                                         </template>
                                         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
                                             <span class="text-caption" style="font-size: 10px !important;">
-                                                Statistics for chat interactions in integrated development environments.
+                                                Average daily users for chat interactions in integrated development environments.
                                             </span>
                                         </v-card>
                                     </v-tooltip>
                                 </v-card-title>
                                 <v-card-text>
                                     <div class="text-h4 mb-2">{{ stats.totalIdeChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
+                                    <div class="text-caption">Average Daily Users with Activity</div>
                                     <div class="text-subtitle2 mt-2">{{ stats.totalIdeChatModels }} Models Used</div>
                                 </v-card-text>
                             </v-card>
@@ -92,14 +92,14 @@
                                         </template>
                                         <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
                                             <span class="text-caption" style="font-size: 10px !important;">
-                                                Statistics for chat interactions on GitHub.com web interface.
+                                                Average daily users for chat interactions on GitHub.com web interface.
                                             </span>
                                         </v-card>
                                     </v-tooltip>
                                 </v-card-title>
                                 <v-card-text>
                                     <div class="text-h4 mb-2">{{ stats.totalDotcomChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
+                                    <div class="text-caption">Average Daily Users with Activity</div>
                                     <div class="text-subtitle2 mt-2">{{ stats.totalDotcomChatModels }} Models Used</div>
                                 </v-card-text>
                             </v-card>
@@ -409,14 +409,14 @@ export default defineComponent({
             { title: 'Model Name', key: 'name' },
             { title: 'Editor', key: 'editor' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Users with Activity', key: 'total_engaged_users' }
+            { title: 'Avg Daily Users with Activity', key: 'total_engaged_users' }
         ];
 
         const ideChatHeaders = [
             { title: 'Model Name', key: 'name' },
             { title: 'Editor', key: 'editor' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Users with Activity', key: 'total_engaged_users' },
+            { title: 'Avg Daily Users with Activity', key: 'total_engaged_users' },
             { title: 'Total Chats', key: 'total_chats' },
             { title: 'Insertions', key: 'total_chat_insertion_events' },
             { title: 'Copy Events', key: 'total_chat_copy_events' }
@@ -425,7 +425,7 @@ export default defineComponent({
         const dotcomChatHeaders = [
             { title: 'Model Name', key: 'name' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Users with Activity', key: 'total_engaged_users' },
+            { title: 'Avg Daily Users with Activity', key: 'total_engaged_users' },
             { title: 'Total Chats', key: 'total_chats' }
         ];
 
@@ -433,7 +433,7 @@ export default defineComponent({
             { title: 'Model Name', key: 'name' },
             { title: 'Repository', key: 'repository' },
             { title: 'Type', key: 'model_type' },
-            { title: 'Total Users with Activity', key: 'total_engaged_users' },
+            { title: 'Avg Daily Users with Activity', key: 'total_engaged_users' },
             { title: 'PR Summaries', key: 'total_pr_summaries_created' }
         ];
 
