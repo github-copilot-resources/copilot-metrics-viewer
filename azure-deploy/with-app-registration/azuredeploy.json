@@ -22,7 +22,7 @@
         "github-client-secret": {
             "type": "securestring",
             "metadata": {
-                "description": "GitHub Client Secret (key)from App Registration"
+                "description": "GitHub Client Secret (key) from App Registration"
             }
         },
         "github-organization": {
@@ -46,27 +46,94 @@
                 "description": "Docker image for metrics viewer - use default or replace with your own"
             }
         },
+        "sync-docker-image": {
+            "type": "string",
+            "defaultValue": "ghcr.io/github-copilot-resources/copilot-metrics-viewer-sync:latest",
+            "metadata": {
+                "description": "Docker image for sync service - use default or replace with your own"
+            }
+        },
         "subnetId": {
             "type": "string",
             "defaultValue": "",
             "metadata": {
                 "description": "Subnet ID (at least /23) for the managed environment when deploying app without public access"
             }
+        },
+        "postgresAdminPassword": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Administrator password for PostgreSQL database (min 8 characters, must include uppercase, lowercase, and number)"
+            }
         }
     },
     "variables": {
         "environmentName": "[concat(parameters('name'),'-env')]",
         "workspaceName": "[concat(parameters('name'),'-ai')]",
-        "app-scope": "[if(not(empty(parameters('github-organization'))), 'organization', if(not(empty(parameters('github-enterprise'))), 'enterprise', ''))]"
+        "postgresServerName": "[concat(parameters('name'),'-db')]",
+        "postgresDatabaseName": "copilot_metrics",
+        "postgresAdminLogin": "metricsadmin",
+        "app-scope": "[if(not(empty(parameters('github-organization'))), 'organization', if(not(empty(parameters('github-enterprise'))), 'enterprise', ''))]",
+        "databaseUrl": "[concat('postgresql://', variables('postgresAdminLogin'), ':', parameters('postgresAdminPassword'), '@', variables('postgresServerName'), '.postgres.database.azure.com:5432/', variables('postgresDatabaseName'), '?sslmode=require')]"
     },
     "resources": [
+        {
+            "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+            "apiVersion": "2023-12-01-preview",
+            "name": "[variables('postgresServerName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "Standard_B1ms",
+                "tier": "Burstable"
+            },
+            "properties": {
+                "version": "16",
+                "administratorLogin": "[variables('postgresAdminLogin')]",
+                "administratorLoginPassword": "[parameters('postgresAdminPassword')]",
+                "storage": {
+                    "storageSizeGB": 32
+                },
+                "backup": {
+                    "backupRetentionDays": 7,
+                    "geoRedundantBackup": "Disabled"
+                },
+                "highAvailability": {
+                    "mode": "Disabled"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+            "apiVersion": "2023-12-01-preview",
+            "name": "[concat(variables('postgresServerName'), '/', variables('postgresDatabaseName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+            ],
+            "properties": {
+                "charset": "UTF8",
+                "collation": "en_US.utf8"
+            }
+        },
+        {
+            "type": "Microsoft.DBforPostgreSQL/flexibleServers/firewallRules",
+            "apiVersion": "2023-12-01-preview",
+            "name": "[concat(variables('postgresServerName'), '/AllowAzureServices')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName'))]"
+            ],
+            "properties": {
+                "startIpAddress": "0.0.0.0",
+                "endIpAddress": "0.0.0.0"
+            }
+        },
         {
             "type": "Microsoft.App/containerapps",
             "apiVersion": "2024-02-02-preview",
             "name": "[parameters('name')]",
             "location": "[parameters('location')]",
             "dependsOn": [
-                "[concat('Microsoft.App/managedEnvironments/', variables('environmentName'))]"
+                "[concat('Microsoft.App/managedEnvironments/', variables('environmentName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/databases', variables('postgresServerName'), variables('postgresDatabaseName'))]"
             ],
             "kind": "containerapps",
             "properties": {
@@ -82,7 +149,13 @@
                             "affinity": "none"
                         },
                         "additionalPortMappings": []
-                    }
+                    },
+                    "secrets": [
+                        {
+                            "name": "database-url",
+                            "value": "[variables('databaseUrl')]"
+                        }
+                    ]
                 },
                 "template": {
                     "containers": [
@@ -126,6 +199,18 @@
                                 {
                                     "name": "NITRO_PORT",
                                     "value": "3000"
+                                },
+                                {
+                                    "name": "ENABLE_HISTORICAL_MODE",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "DATABASE_URL",
+                                    "secretRef": "database-url"
+                                },
+                                {
+                                    "name": "SYNC_ENABLED",
+                                    "value": "false"
                                 }
                             ]
                         }
@@ -133,6 +218,77 @@
                     "scale": {
                         "minReplicas": 0
                     }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.App/jobs",
+            "apiVersion": "2024-03-01",
+            "name": "[concat(parameters('name'), '-sync')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.App/managedEnvironments/', variables('environmentName'))]",
+                "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers/databases', variables('postgresServerName'), variables('postgresDatabaseName'))]"
+            ],
+            "properties": {
+                "environmentId": "[resourceId('Microsoft.App/managedEnvironments', variables('environmentName'))]",
+                "configuration": {
+                    "triggerType": "Schedule",
+                    "scheduleTriggerConfig": {
+                        "cronExpression": "0 2 * * *",
+                        "parallelism": 1,
+                        "replicaCompletionCount": 1
+                    },
+                    "replicaTimeout": 600,
+                    "replicaRetryLimit": 1,
+                    "secrets": [
+                        {
+                            "name": "database-url",
+                            "value": "[variables('databaseUrl')]"
+                        },
+                        {
+                            "name": "github-token",
+                            "value": "[parameters('github-client-secret')]"
+                        }
+                    ]
+                },
+                "template": {
+                    "containers": [
+                        {
+                            "name": "sync",
+                            "image": "[parameters('sync-docker-image')]",
+                            "resources": {
+                                "cpu": 0.25,
+                                "memory": ".5Gi"
+                            },
+                            "env": [
+                                {
+                                    "name": "NUXT_PUBLIC_SCOPE",
+                                    "value": "[variables('app-scope')]"
+                                },
+                                {
+                                    "name": "NUXT_PUBLIC_GITHUB_ORG",
+                                    "value": "[parameters('github-organization')]"
+                                },
+                                {
+                                    "name": "NUXT_PUBLIC_GITHUB_ENT",
+                                    "value": "[parameters('github-enterprise')]"
+                                },
+                                {
+                                    "name": "DATABASE_URL",
+                                    "secretRef": "database-url"
+                                },
+                                {
+                                    "name": "SYNC_ENABLED",
+                                    "value": "true"
+                                },
+                                {
+                                    "name": "SYNC_DAYS_BACK",
+                                    "value": "1"
+                                }
+                            ]
+                        }
+                    ]
                 }
             }
         },
@@ -182,6 +338,10 @@
         "managed-environment-domain": {
             "type": "string",
             "value": "[reference(concat('Microsoft.App/managedEnvironments/', variables('environmentName')), '2024-02-02-preview').defaultDomain]"
+        },
+        "postgresql-server-fqdn": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', variables('postgresServerName')), '2023-12-01-preview').fullyQualifiedDomainName]"
         }
     }
 }

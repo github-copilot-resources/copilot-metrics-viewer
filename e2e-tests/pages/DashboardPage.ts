@@ -10,7 +10,9 @@ export class DashboardPage {
     readonly page: Page;
 
     readonly acceptanceRateByCountLabel: Locator;
+    readonly acceptanceRateByCountValue: Locator;
     readonly totalCountOfSuggestionsLabel: Locator;
+    readonly totalCountOfSuggestionsValue: Locator;
     readonly totalLinesSuggestedLabel: Locator;
     readonly totalLinesSuggestedValue: Locator;
     readonly toolbarTitle: Locator;
@@ -33,9 +35,17 @@ export class DashboardPage {
         this.acceptanceRateByCountLabel = page.getByText(
             "Acceptance Rate (by count)"
         );
+        this.acceptanceRateByCountValue = page
+            .locator(".v-card-item")
+            .filter({ has: page.getByText("Acceptance Rate (by count)") })
+            .locator(".text-h4");
         this.totalCountOfSuggestionsLabel = page.getByText(
-            "Total count of Suggestions (Prompts)"
+            "Total Code Completions", { exact: true }
         );
+        this.totalCountOfSuggestionsValue = page
+            .locator(".v-card-item")
+            .filter({ has: page.getByText("Total Code Completions", { exact: true }) })
+            .locator(".text-h4");
         this.totalLinesSuggestedLabel = page.getByRole("heading", {
             name: "Total Lines Suggested | Total",
         });
@@ -91,6 +101,24 @@ export class DashboardPage {
         expect(parseInt(linesAccepted as string)).toBeGreaterThan(0);
     }
 
+    async expectAcceptanceRateReasonable() {
+        const rateText = await this.acceptanceRateByCountValue.textContent();
+        expect(rateText).toBeDefined();
+        const rate = parseFloat((rateText as string).replace('%', ''));
+        // Acceptance rate should be between 5% and 80% for realistic data
+        // The old bug showed 0.4% — this catches that regression
+        expect(rate).toBeGreaterThanOrEqual(5);
+        expect(rate).toBeLessThanOrEqual(80);
+    }
+
+    async expectSuggestionCountReasonable() {
+        const countText = await this.totalCountOfSuggestionsValue.textContent();
+        expect(countText).toBeDefined();
+        const count = parseInt((countText as string).replace(/,/g, ''));
+        // Should have some completions, but not inflated by agent_edit
+        expect(count).toBeGreaterThan(0);
+    }
+
     async gotoLanguagesTab() {
         await this.languagesTabLink.click();
         return new LanguagesTab(this.page);
@@ -118,7 +146,13 @@ export class DashboardPage {
 
     async gotoGitHubTab() {
         await this.githubTabLink.click();
-        return new GitHubTab(this.page);
+        const tab = new GitHubTab(this.page);
+        // Wait for the github-stats data to load — look for "Copilot Statistics" title
+        // and at least one overview card to have content
+        await tab.statisticsTitle.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+        // Wait for at least one card with non-zero content or "All Models"
+        await this.page.locator('.v-card-title').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        return tab;
     }
 
     async gotoTeamsTab() {

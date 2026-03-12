@@ -25,8 +25,21 @@ export default defineEventHandler(async (event) => {
     const url = event.node.req.url || '';
 
     const healthCheckPaths = ['/api/health', '/api/live', '/api/ready'];
-    // Skip authentication for non-API routes and health check endpoints
-    if (!url.startsWith('/api/') || healthCheckPaths.includes(url)) {
+    // Skip authentication for non-API routes, health checks, admin routes, and auth session
+    if (!url.startsWith('/api/') || healthCheckPaths.includes(url) || url.startsWith('/api/admin/') || url.startsWith('/api/_auth/')) {
+        return;
+    }
+
+    // When historical mode is enabled, metrics come from DB — auth is optional
+    // (the handler will request auth only if it needs to sync from the API)
+    const historicalMode = process.env.ENABLE_HISTORICAL_MODE === 'true';
+    if (historicalMode && (url.startsWith('/api/metrics') || url.startsWith('/api/seats'))) {
+        try {
+            event.context.headers = await authenticateAndGetGitHubHeaders(event);
+        } catch {
+            // No auth available — that's fine, the handler will use DB
+            event.context.headers = new Headers();
+        }
         return;
     }
 

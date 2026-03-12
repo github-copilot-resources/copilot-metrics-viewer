@@ -1,0 +1,40 @@
+# Dockerfile for standalone sync job
+# This creates a lightweight container that only runs the sync service
+# Use this for Kubernetes CronJobs or scheduled container instances
+
+FROM node:24-alpine3.23 AS base
+
+# Build stage - install all dependencies
+FROM base AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy source code
+COPY server ./server
+COPY shared ./shared
+COPY app/model ./app/model
+COPY app/types ./app/types
+COPY app/utils ./app/utils
+COPY nuxt.config.ts tsconfig.json ./
+
+# Production stage
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Copy package files and install ALL dependencies (including tsx for runtime)
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy source files from builder
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/shared ./shared
+COPY --from=builder /app/app ./app
+COPY --from=builder /app/nuxt.config.ts ./nuxt.config.ts
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+
+# Run sync entry point with tsx for TypeScript support
+CMD ["npx", "tsx", "server/sync-entry.ts"]

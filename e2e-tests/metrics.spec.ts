@@ -35,6 +35,14 @@ const tag = { tag: ['@ent', '@org', '@team'] };
             await dashboard.expectDataReturned();
         });
 
+        test('acceptance rate is reasonable', tag, async () => {
+            await dashboard.expectAcceptanceRateReasonable();
+        });
+
+        test('suggestion count is reasonable', tag, async () => {
+            await dashboard.expectSuggestionCountReasonable();
+        });
+
         test('languages visible', tag, async () => {
             const languages = await dashboard.gotoLanguagesTab();
 

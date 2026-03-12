@@ -10,3 +10,9 @@ services:
         language: js
         docker:
             path: Dockerfile
+    copilot-metrics-sync:
+        project: .
+        host: containerapp
+        language: js
+        docker:
+            path: Dockerfile.sync

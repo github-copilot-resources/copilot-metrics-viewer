@@ -4,6 +4,7 @@ import { DashboardPage } from './pages/DashboardPage';
 const tag = { tag: ['@teams-comparison'] };
 
 test.describe('Teams Comparison tests', () => {
+    test.describe.configure({ mode: 'serial' });
 
     let dashboard: DashboardPage;
 
@@ -24,6 +25,18 @@ test.describe('Teams Comparison tests', () => {
     test('has teams tab available', tag, async () => {
         // Verify that teams tab is visible for org scope
         await dashboard.expectTeamsTabVisible();
+    });
+
+    test('teams comparison empty state', tag, async () => {
+        // Click on teams tab (no teams selected yet)
+        await dashboard.gotoTeamsTab();
+
+        // Verify empty state message when no teams are selected
+        const emptyStateMessage = dashboard.page.getByText('No Teams Selected');
+        await expect(emptyStateMessage).toBeVisible();
+
+        const emptyStateDescription = dashboard.page.getByText('Select one or more teams from the dropdown above to view and compare their metrics.');
+        await expect(emptyStateDescription).toBeVisible();
     });
 
     test('teams comparison functionality with team selection', tag, async () => {
@@ -73,23 +86,5 @@ test.describe('Teams Comparison tests', () => {
 
         const editorUsageChart = dashboard.page.getByText('Editor Usage by Team');
         await expect(editorUsageChart).toBeVisible();
-
-        // Take a screenshot for documentation purposes
-        // await dashboard.page.screenshot({
-        //     path: 'images/teams-comparison-test.png',
-        //     fullPage: true
-        // });
-    });
-
-    test('teams comparison empty state', tag, async () => {
-        // Click on teams tab
-        await dashboard.gotoTeamsTab();
-
-        // Verify empty state message when no teams are selected
-        const emptyStateMessage = dashboard.page.getByText('No Teams Selected');
-        await expect(emptyStateMessage).toBeVisible();
-
-        const emptyStateDescription = dashboard.page.getByText('Select one or more teams from the dropdown above to view and compare their metrics.');
-        await expect(emptyStateDescription).toBeVisible();
     });
 });

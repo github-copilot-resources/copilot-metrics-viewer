@@ -1,0 +1,393 @@
+{
+  "report_start_day": "2026-02-20",
+  "report_end_day": "2026-02-20",
+  "organization_id": "100000001",
+  "enterprise_id": "200001",
+  "created_at": "2026-03-04T00:00:00Z",
+  "day_totals": [
+    {
+      "day": "2026-02-20",
+      "organization_id": "100000001",
+      "enterprise_id": "200001",
+      "daily_active_users": 3,
+      "weekly_active_users": 4,
+      "monthly_active_users": 5,
+      "monthly_active_chat_users": 5,
+      "monthly_active_agent_users": 5,
+      "user_initiated_interaction_count": 106,
+      "code_generation_activity_count": 318,
+      "code_acceptance_activity_count": 57,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 106,
+          "code_generation_activity_count": 318,
+          "code_acceptance_activity_count": 57,
+          "loc_suggested_to_add_sum": 1157,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 2378,
+          "loc_deleted_sum": 1029
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 127,
+          "code_acceptance_activity_count": 56,
+          "loc_suggested_to_add_sum": 143,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 82,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 88,
+          "code_generation_activity_count": 29,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 130,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 92,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 2229,
+          "loc_deleted_sum": 1029
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 11,
+          "code_generation_activity_count": 39,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 441,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 67,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 7,
+          "code_generation_activity_count": 31,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 443,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "totals_by_language_feature": [
+        {
+          "language": "python",
+          "feature": "code_completion",
+          "code_generation_activity_count": 121,
+          "code_acceptance_activity_count": 56,
+          "loc_suggested_to_add_sum": 135,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 82,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "python",
+          "feature": "agent_edit",
+          "code_generation_activity_count": 67,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1858,
+          "loc_deleted_sum": 580
+        },
+        {
+          "language": "markdown",
+          "feature": "chat_panel_ask_mode",
+          "code_generation_activity_count": 36,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 422,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 67,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "markdown",
+          "feature": "agent_edit",
+          "code_generation_activity_count": 23,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 361,
+          "loc_deleted_sum": 448
+        },
+        {
+          "language": "prompt",
+          "feature": "chat_panel_custom_mode",
+          "code_generation_activity_count": 20,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 294,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "python",
+          "feature": "chat_panel_agent_mode",
+          "code_generation_activity_count": 16,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 91,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "prompt",
+          "feature": "chat_panel_agent_mode",
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 14,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "markdown",
+          "feature": "chat_panel_custom_mode",
+          "code_generation_activity_count": 6,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 139,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "bash",
+          "feature": "chat_panel_agent_mode",
+          "code_generation_activity_count": 4,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 14,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "json",
+          "feature": "code_completion",
+          "code_generation_activity_count": 3,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 5,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "others",
+          "feature": "others",
+          "code_generation_activity_count": 15,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 43,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 10,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_language_model": [
+        {
+          "language": "python",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 83,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 91,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1858,
+          "loc_deleted_sum": 580
+        },
+        {
+          "language": "markdown",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 66,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 565,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 428,
+          "loc_deleted_sum": 448
+        },
+        {
+          "language": "prompt",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 27,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 308,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "bash",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 6,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 20,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "powershell",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 6,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 23,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "plaintext",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 3,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 7,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 10,
+          "loc_deleted_sum": 1
+        },
+        {
+          "language": "chatagent",
+          "model": "claude-4.5-haiku",
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "chatagent",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "chatagent",
+          "model": "gemini-3.0-pro",
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "json",
+          "model": "claude-opus-4.6",
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "language": "others",
+          "model": "others",
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "totals_by_model_feature": [
+        {
+          "model": "claude-opus-4.6",
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 86,
+          "code_generation_activity_count": 29,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 130,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "model": "claude-opus-4.6",
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 92,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 2229,
+          "loc_deleted_sum": 1029
+        },
+        {
+          "model": "claude-opus-4.6",
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 11,
+          "code_generation_activity_count": 39,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 441,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 67,
+          "loc_deleted_sum": 0
+        },
+        {
+          "model": "claude-opus-4.6",
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 5,
+          "code_generation_activity_count": 31,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 443,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "model": "claude-4.5-haiku",
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "model": "claude-4.5-haiku",
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        },
+        {
+          "model": "gemini-3.0-pro",
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 0,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 0,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 0,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "loc_suggested_to_add_sum": 1157,
+      "loc_suggested_to_delete_sum": 0,
+      "loc_added_sum": 2378,
+      "loc_deleted_sum": 1029
+    }
+  ]
+}

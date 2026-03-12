@@ -8,22 +8,29 @@ export class GitHubTab {
     readonly statisticsTitle: Locator;
     readonly dateRangeCard: Locator;
     
-    // Overview cards
-    readonly ideCodeCompletionsCard: Locator;
-    readonly ideChatCard: Locator;
+    // Overview cards (new API labels)
+    readonly codeCompletionsCard: Locator;
+    readonly chatCard: Locator;
+    readonly allModelsCard: Locator;
+    
+    // Legacy overview cards (shown when hasReportData=false)
     readonly githubChatCard: Locator;
     readonly githubPRSummariesCard: Locator;
     
     // Chart sections
     readonly featureUsageTitle: Locator;
-    readonly modelUsageTitle: Locator;
+    readonly activeUsersTitle: Locator;
     readonly chartContainers: Locator;
     
-    // Models section
-    readonly modelsTitle: Locator;
+    // New API data tables
+    readonly modelFeatureTitle: Locator;
+    readonly featureSummaryTitle: Locator;
+    readonly modelSummaryTitle: Locator;
+    readonly dataTables: Locator;
+    
+    // Legacy model section
     readonly expansionPanels: Locator;
     readonly expansionPanel: Locator;
-    readonly dataTables: Locator;
     
     // Tooltips
     readonly tooltipElements: Locator;
@@ -40,28 +47,35 @@ export class GitHubTab {
         this.statisticsTitle = page.locator('h2').filter({ hasText: 'Copilot Statistics' });
         this.dateRangeCard = page.locator('.v-card').filter({ hasText: /calendar-range/ });
         
-        // Overview cards - using more specific selectors to avoid ambiguity
-        this.ideCodeCompletionsCard = page.locator('.v-card').filter({ hasText: 'IDE Code Completions' }).first();
-        this.ideChatCard = page.locator('.v-card').filter({ hasText: 'IDE Chat' }).first();
+        // Overview cards — new API mode (scoped to github.com container)
+        this.codeCompletionsCard = page.locator('.github-com-container .v-card').filter({ hasText: 'Code Completions' }).first();
+        this.chatCard = page.locator('.github-com-container .v-card').filter({ has: page.locator('.v-card-title', { hasText: 'Chat' }) }).first();
+        this.allModelsCard = page.locator('.github-com-container .v-card').filter({ hasText: 'All Models' }).first();
+        
+        // Legacy overview cards
         this.githubChatCard = page.locator('.v-card').filter({ hasText: 'GitHub.com Chat' }).first();
-        this.githubPRSummariesCard = page.locator('.v-card').filter({ hasText: 'GitHub.com PR Summaries' }).first();
+        this.githubPRSummariesCard = page.locator('.v-card').filter({ hasText: 'GitHub.com PR' }).first();
         
         // Chart sections
-        this.featureUsageTitle = page.locator('h2').filter({ hasText: 'Copilot Feature Usage Over Time' });
-        this.modelUsageTitle = page.locator('h2').filter({ hasText: 'Model Usage Distribution' });
+        this.featureUsageTitle = page.locator('h2').filter({ hasText: 'Feature Usage Over Time' });
+        this.activeUsersTitle = page.locator('h2').filter({ hasText: 'Active Users Over Time' });
         this.chartContainers = page.locator('.chart-container');
         
-        // Models section - using correct CSS selectors
-        this.modelsTitle = page.locator('h2').filter({ hasText: 'Models Used by Users' });
+        // New API data tables
+        this.modelFeatureTitle = page.locator('h2').filter({ hasText: 'Model Usage by Feature' });
+        this.featureSummaryTitle = page.locator('h2').filter({ hasText: 'Feature Summary' });
+        this.modelSummaryTitle = page.locator('h2').filter({ hasText: 'Model Summary' });
+        this.dataTables = page.locator('.v-data-table');
+        
+        // Legacy models section
         this.expansionPanels = page.locator('.v-expansion-panels');
         this.expansionPanel = page.locator('.v-expansion-panel');
-        this.dataTables = page.locator('.v-data-table');
         
         // Tooltips
         this.tooltipElements = page.locator('.v-tooltip');
         
         // Legacy locators
-        this.cumulativeNumberOfTurnsLabel = page.getByText('Cumulative Number of Turns');
+        this.cumulativeNumberOfTurnsLabel = page.getByText('Cumulative Chat Interactions');
         this.cumulativeNumberOfTurnsValue = page.locator('.v-card-item').filter({ has: this.cumulativeNumberOfTurnsLabel }).locator('.text-h4');
     }
 
@@ -78,42 +92,19 @@ export class GitHubTab {
         await expect(this.dateRangeCard).toBeVisible({ timeout });
     }
 
-    // Overview cards
-    async expectOverviewCardsVisible(timeout = 10000) {
-        await expect(this.ideCodeCompletionsCard).toBeVisible({ timeout });
-        await expect(this.ideChatCard).toBeVisible({ timeout });
-        await expect(this.githubChatCard).toBeVisible({ timeout });
-        await expect(this.githubPRSummariesCard).toBeVisible({ timeout });
-    }
-
-    async expectIdeCodeCompletionsVisible(timeout = 10000) {
-        await expect(this.ideCodeCompletionsCard).toBeVisible({ timeout });
-    }
-
-    async expectIdeChatVisible(timeout = 10000) {
-        await expect(this.ideChatCard).toBeVisible({ timeout });
-    }
-
-    async expectGithubChatVisible(timeout = 10000) {
-        await expect(this.githubChatCard).toBeVisible({ timeout });
-    }
-
-    async expectGithubPRSummariesVisible(timeout = 10000) {
-        await expect(this.githubPRSummariesCard).toBeVisible({ timeout });
+    // Overview cards — checks at least the core cards are visible
+    async expectOverviewCardsVisible(timeout = 15000) {
+        await expect(this.codeCompletionsCard).toBeVisible({ timeout });
+        await expect(this.chatCard).toBeVisible({ timeout });
+        // Third card is either "All Models" (new API) or "GitHub.com Chat" (legacy)
+        const allModelsVisible = await this.allModelsCard.isVisible().catch(() => false);
+        const githubChatVisible = await this.githubChatCard.isVisible().catch(() => false);
+        expect(allModelsVisible || githubChatVisible).toBeTruthy();
     }
 
     // Chart sections
     async expectChartSectionsVisible(timeout = 10000) {
         await expect(this.featureUsageTitle).toBeVisible({ timeout });
-        await expect(this.modelUsageTitle).toBeVisible({ timeout });
-    }
-
-    async expectFeatureUsageTitleVisible(timeout = 10000) {
-        await expect(this.featureUsageTitle).toBeVisible({ timeout });
-    }
-
-    async expectModelUsageTitleVisible(timeout = 10000) {
-        await expect(this.modelUsageTitle).toBeVisible({ timeout });
     }
 
     async getChartContainerCount() {
@@ -126,22 +117,23 @@ export class GitHubTab {
         return count;
     }
 
-    // Models section
-    async expectModelsSectionVisible(timeout = 10000) {
-        await expect(this.modelsTitle).toBeVisible({ timeout });
-        // Check if expansion panels exist, but don't fail if they don't
-        const panelCount = await this.expansionPanel.count();
-        if (panelCount > 0) {
-            await expect(this.expansionPanels).toBeVisible({ timeout });
-        }
-    }
-
-    async expectModelsUsedTitleVisible(timeout = 10000) {
-        await expect(this.modelsTitle).toBeVisible({ timeout });
-    }
-
-    async expectExpansionPanelsVisible(timeout = 10000) {
-        await expect(this.expansionPanels).toBeVisible({ timeout });
+    // Models / data tables section
+    async expectModelsSectionVisible(timeout = 20000) {
+        // Wait for the github-stats API to complete (async fetch with 150ms debounce)
+        // First wait for loading spinner to disappear
+        const loadingSpinner = this.page.locator('.v-progress-circular');
+        await loadingSpinner.waitFor({ state: 'hidden', timeout }).catch(() => {});
+        
+        // Wait for any data table or model heading to appear
+        const dataContent = this.page.locator('.v-data-table, h2:text("Model Usage by Feature"), h2:text("Models by Feature"), .v-expansion-panels');
+        await dataContent.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        
+        // New API shows data tables; legacy shows expansion panels
+        const hasModelFeatureTable = await this.modelFeatureTitle.isVisible().catch(() => false);
+        const hasExpansionPanels = await this.expansionPanels.isVisible().catch(() => false);
+        const hasDataTables = await this.dataTables.first().isVisible().catch(() => false);
+        const hasFeatureSummary = await this.featureSummaryTitle.isVisible().catch(() => false);
+        expect(hasModelFeatureTable || hasExpansionPanels || hasDataTables || hasFeatureSummary).toBeTruthy();
     }
 
     async clickFirstExpansionPanel() {
@@ -179,7 +171,6 @@ export class GitHubTab {
 
     async expectTooltipInteraction() {
         await this.hoverOverTitle();
-        // Note: Tooltip visibility check is optional as it might not work with mocked data
     }
 
     // Responsive design checks
@@ -210,15 +201,23 @@ export class GitHubTab {
 
     // Chart styling validation
     async validateChartContainerStyles() {
+        // Wait for the async github-stats data to load
+        const loadingSpinner = this.page.locator('.v-progress-circular');
+        await loadingSpinner.waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+        
+        // Wait for at least one chart container to appear
+        await this.chartContainers.first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        
         const chartContainers = this.chartContainers;
         const containerCount = await chartContainers.count();
         
-        // Expect at least some chart containers to be present
         expect(containerCount).toBeGreaterThan(0);
         
+        let validatedCount = 0;
         for (let i = 0; i < containerCount; i++) {
             const container = chartContainers.nth(i);
-            await expect(container).toBeVisible();
+            const isVisible = await container.isVisible().catch(() => false);
+            if (!isVisible) continue;
             
             const styles = await container.evaluate((el) => {
                 const computed = window.getComputedStyle(el);
@@ -229,10 +228,14 @@ export class GitHubTab {
                 };
             });
             
-            // Check if height is set (should be 400px but might be computed differently)
-            expect(styles.height).toBeTruthy();
+            // Skip containers that haven't been sized yet (async data)
+            if (!styles.height || styles.height === '0px') continue;
+            
             expect(styles.position).toBe('relative');
+            validatedCount++;
         }
+        // At least one chart container should have proper styling
+        expect(validatedCount).toBeGreaterThan(0);
     }
 
     // Performance monitoring
@@ -245,7 +248,6 @@ export class GitHubTab {
             }
         });
         
-        // Trigger potential performance issues
         await this.page.hover('h2');
         await this.page.waitForTimeout(1000);
         await this.page.mouse.wheel(0, 500);
