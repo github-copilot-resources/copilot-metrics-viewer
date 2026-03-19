@@ -1,0 +1,1663 @@
+MIME-Version: 1.0
+X-Document-Type: Workbook
+Content-Type: multipart/related; boundary="----=_NextPart_01DC6857.23156380"
+
+‚±‚ÌƒhƒLƒ…ƒƒ“ƒg‚Í’Pˆêƒtƒ@ƒCƒ‹ Web ƒy[ƒW (Web ƒA[ƒJƒCƒu ƒtƒ@ƒCƒ‹) ‚Å‚·B‚¨g‚¢‚Ìƒuƒ‰ƒEƒU[‚Ü‚½‚ÍƒGƒfƒBƒ^[‚Í Web ƒA[ƒJƒCƒu ƒtƒ@ƒCƒ‹‚ğƒTƒ|[ƒg‚µ‚Ä‚¢‚Ü‚¹‚ñBWeb ƒA[ƒJƒCƒu‚ğƒTƒ|[ƒg‚·‚éƒuƒ‰ƒEƒU[‚ğƒ_ƒEƒ“ƒ[ƒh‚µ‚Ä‚­‚¾‚³‚¢B
+
+------=_NextPart_01DC6857.23156380
+Content-Location: file:///C:/6569DAD3/copilot_report_20251208152553.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="shift_jis"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta name=3D"Excel Workbook Frameset">
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dshift_jis">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 15">
+<link rel=3DFile-List href=3D"copilot_report_20251208152553.files/filelist.=
+xml">
+<![if !supportTabStrip]>
+<link id=3D"shLink" href=3D"copilot_report_20251208152553.files/sheet001.ht=
+m">
+<link id=3D"shLink" href=3D"copilot_report_20251208152553.files/sheet002.ht=
+m">
+
+<link id=3D"shLink">
+
+<script language=3D"JavaScript">
+<!--
+ var c_lTabs=3D2;
+
+ var c_rgszSh=3Dnew Array(c_lTabs);
+ c_rgszSh[0] =3D "copilot_report";
+ c_rgszSh[1] =3D "‘gD‘S‘Ì‚Ì“Œv";
+
+
+
+ var c_rgszClr=3Dnew Array(8);
+ c_rgszClr[0]=3D"window";
+ c_rgszClr[1]=3D"buttonface";
+ c_rgszClr[2]=3D"windowframe";
+ c_rgszClr[3]=3D"windowtext";
+ c_rgszClr[4]=3D"threedlightshadow";
+ c_rgszClr[5]=3D"threedhighlight";
+ c_rgszClr[6]=3D"threeddarkshadow";
+ c_rgszClr[7]=3D"threedshadow";
+
+ var g_iShCur;
+ var g_rglTabX=3Dnew Array(c_lTabs);
+
+function fnGetIEVer()
+{
+ var ua=3Dwindow.navigator.userAgent
+ var msie=3Dua.indexOf("MSIE")
+ if (msie>0 && window.navigator.platform=3D=3D"Win32")
+  return parseInt(ua.substring(msie+5,ua.indexOf(".", msie)));
+ else
+  return 0;
+}
+
+function fnBuildFrameset()
+{
+ var szHTML=3D"<frameset rows=3D\"*,18\" border=3D0 width=3D0 frameborder=
+=3Dno framespacing=3D0>"+
+  "<frame src=3D\""+document.all.item("shLink")[0].href+"\" name=3D\"frShee=
+t\" noresize>"+
+  "<frameset cols=3D\"54,*\" border=3D0 width=3D0 frameborder=3Dno framespa=
+cing=3D0>"+
+  "<frame src=3D\"\" name=3D\"frScroll\" marginwidth=3D0 marginheight=3D0 s=
+crolling=3Dno>"+
+  "<frame src=3D\"\" name=3D\"frTabs\" marginwidth=3D0 marginheight=3D0 scr=
+olling=3Dno>"+
+  "</frameset></frameset><plaintext>";
+
+ with (document) {
+  open("text/html","replace");
+  write(szHTML);
+  close();
+ }
+
+ fnBuildTabStrip();
+}
+
+function fnBuildTabStrip()
+{
+ var szHTML=3D
+  "<html><head><style>.clScroll {font:8pt Courier New;color:"+c_rgszClr[6]+=
+";cursor:default;line-height:10pt;}"+
+  ".clScroll2 {font:10pt Arial;color:"+c_rgszClr[6]+";cursor:default;line-h=
+eight:11pt;}</style></head>"+
+  "<body onclick=3D\"event.returnValue=3Dfalse;\" ondragstart=3D\"event.ret=
+urnValue=3Dfalse;\" onselectstart=3D\"event.returnValue=3Dfalse;\" bgcolor=
+=3D"+c_rgszClr[4]+" topmargin=3D0 leftmargin=3D0><table cellpadding=3D0 cel=
+lspacing=3D0 width=3D100%>"+
+  "<tr><td colspan=3D6 height=3D1 bgcolor=3D"+c_rgszClr[2]+"></td></tr>"+
+  "<tr><td style=3D\"font:1pt\">&nbsp;<td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll\" onclick=3D\"parent.f=
+nFastScrollTabs(0);\" onmouseover=3D\"parent.fnMouseOverScroll(0);\" onmous=
+eout=3D\"parent.fnMouseOutScroll(0);\"><a>&#171;</a></td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll2\" onclick=3D\"parent.=
+fnScrollTabs(0);\" ondblclick=3D\"parent.fnScrollTabs(0);\" onmouseover=3D\=
+"parent.fnMouseOverScroll(1);\" onmouseout=3D\"parent.fnMouseOutScroll(1);\=
+"><a>&lt</a></td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll2\" onclick=3D\"parent.=
+fnScrollTabs(1);\" ondblclick=3D\"parent.fnScrollTabs(1);\" onmouseover=3D\=
+"parent.fnMouseOverScroll(2);\" onmouseout=3D\"parent.fnMouseOutScroll(2);\=
+"><a>&gt</a></td>"+
+  "<td valign=3Dtop id=3DtdScroll class=3D\"clScroll\" onclick=3D\"parent.f=
+nFastScrollTabs(1);\" onmouseover=3D\"parent.fnMouseOverScroll(3);\" onmous=
+eout=3D\"parent.fnMouseOutScroll(3);\"><a>&#187;</a></td>"+
+  "<td style=3D\"font:1pt\">&nbsp;<td></tr></table></body></html>";
+
+ with (frames['frScroll'].document) {
+  open("text/html","replace");
+  write(szHTML);
+  close();
+ }
+
+ szHTML =3D
+  "<html><head>"+
+  "<style>A:link,A:visited,A:active {text-decoration:none;"+"color:"+c_rgsz=
+Clr[3]+";}"+
+  ".clTab {cursor:hand;background:"+c_rgszClr[1]+";font:9pt ‚l‚r ‚oƒSƒVƒbƒN=
+;padding-left:3px;padding-right:3px;text-align:center;}"+
+  ".clBorder {background:"+c_rgszClr[2]+";font:1pt;}"+
+  "</style></head><body onload=3D\"parent.fnInit();\" onselectstart=3D\"eve=
+nt.returnValue=3Dfalse;\" ondragstart=3D\"event.returnValue=3Dfalse;\" bgco=
+lor=3D"+c_rgszClr[4]+
+  " topmargin=3D0 leftmargin=3D0><table id=3DtbTabs cellpadding=3D0 cellspa=
+cing=3D0>";
+
+ var iCellCount=3D(c_lTabs+1)*2;
+
+ var i;
+ for (i=3D0;i<iCellCount;i+=3D2)
+  szHTML+=3D"<col width=3D1><col>";
+
+ var iRow;
+ for (iRow=3D0;iRow<6;iRow++) {
+
+  szHTML+=3D"<tr>";
+
+  if (iRow=3D=3D5)
+   szHTML+=3D"<td colspan=3D"+iCellCount+"></td>";
+  else {
+   if (iRow=3D=3D0) {
+    for(i=3D0;i<iCellCount;i++)
+     szHTML+=3D"<td height=3D1 class=3D\"clBorder\"></td>";
+   } else if (iRow=3D=3D1) {
+    for(i=3D0;i<c_lTabs;i++) {
+     szHTML+=3D"<td height=3D1 nowrap class=3D\"clBorder\">&nbsp;</td>";
+     szHTML+=3D
+      "<td id=3DtdTab height=3D1 nowrap class=3D\"clTab\" onmouseover=3D\"p=
+arent.fnMouseOverTab("+i+");\" onmouseout=3D\"parent.fnMouseOutTab("+i+");\=
+">"+
+      "<a href=3D\""+document.all.item("shLink")[i].href+"\" target=3D\"frS=
+heet\" id=3DaTab>&nbsp;"+c_rgszSh[i]+"&nbsp;</a></td>";
+    }
+    szHTML+=3D"<td id=3DtdTab height=3D1 nowrap class=3D\"clBorder\"><a id=
+=3DaTab>&nbsp;</a></td><td width=3D100%></td>";
+   } else if (iRow=3D=3D2) {
+    for (i=3D0;i<c_lTabs;i++)
+     szHTML+=3D"<td height=3D1></td><td height=3D1 class=3D\"clBorder\"></t=
+d>";
+    szHTML+=3D"<td height=3D1></td><td height=3D1></td>";
+   } else if (iRow=3D=3D3) {
+    for (i=3D0;i<iCellCount;i++)
+     szHTML+=3D"<td height=3D1></td>";
+   } else if (iRow=3D=3D4) {
+    for (i=3D0;i<c_lTabs;i++)
+     szHTML+=3D"<td height=3D1 width=3D1></td><td height=3D1></td>";
+    szHTML+=3D"<td height=3D1 width=3D1></td><td></td>";
+   }
+  }
+  szHTML+=3D"</tr>";
+ }
+
+ szHTML+=3D"</table></body></html>";
+ with (frames['frTabs'].document) {
+  open("text/html","replace");
+  charset=3Ddocument.charset;
+  write(szHTML);
+  close();
+ }
+}
+
+function fnInit()
+{
+ g_rglTabX[0]=3D0;
+ var i;
+ for (i=3D1;i<=3Dc_lTabs;i++)
+  with (frames['frTabs'].document.all.tbTabs.rows[1].cells[fnTabToCol(i-1)])
+   g_rglTabX[i]=3DoffsetLeft+offsetWidth-6;
+}
+
+function fnTabToCol(iTab)
+{
+ return 2*iTab+1;
+}
+
+function fnNextTab(fDir)
+{
+ var iNextTab=3D-1;
+ var i;
+
+ with (frames['frTabs'].document.body) {
+  if (fDir=3D=3D0) {
+   if (scrollLeft>0) {
+    for (i=3D0;i<c_lTabs&&g_rglTabX[i]<scrollLeft;i++);
+    if (i<c_lTabs)
+     iNextTab=3Di-1;
+   }
+  } else {
+   if (g_rglTabX[c_lTabs]+6>offsetWidth+scrollLeft) {
+    for (i=3D0;i<c_lTabs&&g_rglTabX[i]<=3DscrollLeft;i++);
+    if (i<c_lTabs)
+     iNextTab=3Di;
+   }
+  }
+ }
+ return iNextTab;
+}
+
+function fnScrollTabs(fDir)
+{
+ var iNextTab=3DfnNextTab(fDir);
+
+ if (iNextTab>=3D0) {
+  frames['frTabs'].scroll(g_rglTabX[iNextTab],0);
+  return true;
+ } else
+  return false;
+}
+
+function fnFastScrollTabs(fDir)
+{
+ if (c_lTabs>16)
+  frames['frTabs'].scroll(g_rglTabX[fDir?c_lTabs-1:0],0);
+ else
+  if (fnScrollTabs(fDir)>0) window.setTimeout("fnFastScrollTabs("+fDir+");"=
+,5);
+}
+
+function fnSetTabProps(iTab,fActive)
+{
+ var iCol=3DfnTabToCol(iTab);
+ var i;
+
+ if (iTab>=3D0) {
+  with (frames['frTabs'].document.all) {
+   with (tbTabs) {
+    for (i=3D0;i<=3D4;i++) {
+     with (rows[i]) {
+      if (i=3D=3D0)
+       cells[iCol].style.background=3Dc_rgszClr[fActive?0:2];
+      else if (i>0 && i<4) {
+       if (fActive) {
+        cells[iCol-1].style.background=3Dc_rgszClr[2];
+        cells[iCol].style.background=3Dc_rgszClr[0];
+        cells[iCol+1].style.background=3Dc_rgszClr[2];
+       } else {
+        if (i=3D=3D1) {
+         cells[iCol-1].style.background=3Dc_rgszClr[2];
+         cells[iCol].style.background=3Dc_rgszClr[1];
+         cells[iCol+1].style.background=3Dc_rgszClr[2];
+        } else {
+         cells[iCol-1].style.background=3Dc_rgszClr[4];
+         cells[iCol].style.background=3Dc_rgszClr[(i=3D=3D2)?2:4];
+         cells[iCol+1].style.background=3Dc_rgszClr[4];
+        }
+       }
+      } else
+       cells[iCol].style.background=3Dc_rgszClr[fActive?2:4];
+     }
+    }
+   }
+   with (aTab[iTab].style) {
+    cursor=3D(fActive?"default":"hand");
+    color=3Dc_rgszClr[3];
+   }
+  }
+ }
+}
+
+function fnMouseOverScroll(iCtl)
+{
+ frames['frScroll'].document.all.tdScroll[iCtl].style.color=3Dc_rgszClr[7];
+}
+
+function fnMouseOutScroll(iCtl)
+{
+ frames['frScroll'].document.all.tdScroll[iCtl].style.color=3Dc_rgszClr[6];
+}
+
+function fnMouseOverTab(iTab)
+{
+ if (iTab!=3Dg_iShCur) {
+  var iCol=3DfnTabToCol(iTab);
+  with (frames['frTabs'].document.all) {
+   tdTab[iTab].style.background=3Dc_rgszClr[5];
+  }
+ }
+}
+
+function fnMouseOutTab(iTab)
+{
+ if (iTab>=3D0) {
+  var elFrom=3Dframes['frTabs'].event.srcElement;
+  var elTo=3Dframes['frTabs'].event.toElement;
+
+  if ((!elTo) ||
+   (elFrom.tagName=3D=3DelTo.tagName) ||
+   (elTo.tagName=3D=3D"A" && elTo.parentElement!=3DelFrom) ||
+   (elFrom.tagName=3D=3D"A" && elFrom.parentElement!=3DelTo)) {
+
+   if (iTab!=3Dg_iShCur) {
+    with (frames['frTabs'].document.all) {
+     tdTab[iTab].style.background=3Dc_rgszClr[1];
+    }
+   }
+  }
+ }
+}
+
+function fnSetActiveSheet(iSh)
+{
+ if (iSh!=3Dg_iShCur) {
+  fnSetTabProps(g_iShCur,false);
+  fnSetTabProps(iSh,true);
+  g_iShCur=3DiSh;
+ }
+}
+
+ window.g_iIEVer=3DfnGetIEVer();
+ if (window.g_iIEVer>=3D4)
+  fnBuildFrameset();
+//-->
+</script>
+<![endif]><!--[if gte mso 9]><xml>
+ <x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+   <x:ExcelWorksheet>
+    <x:Name>copilot_report</x:Name>
+    <x:WorksheetSource HRef=3D"copilot_report_20251208152553.files/sheet001=
+.htm"/>
+   </x:ExcelWorksheet>
+   <x:ExcelWorksheet>
+    <x:Name>‘gD‘S‘Ì‚Ì“Œv</x:Name>
+    <x:WorksheetSource HRef=3D"copilot_report_20251208152553.files/sheet002=
+.htm"/>
+   </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+  <x:Stylesheet HRef=3D"copilot_report_20251208152553.files/stylesheet.css"=
+/>
+  <x:WindowHeight>7455</x:WindowHeight>
+  <x:WindowWidth>21360</x:WindowWidth>
+  <x:WindowTopX>32767</x:WindowTopX>
+  <x:WindowTopY>32767</x:WindowTopY>
+  <x:ProtectStructure>False</x:ProtectStructure>
+  <x:ProtectWindows>False</x:ProtectWindows>
+ </x:ExcelWorkbook>
+</xml><![endif]-->
+</head>
+
+<frameset rows=3D"*,39" border=3D0 width=3D0 frameborder=3Dno framespacing=
+=3D0>
+ <frame src=3D"copilot_report_20251208152553.files/sheet001.htm" name=3D"fr=
+Sheet">
+ <frame src=3D"copilot_report_20251208152553.files/tabstrip.htm" name=3D"fr=
+Tabs" marginwidth=3D0 marginheight=3D0>
+ <noframes>
+  <body>
+   <p>‚±‚Ìƒy[ƒW‚Åg—p‚·‚éƒtƒŒ[ƒ€‚ÍA‚¨g‚¢‚Ìƒuƒ‰ƒEƒU[‚Å‚ÍƒTƒ|[ƒg‚³‚ê‚Ä‚=
+¢‚Ü‚¹‚ñB</p>
+  </body>
+ </noframes>
+</frameset>
+</html>
+
+------=_NextPart_01DC6857.23156380
+Content-Location: file:///C:/6569DAD3/copilot_report_20251208152553.files/stylesheet.css
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/css; charset="shift_jis"
+
+tr
+	{mso-height-source:auto;
+	mso-ruby-visibility:none;}
+col
+	{mso-width-source:auto;
+	mso-ruby-visibility:none;}
+br
+	{mso-data-placement:same-cell;}
+ruby
+	{ruby-align:left;}
+.style0
+	{mso-number-format:General;
+	text-align:general;
+	vertical-align:bottom;
+	white-space:nowrap;
+	mso-rotate:0;
+	mso-background-source:auto;
+	mso-pattern:auto;
+	color:black;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"‚l‚r ‚oƒSƒVƒbƒN", monospace;
+	mso-font-charset:128;
+	border:none;
+	mso-protection:locked visible;
+	mso-style-name:•W€;
+	mso-style-id:0;}
+td
+	{mso-style-parent:style0;
+	padding-top:1px;
+	padding-right:1px;
+	padding-left:1px;
+	mso-ignore:padding;
+	color:black;
+	font-size:11.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"‚l‚r ‚oƒSƒVƒbƒN", monospace;
+	mso-font-charset:128;
+	mso-number-format:General;
+	text-align:general;
+	vertical-align:bottom;
+	border:none;
+	mso-background-source:auto;
+	mso-pattern:auto;
+	mso-protection:locked visible;
+	white-space:nowrap;
+	mso-rotate:0;}
+.xl65
+	{mso-style-parent:style0;
+	color:red;
+	font-weight:700;}
+.xl66
+	{mso-style-parent:style0;
+	color:windowtext;
+	font-weight:700;}
+
+------=_NextPart_01DC6857.23156380
+Content-Location: file:///C:/6569DAD3/copilot_report_20251208152553.files/tabstrip.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="shift_jis"
+
+<html>
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dshift_jis">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 15">
+<link id=3DMain-File rel=3DMain-File href=3D"../copilot_report_202512081525=
+53.htm">
+<![if IE]>
+<base
+href=3D"file:///C:/6569DAD3/copilot_report_20251208152553.files/tabstrip.ht=
+m"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<script language=3D"JavaScript">
+<!--
+if (window.name!=3D"frTabs")
+ window.location.replace(document.all.item("Main-File").href);
+//-->
+</script>
+<style>
+<!--
+A {
+    text-decoration:none;
+    color:#000000;
+    font-size:9pt;
+}
+-->
+</style>
+</head>
+<body topmargin=3D0 leftmargin=3D0 bgcolor=3D"#808080">
+<table border=3D0 cellspacing=3D1>
+ <tr>
+ <td bgcolor=3D"#FFFFFF" nowrap><b><small><small>&nbsp;<a href=3D"sheet001.=
+htm" target=3D"frSheet"><font face=3D"‚l‚r ‚oƒSƒVƒbƒN" color=3D"#000000">co=
+pilot_report</font></a>&nbsp;</small></small></b></td>
+ <td bgcolor=3D"#FFFFFF" nowrap><b><small><small>&nbsp;<a href=3D"sheet002.=
+htm" target=3D"frSheet"><font face=3D"‚l‚r ‚oƒSƒVƒbƒN" color=3D"#000000">‘g=
+D‘S‘Ì‚Ì“Œv</font></a>&nbsp;</small></small></b></td>
+
+ </tr>
+</table>
+</body>
+</html>
+
+------=_NextPart_01DC6857.23156380
+Content-Location: file:///C:/6569DAD3/copilot_report_20251208152553.files/sheet001.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="shift_jis"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dshift_jis">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 15">
+<link id=3DMain-File rel=3DMain-File href=3D"../copilot_report_202512081525=
+53.htm">
+<link rel=3DFile-List href=3Dfilelist.xml>
+<![if IE]>
+<base
+href=3D"file:///C:/6569DAD3/copilot_report_20251208152553.files/sheet001.ht=
+m"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<link rel=3DStylesheet href=3Dstylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:1.0in .75in 1.0in .75in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;}
+ruby
+	{ruby-align:left;}
+rt
+	{color:windowtext;
+	font-size:6.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"‚l‚r ‚oƒSƒVƒbƒN", monospace;
+	mso-font-charset:128;
+	mso-char-type:katakana;
+	display:none;}
+-->
+</style>
+<![if !supportTabStrip]><script language=3D"JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=3D4) {
+   if (parent.document.readyState=3D=3D"complete"
+    && parent.frames['frTabs'].document.readyState=3D=3D"complete")
+   parent.fnSetActiveSheet(0);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!=3D"frSheet")
+ window.location.replace("../copilot_report_20251208152553.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=3Dblue vlink=3Dpurple>
+
+<table border=3D0 cellpadding=3D0 cellspacing=3D0 width=3D720 style=3D'bord=
+er-collapse:
+ collapse;table-layout:fixed;width:540pt'>
+ <col width=3D72 span=3D9 style=3D'width:54pt'>
+ <col width=3D72 style=3D'width:54pt'>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 width=3D72 style=3D'height:13.5pt;width:54pt'>‘ÎÛƒ`[<sp=
+an
+  style=3D'display:none'>ƒ€: ‘S‘Ì</span></td>
+  <td colspan=3D4 width=3D288 style=3D'mso-ignore:colspan;width:216pt'>ƒf[=
+ƒ^ûW“ú:
+  2025/12/08 15:25</td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D10 style=3D'height:13.5pt;mso-ignore:colspan'><=
+/td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>–¼</td>
+  <td>GitHubƒ†[<span style=3D'display:none'>ƒU[–¼</span></td>
+  <td>pmed-inc<span style=3D'display:none'>Q‰Á</span></td>
+  <td>Copilot—L<span style=3D'display:none'>Œø/–³Œø</span></td>
+  <td>ƒV[ƒgŠ„‚è<span style=3D'display:none'>“–‚Ä</span></td>
+  <td>ÅI—˜—p<span style=3D'display:none'>“ú</span></td>
+  <td>ÅI—˜—p<span style=3D'display:none'>ƒGƒfƒBƒ^</span></td>
+  <td>ƒV[ƒgì¬<span style=3D'display:none'>“ú</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>ƒV[ƒgæÁ—\’è“ú</td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>¼‘º—E‹P</td>
+  <td>yuki-matsu<span style=3D'display:none'>mura-73</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 13:54</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.9/copilot-vs/17.14.87=
+8.3237</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/11 13:13</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>R‰ºÂ</td>
+  <td>wataru-ya<span style=3D'display:none'>mashita27</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/11/<span style=3D'display:none'>26 16:17</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36401.2/copilot-vs-chat/17.14.995.13737</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>X–{—S“l</td>
+  <td>yuto-mori<span style=3D'display:none'>moto</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 06:47</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.21/copilot-vs/17.14.1=
+518.61961</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/26 10:45</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‹ùèŒ’Š</td>
+  <td>Kenji-Kush<span style=3D'display:none'>izaki-Medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>06 17:44</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.19/copilot-vs/17.14.1=
+368.60722</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>¼–{Œõ‹N</td>
+  <td>koki-matsu<span style=3D'display:none'>moto-2410</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:44</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36408.4/copilot-vs-chat/17.14.995.13737</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‹ø“c_—S</td>
+  <td>kushi-da</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>04 19:54</span></td>
+  <td>copilot-ch<span style=3D'display:none'>at</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>–k‘º®‘¾</td>
+  <td>shota-kita<span style=3D'display:none'>mura-medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 20:28</span></td>
+  <td>vscode/1.<span style=3D'display:none'>106.1/copilot-chat/0.33.3</span=
+></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>‹{–{ </td>
+  <td>takumi-miy<span style=3D'display:none'>amoto-1228</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/10/<span style=3D'display:none'>17 04:50</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.9/copilot-vs/17.14.87=
+8.3237</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ŠŞ˜Ğ÷</td>
+  <td>yukiiwao</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 18:04</span></td>
+  <td>copilot-ch<span style=3D'display:none'>at</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>VŒ´‘ˆê<span style=3D'display:no=
+ne'>˜Y</span></td>
+  <td>soichiro-ni<span style=3D'display:none'>ihara</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 11:07</span></td>
+  <td>vscode/1.<span style=3D'display:none'>106.3/copilot-chat/0.33.4</span=
+></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ë’J”üç</td>
+  <td>sagiya-mis<span style=3D'display:none'>aki</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 11:22</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.10.1/copilot-vs/0.2.889.=
+30432</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>’Ã“c½</td>
+  <td>makototsu<span style=3D'display:none'>damedley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/09/<span style=3D'display:none'>25 09:20</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.36105.23/copilot-vs-c=
+hat/17.13.449.12402</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>•½R^–ç</td>
+  <td>shinya-hira<span style=3D'display:none'>yama</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 11:29</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.36105.23/copilot-vs-c=
+hat/17.13.449.12402</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>’£•¶‹­</td>
+  <td>VoidAxon</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>05 11:01</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.2/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/25 09:07</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ˆî—¯˜a‘t</td>
+  <td>wakana-in<span style=3D'display:none'>adome</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:47</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.15/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>’JŒû‹M‘å</td>
+  <td>t-taniguchi<span style=3D'display:none'>-medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 15:05</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.19/copilot-vs/17.14.1=
+368.60722</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>Šâú±ãÄÆ</td>
+  <td>shoyaiwasa<span style=3D'display:none'>ki</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 13:15</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36603.0/copilot-vs-chat/17.14.1290.42047</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‹à’J—²‘¾</td>
+  <td>ryuta-kana<span style=3D'display:none'>ya</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 19:22</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36221.1/copilot-vs-chat/17.14.794.21998</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‹v•ÛéD“l</td>
+  <td>kubo8810</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:56</span></td>
+  <td>vscode/1.<span style=3D'display:none'>103.0/copilot-chat/0.30.3</span=
+></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/18 08:51</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>Îì‘å‹L</td>
+  <td>dishikawa-<span style=3D'display:none'>medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:19</span></td>
+  <td>copilot-ch<span style=3D'display:none'>at</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/11/27 13:28</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‹g‘º—Ö</td>
+  <td>rin-yoshim<span style=3D'display:none'>ura</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 11:05</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.10/copilot-vs/17.14.9=
+39.21063</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>X’JL‘å</td>
+  <td>koudai-mo<span style=3D'display:none'>riya</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 13:45</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.21/copilot-vs/17.14.1=
+518.61961</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ì‰º“NŒh</td>
+  <td>T6-Kawas<span style=3D'display:none'>hita</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:38</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.13/copilot-vs/17.14.1=
+091.29919</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>R’†r</td>
+  <td>Yamanaka<span style=3D'display:none'>Shun</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/09/<span style=3D'display:none'>02 14:03</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.0/copilot-vs/17.14.67=
+0.39694</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>ˆÀ’B—Bl</td>
+  <td>yadachi888</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/11/<span style=3D'display:none'>28 16:33</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‰¡R—‹ì</td>
+  <td>rikuyokoya<span style=3D'display:none'>ma</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:26</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.9/copilot-vs/17.14.87=
+8.3237</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‚“cÊ‰¹</td>
+  <td>ayato-taka<span style=3D'display:none'>da-medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:12</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36221.1/copilot-vs-chat/17.14.794.21998</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>’†‘ºä‘¾<span style=
+=3D'display:none'>˜Y</span></td>
+  <td>jnakamura1<span style=3D'display:none'>999</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>01 09:51</span></td>
+  <td>vscode/1.<span style=3D'display:none'>91.0/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>Š|…Š²‘¾</td>
+  <td>Kkakemizu</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 13:54</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.21/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>’†’J—D“ß</td>
+  <td>nakatani-0<span style=3D'display:none'>2</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 17:27</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/26 10:11</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>’|“àØ÷</td>
+  <td>nao-takeu<span style=3D'display:none'>chi314</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 09:49</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.9/copilot-vs/17.14.87=
+8.3237</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/10 08:56</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‘ååM—“Ş</td>
+  <td>royabu</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:46</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.15/copilot-vs/17.14.1=
+204.46620</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/09 18:21</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ˆäì’¼Æ</td>
+  <td>naoya2198</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:45</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36414.22/copilot-vs-chat/17.14.1091.29919</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>sì‰ël</td>
+  <td>masato-ic<span style=3D'display:none'>hikawa-medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 18:13</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.10/copilot-vs/17.14.9=
+39.21063</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‹g‘ºŸ©Šî</td>
+  <td>koki-yoshi<span style=3D'display:none'>mura-medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>04 10:44</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‰PˆäÅ</td>
+  <td>motto-usui</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 15:26</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>â–{“o–²</td>
+  <td>sakamoto-<span style=3D'display:none'>0520</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>06 13:35</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.13/copilot-vs/17.14.1=
+091.29919</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>RèéD‘å</td>
+  <td>sota-yama<span style=3D'display:none'>saki</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 11:13</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.11/copilot-vs/17.14.9=
+95.13737</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>‰YìŒdÆ</td>
+  <td>keisuke-ur<span style=3D'display:none'>akawa</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/10/<span style=3D'display:none'>28 12:30</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/26 09:48</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>Ä“c^ç</td>
+  <td>mamoru-s<span style=3D'display:none'>hibata</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>05 19:08</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.11/copilot-vs/17.14.9=
+95.13737</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 10:53</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>¼”ö½</td>
+  <td>makoto-ni<span style=3D'display:none'>shio</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>06 18:16</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.9/copilot-vs/17.14.87=
+8.3237</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>¬¼—m‰î</td>
+  <td>ykomatsu0<span style=3D'display:none'>703</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>04 12:56</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.18/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/26 09:19</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>“¹‰º—FL</td>
+  <td>tomohiro-<span style=3D'display:none'>michishita</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>¼–{Œ’ˆê</td>
+  <td>mken0214</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>05 18:51</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.0/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:58</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>¬’J‚j</td>
+  <td>TakafumiO<span style=3D'display:none'>dani</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 09:54</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‹{–{iN</td>
+  <td>shiko-miya<span style=3D'display:none'>moto</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>03 15:05</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.13/copilot-vs/17.14.1=
+091.29919</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>’†“‡Vi</td>
+  <td>pmed-snak<span style=3D'display:none'>ashima</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 12:25</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.9/copilot-vs/17.14.87=
+8.3237</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/09 10:19</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>–ì’†‘×R</td>
+  <td>taizan1970<span style=3D'display:none'>0214</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>àV¼Œ«ˆê</td>
+  <td>Phobos314<span style=3D'display:none'>15</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>’†•½ŠM“l</td>
+  <td>KaitoNakah<span style=3D'display:none'>ira</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>Rè“úŒü</td>
+  <td>HyugaYam<span style=3D'display:none'>asaki</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 13:48</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.19/copilot-vs/17.14.1=
+368.60722</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>“c’†Ê‰_</td>
+  <td>AyamoTan<span style=3D'display:none'>aka</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>05 15:20</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36221.1/copilot-vs-chat/17.14.794.21998</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>•Ğ‰ªÂ</td>
+  <td>syo-kataok<span style=3D'display:none'>a</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 14:15</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.16/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/26 10:42</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'page-break-before:always;height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>âV“¡‘×‹I</td>
+  <td>hk-saito</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>05 15:18</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.2/copilot-vs/17.14.69=
+8.11175</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/26 09:49</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ŸºŒ’‘¾˜Y</td>
+  <td>Mareyoshi<span style=3D'display:none'>0816</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>05 11:16</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.20/copilot-vs/17.14.1=
+431.25910</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/19 17:59</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>“¡ˆä–õO</td>
+  <td>yasuhirofuj<span style=3D'display:none'>ii-medley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>08 15:04</span></td>
+  <td>vscode/1.<span style=3D'display:none'>106.3/copilot-chat/0.33.4</span=
+></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/12/01 16:28</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>aŒû‰Ãu</td>
+  <td>yoshiyuki-<span style=3D'display:none'>mizoguchi-medley</span></td>
+  <td>N/A</td>
+  <td>N/A</td>
+  <td>‚ ‚è</td>
+  <td>2025/10/<span style=3D'display:none'>20 10:41</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.17/copilot-vs/17.14.1=
+290.42047</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/18 10:38</td>
+  <td></td>
+ </tr>
+ <tr height=3D72 style=3D'height:54.0pt;mso-xlrowspan:4'>
+  <td height=3D72 colspan=3D10 style=3D'height:54.0pt;mso-ignore:colspan'><=
+/td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D4 style=3D'height:13.5pt;mso-ignore:colspan'>y=
+7“úˆÈã–¢—˜—pƒ†[ƒU[iÔš‘ÎÛjˆê——z</td>
+  <td colspan=3D6 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl66 style=3D'height:13.5pt'>–¼</td>
+  <td class=3Dxl66>GitHubƒ†<span style=3D'display:none'>[ƒU[–¼</span></td>
+  <td class=3Dxl66>pmed-inc<span style=3D'display:none'>Q‰Á</span></td>
+  <td class=3Dxl66>Copilot—L<span style=3D'display:none'>Œø/–³Œø</span></td>
+  <td class=3Dxl66>ƒV[ƒgŠ„‚è<span style=3D'display:none'>“–‚Ä</span></td>
+  <td class=3Dxl66>ÅI—˜—p<span style=3D'display:none'>“ú</span></td>
+  <td class=3Dxl66>ÅI—˜—p<span style=3D'display:none'>ƒGƒfƒBƒ^</span></td>
+  <td class=3Dxl66>ƒV[ƒgì<span style=3D'display:none'>¬“ú</span></td>
+  <td class=3Dxl66 colspan=3D2 style=3D'mso-ignore:colspan'>ƒV[ƒgæÁ—\’è“=
+ú</td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>R‰ºÂ</td>
+  <td>wataru-ya<span style=3D'display:none'>mashita27</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/11/<span style=3D'display:none'>26 16:17</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/VisualStudio.17.Release/17.=
+14.36401.2/copilot-vs-chat/17.14.995.13737</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>‹{–{ </td>
+  <td>takumi-miy<span style=3D'display:none'>amoto-1228</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/10/<span style=3D'display:none'>17 04:50</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.9/copilot-vs/17.14.87=
+8.3237</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>’Ã“c½</td>
+  <td>makototsu<span style=3D'display:none'>damedley</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/09/<span style=3D'display:none'>25 09:20</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.36105.23/copilot-vs-c=
+hat/17.13.449.12402</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>R’†r</td>
+  <td>Yamanaka<span style=3D'display:none'>Shun</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/09/<span style=3D'display:none'>02 14:03</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.0/copilot-vs/17.14.67=
+0.39694</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>ˆÀ’B—Bl</td>
+  <td>yadachi888</td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/11/<span style=3D'display:none'>28 16:33</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>’†‘ºä‘¾<span style=
+=3D'display:none'>˜Y</span></td>
+  <td>jnakamura1<span style=3D'display:none'>999</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/12/<span style=3D'display:none'>01 09:51</span></td>
+  <td>vscode/1.<span style=3D'display:none'>91.0/</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/02 09:39</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>‰YìŒdÆ</td>
+  <td>keisuke-ur<span style=3D'display:none'>akawa</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚ ‚è</td>
+  <td>2025/10/<span style=3D'display:none'>28 12:30</span></td>
+  <td>visualstudi<span style=3D'display:none'>o/17.13.35931.197/copilot-vs-=
+chat/17.13.444.19527</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/26 09:48</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>“¹‰º—FL</td>
+  <td>tomohiro-<span style=3D'display:none'>michishita</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>–ì’†‘×R</td>
+  <td>taizan1970<span style=3D'display:none'>0214</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>àV¼Œ«ˆê</td>
+  <td>Phobos314<span style=3D'display:none'>15</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>’†•½ŠM“l</td>
+  <td>KaitoNakah<span style=3D'display:none'>ira</span></td>
+  <td>Q‰Á</td>
+  <td>—LŒø</td>
+  <td>‚È‚µ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 class=3Dxl65 style=3D'height:13.5pt'>aŒû‰Ãu</td>
+  <td>yoshiyuki-<span style=3D'display:none'>mizoguchi-medley</span></td>
+  <td>N/A</td>
+  <td>N/A</td>
+  <td>‚ ‚è</td>
+  <td>2025/10/<span style=3D'display:none'>20 10:41</span></td>
+  <td>VisualStudi<span style=3D'display:none'>o/17.14.17/copilot-vs/17.14.1=
+290.42047</span></td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>2025/09/18 10:38</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D10 style=3D'height:13.5pt;mso-ignore:colspan'><=
+/td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>7“úˆÈã–¢<span style=3D'display:n=
+one'>—˜—pƒ†[ƒU[”</span></td>
+  <td align=3Dright>12</td>
+  <td>21%</td>
+  <td colspan=3D7 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>7“úˆÈ“à‚É<span style=3D'display:n=
+one'>—˜—p‚µ‚½ƒ†[ƒU[”</span></td>
+  <td align=3Dright>45</td>
+  <td>79%</td>
+  <td colspan=3D7 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‘ƒ†[ƒU<span style=3D'display:no=
+ne'>[”</span></td>
+  <td align=3Dright>57</td>
+  <td colspan=3D8 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=3D0 style=3D'display:none'>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
+
+------=_NextPart_01DC6857.23156380
+Content-Location: file:///C:/6569DAD3/copilot_report_20251208152553.files/sheet002.htm
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset="shift_jis"
+
+<html xmlns:v=3D"urn:schemas-microsoft-com:vml"
+xmlns:o=3D"urn:schemas-microsoft-com:office:office"
+xmlns:x=3D"urn:schemas-microsoft-com:office:excel"
+xmlns=3D"http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=3DContent-Type content=3D"text/html; charset=3Dshift_jis">
+<meta name=3DProgId content=3DExcel.Sheet>
+<meta name=3DGenerator content=3D"Microsoft Excel 15">
+<link id=3DMain-File rel=3DMain-File href=3D"../copilot_report_202512081525=
+53.htm">
+<link rel=3DFile-List href=3Dfilelist.xml>
+<![if IE]>
+<base
+href=3D"file:///C:/6569DAD3/copilot_report_20251208152553.files/sheet002.ht=
+m"
+id=3D"webarch_temp_base_tag">
+<![endif]>
+<link rel=3DStylesheet href=3Dstylesheet.css>
+<style>
+<!--table
+	{mso-displayed-decimal-separator:"\.";
+	mso-displayed-thousand-separator:"\,";}
+@page
+	{margin:1.0in .75in 1.0in .75in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;}
+ruby
+	{ruby-align:left;}
+rt
+	{color:windowtext;
+	font-size:6.0pt;
+	font-weight:400;
+	font-style:normal;
+	text-decoration:none;
+	font-family:"‚l‚r ‚oƒSƒVƒbƒN", monospace;
+	mso-font-charset:128;
+	mso-char-type:katakana;
+	display:none;}
+-->
+</style>
+<![if !supportTabStrip]><script language=3D"JavaScript">
+<!--
+function fnUpdateTabs()
+ {
+  if (parent.window.g_iIEVer>=3D4) {
+   if (parent.document.readyState=3D=3D"complete"
+    && parent.frames['frTabs'].document.readyState=3D=3D"complete")
+   parent.fnSetActiveSheet(1);
+  else
+   window.setTimeout("fnUpdateTabs();",150);
+ }
+}
+
+if (window.name!=3D"frSheet")
+ window.location.replace("../copilot_report_20251208152553.htm");
+else
+ fnUpdateTabs();
+//-->
+</script>
+<![endif]>
+</head>
+
+<body link=3Dblue vlink=3Dpurple>
+
+<table border=3D0 cellpadding=3D0 cellspacing=3D0 width=3D612 style=3D'bord=
+er-collapse:
+ collapse;table-layout:fixed;width:459pt'>
+ <col width=3D252 style=3D'mso-width-source:userset;mso-width-alt:8064;widt=
+h:189pt'>
+ <col width=3D72 span=3D5 style=3D'width:54pt'>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 width=3D252 style=3D'height:13.5pt;width:189pt'>‘gD‘S‘Ì‚=
+ÌCopilotg—p“Œv
+  (‘S‘Ì)</td>
+  <td colspan=3D4 width=3D288 style=3D'mso-ignore:colspan;width:216pt'>ŠúŠÔ=
+: 2025-11-10
+  ~ 2025-12-08</td>
+  <td width=3D72 style=3D'width:54pt'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D6 style=3D'height:13.5pt;mso-ignore:colspan'></=
+td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D4 style=3D'height:13.5pt;mso-ignore:colspan'>’=
+ˆÓ: GitHub
+  Copilot Metrics API‚Í‘gD‘S‘Ì‚ÌWŒv‚Ì‚İ‚ğ’ñ‹Ÿ‚µ‚Ü‚·</td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D4 style=3D'height:13.5pt;mso-ignore:colspan'>ŒÂ=
+•Êƒ†[ƒU[‚ÌƒƒgƒŠƒNƒX‚Íæ“¾‚Å‚«‚Ü‚¹‚ñiGitHub‚Ìd—l§ŒÀj</td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D6 style=3D'height:13.5pt;mso-ignore:colspan'></=
+td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ƒƒgƒŠƒNƒXAPIŒÄ‚Ño‚µ: ¬Œ÷</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D4 style=3D'height:13.5pt;mso-ignore:colspan'>‚µ=
+‚©‚µAŒÂ•Êƒ†[ƒU[‚Ìƒf[ƒ^‚ÍŠÜ‚Ü‚ê‚Ä‚¢‚Ü‚¹‚ñid—l‚É‚æ‚éj</td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D6 style=3D'height:13.5pt;mso-ignore:colspan'></=
+td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>Ú×î•ñ</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‘ÎÛŠúŠÔ</td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'>2025-11-10 ~ 2025-12-08 (28“=
+úŠÔ)</td>
+  <td></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‘ÎÛ‘gD</td>
+  <td colspan=3D2 style=3D'mso-ignore:colspan'>medley-inc</td>
+  <td colspan=3D3 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>‘ÎÛƒ`[ƒ€</td>
+  <td>‘S‘Ì</td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>ƒŒƒ|[ƒg‘ÎÛƒ†[ƒU[”</td>
+  <td align=3Dright>57</td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D6 style=3D'height:13.5pt;mso-ignore:colspan'></=
+td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D2 style=3D'height:13.5pt;mso-ignore:colspan'>æ=
+“¾‰Â”\‚Èî•ñi‘gD‘S‘Ì‚ÌWŒv‚Ì‚İj</td>
+  <td colspan=3D4 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>- “ú•Ê‚ÌƒAƒNƒeƒBƒuƒ†[ƒU[”</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>- “ú•Ê‚ÌƒGƒ“ƒQ[ƒWƒ†[ƒU[”</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>- ƒR[ƒh•âŠ®—˜—pÒ”</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>- IDE Chat—˜—pÒ”</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 style=3D'height:13.5pt'>- Œ¾Œê•ÊEƒGƒfƒBƒ^•Ê‚ÌWŒv</td>
+  <td colspan=3D5 style=3D'mso-ignore:colspan'></td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D6 style=3D'height:13.5pt;mso-ignore:colspan'></=
+td>
+ </tr>
+ <tr height=3D18 style=3D'height:13.5pt'>
+  <td height=3D18 colspan=3D6 style=3D'height:13.5pt;mso-ignore:colspan'>ŒÂ=
+•Êƒ†[ƒU[‚ÌƒƒgƒŠƒNƒXi’ñˆÄ”A³”F”‚È‚Çj‚ÍGitHub
+  API‚Ìd—l‚É‚æ‚èæ“¾‚Å‚«‚Ü‚¹‚ñ</td>
+ </tr>
+ <![if supportMisalignedColumns]>
+ <tr height=3D0 style=3D'display:none'>
+  <td width=3D252 style=3D'width:189pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+  <td width=3D72 style=3D'width:54pt'></td>
+ </tr>
+ <![endif]>
+</table>
+
+</body>
+
+</html>
+
+------=_NextPart_01DC6857.23156380
+Content-Location: file:///C:/6569DAD3/copilot_report_20251208152553.files/filelist.xml
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/xml; charset="utf-8"
+
+<xml xmlns:o=3D"urn:schemas-microsoft-com:office:office">
+ <o:MainFile HRef=3D"../copilot_report_20251208152553.htm"/>
+ <o:File HRef=3D"stylesheet.css"/>
+ <o:File HRef=3D"tabstrip.htm"/>
+ <o:File HRef=3D"sheet001.htm"/>
+ <o:File HRef=3D"sheet002.htm"/>
+ <o:File HRef=3D"filelist.xml"/>
+</xml>
+------=_NextPart_01DC6857.23156380--

@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.7383842,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:48+09:00",
+    "assignee": {
+      "login": "jnakamura1999",
+      "id": 208579516,
+      "node_id": "U_kgDODG6rvA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/208579516?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/jnakamura1999",
+      "html_url": "https://github.com/jnakamura1999",
+      "followers_url": "https://api.github.com/users/jnakamura1999/followers",
+      "following_url": "https://api.github.com/users/jnakamura1999/following{/other_user}",
+      "gists_url": "https://api.github.com/users/jnakamura1999/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/jnakamura1999/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/jnakamura1999/subscriptions",
+      "organizations_url": "https://api.github.com/users/jnakamura1999/orgs",
+      "repos_url": "https://api.github.com/users/jnakamura1999/repos",
+      "events_url": "https://api.github.com/users/jnakamura1999/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/jnakamura1999/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:16:30Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T16:00:57+09:00",
+    "last_activity_editor": "vscode/1.110.0/copilot-chat/0.38.2",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

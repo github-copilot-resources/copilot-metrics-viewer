@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.673808,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:27+09:00",
+    "assignee": {
+      "login": "wakana-inadome",
+      "id": 208433265,
+      "node_id": "U_kgDODGxwcQ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/208433265?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/wakana-inadome",
+      "html_url": "https://github.com/wakana-inadome",
+      "followers_url": "https://api.github.com/users/wakana-inadome/followers",
+      "following_url": "https://api.github.com/users/wakana-inadome/following{/other_user}",
+      "gists_url": "https://api.github.com/users/wakana-inadome/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/wakana-inadome/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/wakana-inadome/subscriptions",
+      "organizations_url": "https://api.github.com/users/wakana-inadome/orgs",
+      "repos_url": "https://api.github.com/users/wakana-inadome/repos",
+      "events_url": "https://api.github.com/users/wakana-inadome/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/wakana-inadome/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:32:40Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T19:12:25+09:00",
+    "last_activity_editor": "VisualStudio/17.14.15/copilot-vs/17.14.1204.46620",
+    "assigning_team": {
+      "name": "minet",
+      "id": 14012158,
+      "node_id": "T_kwDOAKegfs4A1c7-",
+      "slug": "minet",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14012158",
+      "html_url": "https://github.com/orgs/medley-inc/teams/minet",
+      "members_url": "https://api.github.com/organizations/10985598/team/14012158/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14012158/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

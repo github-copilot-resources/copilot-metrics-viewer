@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917894.4571106,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-26T09:49:17+09:00",
+    "assignee": {
+      "login": "hk-saito",
+      "id": 213770105,
+      "node_id": "U_kgDODL3feQ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/213770105?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/hk-saito",
+      "html_url": "https://github.com/hk-saito",
+      "followers_url": "https://api.github.com/users/hk-saito/followers",
+      "following_url": "https://api.github.com/users/hk-saito/following{/other_user}",
+      "gists_url": "https://api.github.com/users/hk-saito/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/hk-saito/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/hk-saito/subscriptions",
+      "organizations_url": "https://api.github.com/users/hk-saito/orgs",
+      "repos_url": "https://api.github.com/users/hk-saito/repos",
+      "events_url": "https://api.github.com/users/hk-saito/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/hk-saito/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-18T11:23:15Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-13T11:00:52+09:00",
+    "last_activity_editor": "VisualStudio/17.14.27/copilot-vs/17.14.1593.33849",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

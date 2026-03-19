@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.6167917,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:48+09:00",
+    "assignee": {
+      "login": "Kenji-Kushizaki-Medley",
+      "id": 194059905,
+      "node_id": "U_kgDOC5EegQ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/194059905?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/Kenji-Kushizaki-Medley",
+      "html_url": "https://github.com/Kenji-Kushizaki-Medley",
+      "followers_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/followers",
+      "following_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/following{/other_user}",
+      "gists_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/subscriptions",
+      "organizations_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/orgs",
+      "repos_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/repos",
+      "events_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/Kenji-Kushizaki-Medley/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:30:06Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T18:15:04+09:00",
+    "last_activity_editor": "VisualStudio/17.14.19/copilot-vs/17.14.1368.60722",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

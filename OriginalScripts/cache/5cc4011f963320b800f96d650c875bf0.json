@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.7147434,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:48+09:00",
+    "assignee": {
+      "login": "shoyaiwasaki",
+      "id": 187304692,
+      "node_id": "U_kgDOCyoK9A",
+      "avatar_url": "https://avatars.githubusercontent.com/u/187304692?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/shoyaiwasaki",
+      "html_url": "https://github.com/shoyaiwasaki",
+      "followers_url": "https://api.github.com/users/shoyaiwasaki/followers",
+      "following_url": "https://api.github.com/users/shoyaiwasaki/following{/other_user}",
+      "gists_url": "https://api.github.com/users/shoyaiwasaki/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/shoyaiwasaki/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/shoyaiwasaki/subscriptions",
+      "organizations_url": "https://api.github.com/users/shoyaiwasaki/orgs",
+      "repos_url": "https://api.github.com/users/shoyaiwasaki/repos",
+      "events_url": "https://api.github.com/users/shoyaiwasaki/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/shoyaiwasaki/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T07:36:36Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T16:41:20+09:00",
+    "last_activity_editor": "vscode/1.104.3/copilot-chat/0.31.5",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

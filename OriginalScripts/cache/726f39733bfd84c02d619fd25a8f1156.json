@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.6142533,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:48+09:00",
+    "assignee": {
+      "login": "wataru-yamashita27",
+      "id": 201189981,
+      "node_id": "U_kgDOC_3qXQ",
+      "avatar_url": "https://avatars.githubusercontent.com/u/201189981?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/wataru-yamashita27",
+      "html_url": "https://github.com/wataru-yamashita27",
+      "followers_url": "https://api.github.com/users/wataru-yamashita27/followers",
+      "following_url": "https://api.github.com/users/wataru-yamashita27/following{/other_user}",
+      "gists_url": "https://api.github.com/users/wataru-yamashita27/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/wataru-yamashita27/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/wataru-yamashita27/subscriptions",
+      "organizations_url": "https://api.github.com/users/wataru-yamashita27/orgs",
+      "repos_url": "https://api.github.com/users/wataru-yamashita27/repos",
+      "events_url": "https://api.github.com/users/wataru-yamashita27/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/wataru-yamashita27/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-18T15:55:54Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-18T16:32:19+09:00",
+    "last_activity_editor": "unknown/GitHubCopilotChat/0.38.2",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

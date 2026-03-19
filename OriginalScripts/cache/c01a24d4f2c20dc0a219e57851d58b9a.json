@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.686714,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-18T08:51:15+09:00",
+    "assignee": {
+      "login": "kubo8810",
+      "id": 208554282,
+      "node_id": "U_kgDODG5JKg",
+      "avatar_url": "https://avatars.githubusercontent.com/u/208554282?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/kubo8810",
+      "html_url": "https://github.com/kubo8810",
+      "followers_url": "https://api.github.com/users/kubo8810/followers",
+      "following_url": "https://api.github.com/users/kubo8810/following{/other_user}",
+      "gists_url": "https://api.github.com/users/kubo8810/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/kubo8810/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/kubo8810/subscriptions",
+      "organizations_url": "https://api.github.com/users/kubo8810/orgs",
+      "repos_url": "https://api.github.com/users/kubo8810/repos",
+      "events_url": "https://api.github.com/users/kubo8810/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/kubo8810/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:24:07Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T17:20:06+09:00",
+    "last_activity_editor": "vscode/1.103.0/copilot-chat/0.30.3",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

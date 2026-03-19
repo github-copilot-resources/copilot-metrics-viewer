@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.6794634,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-25T09:07:42+09:00",
+    "assignee": {
+      "login": "VoidAxon",
+      "id": 208430644,
+      "node_id": "U_kgDODGxmNA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/208430644?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/VoidAxon",
+      "html_url": "https://github.com/VoidAxon",
+      "followers_url": "https://api.github.com/users/VoidAxon/followers",
+      "following_url": "https://api.github.com/users/VoidAxon/following{/other_user}",
+      "gists_url": "https://api.github.com/users/VoidAxon/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/VoidAxon/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/VoidAxon/subscriptions",
+      "organizations_url": "https://api.github.com/users/VoidAxon/orgs",
+      "repos_url": "https://api.github.com/users/VoidAxon/repos",
+      "events_url": "https://api.github.com/users/VoidAxon/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/VoidAxon/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:14:56Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T18:32:34+09:00",
+    "last_activity_editor": "Neovim/0.11.6/CopilotChat.nvim/*",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

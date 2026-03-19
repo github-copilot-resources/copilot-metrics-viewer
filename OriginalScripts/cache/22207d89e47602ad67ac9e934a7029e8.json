@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.6142883,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:27+09:00",
+    "assignee": {
+      "login": "kushi-da",
+      "id": 179150559,
+      "node_id": "U_kgDOCq2e3w",
+      "avatar_url": "https://avatars.githubusercontent.com/u/179150559?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/kushi-da",
+      "html_url": "https://github.com/kushi-da",
+      "followers_url": "https://api.github.com/users/kushi-da/followers",
+      "following_url": "https://api.github.com/users/kushi-da/following{/other_user}",
+      "gists_url": "https://api.github.com/users/kushi-da/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/kushi-da/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/kushi-da/subscriptions",
+      "organizations_url": "https://api.github.com/users/kushi-da/orgs",
+      "repos_url": "https://api.github.com/users/kushi-da/repos",
+      "events_url": "https://api.github.com/users/kushi-da/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/kushi-da/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T09:47:52Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T18:27:04+09:00",
+    "last_activity_editor": "vscode/1.112.0/copilot-chat/0.40.1",
+    "assigning_team": {
+      "name": "minet",
+      "id": 14012158,
+      "node_id": "T_kwDOAKegfs4A1c7-",
+      "slug": "minet",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14012158",
+      "html_url": "https://github.com/orgs/medley-inc/teams/minet",
+      "members_url": "https://api.github.com/organizations/10985598/team/14012158/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14012158/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

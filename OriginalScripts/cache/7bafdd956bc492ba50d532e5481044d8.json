@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917894.4121468,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:58:22+09:00",
+    "assignee": {
+      "login": "mken0214",
+      "id": 209045988,
+      "node_id": "U_kgDODHXJ5A",
+      "avatar_url": "https://avatars.githubusercontent.com/u/209045988?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/mken0214",
+      "html_url": "https://github.com/mken0214",
+      "followers_url": "https://api.github.com/users/mken0214/followers",
+      "following_url": "https://api.github.com/users/mken0214/following{/other_user}",
+      "gists_url": "https://api.github.com/users/mken0214/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/mken0214/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/mken0214/subscriptions",
+      "organizations_url": "https://api.github.com/users/mken0214/orgs",
+      "repos_url": "https://api.github.com/users/mken0214/repos",
+      "events_url": "https://api.github.com/users/mken0214/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/mken0214/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:26:28Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-18T19:35:02+09:00",
+    "last_activity_editor": "VisualStudio/17.14.27/copilot-vs/17.14.1593.33849",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

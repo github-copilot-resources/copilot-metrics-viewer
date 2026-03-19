@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917894.438902,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-26T10:42:33+09:00",
+    "assignee": {
+      "login": "syo-kataoka",
+      "id": 211467467,
+      "node_id": "U_kgDODJq8yw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/211467467?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/syo-kataoka",
+      "html_url": "https://github.com/syo-kataoka",
+      "followers_url": "https://api.github.com/users/syo-kataoka/followers",
+      "following_url": "https://api.github.com/users/syo-kataoka/following{/other_user}",
+      "gists_url": "https://api.github.com/users/syo-kataoka/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/syo-kataoka/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/syo-kataoka/subscriptions",
+      "organizations_url": "https://api.github.com/users/syo-kataoka/orgs",
+      "repos_url": "https://api.github.com/users/syo-kataoka/repos",
+      "events_url": "https://api.github.com/users/syo-kataoka/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/syo-kataoka/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:31:07Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T14:53:49+09:00",
+    "last_activity_editor": "vscode/1.109.4/copilot-chat/0.37.9",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}
