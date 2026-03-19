@@ -24,7 +24,7 @@
     "nuxt": "^3.19.0",
     "nuxt-auth-utils": "^0.5.7",
     "roboto-fontface": "^0.10.0",
-    "undici": ">=7.5.0",
+    "undici": ">=7.24.4",
     "vue": "latest",
     "vue-chartjs": "^5.3.2",
     "vuetify": "^3.7.3",
@@ -32,19 +32,19 @@
   },
   "devDependencies": {
     "@mdi/font": "^7.4.47",
-    "@nuxt/fonts": "^0.12.1",
+    "@nuxt/fonts": "^0.13.0",
     "@nuxt/test-utils": "^3.20.1",
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "1.57.0",
     "@types/webfontloader": "^1.6.38",
     "@vue/test-utils": "^2.4.6",
-    "esbuild": ">=0.25.10",
-    "happy-dom": "^20.0.0",
+    "esbuild": ">=0.25.11",
+    "happy-dom": "^20.0.10",
     "playwright-core": "1.54.2",
     "sass-embedded": "^1.80.3",
     "typescript": "^5.6.3",
     "vitest": "^3.0.5",
     "vue-tsc": "^2.1.6",
-    "vuetify-nuxt-module": "^0.16.1"
+    "vuetify-nuxt-module": "^0.19.5"
   },
   "overrides": {
     "brace-expansion": "^2.0.2"
