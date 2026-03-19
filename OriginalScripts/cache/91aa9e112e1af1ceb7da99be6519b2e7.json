@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917894.2688966,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:48+09:00",
+    "assignee": {
+      "login": "motto-usui",
+      "id": 208769463,
+      "node_id": "U_kgDODHGRtw",
+      "avatar_url": "https://avatars.githubusercontent.com/u/208769463?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/motto-usui",
+      "html_url": "https://github.com/motto-usui",
+      "followers_url": "https://api.github.com/users/motto-usui/followers",
+      "following_url": "https://api.github.com/users/motto-usui/following{/other_user}",
+      "gists_url": "https://api.github.com/users/motto-usui/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/motto-usui/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/motto-usui/subscriptions",
+      "organizations_url": "https://api.github.com/users/motto-usui/orgs",
+      "repos_url": "https://api.github.com/users/motto-usui/repos",
+      "events_url": "https://api.github.com/users/motto-usui/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/motto-usui/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:27:36Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-19T15:52:09+09:00",
+    "last_activity_editor": "VisualStudio/17.14.29/copilot-vs/17.14.1641.39856",
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

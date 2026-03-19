@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917894.4301827,
+  "etag": null,
+  "data": {
+    "created_at": "2026-03-19T11:10:44+09:00",
+    "assignee": {
+      "login": "KaitoNakahira",
+      "id": 209735816,
+      "node_id": "U_kgDODIBQiA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/209735816?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/KaitoNakahira",
+      "html_url": "https://github.com/KaitoNakahira",
+      "followers_url": "https://api.github.com/users/KaitoNakahira/followers",
+      "following_url": "https://api.github.com/users/KaitoNakahira/following{/other_user}",
+      "gists_url": "https://api.github.com/users/KaitoNakahira/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/KaitoNakahira/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/KaitoNakahira/subscriptions",
+      "organizations_url": "https://api.github.com/users/KaitoNakahira/orgs",
+      "repos_url": "https://api.github.com/users/KaitoNakahira/repos",
+      "events_url": "https://api.github.com/users/KaitoNakahira/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/KaitoNakahira/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-19T10:33:09Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": null,
+    "last_activity_editor": null,
+    "assigning_team": {
+      "name": "mall",
+      "id": 14011987,
+      "node_id": "T_kwDOAKegfs4A1c5T",
+      "slug": "mall",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14011987",
+      "html_url": "https://github.com/orgs/medley-inc/teams/mall",
+      "members_url": "https://api.github.com/organizations/10985598/team/14011987/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14011987/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "cached_at": 1773917892.7104099,
+  "etag": null,
+  "data": {
+    "created_at": "2025-09-02T09:39:27+09:00",
+    "assignee": {
+      "login": "takumi-miyamoto-1228",
+      "id": 188982168,
+      "node_id": "U_kgDOC0OjmA",
+      "avatar_url": "https://avatars.githubusercontent.com/u/188982168?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/takumi-miyamoto-1228",
+      "html_url": "https://github.com/takumi-miyamoto-1228",
+      "followers_url": "https://api.github.com/users/takumi-miyamoto-1228/followers",
+      "following_url": "https://api.github.com/users/takumi-miyamoto-1228/following{/other_user}",
+      "gists_url": "https://api.github.com/users/takumi-miyamoto-1228/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/takumi-miyamoto-1228/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/takumi-miyamoto-1228/subscriptions",
+      "organizations_url": "https://api.github.com/users/takumi-miyamoto-1228/orgs",
+      "repos_url": "https://api.github.com/users/takumi-miyamoto-1228/repos",
+      "events_url": "https://api.github.com/users/takumi-miyamoto-1228/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/takumi-miyamoto-1228/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "pending_cancellation_date": null,
+    "plan_type": "business",
+    "last_authenticated_at": "2026-03-18T15:42:35Z",
+    "updated_at": "2026-03-19T09:00:00+09:00",
+    "last_activity_at": "2026-03-17T17:31:50+09:00",
+    "last_activity_editor": "VisualStudio/17.14.27/copilot-vs/17.14.1593.33849",
+    "assigning_team": {
+      "name": "minet",
+      "id": 14012158,
+      "node_id": "T_kwDOAKegfs4A1c7-",
+      "slug": "minet",
+      "description": "",
+      "privacy": "closed",
+      "notification_setting": "notifications_enabled",
+      "url": "https://api.github.com/organizations/10985598/team/14012158",
+      "html_url": "https://github.com/orgs/medley-inc/teams/minet",
+      "members_url": "https://api.github.com/organizations/10985598/team/14012158/members{/member}",
+      "repositories_url": "https://api.github.com/organizations/10985598/team/14012158/repos",
+      "type": "organization",
+      "organization_id": 10985598,
+      "permission": "pull",
+      "parent": null
+    }
+  }
+}

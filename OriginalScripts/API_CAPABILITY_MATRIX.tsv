@@ -1,0 +1,151 @@
+GitHub Copilot Metrics API - 機能比較マトリックス
+
+■ 利用可能なエンドポイント
+エンドポイント,Enterprise,Organization,現在の実装
+/enterprises/{enterprise}/copilot/metrics,○,×,×
+/enterprises/{enterprise}/team/{team_slug}/copilot/metrics,○,×,×
+/orgs/{org}/copilot/metrics,○,○,○
+/orgs/{org}/team/{team_slug}/copilot/metrics,○,○,×
+/orgs/{org}/copilot/billing/seats,○,○,○
+/orgs/{org}/members/{user}/copilot,○,○,○
+
+■ ユーザー基本情報
+データ項目,Enterprise,Organization,粒度,現在の実装
+シート割り当て状態,○,○,ユーザー別,○
+最終利用日時,○,○,ユーザー別,○
+最終利用エディタ,○,○,ユーザー別,○
+シート作成日,○,○,ユーザー別,○
+シート取消予定日,○,○,ユーザー別,○
+
+■ 日別集計データ（過去100日分）
+データ項目,Enterprise,Organization,粒度,現在の実装
+【基本メトリクス】,,,,
+アクティブユーザー数,○,○,日別・組織全体,○
+エンゲージユーザー数,○,○,日別・組織全体,○
+【コード補完】,,,,
+コード補完利用者数,○,○,日別・組織全体,○
+コード提案総数,○,○,日別・組織全体,○
+コード承認総数,○,○,日別・組織全体,○
+提案行数,○,○,日別・組織全体,○
+承認行数,○,○,日別・組織全体,○
+言語別内訳,○,○,日別・組織全体,×
+エディタ別内訳,○,○,日別・組織全体,×
+モデル別内訳,○,○,日別・組織全体,×
+【IDE Chat】,,,,
+IDE Chat利用者数,○,○,日別・組織全体,○
+Chatメッセージ総数,○,○,日別・組織全体,○
+Chat挿入イベント数,○,○,日別・組織全体,○
+Chatコピーイベント数,○,○,日別・組織全体,×
+エディタ別内訳,○,○,日別・組織全体,×
+モデル別内訳,○,○,日別・組織全体,×
+【GitHub.com Chat】,,,,
+dotcom Chat利用者数,○,○,日別・組織全体,×
+dotcom Chat総数,○,○,日別・組織全体,×
+モデル別内訳,○,○,日別・組織全体,×
+【Pull Request機能】,,,,
+PR機能利用者数,○,○,日別・組織全体,×
+PRサマリー作成数,○,○,日別・組織全体,×
+リポジトリ別内訳,○,○,日別・組織全体,×
+
+■ ユーザー別詳細データ（Usage Metrics API - NDJSON形式）
+データ項目,Enterprise,Organization,備考
+ユーザー別プロンプト数,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+ユーザー別コード生成数,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+ユーザー別受け入れ数,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+ユーザー別追加LoC,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+ユーザー別提案LoC,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+ユーザー別アクティブ日数,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+ユーザー別IDE利用状況,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+ユーザー別言語利用状況,?,×,Enterprise Cloudのみ？公式ドキュメント未記載
+注: ?マークは公式ドキュメントに記載なし。ChatGPTが言及したがベータ版または限定プレビューの可能性,,,
+
+■ 取得不可能なデータ（API仕様による制限）
+データ項目,理由
+ユーザーが入力したプロンプト内容,プライバシー保護
+Copilotが生成したコード内容,プライバシー保護
+操作対象のリポジトリ名,プライバシー保護
+操作対象のファイルパス,プライバシー保護
+GitHub.com上のCopilot Chat,Usage Metrics対象外
+GitHub Mobile利用状況,Usage Metrics対象外
+Copilot CLI利用状況,Usage Metrics対象外
+Copilot Code Review利用状況,Usage Metrics対象外
+
+■ データ粒度の制限
+集計単位,Enterprise,Organization,制約条件
+組織全体の日別集計,○,○,なし
+チーム別の日別集計,○,○,5人以上のアクティブライセンス必要
+ユーザー別の日別詳細,?,×,Enterprise Cloud限定？
+ユーザー別の28日サマリー,?,×,Enterprise Cloud限定？
+
+■ 必要な権限
+項目,Enterprise,Organization
+【閲覧権限】,,
+Enterprise owner,○,-
+Billing manager,○,-
+Organization owner,-,○
+親EnterpriseのOwner/Billing manager,-,○
+【トークンスコープ - PAT classic】,,
+manage_billing:copilot,○,○
+read:enterprise,○,○
+read:org,×,○
+【Fine-grained PAT】,,
+利用可否,×,○
+必要権限,-,GitHub Copilot Business (read) または Administration (read)
+
+■ API設定要件
+設定項目,必須レベル
+Copilot Metrics API access policy,有効化必須
+IDEでのテレメトリ有効化,ユーザー側で必要
+Copilot Business/Enterpriseサブスクリプション,必須
+5人以上のアクティブライセンス（チーム別）,チームメトリクス取得時のみ
+
+■ 現在のスクリプトで取得しているデータ
+
+【取得済み - Sheet 1: メインレポート】
+・ユーザー名、参加日、Copilot有効/無効
+・シート割り当て、最終利用日時、最終利用エディタ
+・シート作成日、シート取消予定日
+
+【取得済み - Sheet 2: 組織全体の統計】
+・日別のアクティブユーザー数・エンゲージユーザー数
+・コード補完（利用者数、提案数、承認数）
+・IDE Chat（利用者数、メッセージ数、挿入数）
+・28日間のサマリー統計
+
+【取得済み - Sheet 3: メトリクス項目説明】
+・各メトリクスの説明
+・重要なポイント
+・データ概要
+
+【未実装 - 取得可能だが実装していない】
+・言語別・エディタ別・モデル別の詳細内訳
+・GitHub.com Chat統計
+・Pull Request機能の統計
+・Chatコピーイベント数
+・チーム別メトリクス
+
+【実装したが動作しない - API制限】
+・ユーザー別のプロンプト数・生成数・受け入れ数
+・ユーザー別の追加LoC・アクティブ日数・主要IDE
+→ これらは全て0（Usage Metrics APIが404）
+
+■ 推奨される今後の拡張
+
+【優先度：高】
+1. 言語別・エディタ別の内訳を追加
+   - 既存APIレスポンスに含まれている
+   - Sheet 2に追加テーブルとして実装可能
+
+2. チーム別メトリクスの取得
+   - /orgs/{org}/team/{team_slug}/copilot/metrics
+   - 部門別の利用状況分析に有用
+
+【優先度：中】
+3. GitHub.com ChatとPR機能の統計
+   - 既存APIレスポンスに含まれている
+   - 組織全体の利用傾向把握に有用
+
+【優先度：低】
+4. Usage Metrics API（NDJSON）の調査
+   - Enterprise Cloudへのアップグレード検討時
+   - ユーザー別詳細データが必要になった場合
