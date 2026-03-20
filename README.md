@@ -1,24 +1,25 @@
 _NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
-> **⚠️ IMPORTANT API MIGRATION NOTICE**
-> 
-> The legacy GitHub Copilot Metrics API will be shut down on **April 2, 2026**. This application now supports the new [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics).
-> 
-> **Migration Status**: ✅ **Implementation Complete** (All 6 Phases)
-> 
-> **What's New**:
-> - ✅ New async file download API support
-> - ✅ Configurable storage backends (PostgreSQL, Redis, MongoDB, filesystem)
-> - ✅ Background data sync with scheduled tasks
-> - ✅ Backward compatible with legacy API (feature-flagged)
-> - ✅ Separate container deployment option
+> **🚨 ACTION REQUIRED — Legacy API Shutdown on April 2, 2026**
 >
-> **Getting Started**:
+> GitHub is **shutting down the legacy Copilot Metrics API on April 2, 2026**. Versions 2.x and earlier will **stop working** after this date.
+>
+> **You must upgrade to v3.0.0** to continue using Copilot Metrics Viewer.
+>
+> | | Details |
+> |---|---|
+> | **Last legacy release** | `v2.1.4` — Docker image: `ghcr.io/github-copilot-resources/copilot-metrics-viewer:v2.1.4` |
+> | **New release** | `v3.0.0` — uses the new [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics) |
+> | **GitHub App update** | Add **"Organization Copilot metrics: Read"** permission ([setup guide](./DEPLOYMENT.md#github-app-registration)) |
+> | **PostgreSQL (optional)** | Enable historical data storage with PostgreSQL ([migration guide](./MIGRATION_GUIDE.md#step-2-enable-historical-mode-optional)) |
+>
+> **Quick upgrade**: Pull `ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest`, update your GitHub App permissions, and redeploy. Set `USE_LEGACY_API=true` to temporarily keep using the old API until the shutdown date.
+
+> **Migration Resources**:
 > - 📖 [Migration Guide](./MIGRATION_GUIDE.md) - Step-by-step migration instructions
 > - 🧪 [Testing Guide](./TESTING_GUIDE.md) - How to test the migration
 > - 📋 [Architecture Design](./API_MIGRATION_DESIGN.md) - Technical design details
 > - 📚 [API Quick Reference](./API_QUICK_REFERENCE.md) - Legacy vs New API comparison
-> - 🗓️ [Implementation Roadmap](./MIGRATION_ROADMAP.md) - Development timeline
 > - 📢 [GitHub Blog Announcement](https://github.blog/changelog/2026-01-29-closing-down-notice-of-legacy-copilot-metrics-apis/)
 
 # GitHub Copilot Metrics Viewer
