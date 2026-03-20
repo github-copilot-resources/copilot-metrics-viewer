@@ -287,6 +287,7 @@ or navigate using UI:
 5. Set the scopes:
    - Select **Organization permissions**.
    - Under **GitHub Copilot Business**, select **Access: Read-only**.
+   - Under **Copilot Metrics**, select **Access: Read-only**. _(Required for v3.0+ — the new Copilot Usage Metrics API)_
    - Under **Members**, select **Access: Read-only**.
 6. Click on 'Create GitHub App' and, in the following page, click on 'Generate a new client secret'.
 7. Note the `Client ID` and `Client Secret` (copy it to a secure location). This is required for the application to authenticate with GitHub.

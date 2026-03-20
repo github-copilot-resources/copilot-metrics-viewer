@@ -7,6 +7,7 @@ All notable changes to the Copilot Metrics Viewer will be documented in this fil
 ### ⚠️ Breaking Changes
 
 - **New Copilot Usage Metrics API is now the default.** The application uses GitHub's new download-based Copilot Usage Metrics API instead of the deprecated synchronous REST API. Set `USE_LEGACY_API=true` to opt back into the deprecated API (sunset: April 2, 2026).
+- **GitHub App permission update required.** The new API requires the **"Organization Copilot metrics: Read"** permission on your GitHub App. Classic PATs need the `read:org` scope. Update your GitHub App at Settings → Developer settings → GitHub Apps → Permissions.
 - **PostgreSQL required for historical mode.** The `ENABLE_HISTORICAL_MODE=true` feature requires a PostgreSQL database configured via `DATABASE_URL`.
 - **Environment variable renamed.** `USE_NEW_API` / `COPILOT_METRICS_API` replaced with `USE_LEGACY_API` (inverted logic — new API is now the default).
 - **Sync service is a separate container.** Background metrics syncing runs as a standalone container (`Dockerfile.sync`) or Kubernetes CronJob rather than being embedded in the web application.

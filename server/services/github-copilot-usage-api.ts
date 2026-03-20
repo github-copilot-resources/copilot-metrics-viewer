@@ -192,15 +192,26 @@ export async function requestDownloadLinks(
   }
 
   const url = buildReportUrl(request, reportType, day);
-  const response = await _fetch<DownloadLinksResponse>(url, {
-    headers: {
-      ...Object.fromEntries(
-        headers instanceof Headers ? headers.entries() : Object.entries(headers)
-      ),
-      'X-GitHub-Api-Version': '2022-11-28',
+
+  // Build clean headers: start from auth middleware headers, then override API version.
+  // Headers.entries() lowercases keys, so we normalize to avoid duplicate version headers.
+  const rawHeaders = headers instanceof Headers
+    ? Object.fromEntries(headers.entries())
+    : { ...headers };
+  // Remove any existing api-version header (lowercase from Headers) before setting the correct one
+  delete rawHeaders['x-github-api-version'];
+  rawHeaders['X-GitHub-Api-Version'] = '2026-03-10';
+
+  try {
+    const response = await _fetch<DownloadLinksResponse>(url, { headers: rawHeaders });
+    return response;
+  } catch (error: unknown) {
+    // Log the response body for better debugging
+    if (error && typeof error === 'object' && 'data' in error) {
+      console.error('[new-api] GitHub error response:', JSON.stringify((error as { data: unknown }).data));
     }
-  });
-  return response;
+    throw error;
+  }
 }
 
 /**

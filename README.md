@@ -237,6 +237,9 @@ NUXT_PUBLIC_IS_DATA_MOCKED=false
 
 Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _read:org_.
 
+> [!IMPORTANT]
+> **v3.0 Migration:** The new Copilot Usage Metrics API requires the **"Organization Copilot metrics: Read"** permission on your GitHub App (or the `read:org` scope for classic PATs). Without this, the new API endpoints will return 400/403 errors. See [GitHub App Registration](DEPLOYMENT.md#github-app-registration) for setup details.
+
 Token is not used in the frontend.
 
 ````

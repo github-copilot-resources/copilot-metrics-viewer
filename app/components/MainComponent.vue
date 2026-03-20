@@ -34,6 +34,25 @@
 
     </v-toolbar>
 
+    <!-- v3.0 Migration Banner -->
+    <v-banner
+      v-if="showMigrationBanner"
+      color="info"
+      icon="mdi-information"
+      lines="two"
+      class="migration-banner"
+    >
+      <v-banner-text>
+        <strong>v3.0 — New Copilot Usage Metrics API.</strong>
+        Your GitHub App now requires the <strong>"Organization Copilot metrics: Read"</strong> permission.
+        Update at GitHub → Settings → Developer settings → GitHub Apps → Permissions.
+        <a href="https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics" target="_blank">Learn more</a>
+      </v-banner-text>
+      <template #actions>
+        <v-btn text="Dismiss" @click="showMigrationBanner = false" />
+      </template>
+    </v-banner>
+
     <!-- Date Range Selector - Hidden for seats tab -->
     <DateRangeSelector 
       v-show="tab !== 'seat analysis' && !signInRequired" 
@@ -252,6 +271,7 @@ export default defineNuxtComponent({
       seatsReady: false,
       seats: [] as Seat[],
       apiError: undefined as string | undefined,
+      showMigrationBanner: true,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
