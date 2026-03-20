@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     // Check if mock mode is enabled via env var
     const mockEnabled = isMockMode();
 
-    // Prepare headers for GitHub API calls (middleware may have skipped admin routes)
+    // Prepare headers for GitHub API calls (middleware handles authentication)
     const headers = event.context.headers || new Headers();
     if (!headers.has('Authorization') && !mockEnabled) {
       return new Response('Authorization header required', { status: 401 });

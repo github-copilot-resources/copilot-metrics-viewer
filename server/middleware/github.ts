@@ -25,8 +25,8 @@ export default defineEventHandler(async (event) => {
     const url = event.node.req.url || '';
 
     const healthCheckPaths = ['/api/health', '/api/live', '/api/ready'];
-    // Skip authentication for non-API routes, health checks, admin routes, and auth session
-    if (!url.startsWith('/api/') || healthCheckPaths.includes(url) || url.startsWith('/api/admin/') || url.startsWith('/api/_auth/')) {
+    // Skip authentication for non-API routes, health checks, and auth session
+    if (!url.startsWith('/api/') || healthCheckPaths.includes(url) || url.startsWith('/api/_auth/')) {
         return;
     }
 
