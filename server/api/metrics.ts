@@ -1,21 +1,19 @@
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
-import { getMetricsData } from '../../shared/utils/metrics-util';
-
-// TODO: use for storage https://unstorage.unjs.io/drivers/azure
+import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
 
 export default defineEventHandler(async (event) => {
 
     const logger = console;
 
     try {
-        // usage is the new API Format
-        const usageData = await getMetricsData(event);
+        // Always use v2 handler which tries new API first, falls back to legacy
+        const { metrics: usageData, reportData } = await getMetricsDataV2(event);
 
         // metrics is the old API format
         const metricsData = convertToMetrics(usageData);
 
-        const result = { metrics: metricsData, usage: usageData } as MetricsApiResponse;
+        const result = { metrics: metricsData, usage: usageData, reportData } as MetricsApiResponse;
         return result;
     } catch (error: unknown) {
         logger.error('Error fetching metrics data:', error);

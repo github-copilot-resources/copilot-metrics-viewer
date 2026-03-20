@@ -1,0 +1,76 @@
+/**
+ * Daily sync scheduled task
+ * Downloads the latest 28-day report and saves any new days to storage.
+ * 
+ * This task runs on a schedule defined by SYNC_SCHEDULE env var (default: 2 AM daily)
+ * Can be disabled by setting SYNC_ENABLED=false
+ */
+
+import { syncBulk } from '../services/sync-service';
+
+export default defineTask({
+  meta: {
+    name: 'daily-metrics-sync',
+    description: 'Sync Copilot metrics daily from GitHub API to storage',
+  },
+  async run() {
+    const logger = console;
+    const config = useRuntimeConfig();
+
+    // Check if sync is enabled
+    const syncEnabled = process.env.SYNC_ENABLED === 'true';
+    if (!syncEnabled) {
+      logger.info('Sync is disabled (SYNC_ENABLED=false), skipping');
+      return { result: 'skipped', reason: 'disabled' };
+    }
+
+    // Get configuration
+    const scope = (config.public.scope as 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise') || 'organization';
+    const githubOrg = config.public.githubOrg;
+    const githubEnt = config.public.githubEnt;
+    const githubTeam = config.public.githubTeam;
+    const githubToken = config.githubToken;
+
+    if (!githubToken) {
+      logger.error('NUXT_GITHUB_TOKEN not configured, cannot run sync');
+      return { result: 'error', reason: 'no_token' };
+    }
+
+    const identifier = githubOrg || githubEnt || '';
+    if (!identifier) {
+      logger.error('No GitHub org or enterprise configured');
+      return { result: 'error', reason: 'no_identifier' };
+    }
+
+    logger.info(`Starting daily bulk sync for ${scope}:${identifier}`);
+
+    try {
+      const result = await syncBulk(
+        scope,
+        identifier,
+        {
+          'Authorization': `Bearer ${githubToken}`,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28'
+        },
+        githubTeam || undefined
+      );
+
+      logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped, ${result.errors.length} errors`);
+
+      return {
+        result: result.success ? 'success' : 'partial',
+        syncResult: result
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`Sync failed:`, errorMessage);
+
+      return {
+        result: 'error',
+        error: errorMessage
+      };
+    }
+  }
+});

@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: copilot-metrics-sync
+  namespace: default
+spec:
+  # Run daily at 2 AM
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: copilot-metrics-sync
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: sync
+            image: ghcr.io/github-copilot-resources/copilot-metrics-viewer-sync:latest
+            imagePullPolicy: Always
+            env:
+            # Scope configuration
+            - name: NUXT_PUBLIC_SCOPE
+              value: "organization"
+            
+            # GitHub configuration
+            - name: NUXT_PUBLIC_GITHUB_ORG
+              value: "your-org"
+            
+            # - name: NUXT_PUBLIC_GITHUB_ENT
+            #   value: "your-enterprise"
+            
+            # - name: NUXT_PUBLIC_GITHUB_TEAM
+            #   value: "your-team"
+            
+            # GitHub token (from secret)
+            - name: NUXT_GITHUB_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: copilot-metrics-secrets
+                  key: github-token
+            
+            # Sync configuration
+            - name: SYNC_ENABLED
+              value: "true"
+            - name: SYNC_DAYS_BACK
+              value: "1"  # Sync yesterday only
+            
+            # PostgreSQL storage
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: copilot-metrics-secrets
+                  key: database-url
+            
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "250m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+---
+# Secret example (create separately with actual values)
+# kubectl create secret generic copilot-metrics-secrets \
+#   --from-literal=github-token="ghp_your_token_here" \
+#   --from-literal=session-password="at_least_32_characters_long_random_string" \
+#   --from-literal=database-url="postgresql://user:pass@host:5432/copilot_metrics"

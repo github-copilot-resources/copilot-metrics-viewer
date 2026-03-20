@@ -7,7 +7,7 @@ export class LanguagesTab {
 
     constructor(page: Page) {
         this.page = page;
-        this.top5Languages = page.getByText('Top 5 Languages by accepted suggestions (prompts)')
+        this.top5Languages = page.getByText('Top 5 Languages by accepted code completions')
         this.numberOfLanguagesValue = page.locator('.v-card-item').filter({ has: page.getByText('Number of Languages') }).locator('.text-h4')
 
     }

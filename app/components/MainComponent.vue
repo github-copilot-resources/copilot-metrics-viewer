@@ -34,6 +34,25 @@
 
     </v-toolbar>
 
+    <!-- v3.0 Migration Banner -->
+    <v-banner
+      v-if="showMigrationBanner"
+      color="info"
+      icon="mdi-information"
+      lines="two"
+      class="migration-banner"
+    >
+      <v-banner-text>
+        <strong>v3.0 — New Copilot Usage Metrics API.</strong>
+        Your GitHub App now requires the <strong>"Organization Copilot metrics: Read"</strong> permission.
+        Update at GitHub → Settings → Developer settings → GitHub Apps → Permissions.
+        <a href="https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics" target="_blank">Learn more</a>
+      </v-banner-text>
+      <template #actions>
+        <v-btn text="Dismiss" @click="showMigrationBanner = false" />
+      </template>
+    </v-banner>
+
     <!-- Date Range Selector - Hidden for seats tab -->
     <DateRangeSelector 
       v-show="tab !== 'seat analysis' && !signInRequired" 
@@ -81,6 +100,8 @@ v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
             <CopilotChatViewer
 v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
+            <AgentActivityViewer v-if="item === 'agent activity'" :report-data="reportData" :date-range-description="dateRangeDescription" />
+            <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
             <ApiResponse
@@ -102,6 +123,7 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
+import type { ReportDayTotals } from "../../server/services/github-copilot-usage-api";
 import type { H3Error } from 'h3'
 
 //Components
@@ -112,6 +134,8 @@ import SeatsAnalysisViewer from './SeatsAnalysisViewer.vue'
 import TeamsComponent from './TeamsComponent.vue'
 import ApiResponse from './ApiResponse.vue'
 import AgentModeViewer from './AgentModeViewer.vue'
+import AgentActivityViewer from './AgentActivityViewer.vue'
+import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -126,6 +150,8 @@ export default defineNuxtComponent({
     TeamsComponent,
     ApiResponse,
     AgentModeViewer,
+    AgentActivityViewer,
+    PullRequestViewer,
     DateRangeSelector
   },
   methods: {
@@ -194,6 +220,7 @@ export default defineNuxtComponent({
 
         this.metrics = response.metrics || [];
         this.originalMetrics = response.usage || [];
+        this.reportData = response.reportData || [];
         this.metricsReady = true;
 
         if (config.public.scope && config.public.scope.includes('team') && this.metrics.length === 0 && !this.apiError) {
@@ -233,16 +260,18 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'github.com', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
       metricsReady: false,
       metrics: [] as Metrics[],
       originalMetrics: [] as CopilotMetrics[],
+      reportData: [] as ReportDayTotals[],
       seatsReady: false,
       seats: [] as Seat[],
       apiError: undefined as string | undefined,
+      showMigrationBanner: true,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,

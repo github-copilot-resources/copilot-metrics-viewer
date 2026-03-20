@@ -1,0 +1,7 @@
+{
+  "download_links": [
+    "/mock-data/new-api/enterprise-28-day-report.json"
+  ],
+  "report_start_day": "2026-02-04",
+  "report_end_day": "2026-03-03"
+}

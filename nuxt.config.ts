@@ -73,7 +73,13 @@ export default defineNuxtConfig({
   nitro: {
     plugins: [
       'plugins/http-agent',
+      'plugins/db-init',
     ],
+    scheduledTasks: {
+      // Daily sync task - runs at 2 AM by default
+      // Customize schedule via SYNC_SCHEDULE env var (cron format)
+      [process.env.SYNC_SCHEDULE ?? '0 2 * * *']: ['daily-metrics-sync']
+    }
   },
   runtimeConfig: {
     githubToken: '',
@@ -96,7 +102,10 @@ export default defineNuxtConfig({
       githubTeam: '',
       usingGithubAuth: false,
       version,
-      isPublicApp: false
+      isPublicApp: false,
+      // New API migration flags
+      useLegacyApi: false,  // Set true to use deprecated /copilot/metrics API (USE_LEGACY_API)
+      enableHistoricalMode: false  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)
     }
   }
 })

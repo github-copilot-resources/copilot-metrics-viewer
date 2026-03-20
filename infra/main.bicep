@@ -34,6 +34,12 @@ param githubEnt string
 @description('Id of the user or app to assign application roles')
 param principalId string
 
+@secure()
+@description('Administrator password for PostgreSQL - auto-generated if not provided')
+param postgresAdminPassword string
+
+param copilotMetricsSyncExists bool
+
 // Tags that should be applied to all resources.
 // 
 // Note that 'azd-service-name' tags should be applied separately to service host resources.
@@ -45,6 +51,10 @@ var tags = {
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
+var postgresAdminLogin = 'metricsadmin'
+var postgresServerName = '${abbrs.dBforPostgreSQLServers}${resourceToken}'
+var postgresDatabaseName = 'copilot_metrics'
+var databaseUrl = 'postgresql://${postgresAdminLogin}:${postgresAdminPassword}@${postgresServerName}.postgres.database.azure.com:5432/${postgresDatabaseName}?sslmode=require'
 
 var settings = concat(
   [
@@ -56,6 +66,19 @@ var settings = concat(
     {
       name: 'NUXT_PUBLIC_SCOPE'
       value: githubScope
+    }
+    {
+      name: 'ENABLE_HISTORICAL_MODE'
+      value: 'true'
+    }
+    {
+      name: 'SYNC_ENABLED'
+      value: 'false'
+    }
+    {
+      name: 'DATABASE_URL'
+      value: databaseUrl
+      secret: true
     }
   ],
   !empty(githubPAT)
@@ -110,6 +133,62 @@ var settings = concat(
         {
           name: 'NUXT_PUBLIC_GITHUB_ENT'
           value: githubEnt
+        }
+      ]
+    : []
+)
+
+// Sync service settings (subset — no OAuth, no session password)
+var syncSettings = concat(
+  [
+    {
+      name: 'NUXT_PUBLIC_SCOPE'
+      value: githubScope
+    }
+    {
+      name: 'SYNC_ENABLED'
+      value: 'true'
+    }
+    {
+      name: 'SYNC_DAYS_BACK'
+      value: '1'
+    }
+    {
+      name: 'DATABASE_URL'
+      value: databaseUrl
+      secret: true
+    }
+  ],
+  !empty(githubOrg)
+    ? [
+        {
+          name: 'NUXT_PUBLIC_GITHUB_ORG'
+          value: githubOrg
+        }
+      ]
+    : [],
+  !empty(githubTeam)
+    ? [
+        {
+          name: 'NUXT_PUBLIC_GITHUB_TEAM'
+          value: githubTeam
+        }
+      ]
+    : [],
+  !empty(githubEnt)
+    ? [
+        {
+          name: 'NUXT_PUBLIC_GITHUB_ENT'
+          value: githubEnt
+        }
+      ]
+    : [],
+  !empty(githubPAT)
+    ? [
+        {
+          name: 'NUXT_GITHUB_TOKEN'
+          value: githubPAT
+          secret: true
         }
       ]
     : []
@@ -176,8 +255,22 @@ module appsEnv './shared/apps-env.bicep' = {
   scope: rg
 }
 
+module postgresql './shared/postgresql.bicep' = {
+  name: 'postgresql'
+  params: {
+    name: postgresServerName
+    location: location
+    tags: tags
+    administratorPassword: postgresAdminPassword
+    administratorLogin: postgresAdminLogin
+    databaseName: postgresDatabaseName
+  }
+  scope: rg
+}
+
 module copilotMetricsViewer './app/copilot-metrics-viewer.bicep' = {
   name: 'copilot-metrics-viewer'
+  dependsOn: [ postgresql ]
   params: {
     name: '${abbrs.appContainerApps}copilot-metr-${resourceToken}'
     location: location
@@ -197,3 +290,22 @@ module copilotMetricsViewer './app/copilot-metrics-viewer.bicep' = {
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = registry.outputs.loginServer
 output AZURE_KEY_VAULT_NAME string = keyVault.outputs.name
 output AZURE_KEY_VAULT_ENDPOINT string = keyVault.outputs.endpoint
+output POSTGRESQL_SERVER_FQDN string = postgresql.outputs.serverFqdn
+
+module copilotMetricsSync './app/copilot-metrics-sync.bicep' = {
+  name: 'copilot-metrics-sync'
+  dependsOn: [ postgresql ]
+  params: {
+    name: '${abbrs.appContainerApps}sync-${resourceToken}'
+    location: location
+    tags: tags
+    identityName: '${abbrs.managedIdentityUserAssignedIdentities}copilot-metr-${resourceToken}'
+    containerAppsEnvironmentName: appsEnv.outputs.name
+    containerRegistryName: registry.outputs.name
+    exists: copilotMetricsSyncExists
+    appDefinition: {
+      settings: syncSettings
+    }
+  }
+  scope: rg
+}

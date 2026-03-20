@@ -1,11 +1,38 @@
 _NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
+> **🚨 ACTION REQUIRED — Legacy API Shutdown on April 2, 2026**
+>
+> GitHub is **shutting down the legacy Copilot Metrics API on April 2, 2026**. Versions 2.x and earlier will **stop working** after this date.
+>
+> **You must upgrade to v3.0.0** to continue using Copilot Metrics Viewer.
+>
+> | | Details |
+> |---|---|
+> | **Last legacy release** | `v2.1.4` — Docker image: `ghcr.io/github-copilot-resources/copilot-metrics-viewer:v2.1.4` |
+> | **New release** | `v3.0.0` — uses the new [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics) |
+> | **GitHub App update** | Add **"Organization Copilot metrics: Read"** permission ([setup guide](./DEPLOYMENT.md#github-app-registration)) |
+> | **PostgreSQL (optional)** | Enable historical data storage with PostgreSQL ([migration guide](./MIGRATION_GUIDE.md#step-2-enable-historical-mode-optional)) |
+>
+> **Quick upgrade**: Pull `ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest`, update your GitHub App permissions, and redeploy. Set `USE_LEGACY_API=true` to temporarily keep using the old API until the shutdown date.
+
+> **Migration Resources**:
+> - 📖 [Migration Guide](./MIGRATION_GUIDE.md) - Step-by-step migration instructions
+> - 🧪 [Testing Guide](./TESTING_GUIDE.md) - How to test the migration
+> - 📋 [Architecture Design](./API_MIGRATION_DESIGN.md) - Technical design details
+> - 📚 [API Quick Reference](./API_QUICK_REFERENCE.md) - Legacy vs New API comparison
+> - 📢 [GitHub Blog Announcement](https://github.blog/changelog/2026-01-29-closing-down-notice-of-legacy-copilot-metrics-apis/)
+
 # GitHub Copilot Metrics Viewer
 <p align="center">
   <img width="150" alt="image" src="https://github.com/github-copilot-resources/copilot-metrics-viewer/assets/3329307/8473a694-217e-4aa2-a3c7-2222a321c336">
 </p>
 
-This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. This app utilizes the [GitHub Copilot Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage?apiVersion=2022-11-28).
+This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. 
+
+**API Support**:
+- Legacy API (default) - Works until April 2, 2026
+- New Usage Metrics API (opt-in) - Future-proof, async downloads
+- See [Migration Guide](./MIGRATION_GUIDE.md) for switching to new API
 
 ## Application Overview
 
@@ -210,6 +237,9 @@ NUXT_PUBLIC_IS_DATA_MOCKED=false
 #### NUXT_GITHUB_TOKEN
 
 Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following scopes: _copilot_, _manage_billing:copilot_, _manage_billing:enterprise_, _read:enterprise_, _read:org_.
+
+> [!IMPORTANT]
+> **v3.0 Migration:** The new Copilot Usage Metrics API requires the **"Organization Copilot metrics: Read"** permission on your GitHub App (or the `read:org` scope for classic PATs). Without this, the new API endpoints will return 400/403 errors. See [GitHub App Registration](DEPLOYMENT.md#github-app-registration) for setup details.
 
 Token is not used in the frontend.
 
