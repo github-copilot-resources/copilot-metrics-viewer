@@ -12,6 +12,11 @@ import { fetchLatestReport, fetchReportForDate, fetchLatestUserReport, type Metr
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
 import { saveUserMetrics, hasUserMetrics } from '../storage/user-metrics-storage';
+import { saveSeats, hasSeats, getLatestSeats } from '../storage/seats-storage';
+import { Seat } from '@/model/Seat';
+// ofetch fallback for standalone (non-Nitro) environments
+import { $fetch as _ofetch } from 'ofetch';
+const _fetch = typeof $fetch !== 'undefined' ? $fetch : _ofetch;
 import { 
   createPendingSyncStatus, 
   markSyncInProgress, 
@@ -389,5 +394,72 @@ export async function syncUserMetrics(
       userCount: 0,
       error: msg
     };
+  }
+}
+
+export interface SeatsSyncResult {
+  success: boolean;
+  snapshotDate: string;
+  seatCount: number;
+  error?: string;
+}
+
+/**
+ * Sync today's seat snapshot for a scope.
+ * Fetches all billing-seats pages from GitHub and stores them as a single daily
+ * snapshot.  Skips if today's snapshot is already stored.
+ */
+export async function syncSeats(
+  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+  identifier: string,
+  headers: HeadersInit
+): Promise<SeatsSyncResult> {
+  const logger = console;
+  const today = new Date().toISOString().split('T')[0];
+
+  try {
+    const alreadySynced = await hasSeats(scope, identifier, today);
+    if (alreadySynced) {
+      logger.info(`Seats snapshot for ${today} already stored, skipping`);
+      const existing = await getLatestSeats(scope, identifier);
+      return { success: true, snapshotDate: today, seatCount: existing?.length ?? 0 };
+    }
+
+    const baseUrl = 'https://api.github.com';
+    const apiUrl = (scope === 'enterprise' || scope === 'team-enterprise')
+      ? `${baseUrl}/enterprises/${identifier}/copilot/billing/seats`
+      : `${baseUrl}/orgs/${identifier}/copilot/billing/seats`;
+
+    const GITHUB_PER_PAGE = 100;
+    let page = 1;
+    const allSeats: Seat[] = [];
+
+    logger.info(`Syncing seats for ${scope}:${identifier}`);
+
+    const first = await _fetch(apiUrl, {
+      headers,
+      params: { per_page: GITHUB_PER_PAGE, page }
+    }) as { seats: unknown[]; total_seats: number };
+
+    allSeats.push(...first.seats.map((item: unknown) => new Seat(item)));
+    const totalPages = Math.ceil(first.total_seats / GITHUB_PER_PAGE);
+
+    for (page = 2; page <= totalPages; page++) {
+      const resp = await _fetch(apiUrl, {
+        headers,
+        params: { per_page: GITHUB_PER_PAGE, page }
+      }) as { seats: unknown[]; total_seats: number };
+      allSeats.push(...resp.seats.map((item: unknown) => new Seat(item)));
+    }
+
+    await saveSeats(scope, identifier, today, allSeats);
+    logger.info(`Saved ${allSeats.length} seats snapshot for ${today}`);
+
+    return { success: true, snapshotDate: today, seatCount: allSeats.length };
+
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`Seats sync failed: ${msg}`);
+    return { success: false, snapshotDate: today, seatCount: 0, error: msg };
   }
 }

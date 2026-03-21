@@ -133,24 +133,74 @@
         </v-data-table>
       </v-container>
     </v-main>
+
+    <!-- User metrics history chart (historical / DB mode only) -->
+    <div v-if="userMetricsHistory.length > 0">
+      <v-main class="p-1">
+        <v-container class="px-4 elevation-2">
+          <br>
+          <h2>User Metrics History</h2>
+          <div class="text-caption mb-4">Trends across stored 28-day snapshots</div>
+          <Line :data="historyChartData" :options="historyChartOptions" />
+          <br>
+          <v-data-table
+            :headers="historyHeaders"
+            :items="userMetricsHistory"
+            :items-per-page="10"
+            class="elevation-1 mt-4"
+            density="comfortable"
+          >
+            <template #item="{ item }">
+              <tr>
+                <td>{{ item.report_end_day }}</td>
+                <td class="text-center">{{ item.total_users }}</td>
+                <td class="text-center">{{ item.active_users }}</td>
+                <td class="text-center">{{ item.total_premium_requests.toLocaleString() }}</td>
+                <td class="text-center">{{ item.avg_acceptance_rate }}%</td>
+              </tr>
+            </template>
+          </v-data-table>
+        </v-container>
+      </v-main>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watchEffect } from 'vue';
+import { defineComponent, ref, computed, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
+import type { UserMetricsHistoryEntry } from '../../server/storage/user-metrics-storage';
+import { Line } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default defineComponent({
   name: 'UserMetricsViewer',
+  components: { Line },
   props: {
     userMetrics: {
-      type: Array as () => UserTotals[],
+      type: Array as PropType<UserTotals[]>,
       required: true,
       default: () => []
     },
     dateRangeDescription: {
       type: String,
       default: 'Over the last 28 days'
+    },
+    /** Time-series snapshots from DB (historical mode). Empty array hides the chart. */
+    userMetricsHistory: {
+      type: Array as PropType<UserMetricsHistoryEntry[]>,
+      default: () => []
     }
   },
   setup(props) {
@@ -259,6 +309,58 @@ export default defineComponent({
       { title: 'Top Language', key: 'top_language', sortable: false }
     ];
 
+    // ── History chart ───────────────────────────────────────────────────────
+    const historyChartData = computed(() => ({
+      labels: props.userMetricsHistory.map(e => e.report_end_day),
+      datasets: [
+        {
+          label: 'Total Users',
+          data: props.userMetricsHistory.map(e => e.total_users),
+          borderColor: 'rgba(63, 81, 181, 1)',
+          backgroundColor: 'rgba(63, 81, 181, 0.15)',
+          fill: true,
+          tension: 0.3,
+          yAxisID: 'yUsers',
+        },
+        {
+          label: 'Active Users (≥7 days)',
+          data: props.userMetricsHistory.map(e => e.active_users),
+          borderColor: 'rgba(76, 175, 80, 1)',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'yUsers',
+        },
+        {
+          label: 'Premium Requests',
+          data: props.userMetricsHistory.map(e => e.total_premium_requests),
+          borderColor: 'rgba(156, 39, 176, 0.9)',
+          backgroundColor: 'rgba(156, 39, 176, 0.1)',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'yPremium',
+        },
+      ],
+    }));
+
+    const historyChartOptions = {
+      responsive: true,
+      maintainAspectRatio: true,
+      layout: { padding: { left: 60, right: 60, top: 20, bottom: 40 } },
+      scales: {
+        yUsers:   { type: 'linear' as const, position: 'left'  as const, beginAtZero: true, title: { display: true, text: 'Users' } },
+        yPremium: { type: 'linear' as const, position: 'right' as const, beginAtZero: true, title: { display: true, text: 'Premium Req.' }, grid: { drawOnChartArea: false } },
+      },
+    };
+
+    const historyHeaders = [
+      { title: 'Snapshot (end day)', key: 'report_end_day' },
+      { title: 'Total Users',        key: 'total_users' },
+      { title: 'Active Users',       key: 'active_users' },
+      { title: 'Premium Requests',   key: 'total_premium_requests' },
+      { title: 'Avg Acceptance',     key: 'avg_acceptance_rate' },
+    ];
+
     return {
       search,
       activityFilter,
@@ -274,7 +376,10 @@ export default defineComponent({
       getAcceptanceRate,
       getActivityColor,
       getTopIde,
-      getTopLanguage
+      getTopLanguage,
+      historyChartData,
+      historyChartOptions,
+      historyHeaders,
     };
   }
 });

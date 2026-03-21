@@ -103,8 +103,17 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <AgentActivityViewer v-if="item === 'agent activity'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
-            <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
-            <UserMetricsViewer v-if="item === 'user metrics'" :user-metrics="userMetrics" :date-range-description="dateRangeDescription" />
+            <SeatsAnalysisViewer
+              v-if="item === 'seat analysis'"
+              :seats="seats"
+              :total-seats-count="seatsTotalCount"
+              :current-page="seatsCurrentPage"
+              :total-pages="seatsTotalPages"
+              :per-page="seatsPerPage"
+              :seats-history="seatsHistory"
+              @page-change="handleSeatsPageChange"
+            />
+            <UserMetricsViewer v-if="item === 'user metrics'" :user-metrics="userMetrics" :date-range-description="dateRangeDescription" :user-metrics-history="userMetricsHistory" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
@@ -124,7 +133,10 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
+import type { SeatsApiResponse } from '../server/api/seats';
 import type { ReportDayTotals, UserTotals } from "../../server/services/github-copilot-usage-api";
+import type { SeatHistoryEntry } from "../../server/storage/seats-storage";
+import type { UserMetricsHistoryEntry } from "../../server/storage/user-metrics-storage";
 import type { H3Error } from 'h3'
 
 //Components
@@ -308,7 +320,13 @@ export default defineNuxtComponent({
         if (seatsError.value) {
           this.processError(seatsError.value as H3Error);
         } else {
-          this.seats = (seatsData.value as Seat[]) || [];
+          const resp = seatsData.value as SeatsApiResponse | null;
+          if (resp) {
+            this.seats          = resp.seats          || [];
+            this.seatsTotalCount = resp.total_seats   || 0;
+            this.seatsCurrentPage = resp.page         || 1;
+            this.seatsTotalPages  = resp.total_pages  || 1;
+          }
           this.seatsReady = true;
         }
 
@@ -320,6 +338,12 @@ export default defineNuxtComponent({
         } else {
           this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
           this.userMetricsReady = true;
+        }
+
+        // Fetch history data if historical mode is enabled
+        const config = useRuntimeConfig();
+        if (config.public.enableHistoricalMode) {
+          await this.fetchHistory();
         }
       }
 

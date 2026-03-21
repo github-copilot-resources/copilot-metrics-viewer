@@ -6,6 +6,17 @@ import type { Seat } from '@/model/Seat';
 import { getPool } from './db';
 
 /**
+ * Aggregated seat statistics for one daily snapshot.
+ */
+export interface SeatHistoryEntry {
+  snapshot_date: string;
+  total_seats: number;
+  never_active: number;
+  inactive_7d: number;
+  inactive_30d: number;
+}
+
+/**
  * Save seats data to storage (upsert)
  */
 export async function saveSeats(
@@ -70,4 +81,54 @@ export async function hasSeats(
     [scope, scopeIdentifier, snapshotDate]
   );
   return rows.length > 0;
+}
+
+/**
+ * Return aggregated seat statistics for every stored snapshot, ordered by date ascending.
+ * Stats are computed in TypeScript from the stored JSONB array for pg-mem compatibility.
+ */
+export async function getSeatsHistorySummary(
+  scope: string,
+  scopeIdentifier: string
+): Promise<SeatHistoryEntry[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT snapshot_date, seats
+     FROM seats
+     WHERE scope = $1 AND identifier = $2
+     ORDER BY snapshot_date ASC`,
+    [scope, scopeIdentifier]
+  );
+
+  const MS_7D  = 7  * 24 * 60 * 60 * 1000;
+  const MS_30D = 30 * 24 * 60 * 60 * 1000;
+
+  return rows.map(row => {
+    const snapshotMs = new Date(row.snapshot_date).getTime();
+    const seats: Array<{ last_activity_at?: string | null }> = row.seats;
+
+    let never_active = 0;
+    let inactive_7d  = 0;
+    let inactive_30d = 0;
+
+    for (const seat of seats) {
+      if (!seat.last_activity_at) {
+        never_active++;
+        inactive_7d++;
+        inactive_30d++;
+      } else {
+        const activityMs = new Date(seat.last_activity_at).getTime();
+        if (snapshotMs - activityMs > MS_7D)  inactive_7d++;
+        if (snapshotMs - activityMs > MS_30D) inactive_30d++;
+      }
+    }
+
+    return {
+      snapshot_date: new Date(row.snapshot_date).toISOString().split('T')[0],
+      total_seats: seats.length,
+      never_active,
+      inactive_7d,
+      inactive_30d,
+    };
+  });
 }

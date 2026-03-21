@@ -7,7 +7,7 @@
  * Can be disabled by setting SYNC_ENABLED=false
  */
 
-import { syncBulk, syncUserMetrics } from '../services/sync-service';
+import { syncBulk, syncUserMetrics, syncSeats } from '../services/sync-service';
 
 export default defineTask({
   meta: {
@@ -71,10 +71,18 @@ export default defineTask({
 
       logger.info(`User metrics sync completed: ${userResult.userCount} users, success=${userResult.success}`);
 
+      // Sync seats snapshot when historical mode is enabled
+      let seatsResult = { success: true, snapshotDate: '', seatCount: 0 };
+      if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+        seatsResult = await syncSeats(scope, identifier, headers);
+        logger.info(`Seats sync completed: ${seatsResult.seatCount} seats, success=${seatsResult.success}`);
+      }
+
       return {
-        result: (result.success && userResult.success) ? 'success' : 'partial',
+        result: (result.success && userResult.success && seatsResult.success) ? 'success' : 'partial',
         syncResult: result,
-        userMetricsSyncResult: userResult
+        userMetricsSyncResult: userResult,
+        seatsSyncResult: seatsResult
       };
 
     } catch (error) {
