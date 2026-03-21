@@ -86,7 +86,7 @@
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
-      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis')" v-model="tab">
+      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics')" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :date-range-description="dateRangeDescription" />
@@ -104,13 +104,14 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
+            <UserMetricsViewer v-if="item === 'user metrics'" :user-metrics="userMetrics" :date-range-description="dateRangeDescription" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
         <v-alert
-          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis') || (seatsReady && seats.length == 0 && tab === 'seat analysis')"
+          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
           density="compact" text="No data available to display" title="No data" type="warning" />
       </v-window>
 
@@ -123,7 +124,7 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
-import type { ReportDayTotals } from "../../server/services/github-copilot-usage-api";
+import type { ReportDayTotals, UserTotals } from "../../server/services/github-copilot-usage-api";
 import type { H3Error } from 'h3'
 
 //Components
@@ -137,6 +138,7 @@ import AgentModeViewer from './AgentModeViewer.vue'
 import AgentActivityViewer from './AgentActivityViewer.vue'
 import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
+import UserMetricsViewer from './UserMetricsViewer.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 
@@ -152,7 +154,8 @@ export default defineNuxtComponent({
     AgentModeViewer,
     AgentActivityViewer,
     PullRequestViewer,
-    DateRangeSelector
+    DateRangeSelector,
+    UserMetricsViewer
   },
   methods: {
     logout() {
@@ -260,7 +263,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'user metrics', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
@@ -270,6 +273,8 @@ export default defineNuxtComponent({
       reportData: [] as ReportDayTotals[],
       seatsReady: false,
       seats: [] as Seat[],
+      userMetricsReady: false,
+      userMetrics: [] as UserTotals[],
       apiError: undefined as string | undefined,
       showMigrationBanner: true,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
@@ -295,6 +300,7 @@ export default defineNuxtComponent({
       await this.fetchMetrics();
 
       const { data: seatsData, error: seatsError, execute: executeSeats } = this.seatsFetch;
+      const { data: userMetricsData, error: userMetricsError, execute: executeUserMetrics } = this.userMetricsFetch;
 
       if (!this.signInRequired) {
         await executeSeats();
@@ -304,6 +310,16 @@ export default defineNuxtComponent({
         } else {
           this.seats = (seatsData.value as Seat[]) || [];
           this.seatsReady = true;
+        }
+
+        await executeUserMetrics();
+
+        if (userMetricsError.value) {
+          // User metrics errors are non-fatal — log but don't block the UI
+          console.warn('User metrics fetch failed:', userMetricsError.value);
+        } else {
+          this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
+          this.userMetricsReady = true;
         }
       }
 
@@ -336,6 +352,15 @@ export default defineNuxtComponent({
       })
     });
 
+    const userMetricsFetch = useFetch('/api/user-metrics', {
+      server: true,
+      immediate: false,
+      query: computed(() => {
+        const options = Options.fromRoute(route.value);
+        return options.toParams();
+      })
+    });
+
     return {
       showLogoutButton,
       mockedDataMessage,
@@ -344,6 +369,7 @@ export default defineNuxtComponent({
       signInRequired,
       user,
       seatsFetch,
+      userMetricsFetch,
       dateRange,
       isLoading,
       route,

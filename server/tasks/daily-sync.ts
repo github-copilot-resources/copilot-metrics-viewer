@@ -1,12 +1,13 @@
 /**
  * Daily sync scheduled task
  * Downloads the latest 28-day report and saves any new days to storage.
+ * Also syncs per-user metrics using the users-28-day report.
  * 
  * This task runs on a schedule defined by SYNC_SCHEDULE env var (default: 2 AM daily)
  * Can be disabled by setting SYNC_ENABLED=false
  */
 
-import { syncBulk } from '../services/sync-service';
+import { syncBulk, syncUserMetrics } from '../services/sync-service';
 
 export default defineTask({
   meta: {
@@ -44,23 +45,36 @@ export default defineTask({
 
     logger.info(`Starting daily bulk sync for ${scope}:${identifier}`);
 
+    const headers = {
+      'Authorization': `Bearer ${githubToken}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+
     try {
       const result = await syncBulk(
         scope,
         identifier,
-        {
-          'Authorization': `Bearer ${githubToken}`,
-          'Accept': 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28'
-        },
+        headers,
         githubTeam || undefined
       );
 
-      logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped, ${result.errors.length} errors`);
+      logger.info(`Aggregated sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped, ${result.errors.length} errors`);
+
+      // Also sync per-user metrics
+      const userResult = await syncUserMetrics(
+        scope,
+        identifier,
+        headers,
+        githubTeam || undefined
+      );
+
+      logger.info(`User metrics sync completed: ${userResult.userCount} users, success=${userResult.success}`);
 
       return {
-        result: result.success ? 'success' : 'partial',
-        syncResult: result
+        result: (result.success && userResult.success) ? 'success' : 'partial',
+        syncResult: result,
+        userMetricsSyncResult: userResult
       };
 
     } catch (error) {

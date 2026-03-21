@@ -8,9 +8,10 @@
  *     transformed CopilotMetrics (for UI consumption)
  */
 
-import { fetchLatestReport, fetchReportForDate, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
+import { fetchLatestReport, fetchReportForDate, fetchLatestUserReport, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
+import { saveUserMetrics, hasUserMetrics } from '../storage/user-metrics-storage';
 import { 
   createPendingSyncStatus, 
   markSyncInProgress, 
@@ -311,4 +312,82 @@ export async function getSyncStats(
   }
 
   return { totalDays, syncedDays, missingDays: totalDays - syncedDays, missingDates };
+}
+
+export interface UserMetricsSyncResult {
+  success: boolean;
+  reportStartDay: string;
+  reportEndDay: string;
+  userCount: number;
+  error?: string;
+}
+
+/**
+ * Sync per-user metrics using the 28-day bulk download.
+ * Designed for large enterprises: handles multiple download links in parallel.
+ * Skips the period if already stored.
+ */
+export async function syncUserMetrics(
+  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+  identifier: string,
+  headers: HeadersInit,
+  teamSlug?: string
+): Promise<UserMetricsSyncResult> {
+  const logger = console;
+
+  try {
+    const request: MetricsReportRequest = { scope, identifier, teamSlug };
+    logger.info(`Starting user metrics sync for ${scope}:${identifier}`);
+
+    const report = await fetchLatestUserReport(request, headers);
+
+    if (!report.user_totals || report.user_totals.length === 0) {
+      logger.info('No user totals in report, skipping save');
+      return {
+        success: true,
+        reportStartDay: report.report_start_day,
+        reportEndDay: report.report_end_day,
+        userCount: 0
+      };
+    }
+
+    const alreadySynced = await hasUserMetrics(
+      scope,
+      identifier,
+      report.report_start_day,
+      report.report_end_day
+    );
+
+    if (alreadySynced) {
+      logger.info(`User metrics for ${report.report_start_day}–${report.report_end_day} already synced, skipping`);
+      return {
+        success: true,
+        reportStartDay: report.report_start_day,
+        reportEndDay: report.report_end_day,
+        userCount: report.user_totals.length
+      };
+    }
+
+    await saveUserMetrics(scope, identifier, report.report_start_day, report.report_end_day, report.user_totals);
+
+    logger.info(`Saved user metrics: ${report.user_totals.length} users for ${report.report_start_day}–${report.report_end_day}`);
+
+    return {
+      success: true,
+      reportStartDay: report.report_start_day,
+      reportEndDay: report.report_end_day,
+      userCount: report.user_totals.length
+    };
+
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`User metrics sync failed: ${msg}`);
+    return {
+      success: false,
+      reportStartDay: '',
+      reportEndDay: '',
+      userCount: 0,
+      error: msg
+    };
+  }
 }

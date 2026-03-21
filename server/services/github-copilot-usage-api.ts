@@ -4,7 +4,7 @@
  * See: https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics
  */
 
-import { isMockMode, mockRequestDownloadLinks } from './github-copilot-usage-api-mock';
+import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks } from './github-copilot-usage-api-mock';
 
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
@@ -146,6 +146,101 @@ export interface OrgReport {
   enterprise_id: string;
   created_at: string;
   day_totals: ReportDayTotals[];
+}
+
+// --- User-level Report Data Types ---
+
+/** Per-user IDE usage totals */
+export interface UserIdeTotals {
+  ide: string;
+  user_initiated_interaction_count: number;
+  code_generation_activity_count: number;
+  code_acceptance_activity_count: number;
+  loc_suggested_to_add_sum: number;
+  loc_suggested_to_delete_sum: number;
+  loc_added_sum: number;
+  loc_deleted_sum: number;
+}
+
+/** Per-user feature usage totals */
+export interface UserFeatureTotals {
+  feature: string;
+  user_initiated_interaction_count: number;
+  code_generation_activity_count: number;
+  code_acceptance_activity_count: number;
+  loc_suggested_to_add_sum: number;
+  loc_suggested_to_delete_sum: number;
+  loc_added_sum: number;
+  loc_deleted_sum: number;
+}
+
+/** Per-user language + feature usage totals */
+export interface UserLanguageFeatureTotals {
+  language: string;
+  feature: string;
+  code_generation_activity_count: number;
+  code_acceptance_activity_count: number;
+  loc_suggested_to_add_sum: number;
+  loc_suggested_to_delete_sum: number;
+  loc_added_sum: number;
+  loc_deleted_sum: number;
+}
+
+/** Per-user model + feature usage totals */
+export interface UserModelFeatureTotals {
+  model: string;
+  feature: string;
+  user_initiated_interaction_count: number;
+  code_generation_activity_count: number;
+  code_acceptance_activity_count: number;
+  loc_suggested_to_add_sum: number;
+  loc_suggested_to_delete_sum: number;
+  loc_added_sum: number;
+  loc_deleted_sum: number;
+  /** Premium requests count for this model+feature combination */
+  premium_requests_total?: number;
+}
+
+/** Aggregated metrics for a single user over a time period */
+export interface UserTotals {
+  /** GitHub login / username */
+  login: string;
+  /** GitHub user ID */
+  user_id: number;
+  /** Number of days the user was active in the period */
+  total_active_days: number;
+  /** Total user-initiated interactions (chat, completions, etc.) */
+  user_initiated_interaction_count: number;
+  /** Total code generation events */
+  code_generation_activity_count: number;
+  /** Total code acceptance events */
+  code_acceptance_activity_count: number;
+  /** Total lines of code suggested */
+  loc_suggested_to_add_sum: number;
+  loc_suggested_to_delete_sum: number;
+  /** Total lines of code accepted (added) */
+  loc_added_sum: number;
+  loc_deleted_sum: number;
+  /** Total premium requests consumed (e.g. Claude Sonnet, GPT-5, etc.) */
+  premium_requests_total?: number;
+  /** Breakdown by IDE */
+  totals_by_ide?: UserIdeTotals[];
+  /** Breakdown by feature */
+  totals_by_feature?: UserFeatureTotals[];
+  /** Breakdown by language + feature */
+  totals_by_language_feature?: UserLanguageFeatureTotals[];
+  /** Breakdown by model + feature */
+  totals_by_model_feature?: UserModelFeatureTotals[];
+}
+
+/** A user-level usage metrics report covering a date range */
+export interface UserReport {
+  report_start_day: string;
+  report_end_day: string;
+  organization_id?: string;
+  enterprise_id?: string;
+  created_at?: string;
+  user_totals: UserTotals[];
 }
 
 // --- API Functions ---
@@ -306,3 +401,129 @@ export async function fetchMetricsForDate(
   return report.day_totals;
 }
 
+// --- User metrics API Functions ---
+
+/**
+ * Build the user-level report URL for the given scope and report type.
+ * Org: /orgs/{org}/copilot/metrics/reports/users-{type}[/latest]
+ * Enterprise: /enterprises/{ent}/copilot/metrics/reports/users-{type}[/latest]
+ */
+function buildUserReportUrl(
+  request: MetricsReportRequest,
+  reportType: '1-day' | '28-day',
+  day?: string
+): string {
+  const { scope, identifier } = request;
+  const base = 'https://api.github.com';
+  const isOrg = scope === 'organization' || scope === 'team-organization';
+
+  if (isOrg) {
+    const prefix = reportType === '1-day'
+      ? 'users-1-day'
+      : 'users-28-day/latest';
+    const url = `${base}/orgs/${identifier}/copilot/metrics/reports/${prefix}`;
+    return reportType === '1-day' ? `${url}?day=${day}` : url;
+  } else {
+    const prefix = reportType === '1-day'
+      ? 'users-1-day'
+      : 'users-28-day/latest';
+    const url = `${base}/enterprises/${identifier}/copilot/metrics/reports/${prefix}`;
+    return reportType === '1-day' ? `${url}?day=${day}` : url;
+  }
+}
+
+/**
+ * Request download links for a user-level metrics report.
+ */
+export async function requestUserDownloadLinks(
+  request: MetricsReportRequest,
+  headers: HeadersInit,
+  reportType: '1-day' | '28-day' = '28-day',
+  day?: string
+): Promise<DownloadLinksResponse> {
+  if (isMockMode()) {
+    return mockRequestUserDownloadLinks(request, reportType, day);
+  }
+
+  const url = buildUserReportUrl(request, reportType, day);
+
+  const rawHeaders = headers instanceof Headers
+    ? Object.fromEntries(headers.entries())
+    : { ...headers };
+  delete rawHeaders['x-github-api-version'];
+  rawHeaders['X-GitHub-Api-Version'] = '2026-03-10';
+
+  try {
+    const response = await _fetch<DownloadLinksResponse>(url, { headers: rawHeaders });
+    return response;
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'data' in error) {
+      console.error('[user-metrics-api] GitHub error response:', JSON.stringify((error as { data: unknown }).data));
+    }
+    throw error;
+  }
+}
+
+/**
+ * Download and parse a user-level report file from a signed URL.
+ */
+export async function downloadUserReport(downloadUrl: string): Promise<UserReport> {
+  const response = await _fetch<UserReport>(downloadUrl, {
+    responseType: 'json',
+  });
+  return response;
+}
+
+/**
+ * Fetch the latest 28-day user-level metrics report.
+ * Handles multiple download links (large enterprises may have multiple files).
+ */
+export async function fetchLatestUserReport(
+  request: MetricsReportRequest,
+  headers: HeadersInit
+): Promise<UserReport> {
+  const { download_links } = await requestUserDownloadLinks(request, headers, '28-day');
+
+  if (!download_links || download_links.length === 0) {
+    throw new Error('No download links returned from user metrics report API');
+  }
+
+  // Download all report files concurrently and merge user_totals
+  const reports = await Promise.all(
+    download_links.map(url => downloadUserReport(url))
+  );
+
+  // Merge: use first report as base, combine user_totals from all files
+  const merged: UserReport = { ...reports[0] };
+  if (reports.length > 1) {
+    merged.user_totals = reports.flatMap(r => r.user_totals);
+  }
+
+  return merged;
+}
+
+/**
+ * Fetch a single day's user-level metrics report.
+ */
+export async function fetchUserReportForDate(
+  request: MetricsReportRequest,
+  headers: HeadersInit,
+  day: string
+): Promise<UserReport> {
+  const { download_links } = await requestUserDownloadLinks(request, headers, '1-day', day);
+
+  if (!download_links || download_links.length === 0) {
+    throw new Error(`No user-level download links returned for day ${day}`);
+  }
+
+  const reports = await Promise.all(
+    download_links.map(url => downloadUserReport(url))
+  );
+
+  const merged: UserReport = { ...reports[0] };
+  if (reports.length > 1) {
+    merged.user_totals = reports.flatMap(r => r.user_totals);
+  }
+
+  return merged;
+}
