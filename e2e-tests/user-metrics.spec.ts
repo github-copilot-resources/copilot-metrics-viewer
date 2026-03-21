@@ -45,10 +45,10 @@ test('user metrics tab shows data table', tag, async () => {
 test('user metrics table contains expected columns', tag, async () => {
     const userMetrics = await dashboard.gotoUserMetricsTab();
 
-    await expect(dashboard.page.getByText('Active Days')).toBeVisible();
-    await expect(dashboard.page.getByText('Interactions')).toBeVisible();
-    await expect(dashboard.page.getByText('Accept Rate')).toBeVisible();
-    await expect(dashboard.page.getByText('Premium Req.')).toBeVisible();
-    await expect(dashboard.page.getByText('Top IDE')).toBeVisible();
-    await expect(dashboard.page.getByText('Top Language')).toBeVisible();
+    await expect(dashboard.page.getByText('Active Days', { exact: true })).toBeVisible();
+    await expect(dashboard.page.getByText('Interactions', { exact: true })).toBeVisible();
+    await expect(dashboard.page.getByText('Accept Rate', { exact: true })).toBeVisible();
+    await expect(dashboard.page.getByText('Premium Req.', { exact: true })).toBeVisible();
+    await expect(dashboard.page.getByText('Top IDE', { exact: true })).toBeVisible();
+    await expect(dashboard.page.getByText('Top Language', { exact: true })).toBeVisible();
 });

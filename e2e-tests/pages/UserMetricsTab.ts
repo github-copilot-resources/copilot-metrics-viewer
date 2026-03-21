@@ -16,7 +16,7 @@ export class UserMetricsTab {
             .locator('.v-card-item')
             .filter({ has: this.totalUsersLabel })
             .locator('.text-h4');
-        this.premiumRequestsLabel = page.getByText('Premium Requests');
+        this.premiumRequestsLabel = page.getByText('Premium Requests', { exact: true });
         this.searchInput = page.getByLabel('Search users…');
         this.dataTable = page.locator('.v-data-table');
         this.activityFilterSelect = page.getByLabel('Activity filter');
