@@ -1,6 +1,7 @@
 /**
  * Tests for PostgreSQL storage layer using pg-mem (in-memory PostgreSQL).
- * Validates that actual SQL queries work correctly for metrics, sync status, and seats.
+ * Validates that actual SQL queries work correctly for metrics, sync status, seats,
+ * and user metrics.
  */
 
 import { describe, it, expect, beforeEach, beforeAll, vi } from 'vitest';
@@ -30,7 +31,11 @@ import {
 import {
   saveSeats, getSeats, getLatestSeats, hasSeats,
 } from '../server/storage/seats-storage';
+import {
+  saveUserMetrics, getUserMetrics, getLatestUserMetrics, hasUserMetrics,
+} from '../server/storage/user-metrics-storage';
 import type { CopilotMetrics } from '../app/model/Copilot_Metrics';
+import type { UserTotals } from '../server/services/github-copilot-usage-api';
 
 // Run real schema SQL against pg-mem
 async function setupSchema() {
@@ -76,6 +81,19 @@ async function setupSchema() {
       UNIQUE (scope, identifier, snapshot_date)
     )
   `);
+  await mockPool.query(`
+    CREATE TABLE IF NOT EXISTS user_metrics (
+      id               SERIAL PRIMARY KEY,
+      scope            TEXT NOT NULL,
+      identifier       TEXT NOT NULL,
+      report_start_day DATE NOT NULL,
+      report_end_day   DATE NOT NULL,
+      user_totals      JSONB NOT NULL,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (scope, identifier, report_start_day, report_end_day)
+    )
+  `);
 }
 
 // Minimal CopilotMetrics fixture
@@ -103,6 +121,54 @@ function mockReportData(date: string): any {
   return { day: date, daily_active_users: 50, totals_by_ide: [], totals_by_feature: [] };
 }
 
+// Minimal UserTotals fixtures matching real GitHub API feature names
+function mockUserTotals(): UserTotals[] {
+  return [
+    {
+      login: 'octocat',
+      user_id: 1,
+      total_active_days: 22,
+      user_initiated_interaction_count: 410,
+      code_generation_activity_count: 1240,
+      code_acceptance_activity_count: 860,
+      loc_suggested_to_add_sum: 4800,
+      loc_suggested_to_delete_sum: 120,
+      loc_added_sum: 3200,
+      loc_deleted_sum: 85,
+      premium_requests_total: 45,
+      totals_by_ide: [
+        { ide: 'vscode', user_initiated_interaction_count: 350, code_generation_activity_count: 1050, code_acceptance_activity_count: 720, loc_suggested_to_add_sum: 4100, loc_suggested_to_delete_sum: 100, loc_added_sum: 2750, loc_deleted_sum: 70 },
+      ],
+      totals_by_feature: [
+        { feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 800, code_acceptance_activity_count: 620, loc_suggested_to_add_sum: 3200, loc_suggested_to_delete_sum: 80, loc_added_sum: 2100, loc_deleted_sum: 55 },
+        { feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 180, code_generation_activity_count: 200, code_acceptance_activity_count: 120, loc_suggested_to_add_sum: 800, loc_suggested_to_delete_sum: 20, loc_added_sum: 600, loc_deleted_sum: 15 },
+        { feature: 'agent_edit', user_initiated_interaction_count: 0, code_generation_activity_count: 240, code_acceptance_activity_count: 120, loc_suggested_to_add_sum: 800, loc_suggested_to_delete_sum: 20, loc_added_sum: 500, loc_deleted_sum: 15 },
+      ],
+      totals_by_language_feature: [
+        { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 420, code_acceptance_activity_count: 330, loc_suggested_to_add_sum: 1700, loc_suggested_to_delete_sum: 45, loc_added_sum: 1100, loc_deleted_sum: 30 },
+        { language: 'python', feature: 'code_completion', code_generation_activity_count: 230, code_acceptance_activity_count: 180, loc_suggested_to_add_sum: 950, loc_suggested_to_delete_sum: 22, loc_added_sum: 640, loc_deleted_sum: 15 },
+      ],
+      totals_by_model_feature: [
+        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 800, code_acceptance_activity_count: 620, loc_suggested_to_add_sum: 3200, loc_suggested_to_delete_sum: 80, loc_added_sum: 2100, loc_deleted_sum: 55, premium_requests_total: 0 },
+        { model: 'claude-4.5-sonnet', feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 180, code_generation_activity_count: 200, code_acceptance_activity_count: 120, loc_suggested_to_add_sum: 800, loc_suggested_to_delete_sum: 20, loc_added_sum: 600, loc_deleted_sum: 15, premium_requests_total: 45 },
+      ],
+    },
+    {
+      login: 'octokitten',
+      user_id: 2,
+      total_active_days: 8,
+      user_initiated_interaction_count: 120,
+      code_generation_activity_count: 350,
+      code_acceptance_activity_count: 210,
+      loc_suggested_to_add_sum: 1400,
+      loc_suggested_to_delete_sum: 35,
+      loc_added_sum: 840,
+      loc_deleted_sum: 22,
+      premium_requests_total: 0,
+    },
+  ];
+}
+
 describe('PostgreSQL Storage Layer', () => {
   beforeAll(async () => {
     await setupSchema();
@@ -113,6 +179,7 @@ describe('PostgreSQL Storage Layer', () => {
     await mockPool.query('DELETE FROM metrics');
     await mockPool.query('DELETE FROM sync_status');
     await mockPool.query('DELETE FROM seats');
+    await mockPool.query('DELETE FROM user_metrics');
   });
 
   describe('metrics-storage', () => {
@@ -301,6 +368,75 @@ describe('PostgreSQL Storage Layer', () => {
       expect(await hasSeats('organization', 'test-org', '2026-02-15')).toBe(false);
       await saveSeats('organization', 'test-org', '2026-02-15', mockSeats as any);
       expect(await hasSeats('organization', 'test-org', '2026-02-15')).toBe(true);
+    });
+  });
+
+  describe('user-metrics-storage', () => {
+    it('should save and retrieve user metrics for a report period', async () => {
+      const totals = mockUserTotals();
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', totals);
+
+      const result = await getUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03');
+      expect(result).not.toBeNull();
+      expect(result).toHaveLength(2);
+      expect(result![0].login).toBe('octocat');
+      expect(result![0].premium_requests_total).toBe(45);
+    });
+
+    it('should upsert on duplicate (scope, identifier, start, end)', async () => {
+      const totals = mockUserTotals();
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', totals);
+
+      // Overwrite with updated premium requests
+      const updated = totals.map(u => ({ ...u, premium_requests_total: 999 }));
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', updated);
+
+      const result = await getUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03');
+      expect(result![0].premium_requests_total).toBe(999);
+    });
+
+    it('should check existence with hasUserMetrics', async () => {
+      expect(await hasUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03')).toBe(false);
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+      expect(await hasUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03')).toBe(true);
+    });
+
+    it('should return latest snapshot ordered by report_end_day DESC', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-01-01', '2026-01-28', mockUserTotals());
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const latest = await getLatestUserMetrics('organization', 'test-org');
+      expect(latest).not.toBeNull();
+      // DATE columns may come back as Date objects from pg-mem
+      expect(new Date(latest!.reportEndDay).toISOString().startsWith('2026-03-03')).toBe(true);
+      expect(latest!.userTotals).toHaveLength(2);
+    });
+
+    it('should return null when no user metrics stored', async () => {
+      const result = await getLatestUserMetrics('organization', 'unknown-org');
+      expect(result).toBeNull();
+    });
+
+    it('should isolate by scope and identifier', async () => {
+      await saveUserMetrics('organization', 'org-a', '2026-02-04', '2026-03-03', mockUserTotals());
+      await saveUserMetrics('enterprise', 'ent-x', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      expect(await hasUserMetrics('organization', 'org-a', '2026-02-04', '2026-03-03')).toBe(true);
+      expect(await hasUserMetrics('enterprise', 'ent-x', '2026-02-04', '2026-03-03')).toBe(true);
+      expect(await hasUserMetrics('organization', 'ent-x', '2026-02-04', '2026-03-03')).toBe(false);
+    });
+
+    it('should preserve full user_totals JSONB including breakdowns', async () => {
+      const totals = mockUserTotals();
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', totals);
+
+      const result = await getUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03');
+      expect(result![0].totals_by_ide).toHaveLength(1);
+      expect(result![0].totals_by_ide![0].ide).toBe('vscode');
+      expect(result![0].totals_by_feature).toHaveLength(3);
+      expect(result![0].totals_by_feature![0].feature).toBe('code_completion');
+      expect(result![0].totals_by_model_feature![1].model).toBe('claude-4.5-sonnet');
+      expect(result![0].totals_by_model_feature![1].premium_requests_total).toBe(45);
     });
   });
 });
