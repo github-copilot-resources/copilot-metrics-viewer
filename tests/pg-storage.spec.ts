@@ -29,10 +29,11 @@ import {
   getPendingSyncs, getFailedSyncs,
 } from '../server/storage/sync-storage';
 import {
-  saveSeats, getSeats, getLatestSeats, hasSeats,
+  saveSeats, getSeats, getLatestSeats, hasSeats, getSeatsHistorySummary,
 } from '../server/storage/seats-storage';
 import {
   saveUserMetrics, getUserMetrics, getLatestUserMetrics, hasUserMetrics,
+  getUserMetricsHistory, getUserTimeSeries,
 } from '../server/storage/user-metrics-storage';
 import type { CopilotMetrics } from '../app/model/Copilot_Metrics';
 import type { UserTotals } from '../server/services/github-copilot-usage-api';
@@ -437,6 +438,136 @@ describe('PostgreSQL Storage Layer', () => {
       expect(result![0].totals_by_feature![0].feature).toBe('code_completion');
       expect(result![0].totals_by_model_feature![1].model).toBe('claude-4.5-sonnet');
       expect(result![0].totals_by_model_feature![1].premium_requests_total).toBe(45);
+    });
+  });
+
+  // ── getSeatsHistorySummary ─────────────────────────────────────────────────
+  describe('getSeatsHistorySummary', () => {
+    const makeSeats = (activityDates: Array<string | null>) =>
+      activityDates.map((d, i) => ({ login: `user${i}`, last_activity_at: d }));
+
+    it('should return one entry per snapshot ordered by date', async () => {
+      await saveSeats('organization', 'test-org', '2026-02-14', makeSeats(['2026-02-14']) as any);
+      await saveSeats('organization', 'test-org', '2026-02-15', makeSeats(['2026-02-15', '2026-02-10']) as any);
+
+      const history = await getSeatsHistorySummary('organization', 'test-org');
+      expect(history).toHaveLength(2);
+      expect(history[0].snapshot_date).toBe('2026-02-14');
+      expect(history[1].snapshot_date).toBe('2026-02-15');
+    });
+
+    it('should count total_seats correctly', async () => {
+      await saveSeats('organization', 'test-org', '2026-02-15', makeSeats([null, '2026-02-15', '2026-02-01']) as any);
+      const [entry] = await getSeatsHistorySummary('organization', 'test-org');
+      expect(entry.total_seats).toBe(3);
+    });
+
+    it('should count never_active seats', async () => {
+      await saveSeats('organization', 'test-org', '2026-02-15', makeSeats([null, null, '2026-02-15']) as any);
+      const [entry] = await getSeatsHistorySummary('organization', 'test-org');
+      expect(entry.never_active).toBe(2);
+    });
+
+    it('should count inactive_7d using snapshot date as reference', async () => {
+      // snapshot: 2026-03-01 — anything with last_activity before 2026-02-22 is inactive_7d
+      const seats = makeSeats([
+        '2026-02-21T00:00:00Z', // >7 days before snapshot → inactive
+        '2026-02-25T00:00:00Z', // <7 days before snapshot → active
+        null,                    // never active → also counted
+      ]);
+      await saveSeats('organization', 'test-org', '2026-03-01', seats as any);
+      const [entry] = await getSeatsHistorySummary('organization', 'test-org');
+      expect(entry.inactive_7d).toBe(2);  // user0 + null user
+    });
+
+    it('should return empty array when no snapshots exist', async () => {
+      const history = await getSeatsHistorySummary('organization', 'no-such-org');
+      expect(history).toHaveLength(0);
+    });
+  });
+
+  // ── getUserMetricsHistory ──────────────────────────────────────────────────
+  describe('getUserMetricsHistory', () => {
+    it('should return one aggregate entry per snapshot', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-01-01', '2026-01-28', mockUserTotals());
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const history = await getUserMetricsHistory('organization', 'test-org');
+      expect(history).toHaveLength(2);
+      expect(new Date(history[0].report_end_day) < new Date(history[1].report_end_day)).toBe(true);
+    });
+
+    it('should aggregate total_users and active_users correctly', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const [entry] = await getUserMetricsHistory('organization', 'test-org');
+      expect(entry.total_users).toBe(2);
+      // octocat has 22 active days (≥7), octokitten has 8 (≥7) → both active
+      expect(entry.active_users).toBe(2);
+    });
+
+    it('should aggregate total_premium_requests', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const [entry] = await getUserMetricsHistory('organization', 'test-org');
+      expect(entry.total_premium_requests).toBe(45); // only octocat has premium_requests_total=45
+    });
+
+    it('should compute avg_acceptance_rate', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const [entry] = await getUserMetricsHistory('organization', 'test-org');
+      // (860+210)/(1240+350) ≈ 67.3%
+      expect(entry.avg_acceptance_rate).toBeGreaterThan(0);
+      expect(entry.avg_acceptance_rate).toBeLessThanOrEqual(100);
+    });
+
+    it('should return empty array when no data exists', async () => {
+      const result = await getUserMetricsHistory('organization', 'unknown-org');
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  // ── getUserTimeSeries ──────────────────────────────────────────────────────
+  describe('getUserTimeSeries', () => {
+    it('should return one entry per snapshot where the user appears', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-01-01', '2026-01-28', mockUserTotals());
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const series = await getUserTimeSeries('organization', 'test-org', 'octocat');
+      expect(series).toHaveLength(2);
+    });
+
+    it('should return empty array for a user not in any snapshot', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const series = await getUserTimeSeries('organization', 'test-org', 'ghost');
+      expect(series).toHaveLength(0);
+    });
+
+    it('should carry correct per-user stats', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const [entry] = await getUserTimeSeries('organization', 'test-org', 'octocat');
+      expect(entry.total_active_days).toBe(22);
+      expect(entry.premium_requests_total).toBe(45);
+      expect(entry.code_generation_activity_count).toBe(1240);
+    });
+
+    it('should compute acceptance_rate per snapshot', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+
+      const [entry] = await getUserTimeSeries('organization', 'test-org', 'octocat');
+      // 860/1240 * 100 ≈ 69.4
+      expect(entry.acceptance_rate).toBeCloseTo(69.4, 0);
+    });
+
+    it('should order entries by report_end_day ascending', async () => {
+      await saveUserMetrics('organization', 'test-org', '2026-02-04', '2026-03-03', mockUserTotals());
+      await saveUserMetrics('organization', 'test-org', '2026-01-01', '2026-01-28', mockUserTotals());
+
+      const series = await getUserTimeSeries('organization', 'test-org', 'octocat');
+      expect(new Date(series[0].report_end_day) < new Date(series[1].report_end_day)).toBe(true);
     });
   });
 });

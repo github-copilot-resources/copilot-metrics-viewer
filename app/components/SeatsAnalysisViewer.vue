@@ -35,7 +35,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption">
-              No show seats
+              No show seats{{ totalPages > 1 ? ' (this page)' : '' }}
             </div>
             <p class="text-h4">{{ noshowSeats }}</p>
           </div>
@@ -55,7 +55,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption">
-              No use in the last 7 days
+              No use in the last 7 days{{ totalPages > 1 ? ' (this page)' : '' }}
             </div>
             <p class="text-h4">{{ unusedSeatsInSevenDays }}</p>
           </div>
@@ -75,7 +75,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption">
-              No use in the last 30 days
+              No use in the last 30 days{{ totalPages > 1 ? ' (this page)' : '' }}
             </div>
             <p class="text-h4">{{ unusedSeatsInThirtyDays }}</p>
           </div>

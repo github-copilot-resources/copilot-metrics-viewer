@@ -113,7 +113,13 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :seats-history="seatsHistory"
               @page-change="handleSeatsPageChange"
             />
-            <UserMetricsViewer v-if="item === 'user metrics'" :user-metrics="userMetrics" :date-range-description="dateRangeDescription" :user-metrics-history="userMetricsHistory" />
+            <UserMetricsViewer
+              v-if="item === 'user metrics'"
+              :user-metrics="userMetrics"
+              :date-range-description="dateRangeDescription"
+              :user-metrics-history="userMetricsHistory"
+              :query-params="seatsQueryParams"
+            />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
@@ -270,6 +276,39 @@ export default defineNuxtComponent({
             break;
         }
       }
+    },
+    /** Handle page navigation from SeatsAnalysisViewer paginator */
+    async handleSeatsPageChange(page: number) {
+      const { data: seatsData, error: seatsError, execute } = this.seatsFetch;
+      // Update setup ref so the reactive query re-evaluates with the new page
+      (this as any).seatsCurrentPage = page;
+      await execute();
+      if (!seatsError.value) {
+        const resp = seatsData.value as SeatsApiResponse | null;
+        if (resp) {
+          this.seats            = resp.seats        || [];
+          this.seatsTotalCount  = resp.total_seats  || 0;
+          this.seatsCurrentPage = resp.page         || page;
+          this.seatsTotalPages  = resp.total_pages  || 1;
+        }
+      }
+    },
+    /** Fetch seats and user-metrics history (DB / historical mode) */
+    async fetchHistory() {
+      const options = Options.fromRoute(this.route);
+      const params  = options.toParams();
+      const qs      = new URLSearchParams(params).toString();
+
+      try {
+        const [seatsH, userH] = await Promise.all([
+          $fetch<SeatHistoryEntry[]>(`/api/seats-history${qs ? '?' + qs : ''}`).catch(() => []),
+          $fetch<UserMetricsHistoryEntry[]>(`/api/user-metrics-history${qs ? '?' + qs : ''}`).catch(() => []),
+        ]);
+        this.seatsHistory        = seatsH;
+        this.userMetricsHistory  = userH;
+      } catch {
+        // history is non-critical — swallow errors
+      }
     }
   },
 
@@ -285,8 +324,14 @@ export default defineNuxtComponent({
       reportData: [] as ReportDayTotals[],
       seatsReady: false,
       seats: [] as Seat[],
+      seatsTotalCount:  0,
+      seatsCurrentPage: 1,
+      seatsTotalPages:  1,
+      seatsPerPage:     300,
+      seatsHistory:     [] as SeatHistoryEntry[],
       userMetricsReady: false,
       userMetrics: [] as UserTotals[],
+      userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
       showMigrationBanner: true,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
@@ -362,6 +407,7 @@ export default defineNuxtComponent({
     const dateRange = ref({ since: undefined as string | undefined, until: undefined as string | undefined });
     const isLoading = ref(false);
     const route = ref(useRoute());
+    const seatsCurrentPage = ref(1);
 
     const signInRequired = computed(() => {
       return config.public.usingGithubAuth && !loggedIn.value;
@@ -372,8 +418,17 @@ export default defineNuxtComponent({
       immediate: !signInRequired.value,
       query: computed(() => {
         const options = Options.fromRoute(route.value);
-        return options.toParams();
+        return { ...options.toParams(), page: String(seatsCurrentPage.value), per_page: '300' };
       })
+    });
+
+    /** Scope + org/ent params forwarded to history endpoints and user-trend API */
+    const seatsQueryParams = computed(() => {
+      const options = Options.fromRoute(route.value);
+      const p = options.toParams();
+      // Only forward identity params, not pagination
+      const { since: _s, until: _u, ...rest } = p;
+      return rest;
     });
 
     const userMetricsFetch = useFetch('/api/user-metrics', {
@@ -397,6 +452,8 @@ export default defineNuxtComponent({
       dateRange,
       isLoading,
       route,
+      seatsCurrentPage,
+      seatsQueryParams,
     };
   },
 })

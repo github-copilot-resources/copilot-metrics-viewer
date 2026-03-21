@@ -128,11 +128,46 @@
               </td>
               <td class="text-center">{{ getTopIde(item) }}</td>
               <td class="text-center">{{ getTopLanguage(item) }}</td>
+              <td class="text-center">
+                <v-btn
+                  v-if="showTrendButtons"
+                  icon
+                  size="x-small"
+                  variant="text"
+                  :title="`View trend for ${item.login}`"
+                  @click="openUserTrend(item.login)"
+                >
+                  <v-icon>mdi-chart-line</v-icon>
+                </v-btn>
+              </td>
             </tr>
           </template>
         </v-data-table>
       </v-container>
     </v-main>
+
+    <!-- Per-user trend dialog -->
+    <v-dialog v-model="trendDialog" max-width="760">
+      <v-card>
+        <v-card-title class="d-flex justify-space-between align-center">
+          <span>Activity Trend — {{ trendLogin }}</span>
+          <v-btn icon variant="text" @click="trendDialog = false"><v-icon>mdi-close</v-icon></v-btn>
+        </v-card-title>
+        <v-card-text>
+          <div v-if="trendLoading" class="d-flex justify-center py-8">
+            <v-progress-circular indeterminate color="indigo" />
+          </div>
+          <v-alert v-else-if="trendError" type="error" density="compact" class="my-4">{{ trendError }}</v-alert>
+          <div v-else-if="trendData.length === 0" class="text-center py-8 text-disabled">
+            No historical data available for this user yet.
+          </div>
+          <div v-else>
+            <div class="text-caption mb-4">28-day rolling window snapshots stored by the sync job</div>
+            <Line :data="trendChartData" :options="trendChartOptions" />
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
 
     <!-- User metrics history chart (historical / DB mode only) -->
     <div v-if="userMetricsHistory.length > 0">
@@ -169,7 +204,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
-import type { UserMetricsHistoryEntry } from '../../server/storage/user-metrics-storage';
+import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -201,12 +236,98 @@ export default defineComponent({
     userMetricsHistory: {
       type: Array as PropType<UserMetricsHistoryEntry[]>,
       default: () => []
+    },
+    /** Query params forwarded to /api/user-metrics-history?login= (scope, org/ent). */
+    queryParams: {
+      type: Object as PropType<Record<string, string>>,
+      default: () => ({})
     }
   },
   setup(props) {
     const search = ref('');
     const activityFilter = ref('all');
     const premiumFilter = ref('all');
+
+    // ── Per-user trend dialog ──────────────────────────────────────────────
+    const trendDialog  = ref(false);
+    const trendLogin   = ref('');
+    const trendLoading = ref(false);
+    const trendError   = ref('');
+    const trendData    = ref<UserTimeSeriesEntry[]>([]);
+
+    const showTrendButtons = computed(() => props.userMetricsHistory.length > 0);
+
+    async function openUserTrend(login: string) {
+      trendLogin.value   = login;
+      trendData.value    = [];
+      trendError.value   = '';
+      trendLoading.value = true;
+      trendDialog.value  = true;
+
+      try {
+        const params = new URLSearchParams({ ...props.queryParams, login });
+        const data = await $fetch<UserTimeSeriesEntry[]>(`/api/user-metrics-history?${params}`);
+        trendData.value = data;
+      } catch (err) {
+        console.error('Failed to load user trend:', err);
+        trendError.value = 'Could not load trend data. Please try again later.';
+      } finally {
+        trendLoading.value = false;
+      }
+    }
+
+    const trendChartData = computed(() => ({
+      labels: trendData.value.map(e => e.report_end_day),
+      datasets: [
+        {
+          label: 'Active Days',
+          data: trendData.value.map(e => e.total_active_days),
+          borderColor: 'rgba(63, 81, 181, 1)',
+          backgroundColor: 'rgba(63, 81, 181, 0.15)',
+          fill: true,
+          tension: 0.3,
+          yAxisID: 'yDays',
+        },
+        {
+          label: 'Acceptance Rate %',
+          data: trendData.value.map(e => e.acceptance_rate),
+          borderColor: 'rgba(76, 175, 80, 1)',
+          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'yRate',
+        },
+        {
+          label: 'Completions',
+          data: trendData.value.map(e => e.code_generation_activity_count),
+          borderColor: 'rgba(255, 152, 0, 0.9)',
+          backgroundColor: 'rgba(255, 152, 0, 0.1)',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'yCount',
+        },
+        {
+          label: 'Premium Req.',
+          data: trendData.value.map(e => e.premium_requests_total),
+          borderColor: 'rgba(156, 39, 176, 0.9)',
+          backgroundColor: 'rgba(156, 39, 176, 0.1)',
+          fill: false,
+          tension: 0.3,
+          yAxisID: 'yCount',
+        },
+      ],
+    }));
+
+    const trendChartOptions = {
+      responsive: true,
+      maintainAspectRatio: true,
+      layout: { padding: { top: 10, bottom: 20 } },
+      scales: {
+        yDays: { type: 'linear' as const, position: 'left'  as const, beginAtZero: true, title: { display: true, text: 'Days / Count' } },
+        yRate: { type: 'linear' as const, position: 'right' as const, beginAtZero: true, max: 100, title: { display: true, text: 'Rate %' }, grid: { drawOnChartArea: false } },
+        yCount: { display: false },
+      },
+    };
 
     const activityFilterOptions = [
       { title: 'All users', value: 'all' },
@@ -296,18 +417,24 @@ export default defineComponent({
       return topLang;
     }
 
-    const tableHeaders = [
-      { title: 'User', key: 'login', sortable: true },
-      { title: 'Active Days', key: 'total_active_days', sortable: true },
-      { title: 'Interactions', key: 'user_initiated_interaction_count', sortable: true },
-      { title: 'Completions', key: 'code_generation_activity_count', sortable: true },
-      { title: 'Accepted', key: 'code_acceptance_activity_count', sortable: true },
-      { title: 'Accept Rate', key: 'acceptance_rate', sortable: false },
-      { title: 'Lines Accepted', key: 'loc_added_sum', sortable: true },
-      { title: 'Premium Req.', key: 'premium_requests_total', sortable: true },
-      { title: 'Top IDE', key: 'top_ide', sortable: false },
-      { title: 'Top Language', key: 'top_language', sortable: false }
-    ];
+    const tableHeaders = computed(() => {
+      const cols: { title: string; key: string; sortable?: boolean }[] = [
+        { title: 'User',           key: 'login',                            sortable: true  },
+        { title: 'Active Days',    key: 'total_active_days',                sortable: true  },
+        { title: 'Interactions',   key: 'user_initiated_interaction_count', sortable: true  },
+        { title: 'Completions',    key: 'code_generation_activity_count',   sortable: true  },
+        { title: 'Accepted',       key: 'code_acceptance_activity_count',   sortable: true  },
+        { title: 'Accept Rate',    key: 'acceptance_rate',                  sortable: false },
+        { title: 'Lines Accepted', key: 'loc_added_sum',                    sortable: true  },
+        { title: 'Premium Req.',   key: 'premium_requests_total',           sortable: true  },
+        { title: 'Top IDE',        key: 'top_ide',                          sortable: false },
+        { title: 'Top Language',   key: 'top_language',                     sortable: false },
+      ];
+      if (showTrendButtons.value) {
+        cols.push({ title: 'Trend', key: 'trend', sortable: false });
+      }
+      return cols;
+    });
 
     // ── History chart ───────────────────────────────────────────────────────
     const historyChartData = computed(() => ({
@@ -380,6 +507,16 @@ export default defineComponent({
       historyChartData,
       historyChartOptions,
       historyHeaders,
+      // trend dialog
+      showTrendButtons,
+      trendDialog,
+      trendLogin,
+      trendLoading,
+      trendError,
+      trendData,
+      trendChartData,
+      trendChartOptions,
+      openUserTrend,
     };
   }
 });

@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   if (process.env.ENABLE_HISTORICAL_MODE !== 'true') {
     return new Response(
       'seats-history endpoint requires ENABLE_HISTORICAL_MODE=true',
-      { status: 404 }
+      { status: 503 }
     );
   }
 

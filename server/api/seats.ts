@@ -216,7 +216,10 @@ export default defineEventHandler(async (event) => {
       fetched = fetched.concat(resp.seats.map((item: unknown) => new Seat(item)));
     }
 
-    const pageSeats = deduplicateSeats(fetched).slice(localOffset, localOffset + uiPerPage);
+    // Deduplicate first (handles rare cases where a user appears in multiple pages),
+    // then slice to the window within these fetched pages.
+    const deduped    = deduplicateSeats(fetched);
+    const pageSeats  = deduped.slice(localOffset, localOffset + uiPerPage);
     return {
       seats: pageSeats,
       total_seats: totalSeats,

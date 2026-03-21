@@ -1,17 +1,21 @@
 /**
  * GET /api/user-metrics-history
  *
- * Returns a time-series of per-user metrics aggregated per stored 28-day
- * snapshot.  Only available when ENABLE_HISTORICAL_MODE=true (data is
- * collected by the daily sync job).
+ * Two modes:
  *
- * Response: UserMetricsHistoryEntry[]
- *   { report_start_day, report_end_day, total_users, active_users,
- *     total_premium_requests, avg_acceptance_rate }
+ * 1. Without ?login=  → aggregate snapshots
+ *    Returns UserMetricsHistoryEntry[] — one entry per stored 28-day window with
+ *    org-level totals (total_users, active_users, premium_requests, acceptance_rate).
+ *
+ * 2. With ?login=<username>  → per-user time series
+ *    Returns UserTimeSeriesEntry[] — one entry per snapshot where the user appears,
+ *    showing that individual user's stats over time.
+ *
+ * Only available when ENABLE_HISTORICAL_MODE=true.
  */
 
 import { Options } from '@/model/Options';
-import { getUserMetricsHistory } from '../storage/user-metrics-storage';
+import { getUserMetricsHistory, getUserTimeSeries } from '../storage/user-metrics-storage';
 
 export default defineEventHandler(async (event) => {
   const logger = console;
@@ -19,7 +23,7 @@ export default defineEventHandler(async (event) => {
   if (process.env.ENABLE_HISTORICAL_MODE !== 'true') {
     return new Response(
       'user-metrics-history endpoint requires ENABLE_HISTORICAL_MODE=true',
-      { status: 404 }
+      { status: 503 }
     );
   }
 
@@ -27,12 +31,21 @@ export default defineEventHandler(async (event) => {
   const options    = Options.fromQuery(query);
   const scope      = options.scope      || 'organization';
   const identifier = options.githubOrg  || options.githubEnt || '';
+  const login      = typeof query.login === 'string' ? query.login.trim() : '';
 
   if (!identifier) {
     return new Response('GitHub org or enterprise must be configured', { status: 400 });
   }
 
   try {
+    if (login) {
+      // Per-user time series
+      const series = await getUserTimeSeries(scope, identifier, login);
+      logger.info(`Returning ${series.length} time-series entries for user "${login}" in ${scope}:${identifier}`);
+      return series;
+    }
+
+    // Aggregate snapshot history
     const history = await getUserMetricsHistory(scope, identifier);
     logger.info(`Returning ${history.length} user-metrics history entries for ${scope}:${identifier}`);
     return history;
