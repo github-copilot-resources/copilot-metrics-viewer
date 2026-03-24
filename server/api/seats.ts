@@ -2,6 +2,7 @@ import { Seat } from "@/model/Seat";
 import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
 import { resolve } from 'path';
+import { isMockMode } from '../services/github-copilot-usage-api-mock';
 
 // Minimal shape of a GitHub team member object we care about
 export interface TeamMember {
@@ -9,6 +10,16 @@ export interface TeamMember {
   id: number;
   [key: string]: unknown; // allow additional fields without using any
 }
+
+// Mock team membership data, aligned with the mock user report.
+// Users alice/bob belong to 'the-a-team', charlie/diana to 'dev-team', etc.
+const MOCK_TEAM_MEMBERS: Record<string, TeamMember[]> = {
+  'the-a-team':    [{ login: 'alice', id: 10001 }, { login: 'bob', id: 10002 }],
+  'dev-team':      [{ login: 'charlie', id: 10003 }, { login: 'diana', id: 10004 }],
+  'frontend-team': [{ login: 'alice', id: 10001 }, { login: 'diana', id: 10004 }],
+  'backend-team':  [{ login: 'bob', id: 10002 }, { login: 'charlie', id: 10003 }],
+  'qa-team':       [{ login: 'diana', id: 10004 }, { login: 'alice', id: 10001 }],
+};
 
 /**
  * Fetch all members of a team (org team scope) handling GitHub API pagination.
@@ -24,6 +35,10 @@ export async function fetchAllTeamMembers(options: Options, headers: HeadersInit
   // Only proceed for explicit team scopes with an organization + team slug
   if (!(options.scope === 'team-organization' || options.scope === 'team-enterprise') || !options.githubTeam) {
     return [];
+  }
+
+  if (isMockMode()) {
+    return MOCK_TEAM_MEMBERS[options.githubTeam] ?? [];
   }
 
   const membersUrl = options.getTeamMembersApiUrl();

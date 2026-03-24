@@ -17,9 +17,11 @@ import { getLocale } from "./getLocale";
 import { filterHolidaysFromMetrics } from '@/utils/dateUtils';
 import { getMetricsData as getLegacyMetricsData } from './metrics-util';
 import { getMetricsByDateRange, getReportDataByDateRange, saveMetrics } from '../../server/storage/metrics-storage';
-import { fetchLatestReport, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
+import { fetchLatestReport, fetchUsersLatestReport, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
 import { transformReportToMetrics } from '../../server/services/report-transformer';
 import { isMockMode } from '../../server/services/github-copilot-usage-api-mock';
+import { aggregateTeamMetrics } from '../../server/services/user-metrics-aggregator';
+import { fetchAllTeamMembers } from '../../server/api/seats';
 
 export interface MetricsDataResult {
   metrics: CopilotMetrics[];
@@ -45,13 +47,15 @@ function isStorageModeEnabled(): boolean {
 }
 
 /**
- * Fetch metrics using the new download-based API
+ * Fetch metrics using the new download-based API.
+ * For team scopes, fetches per-user data and aggregates it for team members only.
  */
 async function fetchFromNewApi(
   options: Options,
   headers: Headers
 ): Promise<MetricsDataResult> {
   const identifier = options.githubOrg || options.githubEnt || '';
+  const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
 
   const request: MetricsReportRequest = {
     scope: options.scope!,
@@ -59,7 +63,21 @@ async function fetchFromNewApi(
     teamSlug: options.githubTeam
   };
 
-  const report = await fetchLatestReport(request, headers);
+  let report;
+  if (isTeamScope && options.githubTeam) {
+    // Fetch team members first; only fetch user report if the team has members.
+    // This avoids an expensive download when the team is empty or doesn't exist.
+    const teamMembers = await fetchAllTeamMembers(options, headers);
+    if (teamMembers.length === 0) {
+      return { metrics: [], reportData: [] };
+    }
+    const userRecords = await fetchUsersLatestReport(request, headers);
+    const teamLogins = new Set(teamMembers.map(m => m.login));
+    report = aggregateTeamMetrics(userRecords, teamLogins);
+  } else {
+    report = await fetchLatestReport(request, headers);
+  }
+
   let metrics = transformReportToMetrics(report);
   let reportData = report.day_totals;
 
@@ -108,13 +126,10 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
       const metrics = await getLegacyMetricsData(event);
       return { metrics, reportData: [] };
     }
-    // Default: exercise full new-API mock pipeline
+    // Default: exercise full new-API mock pipeline (including team aggregation)
     logger.info('Using mocked data mode (new API format via HTTP download)');
-    const identifier = options.githubOrg || options.githubEnt || 'mock-org';
-    const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
-    const report = await fetchLatestReport({ scope, identifier }, new Headers());
-    const metrics = transformReportToMetrics(report);
-    return { metrics, reportData: report.day_totals };
+    const result = await fetchFromNewApi(options, new Headers());
+    return { metrics: result.metrics, reportData: result.reportData };
   }
 
   const identifier = options.githubOrg || options.githubEnt || '';
@@ -203,6 +218,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 /**
  * Fetch from API and store to DB (sync-on-miss).
  * Used when historical mode is enabled but DB is empty for the requested range.
+ * For team scopes, fetches per-user data and aggregates for team members.
  */
 async function fetchAndStore(
   options: Options,
@@ -210,6 +226,7 @@ async function fetchAndStore(
 ): Promise<MetricsDataResult> {
   const logger = console;
   const identifier = options.githubOrg || options.githubEnt || '';
+  const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
 
   const request: MetricsReportRequest = {
     scope: options.scope!,
@@ -217,7 +234,19 @@ async function fetchAndStore(
     teamSlug: options.githubTeam
   };
 
-  const report = await fetchLatestReport(request, headers);
+  let report;
+  if (isTeamScope && options.githubTeam) {
+    const teamMembers = await fetchAllTeamMembers(options, headers);
+    if (teamMembers.length === 0) {
+      return { metrics: [], reportData: [] };
+    }
+    const userRecords = await fetchUsersLatestReport(request, headers);
+    const teamLogins = new Set(teamMembers.map(m => m.login));
+    report = aggregateTeamMetrics(userRecords, teamLogins);
+  } else {
+    report = await fetchLatestReport(request, headers);
+  }
+
   let metrics = transformReportToMetrics(report);
   let reportData = report.day_totals;
 

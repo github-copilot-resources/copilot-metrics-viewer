@@ -4,7 +4,7 @@
  * See: https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics
  */
 
-import { isMockMode, mockRequestDownloadLinks } from './github-copilot-usage-api-mock';
+import { isMockMode, mockRequestDownloadLinks, mockRequestUsersDownloadLinks } from './github-copilot-usage-api-mock';
 
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
@@ -148,6 +148,33 @@ export interface OrgReport {
   day_totals: ReportDayTotals[];
 }
 
+/**
+ * A single user's metrics for a single day.
+ * The downloaded users-28-day report file is a flat JSON array of these records.
+ */
+export interface UserDayRecord {
+  user_id: number;
+  user_login: string;
+  day: string;
+  organization_id?: string;
+  enterprise_id?: string;
+  user_initiated_interaction_count: number;
+  code_generation_activity_count: number;
+  code_acceptance_activity_count: number;
+  loc_suggested_to_add_sum: number;
+  loc_suggested_to_delete_sum: number;
+  loc_added_sum: number;
+  loc_deleted_sum: number;
+  totals_by_ide: ReportIdeTotals[];
+  totals_by_feature: ReportFeatureTotals[];
+  totals_by_language_feature: ReportLanguageFeatureTotals[];
+  totals_by_model_feature: ReportModelFeatureTotals[];
+  totals_by_language_model: ReportLanguageModelTotals[];
+  used_agent?: boolean;
+  used_chat?: boolean;
+  used_cli?: boolean;
+}
+
 // --- API Functions ---
 
 /**
@@ -178,9 +205,96 @@ function buildReportUrl(
 }
 
 /**
- * Request download links for a metrics report.
- * Returns signed URLs to download the actual report files.
+ * Build the users report URL (per-user metrics) for the given scope.
  */
+function buildUsersReportUrl(
+  request: MetricsReportRequest,
+  reportType: '1-day' | '28-day',
+  day?: string
+): string {
+  const { scope, identifier } = request;
+  const base = 'https://api.github.com';
+  const isOrg = scope === 'organization' || scope === 'team-organization';
+
+  if (isOrg) {
+    const suffix = reportType === '1-day' ? `users-1-day` : `users-28-day/latest`;
+    const url = `${base}/orgs/${identifier}/copilot/metrics/reports/${suffix}`;
+    return reportType === '1-day' ? `${url}?day=${day}` : url;
+  } else {
+    const suffix = reportType === '1-day' ? `users-1-day` : `users-28-day/latest`;
+    const url = `${base}/enterprises/${identifier}/copilot/metrics/reports/${suffix}`;
+    return reportType === '1-day' ? `${url}?day=${day}` : url;
+  }
+}
+
+/**
+ * Request download links for a per-user metrics report.
+ */
+async function requestUsersDownloadLinks(
+  request: MetricsReportRequest,
+  headers: HeadersInit,
+  reportType: '1-day' | '28-day' = '28-day',
+  day?: string
+): Promise<DownloadLinksResponse> {
+  if (isMockMode()) {
+    return mockRequestUsersDownloadLinks(request, reportType, day);
+  }
+
+  const url = buildUsersReportUrl(request, reportType, day);
+
+  const rawHeaders = headers instanceof Headers
+    ? Object.fromEntries(headers.entries())
+    : { ...headers };
+  delete rawHeaders['x-github-api-version'];
+  rawHeaders['X-GitHub-Api-Version'] = '2026-03-10';
+
+  try {
+    const response = await _fetch<DownloadLinksResponse>(url, { headers: rawHeaders });
+    return response;
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'data' in error) {
+      console.error('[new-api] GitHub users report error:', JSON.stringify((error as { data: unknown }).data));
+    }
+    throw error;
+  }
+}
+
+/**
+ * Download and parse a per-user report file from a signed URL.
+ * The file is a flat JSON array of UserDayRecord objects.
+ */
+export async function downloadUsersReport(
+  downloadUrl: string
+): Promise<UserDayRecord[]> {
+  const response = await _fetch<UserDayRecord[]>(downloadUrl, {
+    responseType: 'json',
+  });
+  return response;
+}
+
+/**
+ * Fetch the latest 28-day per-user metrics report.
+ * Returns a flat array of UserDayRecord objects (one per user per day).
+ * Used to derive team-level metrics by filtering on team membership.
+ */
+export async function fetchUsersLatestReport(
+  request: MetricsReportRequest,
+  headers: HeadersInit
+): Promise<UserDayRecord[]> {
+  const { download_links } = await requestUsersDownloadLinks(request, headers, '28-day');
+
+  if (!download_links || download_links.length === 0) {
+    throw new Error('No download links returned from users metrics report API');
+  }
+
+  const records = await Promise.all(
+    download_links.map(url => downloadUsersReport(url))
+  );
+
+  return records.flat();
+}
+
+
 export async function requestDownloadLinks(
   request: MetricsReportRequest,
   headers: HeadersInit,
