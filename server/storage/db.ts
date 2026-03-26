@@ -102,4 +102,24 @@ export async function initSchema(): Promise<void> {
       UNIQUE (scope, identifier, snapshot_date)
     );
   `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS user_metrics (
+      id            SERIAL PRIMARY KEY,
+      scope         TEXT NOT NULL,
+      identifier    TEXT NOT NULL,
+      user_login    TEXT NOT NULL,
+      user_id       BIGINT,
+      metrics_date  DATE NOT NULL,
+      data          JSONB NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (scope, identifier, user_login, metrics_date)
+    );
+  `);
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_user_metrics_lookup
+    ON user_metrics (scope, identifier, metrics_date);
+  `);
 }

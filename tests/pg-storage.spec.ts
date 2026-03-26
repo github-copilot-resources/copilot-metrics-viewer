@@ -30,7 +30,11 @@ import {
 import {
   saveSeats, getSeats, getLatestSeats, hasSeats,
 } from '../server/storage/seats-storage';
+import {
+  saveUserMetricsBatch, getUserMetricsByDateRange, hasUserMetricsForDate,
+} from '../server/storage/user-metrics-storage';
 import type { CopilotMetrics } from '../app/model/Copilot_Metrics';
+import type { UserDayRecord } from '../server/services/github-copilot-usage-api';
 
 // Run real schema SQL against pg-mem
 async function setupSchema() {
@@ -76,6 +80,24 @@ async function setupSchema() {
       UNIQUE (scope, identifier, snapshot_date)
     )
   `);
+  await mockPool.query(`
+    CREATE TABLE IF NOT EXISTS user_metrics (
+      id            SERIAL PRIMARY KEY,
+      scope         TEXT NOT NULL,
+      identifier    TEXT NOT NULL,
+      user_login    TEXT NOT NULL,
+      user_id       BIGINT,
+      metrics_date  DATE NOT NULL,
+      data          JSONB NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (scope, identifier, user_login, metrics_date)
+    )
+  `);
+  await mockPool.query(`
+    CREATE INDEX IF NOT EXISTS idx_user_metrics_lookup
+    ON user_metrics (scope, identifier, metrics_date)
+  `);
 }
 
 // Minimal CopilotMetrics fixture
@@ -98,6 +120,28 @@ function mockMetrics(date: string): CopilotMetrics {
   } as CopilotMetrics;
 }
 
+// Minimal UserDayRecord fixture
+function mockUserRecord(login: string, id: number, day: string): UserDayRecord {
+  return {
+    user_id: id,
+    user_login: login,
+    day,
+    organization_id: 'org-1',
+    user_initiated_interaction_count: 5,
+    code_generation_activity_count: 20,
+    code_acceptance_activity_count: 5,
+    loc_suggested_to_add_sum: 100,
+    loc_suggested_to_delete_sum: 0,
+    loc_added_sum: 40,
+    loc_deleted_sum: 2,
+    totals_by_ide: [],
+    totals_by_feature: [],
+    totals_by_language_feature: [],
+    totals_by_model_feature: [],
+    totals_by_language_model: [],
+  };
+}
+
 // Minimal ReportDayTotals fixture for hasMetrics (requires report_data IS NOT NULL)
 function mockReportData(date: string): any {
   return { day: date, daily_active_users: 50, totals_by_ide: [], totals_by_feature: [] };
@@ -113,6 +157,7 @@ describe('PostgreSQL Storage Layer', () => {
     await mockPool.query('DELETE FROM metrics');
     await mockPool.query('DELETE FROM sync_status');
     await mockPool.query('DELETE FROM seats');
+    await mockPool.query('DELETE FROM user_metrics');
   });
 
   describe('metrics-storage', () => {
@@ -301,6 +346,70 @@ describe('PostgreSQL Storage Layer', () => {
       expect(await hasSeats('organization', 'test-org', '2026-02-15')).toBe(false);
       await saveSeats('organization', 'test-org', '2026-02-15', mockSeats as any);
       expect(await hasSeats('organization', 'test-org', '2026-02-15')).toBe(true);
+    });
+  });
+
+  describe('user-metrics-storage', () => {
+    it('should save and retrieve per-user records by date range', async () => {
+      const records = [
+        mockUserRecord('alice', 1, '2026-02-15'),
+        mockUserRecord('bob', 2, '2026-02-15'),
+      ];
+      await saveUserMetricsBatch('organization', 'test-org', records);
+
+      const result = await getUserMetricsByDateRange('organization', 'test-org', '2026-02-15', '2026-02-15');
+      expect(result).toHaveLength(2);
+      expect(result.map(r => r.user_login).sort()).toEqual(['alice', 'bob']);
+    });
+
+    it('should upsert — update existing record on save', async () => {
+      await saveUserMetricsBatch('organization', 'test-org', [mockUserRecord('alice', 1, '2026-02-15')]);
+
+      const updated = { ...mockUserRecord('alice', 1, '2026-02-15'), code_generation_activity_count: 99 };
+      await saveUserMetricsBatch('organization', 'test-org', [updated]);
+
+      const result = await getUserMetricsByDateRange('organization', 'test-org', '2026-02-15', '2026-02-15');
+      expect(result).toHaveLength(1);
+      expect(result[0].code_generation_activity_count).toBe(99);
+    });
+
+    it('should check existence for a given date', async () => {
+      expect(await hasUserMetricsForDate('organization', 'test-org', '2026-02-15')).toBe(false);
+      await saveUserMetricsBatch('organization', 'test-org', [mockUserRecord('alice', 1, '2026-02-15')]);
+      expect(await hasUserMetricsForDate('organization', 'test-org', '2026-02-15')).toBe(true);
+    });
+
+    it('should return records across multiple days in order', async () => {
+      await saveUserMetricsBatch('organization', 'test-org', [
+        mockUserRecord('alice', 1, '2026-02-14'),
+        mockUserRecord('alice', 1, '2026-02-15'),
+        mockUserRecord('alice', 1, '2026-02-16'),
+      ]);
+
+      const result = await getUserMetricsByDateRange('organization', 'test-org', '2026-02-14', '2026-02-16');
+      expect(result).toHaveLength(3);
+      expect(result.map(r => r.day)).toEqual(['2026-02-14', '2026-02-15', '2026-02-16']);
+    });
+
+    it('should normalize team-organization scope to organization', async () => {
+      await saveUserMetricsBatch('team-organization', 'test-org', [mockUserRecord('alice', 1, '2026-02-15')]);
+
+      // Querying with team scope should find it (normalizes internally)
+      expect(await hasUserMetricsForDate('team-organization', 'test-org', '2026-02-15')).toBe(true);
+      // Querying with base scope should also find it (same row)
+      expect(await hasUserMetricsForDate('organization', 'test-org', '2026-02-15')).toBe(true);
+    });
+
+    it('should return empty array when no records exist in range', async () => {
+      await saveUserMetricsBatch('organization', 'test-org', [mockUserRecord('alice', 1, '2026-02-01')]);
+      const result = await getUserMetricsByDateRange('organization', 'test-org', '2026-02-15', '2026-02-28');
+      expect(result).toHaveLength(0);
+    });
+
+    it('should do nothing for an empty batch', async () => {
+      await saveUserMetricsBatch('organization', 'test-org', []);
+      const result = await getUserMetricsByDateRange('organization', 'test-org', '2026-02-01', '2026-02-28');
+      expect(result).toHaveLength(0);
     });
   });
 });

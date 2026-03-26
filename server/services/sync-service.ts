@@ -8,9 +8,10 @@
  *     transformed CopilotMetrics (for UI consumption)
  */
 
-import { fetchLatestReport, fetchReportForDate, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
+import { fetchLatestReport, fetchReportForDate, fetchUsersLatestReport, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
+import { saveUserMetricsBatch, hasUserMetricsForDate } from '../storage/user-metrics-storage';
 import { 
   createPendingSyncStatus, 
   markSyncInProgress, 
@@ -60,6 +61,11 @@ async function saveDayData(
  * Sync metrics using the 28-day bulk download.
  * One API call fetches up to 28 days, then saves each day individually.
  * Skips days that are already stored.
+ *
+ * For org/enterprise scopes, also fetches the per-user report and saves
+ * individual user records to the user_metrics table. This accumulates a
+ * time-series history of per-user activity beyond the API's 28-day window,
+ * enabling accurate team-level queries for any historical date range.
  */
 export async function syncBulk(
   scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
@@ -99,6 +105,36 @@ export async function syncBulk(
         const msg = error instanceof Error ? error.message : String(error);
         result.errors.push({ date: dayData.day, error: msg });
         logger.error(`Failed to save ${dayData.day}: ${msg}`);
+      }
+    }
+
+    // For org/enterprise scopes, also persist per-user records so that
+    // team-level metrics can be derived from DB for any historical period.
+    const isBaseScope = scope === 'organization' || scope === 'enterprise';
+    if (isBaseScope) {
+      try {
+        logger.info(`Fetching per-user report for ${scope}:${identifier}`);
+        const userRecords = await fetchUsersLatestReport(request, headers);
+
+        // Group by day so we can check existence once per day
+        const byDay = new Map<string, typeof userRecords>();
+        for (const record of userRecords) {
+          const existing = byDay.get(record.day) ?? [];
+          existing.push(record);
+          byDay.set(record.day, existing);
+        }
+
+        for (const [day, records] of byDay) {
+          const alreadyStored = await hasUserMetricsForDate(scope, identifier, day);
+          if (!alreadyStored) {
+            await saveUserMetricsBatch(scope, identifier, records);
+            logger.info(`Saved per-user records for ${day} (${records.length} users)`);
+          }
+        }
+      } catch (error) {
+        // Per-user sync failure is non-fatal — aggregate metrics are already saved.
+        const msg = error instanceof Error ? error.message : String(error);
+        logger.warn(`Per-user sync failed (non-fatal): ${msg}`);
       }
     }
 
