@@ -8,7 +8,7 @@
  *     transformed CopilotMetrics (for UI consumption)
  */
 
-import { fetchLatestReport, fetchReportForDate, fetchUsersLatestReport, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
+import { fetchLatestReport, fetchReportForDate, fetchUsersLatestReport, type MetricsReportRequest, type ReportDayTotals, type UserDayRecord } from './github-copilot-usage-api';
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
 import { saveUserMetricsBatch, hasUserMetricsForDate } from '../storage/user-metrics-storage';
@@ -117,7 +117,7 @@ export async function syncBulk(
         const userRecords = await fetchUsersLatestReport(request, headers);
 
         // Group by day so we can check existence once per day
-        const byDay = new Map<string, typeof userRecords>();
+        const byDay = new Map<string, UserDayRecord[]>();
         for (const record of userRecords) {
           const existing = byDay.get(record.day) ?? [];
           existing.push(record);

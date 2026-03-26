@@ -20,9 +20,13 @@ function baseScope(scope: string): string {
   return scope;
 }
 
+/** Number of columns in a single user_metrics INSERT row. */
+const USER_METRICS_COLUMNS = 6;
+
 /**
  * Save a batch of per-user daily records.
  * Upsert — safe to call multiple times for the same (user, day).
+ * Uses a single multi-row INSERT for efficiency.
  */
 export async function saveUserMetricsBatch(
   scope: string,
@@ -32,15 +36,23 @@ export async function saveUserMetricsBatch(
   if (records.length === 0) return;
   const pool = getPool();
   const normalizedScope = baseScope(scope);
-  for (const record of records) {
-    await pool.query(
-      `INSERT INTO user_metrics (scope, identifier, user_login, user_id, metrics_date, data)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (scope, identifier, user_login, metrics_date)
-       DO UPDATE SET data = $6, updated_at = NOW()`,
-      [normalizedScope, identifier, record.user_login, record.user_id ?? null, record.day, JSON.stringify(record)]
-    );
-  }
+
+  // Build a single multi-row INSERT: ($1,$2,$3,$4,$5,$6), ($7,$8,$9,$10,$11,$12), ...
+  const values: unknown[] = [];
+  const placeholders: string[] = [];
+  records.forEach((record, i) => {
+    const base = i * USER_METRICS_COLUMNS;
+    placeholders.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6})`);
+    values.push(normalizedScope, identifier, record.user_login, record.user_id ?? null, record.day, JSON.stringify(record));
+  });
+
+  await pool.query(
+    `INSERT INTO user_metrics (scope, identifier, user_login, user_id, metrics_date, data)
+     VALUES ${placeholders.join(',')}
+     ON CONFLICT (scope, identifier, user_login, metrics_date)
+     DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+    values
+  );
 }
 
 /**
