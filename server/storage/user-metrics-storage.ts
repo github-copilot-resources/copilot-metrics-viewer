@@ -152,7 +152,7 @@ export async function getUserTimeSeries(
     const acc = user.code_acceptance_activity_count;
 
     series.push({
-      report_end_day:   new Date(row.report_end_day).toISOString().split('T')[0],
+      report_end_day:   new Date(row.report_end_day).toISOString().slice(0, 10),
       total_active_days: user.total_active_days,
       user_initiated_interaction_count: user.user_initiated_interaction_count,
       code_generation_activity_count:   gen,
@@ -190,8 +190,8 @@ export async function getUserMetricsHistory(
     const total_acc = totals.reduce((s, u) => s + u.code_acceptance_activity_count, 0);
 
     return {
-      report_start_day: new Date(row.report_start_day).toISOString().split('T')[0],
-      report_end_day:   new Date(row.report_end_day).toISOString().split('T')[0],
+      report_start_day: new Date(row.report_start_day).toISOString().slice(0, 10),
+      report_end_day:   new Date(row.report_end_day).toISOString().slice(0, 10),
       total_users:      totals.length,
       active_users:     totals.filter(u => u.total_active_days >= 7).length,
       total_premium_requests: totals.reduce((s, u) => s + (u.premium_requests_total ?? 0), 0),
