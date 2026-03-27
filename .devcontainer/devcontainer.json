@@ -2,21 +2,30 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
 {
 	"name": "GitHub Copilot Metrics Viewer Dev Environment",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspaces/copilot-metrics-viewer",
 	"features": {
 		"ghcr.io/devcontainers/features/azure-cli:1": {},
 		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
 
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
+	// Forward ports for the app and PostgreSQL.
+	"forwardPorts": [3000, 5432],
+	"portsAttributes": {
+		"3000": {
+			"label": "App (Nuxt)",
+			"onAutoForward": "notify"
+		},
+		"5432": {
+			"label": "PostgreSQL",
+			"onAutoForward": "silent"
+		}
+	},
 
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Use 'postCreateCommand' to run commands after the container is created.
-	"postCreateCommand": "npm install && npm run serve"
+	// Install dependencies on container creation. The database schema is initialized
+	// automatically on first app startup via initSchema() in server/storage/db.ts.
+	"postCreateCommand": "npm install",
 
 	// Configure tool-specific properties.
 	// "customizations": {},
