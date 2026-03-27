@@ -24,7 +24,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
+      <v-card v-if="hasPremiumData" elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center">
           <div class="tiles-text">
             <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -78,7 +78,7 @@
               hide-details
             />
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col v-if="hasPremiumData" cols="12" md="3">
             <v-select
               v-model="premiumFilter"
               :items="premiumFilterOptions"
@@ -117,7 +117,7 @@
               <td class="text-center">{{ item.code_acceptance_activity_count.toLocaleString() }}</td>
               <td class="text-center">{{ getAcceptanceRate(item) }}%</td>
               <td class="text-center">{{ item.loc_added_sum.toLocaleString() }}</td>
-              <td class="text-center">
+              <td v-if="hasPremiumData" class="text-center">
                 <v-chip
                   v-if="(item.premium_requests_total ?? 0) > 0"
                   color="purple"
@@ -192,7 +192,7 @@
                 <td>{{ item.report_end_day }}</td>
                 <td class="text-center">{{ item.total_users }}</td>
                 <td class="text-center">{{ item.active_users }}</td>
-                <td class="text-center">{{ item.total_premium_requests.toLocaleString() }}</td>
+                <td v-if="hasHistoryPremiumData" class="text-center">{{ item.total_premium_requests.toLocaleString() }}</td>
                 <td class="text-center">{{ item.avg_acceptance_rate }}%</td>
               </tr>
             </template>
@@ -278,9 +278,8 @@ export default defineComponent({
       }
     }
 
-    const trendChartData = computed(() => ({
-      labels: trendData.value.map(e => e.report_end_day),
-      datasets: [
+    const trendChartData = computed(() => {
+      const datasets = [
         {
           label: 'Active Days',
           data: trendData.value.map(e => e.total_active_days),
@@ -308,7 +307,9 @@ export default defineComponent({
           tension: 0.3,
           yAxisID: 'yCount',
         },
-        {
+      ];
+      if (trendData.value.some(e => e.premium_requests_total > 0)) {
+        datasets.push({
           label: 'Premium Req.',
           data: trendData.value.map(e => e.premium_requests_total),
           borderColor: 'rgba(156, 39, 176, 0.9)',
@@ -316,9 +317,10 @@ export default defineComponent({
           fill: false,
           tension: 0.3,
           yAxisID: 'yCount',
-        },
-      ],
-    }));
+        });
+      }
+      return { labels: trendData.value.map(e => e.report_end_day), datasets };
+    });
 
     const trendChartOptions = {
       responsive: true,
@@ -352,6 +354,14 @@ export default defineComponent({
 
     const totalPremiumRequests = computed(() =>
       props.userMetrics.reduce((sum, u) => sum + (u.premium_requests_total ?? 0), 0)
+    );
+
+    const hasPremiumData = computed(() =>
+      props.userMetrics.some(u => u.premium_requests_total !== undefined && u.premium_requests_total !== null)
+    );
+
+    const hasHistoryPremiumData = computed(() =>
+      props.userMetricsHistory.some(e => e.total_premium_requests > 0)
     );
 
     const avgAcceptanceRate = computed(() => {
@@ -428,10 +438,14 @@ export default defineComponent({
         { title: 'Accepted',       key: 'code_acceptance_activity_count',   sortable: true  },
         { title: 'Accept Rate',    key: 'acceptance_rate',                  sortable: false },
         { title: 'Lines Accepted', key: 'loc_added_sum',                    sortable: true  },
-        { title: 'Premium Req.',   key: 'premium_requests_total',           sortable: true  },
+      ];
+      if (hasPremiumData.value) {
+        cols.push({ title: 'Premium Req.', key: 'premium_requests_total', sortable: true });
+      }
+      cols.push(
         { title: 'Top IDE',        key: 'top_ide',                          sortable: false },
         { title: 'Top Language',   key: 'top_language',                     sortable: false },
-      ];
+      );
       if (showTrendButtons.value) {
         cols.push({ title: 'Trend', key: 'trend', sortable: false });
       }
@@ -439,9 +453,8 @@ export default defineComponent({
     });
 
     // ── History chart ───────────────────────────────────────────────────────
-    const historyChartData = computed(() => ({
-      labels: props.userMetricsHistory.map(e => e.report_end_day),
-      datasets: [
+    const historyChartData = computed(() => {
+      const datasets = [
         {
           label: 'Total Users',
           data: props.userMetricsHistory.map(e => e.total_users),
@@ -460,7 +473,9 @@ export default defineComponent({
           tension: 0.3,
           yAxisID: 'yUsers',
         },
-        {
+      ];
+      if (hasHistoryPremiumData.value) {
+        datasets.push({
           label: 'Premium Requests',
           data: props.userMetricsHistory.map(e => e.total_premium_requests),
           borderColor: 'rgba(156, 39, 176, 0.9)',
@@ -468,27 +483,38 @@ export default defineComponent({
           fill: false,
           tension: 0.3,
           yAxisID: 'yPremium',
-        },
-      ],
-    }));
+        });
+      }
+      return { labels: props.userMetricsHistory.map(e => e.report_end_day), datasets };
+    });
 
-    const historyChartOptions = {
-      responsive: true,
-      maintainAspectRatio: true,
-      layout: { padding: { left: 60, right: 60, top: 20, bottom: 40 } },
-      scales: {
-        yUsers:   { type: 'linear' as const, position: 'left'  as const, beginAtZero: true, title: { display: true, text: 'Users' } },
-        yPremium: { type: 'linear' as const, position: 'right' as const, beginAtZero: true, title: { display: true, text: 'Premium Req.' }, grid: { drawOnChartArea: false } },
-      },
-    };
+    const historyChartOptions = computed(() => {
+      const scales: Record<string, object> = {
+        yUsers: { type: 'linear' as const, position: 'left' as const, beginAtZero: true, title: { display: true, text: 'Users' } },
+      };
+      if (hasHistoryPremiumData.value) {
+        scales.yPremium = { type: 'linear' as const, position: 'right' as const, beginAtZero: true, title: { display: true, text: 'Premium Req.' }, grid: { drawOnChartArea: false } };
+      }
+      return {
+        responsive: true,
+        maintainAspectRatio: true,
+        layout: { padding: { left: 60, right: 60, top: 20, bottom: 40 } },
+        scales,
+      };
+    });
 
-    const historyHeaders = [
-      { title: 'Snapshot (end day)', key: 'report_end_day' },
-      { title: 'Total Users',        key: 'total_users' },
-      { title: 'Active Users',       key: 'active_users' },
-      { title: 'Premium Requests',   key: 'total_premium_requests' },
-      { title: 'Avg Acceptance',     key: 'avg_acceptance_rate' },
-    ];
+    const historyHeaders = computed(() => {
+      const cols = [
+        { title: 'Snapshot (end day)', key: 'report_end_day' },
+        { title: 'Total Users',        key: 'total_users' },
+        { title: 'Active Users',       key: 'active_users' },
+      ];
+      if (hasHistoryPremiumData.value) {
+        cols.push({ title: 'Premium Requests', key: 'total_premium_requests' });
+      }
+      cols.push({ title: 'Avg Acceptance', key: 'avg_acceptance_rate' });
+      return cols;
+    });
 
     return {
       search,
@@ -499,6 +525,8 @@ export default defineComponent({
       totalUsers,
       activeUsers,
       totalPremiumRequests,
+      hasPremiumData,
+      hasHistoryPremiumData,
       avgAcceptanceRate,
       filteredUsers,
       tableHeaders,
