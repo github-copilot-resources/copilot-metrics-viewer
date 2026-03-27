@@ -150,6 +150,34 @@ export interface OrgReport {
 
 // --- User-level Report Data Types ---
 
+/**
+ * Raw per-user-per-day record as returned by the GitHub Users Report API (NDJSON).
+ * Each line in the downloaded file has this shape — one record per user per active day.
+ * Field name is `user_login` (not `login`).
+ */
+export interface UserDayRecord {
+  report_start_day: string;
+  report_end_day: string;
+  day: string;
+  organization_id: string;
+  enterprise_id: string;
+  user_id: number;
+  user_login: string;
+  user_initiated_interaction_count: number;
+  code_generation_activity_count: number;
+  code_acceptance_activity_count: number;
+  loc_suggested_to_add_sum: number;
+  loc_suggested_to_delete_sum: number;
+  loc_added_sum: number;
+  loc_deleted_sum: number;
+  used_agent?: boolean;
+  used_chat?: boolean;
+  totals_by_ide?: UserIdeTotals[];
+  totals_by_feature?: UserFeatureTotals[];
+  totals_by_language_feature?: UserLanguageFeatureTotals[];
+  totals_by_model_feature?: UserModelFeatureTotals[];
+}
+
 /** Per-user IDE usage totals */
 export interface UserIdeTotals {
   ide: string;
@@ -241,6 +269,155 @@ export interface UserReport {
   enterprise_id?: string;
   created_at?: string;
   user_totals: UserTotals[];
+}
+
+// --- Helper: merge breakdown arrays by key ---
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mergeBreakdown<T>(
+  existing: T[] | undefined,
+  incoming: T[] | undefined,
+  keyFn: (item: T) => string,
+  sumFields: string[]
+): T[] {
+  const map = new Map<string, T>();
+  for (const item of existing ?? []) {
+    map.set(keyFn(item), { ...item });
+  }
+  for (const item of incoming ?? []) {
+    const key = keyFn(item);
+    const prev = map.get(key);
+    if (prev) {
+      for (const f of sumFields) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prev as any)[f] = (((prev as any)[f] as number) || 0) + (((item as any)[f] as number) || 0);
+      }
+    } else {
+      map.set(key, { ...item });
+    }
+  }
+  return Array.from(map.values());
+}
+
+const METRIC_FIELDS = [
+  'user_initiated_interaction_count',
+  'code_generation_activity_count',
+  'code_acceptance_activity_count',
+  'loc_suggested_to_add_sum',
+  'loc_suggested_to_delete_sum',
+  'loc_added_sum',
+  'loc_deleted_sum',
+];
+
+const METRIC_FIELDS_NO_INTERACTION = METRIC_FIELDS.filter(f => f !== 'user_initiated_interaction_count');
+
+const MODEL_METRIC_FIELDS = [...METRIC_FIELDS, 'premium_requests_total'];
+
+/**
+ * Aggregate an array of per-user-per-day records (from the real GitHub API)
+ * into per-user totals matching the UserTotals interface.
+ */
+export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] {
+  const byUser = new Map<string, {
+    user_id: number;
+    days: Set<string>;
+    user_initiated_interaction_count: number;
+    code_generation_activity_count: number;
+    code_acceptance_activity_count: number;
+    loc_suggested_to_add_sum: number;
+    loc_suggested_to_delete_sum: number;
+    loc_added_sum: number;
+    loc_deleted_sum: number;
+    totals_by_ide: UserIdeTotals[];
+    totals_by_feature: UserFeatureTotals[];
+    totals_by_language_feature: UserLanguageFeatureTotals[];
+    totals_by_model_feature: UserModelFeatureTotals[];
+  }>();
+
+  for (const rec of records) {
+    const login = rec.user_login;
+    let agg = byUser.get(login);
+    if (!agg) {
+      agg = {
+        user_id: rec.user_id,
+        days: new Set(),
+        user_initiated_interaction_count: 0,
+        code_generation_activity_count: 0,
+        code_acceptance_activity_count: 0,
+        loc_suggested_to_add_sum: 0,
+        loc_suggested_to_delete_sum: 0,
+        loc_added_sum: 0,
+        loc_deleted_sum: 0,
+        totals_by_ide: [],
+        totals_by_feature: [],
+        totals_by_language_feature: [],
+        totals_by_model_feature: [],
+      };
+      byUser.set(login, agg);
+    }
+
+    agg.days.add(rec.day);
+    agg.user_initiated_interaction_count += rec.user_initiated_interaction_count || 0;
+    agg.code_generation_activity_count += rec.code_generation_activity_count || 0;
+    agg.code_acceptance_activity_count += rec.code_acceptance_activity_count || 0;
+    agg.loc_suggested_to_add_sum += rec.loc_suggested_to_add_sum || 0;
+    agg.loc_suggested_to_delete_sum += rec.loc_suggested_to_delete_sum || 0;
+    agg.loc_added_sum += rec.loc_added_sum || 0;
+    agg.loc_deleted_sum += rec.loc_deleted_sum || 0;
+
+    agg.totals_by_ide = mergeBreakdown(
+      agg.totals_by_ide, rec.totals_by_ide,
+      (i) => i.ide, METRIC_FIELDS
+    );
+    agg.totals_by_feature = mergeBreakdown(
+      agg.totals_by_feature, rec.totals_by_feature,
+      (f) => f.feature, METRIC_FIELDS
+    );
+    agg.totals_by_language_feature = mergeBreakdown(
+      agg.totals_by_language_feature, rec.totals_by_language_feature,
+      (lf) => `${lf.language}:${lf.feature}`,
+      METRIC_FIELDS_NO_INTERACTION
+    );
+    agg.totals_by_model_feature = mergeBreakdown(
+      agg.totals_by_model_feature, rec.totals_by_model_feature,
+      (mf) => `${mf.model}:${mf.feature}`, MODEL_METRIC_FIELDS
+    );
+  }
+
+  const result: UserTotals[] = [];
+  for (const [login, agg] of byUser) {
+    // Premium requests: the real API does not include a premium_requests_total
+    // field. Premium request cost depends on model multipliers that aren't in this
+    // data.  If the source records carried the field (e.g. mock data) we sum it;
+    // otherwise we leave it undefined so the UI can hide the column.
+    const premiumFromSource = agg.totals_by_model_feature.reduce(
+      (sum, mf) => sum + (mf.premium_requests_total ?? 0), 0
+    );
+    const hasPremiumData = agg.totals_by_model_feature.some(
+      mf => mf.premium_requests_total !== undefined && mf.premium_requests_total !== null
+    );
+    const premiumTotal = hasPremiumData ? premiumFromSource : undefined;
+
+    result.push({
+      login,
+      user_id: agg.user_id,
+      total_active_days: agg.days.size,
+      user_initiated_interaction_count: agg.user_initiated_interaction_count,
+      code_generation_activity_count: agg.code_generation_activity_count,
+      code_acceptance_activity_count: agg.code_acceptance_activity_count,
+      loc_suggested_to_add_sum: agg.loc_suggested_to_add_sum,
+      loc_suggested_to_delete_sum: agg.loc_suggested_to_delete_sum,
+      loc_added_sum: agg.loc_added_sum,
+      loc_deleted_sum: agg.loc_deleted_sum,
+      premium_requests_total: premiumTotal,
+      totals_by_ide: agg.totals_by_ide,
+      totals_by_feature: agg.totals_by_feature,
+      totals_by_language_feature: agg.totals_by_language_feature,
+      totals_by_model_feature: agg.totals_by_model_feature,
+    });
+  }
+
+  return result;
 }
 
 // --- API Functions ---
@@ -466,12 +643,73 @@ export async function requestUserDownloadLinks(
 
 /**
  * Download and parse a user-level report file from a signed URL.
+ *
+ * The real GitHub API returns NDJSON — one JSON object per line, each being a
+ * UserDayRecord (per-user-per-day). We parse and aggregate into UserTotals[].
  */
 export async function downloadUserReport(downloadUrl: string): Promise<UserReport> {
-  const response = await _fetch<UserReport>(downloadUrl, {
-    responseType: 'json',
+  const raw = await _fetch<unknown>(downloadUrl, {
+    responseType: 'text',
   });
-  return response;
+
+  // Parse the response text into an array of records
+  let records: unknown[];
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    try {
+      // Try plain JSON first (mock data or single-object responses)
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        records = parsed;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.user_totals)) {
+        // Already in UserReport shape (mock data format)
+        console.info('[user-metrics-api] Download is pre-aggregated UserReport');
+        return parsed as UserReport;
+      } else {
+        records = [parsed];
+      }
+    } catch {
+      // NDJSON: one JSON object per line
+      const lines = trimmed.split('\n').filter(l => l.trim());
+      records = lines.map(line => JSON.parse(line));
+    }
+  } else if (Array.isArray(raw)) {
+    records = raw;
+  } else if (raw && typeof raw === 'object' && 'user_totals' in (raw as Record<string, unknown>)) {
+    return raw as UserReport;
+  } else {
+    console.error('[user-metrics-api] Unexpected download response type:', typeof raw);
+    return { report_start_day: '', report_end_day: '', user_totals: [] };
+  }
+
+  if (records.length === 0) {
+    return { report_start_day: '', report_end_day: '', user_totals: [] };
+  }
+
+  // Detect format: real API has `user_login` + `day`; pre-aggregated has `login` + `total_active_days`
+  const first = records[0] as Record<string, unknown>;
+  if ('user_login' in first && 'day' in first) {
+    // Real API format — aggregate daily records into per-user totals
+    const dayRecords = records as UserDayRecord[];
+    console.info(`[user-metrics-api] Aggregating ${dayRecords.length} daily user records`);
+    const userTotals = aggregateUserDayRecords(dayRecords);
+    return {
+      report_start_day: first.report_start_day as string || '',
+      report_end_day: first.report_end_day as string || '',
+      organization_id: first.organization_id as string,
+      enterprise_id: first.enterprise_id as string,
+      user_totals: userTotals,
+    };
+  }
+
+  // Pre-aggregated format (mock data / already-aggregated) — array of UserTotals
+  if ('login' in first) {
+    console.info(`[user-metrics-api] Download has ${records.length} pre-aggregated user records`);
+    return { report_start_day: '', report_end_day: '', user_totals: records as UserTotals[] };
+  }
+
+  console.warn('[user-metrics-api] Unknown record format. Keys:', Object.keys(first));
+  return { report_start_day: '', report_end_day: '', user_totals: [] };
 }
 
 /**
@@ -495,9 +733,7 @@ export async function fetchLatestUserReport(
 
   // Merge: use first report as base, combine user_totals from all files
   const merged: UserReport = { ...reports[0] };
-  if (reports.length > 1) {
-    merged.user_totals = reports.flatMap(r => r.user_totals);
-  }
+  merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
 
   return merged;
 }
@@ -521,9 +757,7 @@ export async function fetchUserReportForDate(
   );
 
   const merged: UserReport = { ...reports[0] };
-  if (reports.length > 1) {
-    merged.user_totals = reports.flatMap(r => r.user_totals);
-  }
+  merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
 
   return merged;
 }

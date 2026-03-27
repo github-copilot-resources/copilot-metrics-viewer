@@ -70,7 +70,7 @@
                                     "name": "infoBoxLocation",
                                     "type": "Microsoft.Common.InfoBox",
                                     "options": {
-                                        "text": "Make sure your token has required scopes: manage_billing:copilot for Organizations or PAT (classic) with manage_billing:copilot or read:enterprise scopes for Enterprise.",
+                                        "text": "Make sure your token has the required permissions: Read access to members, organization copilot metrics, and organization copilot seat management.",
                                         "style": "Warning"
                                     }
                                 },

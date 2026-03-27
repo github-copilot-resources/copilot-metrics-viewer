@@ -6,7 +6,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { UserReport, UserTotals } from '../server/services/github-copilot-usage-api';
+import type { UserReport, UserTotals, UserDayRecord } from '../server/services/github-copilot-usage-api';
+import { aggregateUserDayRecords } from '../server/services/github-copilot-usage-api';
 import { mockRequestUserDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
 
 // ── Mock storage + API for sync service tests ─────────────────────────────────
@@ -114,6 +115,146 @@ const TEST_HEADERS = {
   'Authorization': 'Bearer test-token',
   'Accept': 'application/vnd.github+json',
 };
+
+// ── aggregateUserDayRecords ───────────────────────────────────────────────────
+
+describe('aggregateUserDayRecords', () => {
+  const DAY_RECORDS: UserDayRecord[] = [
+    {
+      report_start_day: '2026-02-26', report_end_day: '2026-03-25', day: '2026-03-12',
+      organization_id: '100', enterprise_id: '200', user_id: 1, user_login: 'alice',
+      user_initiated_interaction_count: 10, code_generation_activity_count: 50,
+      code_acceptance_activity_count: 30, loc_suggested_to_add_sum: 100,
+      loc_suggested_to_delete_sum: 5, loc_added_sum: 80, loc_deleted_sum: 3,
+      totals_by_ide: [
+        { ide: 'vscode', user_initiated_interaction_count: 10, code_generation_activity_count: 50, code_acceptance_activity_count: 30, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 5, loc_added_sum: 80, loc_deleted_sum: 3 },
+      ],
+      totals_by_feature: [
+        { feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 40, code_acceptance_activity_count: 25, loc_suggested_to_add_sum: 80, loc_suggested_to_delete_sum: 5, loc_added_sum: 60, loc_deleted_sum: 3 },
+        { feature: 'chat_panel_agent_mode', user_initiated_interaction_count: 10, code_generation_activity_count: 10, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 20, loc_suggested_to_delete_sum: 0, loc_added_sum: 20, loc_deleted_sum: 0 },
+      ],
+      totals_by_language_feature: [
+        { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 40, code_acceptance_activity_count: 25, loc_suggested_to_add_sum: 80, loc_suggested_to_delete_sum: 5, loc_added_sum: 60, loc_deleted_sum: 3 },
+      ],
+      totals_by_model_feature: [
+        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 40, code_acceptance_activity_count: 25, loc_suggested_to_add_sum: 80, loc_suggested_to_delete_sum: 5, loc_added_sum: 60, loc_deleted_sum: 3, premium_requests_total: 0 },
+        { model: 'claude-opus-4.6', feature: 'chat_panel_agent_mode', user_initiated_interaction_count: 10, code_generation_activity_count: 10, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 20, loc_suggested_to_delete_sum: 0, loc_added_sum: 20, loc_deleted_sum: 0, premium_requests_total: 10 },
+      ],
+    },
+    {
+      report_start_day: '2026-02-26', report_end_day: '2026-03-25', day: '2026-03-13',
+      organization_id: '100', enterprise_id: '200', user_id: 1, user_login: 'alice',
+      user_initiated_interaction_count: 5, code_generation_activity_count: 20,
+      code_acceptance_activity_count: 12, loc_suggested_to_add_sum: 40,
+      loc_suggested_to_delete_sum: 2, loc_added_sum: 30, loc_deleted_sum: 1,
+      totals_by_ide: [
+        { ide: 'vscode', user_initiated_interaction_count: 5, code_generation_activity_count: 20, code_acceptance_activity_count: 12, loc_suggested_to_add_sum: 40, loc_suggested_to_delete_sum: 2, loc_added_sum: 30, loc_deleted_sum: 1 },
+      ],
+      totals_by_feature: [
+        { feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 20, code_acceptance_activity_count: 12, loc_suggested_to_add_sum: 40, loc_suggested_to_delete_sum: 2, loc_added_sum: 30, loc_deleted_sum: 1 },
+      ],
+      totals_by_language_feature: [
+        { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 20, code_acceptance_activity_count: 12, loc_suggested_to_add_sum: 40, loc_suggested_to_delete_sum: 2, loc_added_sum: 30, loc_deleted_sum: 1 },
+      ],
+      totals_by_model_feature: [
+        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 20, code_acceptance_activity_count: 12, loc_suggested_to_add_sum: 40, loc_suggested_to_delete_sum: 2, loc_added_sum: 30, loc_deleted_sum: 1, premium_requests_total: 0 },
+      ],
+    },
+    {
+      report_start_day: '2026-02-26', report_end_day: '2026-03-25', day: '2026-03-12',
+      organization_id: '100', enterprise_id: '200', user_id: 2, user_login: 'bob',
+      user_initiated_interaction_count: 3, code_generation_activity_count: 8,
+      code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15,
+      loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0,
+      totals_by_ide: [
+        { ide: 'jetbrains', user_initiated_interaction_count: 3, code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0 },
+      ],
+      totals_by_feature: [
+        { feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0 },
+      ],
+      totals_by_language_feature: [
+        { language: 'python', feature: 'code_completion', code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0 },
+      ],
+      totals_by_model_feature: [
+        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0, premium_requests_total: 0 },
+      ],
+    },
+  ];
+
+  it('aggregates daily records into per-user totals', () => {
+    const result = aggregateUserDayRecords(DAY_RECORDS);
+    expect(result).toHaveLength(2);
+    const alice = result.find(u => u.login === 'alice')!;
+    const bob = result.find(u => u.login === 'bob')!;
+    expect(alice).toBeDefined();
+    expect(bob).toBeDefined();
+  });
+
+  it('counts distinct active days per user', () => {
+    const result = aggregateUserDayRecords(DAY_RECORDS);
+    const alice = result.find(u => u.login === 'alice')!;
+    const bob = result.find(u => u.login === 'bob')!;
+    expect(alice.total_active_days).toBe(2); // 2026-03-12 + 2026-03-13
+    expect(bob.total_active_days).toBe(1);   // 2026-03-12
+  });
+
+  it('sums numeric metrics across days', () => {
+    const result = aggregateUserDayRecords(DAY_RECORDS);
+    const alice = result.find(u => u.login === 'alice')!;
+    expect(alice.user_initiated_interaction_count).toBe(15); // 10 + 5
+    expect(alice.code_generation_activity_count).toBe(70);   // 50 + 20
+    expect(alice.code_acceptance_activity_count).toBe(42);   // 30 + 12
+    expect(alice.loc_added_sum).toBe(110);                   // 80 + 30
+  });
+
+  it('merges IDE breakdowns by IDE name', () => {
+    const result = aggregateUserDayRecords(DAY_RECORDS);
+    const alice = result.find(u => u.login === 'alice')!;
+    expect(alice.totals_by_ide).toHaveLength(1); // both days used vscode
+    expect(alice.totals_by_ide![0].ide).toBe('vscode');
+    expect(alice.totals_by_ide![0].code_generation_activity_count).toBe(70); // 50+20
+  });
+
+  it('merges feature breakdowns by feature name', () => {
+    const result = aggregateUserDayRecords(DAY_RECORDS);
+    const alice = result.find(u => u.login === 'alice')!;
+    const codeCompletion = alice.totals_by_feature!.find(f => f.feature === 'code_completion')!;
+    expect(codeCompletion.code_generation_activity_count).toBe(60); // 40+20
+    // agent_mode only appeared on day 1
+    const agentMode = alice.totals_by_feature!.find(f => f.feature === 'chat_panel_agent_mode')!;
+    expect(agentMode.code_generation_activity_count).toBe(10);
+  });
+
+  it('sums premium_requests_total when source records include it', () => {
+    // The test DAY_RECORDS have explicit premium_requests_total on model_feature entries
+    const result = aggregateUserDayRecords(DAY_RECORDS);
+    const alice = result.find(u => u.login === 'alice')!;
+    // alice: auto=0 + claude-opus-4.6=10 = 10
+    expect(alice.premium_requests_total).toBe(10);
+  });
+
+  it('leaves premium_requests_total undefined when source records lack the field', () => {
+    // Simulate real API data: no premium_requests_total on any model_feature entry
+    const realApiRecords: UserDayRecord[] = [{
+      ...DAY_RECORDS[2], // bob's record
+      totals_by_model_feature: [
+        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0 },
+      ],
+    }];
+    const result = aggregateUserDayRecords(realApiRecords);
+    expect(result[0].premium_requests_total).toBeUndefined();
+  });
+
+  it('preserves user_id', () => {
+    const result = aggregateUserDayRecords(DAY_RECORDS);
+    expect(result.find(u => u.login === 'alice')!.user_id).toBe(1);
+    expect(result.find(u => u.login === 'bob')!.user_id).toBe(2);
+  });
+
+  it('handles empty input', () => {
+    expect(aggregateUserDayRecords([])).toEqual([]);
+  });
+});
 
 // ── mockRequestUserDownloadLinks ──────────────────────────────────────────────
 

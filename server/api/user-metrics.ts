@@ -76,8 +76,9 @@ export default defineEventHandler(async (event) => {
       event.context.headers
     );
 
-    logger.info(`Returned ${report.user_totals.length} user records for ${scope}:${identifier}`);
-    return report.user_totals;
+    const userTotals = report.user_totals ?? [];
+    logger.info(`Returned ${userTotals.length} user records for ${scope}:${identifier}`);
+    return userTotals;
 
   } catch (error: unknown) {
     logger.error('Error fetching user metrics:', error);

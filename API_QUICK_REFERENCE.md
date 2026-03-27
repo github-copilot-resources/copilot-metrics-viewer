@@ -53,19 +53,13 @@ GET https://api.github.com/enterprises/{enterprise}/copilot/metrics/reports/ente
 
 ## Authentication
 
-### Required Token Scopes (Same for Both APIs)
-
-**Classic PAT**:
-- `copilot` (for basic metrics)
-- `manage_billing:copilot` (for billing-related metrics)
-- `manage_billing:enterprise` (for enterprise billing)
-- `read:enterprise` (for enterprise metrics)
-- `read:org` (for organization metrics)
+### Required Token Permissions (Same for Both APIs)
 
 **Fine-grained Token**:
 - Repository access: Not required
-- Organization permissions: "View Copilot usage"
-- Enterprise permissions: "View Enterprise Copilot Metrics"
+- Read access to members
+- Organization copilot metrics
+- Organization copilot seat management
 
 ## Request/Response Examples
 
@@ -409,7 +403,7 @@ async function getMetrics(org: string, since: string, until: string) {
 **A**: Team metrics are included in organization/enterprise reports, but may require filtering
 
 ### Q: Can I still use the same authentication?
-**A**: Yes, token scopes are the same
+**A**: Yes, the required permissions are the same: Read access to members, organization copilot metrics, and organization copilot seat management
 
 ### Q: What about seats data?
 **A**: Seats API remains similar (separate endpoint, not affected by metrics API change)

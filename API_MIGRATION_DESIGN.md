@@ -33,7 +33,7 @@ The application currently operates as a **stateless web application** with the f
 
 4. **Authentication**
    - Personal Access Tokens (PAT) or GitHub OAuth
-   - Token scopes: `copilot`, `manage_billing:copilot`, `read:enterprise`, `read:org`
+   - Token permissions: Read access to members, organization copilot metrics, and organization copilot seat management
 
 ## New API Requirements
 
@@ -56,7 +56,7 @@ The application currently operates as a **stateless web application** with the f
    - Must enable "Copilot usage metrics" policy
 
 4. **Authentication**
-   - Same token scopes: `manage_billing:copilot` or `read:enterprise`
+   - Required permissions: Read access to members, organization copilot metrics, and organization copilot seat management
    - OAuth apps or fine-grained access tokens supported
 
 ## Proposed Architecture
