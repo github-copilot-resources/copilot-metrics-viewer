@@ -41,7 +41,7 @@
     "@types/webfontloader": "^1.6.38",
     "@vue/test-utils": "^2.4.6",
     "esbuild": ">=0.25.11",
-    "happy-dom": "^20.0.10",
+    "happy-dom": "^20.8.8",
     "pg-mem": "^3.0.14",
     "playwright-core": "1.54.2",
     "sass-embedded": "^1.80.3",
