@@ -71,6 +71,7 @@
             <v-select
               v-model="activityFilter"
               :items="activityFilterOptions"
+              :menu-props="{ zIndex: 2400 }"
               label="Activity filter"
               density="compact"
               variant="outlined"
@@ -81,6 +82,7 @@
             <v-select
               v-model="premiumFilter"
               :items="premiumFilterOptions"
+              :menu-props="{ zIndex: 2400 }"
               label="Premium requests"
               density="compact"
               variant="outlined"
