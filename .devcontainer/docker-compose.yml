@@ -1,0 +1,32 @@
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
+    volumes:
+      - ..:/workspaces/copilot-metrics-viewer:cached
+    environment:
+      - DATABASE_URL=postgresql://metrics_user:metrics_password@db:5432/copilot_metrics
+    command: sleep infinity
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    # Development-only credentials — not suitable for production use.
+    environment:
+      POSTGRES_DB: copilot_metrics
+      POSTGRES_USER: metrics_user
+      POSTGRES_PASSWORD: metrics_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metrics_user -d copilot_metrics"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
