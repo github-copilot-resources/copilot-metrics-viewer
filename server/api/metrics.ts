@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
         const statusCode = (error && typeof error === 'object' && 'statusCode' in error)
             ? (error as { statusCode: number }).statusCode
             : 500;
-        return new Response('Error fetching metrics data: ' + errorMessage, { status: statusCode });
+        throw createError({ statusCode, statusMessage: 'Error fetching metrics data: ' + errorMessage });
     }
 })
 

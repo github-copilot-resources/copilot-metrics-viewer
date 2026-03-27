@@ -55,9 +55,9 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── Auth check ─────────────────────────────────────────────────────────────
-  if (!event.context.headers.has('Authorization')) {
+  if (!event.context.headers?.has('Authorization')) {
     logger.error('No Authentication provided for user-metrics endpoint');
-    return new Response('No Authentication provided', { status: 401 });
+    throw createError({ statusCode: 401, statusMessage: 'No Authentication provided' });
   }
 
   // ── Live API fetch ─────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
     const identifier = options.githubOrg || options.githubEnt || '';
 
     if (!identifier) {
-      return new Response('GitHub organization or enterprise must be configured', { status: 400 });
+      throw createError({ statusCode: 400, statusMessage: 'GitHub organization or enterprise must be configured' });
     }
 
     logger.info(`Fetching user metrics for ${scope}:${identifier}`);
@@ -84,9 +84,9 @@ export default defineEventHandler(async (event) => {
     const status = typeof error === 'object' && error && 'statusCode' in error
       ? (error as { statusCode?: number }).statusCode
       : 500;
-    return new Response(
-      'Error fetching user metrics. Error: ' + String(error),
-      { status: status || 500 }
-    );
+    throw createError({
+      statusCode: status || 500,
+      statusMessage: 'Error fetching user metrics. Error: ' + String(error)
+    });
   }
 });

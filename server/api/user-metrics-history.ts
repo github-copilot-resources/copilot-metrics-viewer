@@ -21,10 +21,10 @@ export default defineEventHandler(async (event) => {
   const logger = console;
 
   if (process.env.ENABLE_HISTORICAL_MODE !== 'true') {
-    return new Response(
-      'user-metrics-history endpoint requires ENABLE_HISTORICAL_MODE=true',
-      { status: 503 }
-    );
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'user-metrics-history endpoint requires ENABLE_HISTORICAL_MODE=true'
+    });
   }
 
   const query      = getQuery(event);
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
   const login      = typeof query.login === 'string' ? query.login.trim() : '';
 
   if (!identifier) {
-    return new Response('GitHub org or enterprise must be configured', { status: 400 });
+    throw createError({ statusCode: 400, statusMessage: 'GitHub org or enterprise must be configured' });
   }
 
   try {
@@ -51,6 +51,6 @@ export default defineEventHandler(async (event) => {
     return history;
   } catch (error: unknown) {
     logger.error('Error fetching user-metrics history:', error);
-    return new Response('Error fetching user-metrics history: ' + String(error), { status: 500 });
+    throw createError({ statusCode: 500, statusMessage: 'Error fetching user-metrics history: ' + String(error) });
   }
 });

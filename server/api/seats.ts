@@ -143,7 +143,7 @@ export default defineEventHandler(async (event) => {
     return paginateSeats(seatsData, uiPage, uiPerPage);
   }
 
-  if (!event.context.headers.has('Authorization')) {
+  if (!event.context.headers?.has('Authorization')) {
     // ── Historical mode without auth — serve from DB ───────────────────────
     if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
       logger.info('No auth in historical mode, serving latest seats from storage');
@@ -154,7 +154,7 @@ export default defineEventHandler(async (event) => {
       return paginateSeats(seats, uiPage, uiPerPage);
     }
     logger.error('No Authentication provided');
-    return new Response('No Authentication provided', { status: 401 });
+    throw createError({ statusCode: 401, statusMessage: 'No Authentication provided' });
   }
 
   // ── Historical mode with auth — DB first, live fallback ───────────────────
@@ -198,7 +198,7 @@ export default defineEventHandler(async (event) => {
       logger.error('Error fetching seats data:', error);
       const status = typeof error === 'object' && error && 'statusCode' in error
         ? (error as { statusCode?: number }).statusCode : 500;
-      return new Response('Error fetching seats data. Error: ' + String(error), { status: status || 500 });
+      throw createError({ statusCode: status || 500, statusMessage: 'Error fetching seats data. Error: ' + String(error) });
     }
 
     const totalSeats = firstResponse.total_seats;
@@ -241,7 +241,7 @@ export default defineEventHandler(async (event) => {
     logger.error('Error fetching seats data:', error);
     const status = typeof error === 'object' && error && 'statusCode' in error
       ? (error as { statusCode?: number }).statusCode : 500;
-    return new Response('Error fetching seats data. Error: ' + String(error), { status: status || 500 });
+    throw createError({ statusCode: status || 500, statusMessage: 'Error fetching seats data. Error: ' + String(error) });
   }
 
   let seatsData = firstResponse.seats.map((item: unknown) => new Seat(item));
