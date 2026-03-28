@@ -11,182 +11,188 @@ const tag = { tag: ['@org', '@user-metrics'] };
  *   monalisa   –  5 active days,  0 premium requests  (occasional 1–6 → "warning" chip)
  */
 
-let dashboard: DashboardPage;
+test.describe('User Metrics tab', () => {
+    // Run tests serially so that beforeAll context is re-created on retry and a
+    // single failing test does not cascade to "browser has been closed" for the rest.
+    test.describe.configure({ mode: 'serial' });
 
-test.beforeAll(async ({ browser }) => {
-    const page = await browser.newPage();
-    await page.goto('/orgs/octo-demo-org?mock=true');
+    let dashboard: DashboardPage;
 
-    dashboard = new DashboardPage(page);
+    test.beforeAll(async ({ browser }) => {
+        const page = await browser.newPage();
+        await page.goto('/orgs/octo-demo-org?mock=true');
 
-    // wait for the main metrics data first
-    await dashboard.expectMetricLabelsVisible();
-});
+        dashboard = new DashboardPage(page);
 
-test.afterAll(async () => {
-    await dashboard?.close();
-});
+        // wait for the main metrics data first
+        await dashboard.expectMetricLabelsVisible();
+    });
 
-// ── Tab visibility ────────────────────────────────────────────────────────────
+    test.afterAll(async () => {
+        await dashboard?.close();
+    });
 
-test('user metrics tab is visible', tag, async () => {
-    await expect(dashboard.userMetricsTabLink).toBeVisible();
-});
+    // ── Tab visibility ────────────────────────────────────────────────────────────
 
-// ── Summary tiles ─────────────────────────────────────────────────────────────
+    test('user metrics tab is visible', tag, async () => {
+        await expect(dashboard.userMetricsTabLink).toBeVisible();
+    });
 
-test('user metrics tab shows total users tile', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+    // ── Summary tiles ─────────────────────────────────────────────────────────────
 
-    await userMetrics.expectTotalUsersVisible();
-    await userMetrics.expectTotalUsersReturned();
-});
+    test('user metrics tab shows total users tile', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-test('user metrics tab shows active users tile', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+        await userMetrics.expectTotalUsersVisible();
+        await userMetrics.expectTotalUsersReturned();
+    });
 
-    await userMetrics.expectActiveUsersVisible();
-    await userMetrics.expectActiveUsersReturned();
-});
+    test('user metrics tab shows active users tile', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-test('user metrics tab shows premium requests tile', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+        await userMetrics.expectActiveUsersVisible();
+        await userMetrics.expectActiveUsersReturned();
+    });
 
-    await userMetrics.expectPremiumRequestsVisible();
-});
+    test('user metrics tab shows premium requests tile', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-test('user metrics tab shows avg acceptance rate tile', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+        await userMetrics.expectPremiumRequestsVisible();
+    });
 
-    await userMetrics.expectAvgAcceptanceRateVisible();
-    await userMetrics.expectAvgAcceptanceRateReasonable();
-});
+    test('user metrics tab shows avg acceptance rate tile', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-// ── Data table structure ──────────────────────────────────────────────────────
+        await userMetrics.expectAvgAcceptanceRateVisible();
+        await userMetrics.expectAvgAcceptanceRateReasonable();
+    });
 
-test('user metrics tab shows data table', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+    // ── Data table structure ──────────────────────────────────────────────────────
 
-    await userMetrics.expectDataTableVisible();
-});
+    test('user metrics tab shows data table', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-test('user metrics table contains expected columns', tag, async () => {
-    await dashboard.gotoUserMetricsTab();
+        await userMetrics.expectDataTableVisible();
+    });
 
-    await expect(dashboard.page.getByText('Active Days', { exact: true })).toBeVisible();
-    await expect(dashboard.page.getByText('Interactions', { exact: true })).toBeVisible();
-    await expect(dashboard.page.getByText('Accept Rate', { exact: true })).toBeVisible();
-    await expect(dashboard.page.getByText('Premium Req.', { exact: true })).toBeVisible();
-    await expect(dashboard.page.getByText('Top IDE', { exact: true })).toBeVisible();
-    await expect(dashboard.page.getByText('Top Language', { exact: true })).toBeVisible();
-});
+    test('user metrics table contains expected columns', tag, async () => {
+        await dashboard.gotoUserMetricsTab();
 
-// ── Table row contents ────────────────────────────────────────────────────────
+        await expect(dashboard.page.getByText('Active Days', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Interactions', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Accept Rate', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Premium Req.', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Top IDE', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Top Language', { exact: true })).toBeVisible();
+    });
 
-test('user metrics table lists all mock users', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+    // ── Table row contents ────────────────────────────────────────────────────────
 
-    await userMetrics.expectUserInTable('octocat');
-    await userMetrics.expectUserInTable('octokitten');
-    await userMetrics.expectUserInTable('monalisa');
-});
+    test('user metrics table lists all mock users', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-test('user metrics table shows octocat with acceptance rate', tag, async () => {
-    await dashboard.gotoUserMetricsTab();
+        await userMetrics.expectUserInTable('octocat');
+        await userMetrics.expectUserInTable('octokitten');
+        await userMetrics.expectUserInTable('monalisa');
+    });
 
-    // The Accept Rate column must contain a % value
-    await expect(
-        dashboard.page.locator('tbody tr').first().getByText(/%/)
-    ).toBeVisible();
-});
+    test('user metrics table shows octocat with acceptance rate', tag, async () => {
+        await dashboard.gotoUserMetricsTab();
 
-// ── Search ────────────────────────────────────────────────────────────────────
+        // The Accept Rate column must contain a % value
+        await expect(
+            dashboard.page.locator('tbody tr').first().getByText(/%/)
+        ).toBeVisible();
+    });
 
-test('search filters table to matching users', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+    // ── Search ────────────────────────────────────────────────────────────────────
 
-    await userMetrics.searchForUser('octocat');
+    test('search filters table to matching users', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-    // octocat must be visible, monalisa must disappear
-    await userMetrics.expectUserInTable('octocat');
-    await userMetrics.expectUserNotInTable('monalisa');
+        await userMetrics.searchForUser('octocat');
 
-    await userMetrics.clearSearch();
-});
+        // octocat must be visible, monalisa must disappear
+        await userMetrics.expectUserInTable('octocat');
+        await userMetrics.expectUserNotInTable('monalisa');
 
-test('search with partial name returns matching users', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+        await userMetrics.clearSearch();
+    });
 
-    // 'octo' matches both octocat and octokitten
-    await userMetrics.searchForUser('octo');
+    test('search with partial name returns matching users', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-    await userMetrics.expectUserInTable('octocat');
-    await userMetrics.expectUserInTable('octokitten');
-    await userMetrics.expectUserNotInTable('monalisa');
+        // 'octo' matches both octocat and octokitten
+        await userMetrics.searchForUser('octo');
 
-    await userMetrics.clearSearch();
-});
+        await userMetrics.expectUserInTable('octocat');
+        await userMetrics.expectUserInTable('octokitten');
+        await userMetrics.expectUserNotInTable('monalisa');
 
-// ── Activity filter ───────────────────────────────────────────────────────────
+        await userMetrics.clearSearch();
+    });
 
-test('activity filter "Active (≥ 7 days)" hides inactive/occasional users', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+    // ── Activity filter ───────────────────────────────────────────────────────────
 
-    await userMetrics.filterByActivity('Active (≥ 7 days)');
+    test('activity filter "Active (≥ 7 days)" hides inactive/occasional users', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-    // octocat (22 days) and octokitten (18 days) are active ≥ 7
-    await userMetrics.expectUserInTable('octocat');
-    await userMetrics.expectUserInTable('octokitten');
-    // monalisa (5 days) is occasional, not active ≥ 7
-    await userMetrics.expectUserNotInTable('monalisa');
+        await userMetrics.filterByActivity('Active (≥ 7 days)');
 
-    // Reset
-    await userMetrics.filterByActivity('All users');
-});
+        // octocat (22 days) and octokitten (18 days) are active ≥ 7
+        await userMetrics.expectUserInTable('octocat');
+        await userMetrics.expectUserInTable('octokitten');
+        // monalisa (5 days) is occasional, not active ≥ 7
+        await userMetrics.expectUserNotInTable('monalisa');
 
-test('activity filter "Occasional (1–6 days)" shows only occasional users', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+        // Reset
+        await userMetrics.filterByActivity('All users');
+    });
 
-    await userMetrics.filterByActivity('Occasional (1–6 days)');
+    test('activity filter "Occasional (1–6 days)" shows only occasional users', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-    // monalisa has 5 active days → occasional
-    await userMetrics.expectUserInTable('monalisa');
-    // octocat and octokitten are active ≥ 7, not occasional
-    await userMetrics.expectUserNotInTable('octocat');
-    await userMetrics.expectUserNotInTable('octokitten');
+        await userMetrics.filterByActivity('Occasional (1–6 days)');
 
-    // Reset
-    await userMetrics.filterByActivity('All users');
-});
+        // monalisa has 5 active days → occasional
+        await userMetrics.expectUserInTable('monalisa');
+        // octocat and octokitten are active ≥ 7, not occasional
+        await userMetrics.expectUserNotInTable('octocat');
+        await userMetrics.expectUserNotInTable('octokitten');
 
-// ── Premium filter ────────────────────────────────────────────────────────────
+        // Reset
+        await userMetrics.filterByActivity('All users');
+    });
 
-test('premium filter "Has premium requests" hides users without premium usage', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+    // ── Premium filter ────────────────────────────────────────────────────────────
 
-    await userMetrics.filterByPremium('Has premium requests');
+    test('premium filter "Has premium requests" hides users without premium usage', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-    // octocat (45) and octokitten (28) have premium requests
-    await userMetrics.expectUserInTable('octocat');
-    await userMetrics.expectUserInTable('octokitten');
-    // monalisa has 0 premium requests
-    await userMetrics.expectUserNotInTable('monalisa');
+        await userMetrics.filterByPremium('Has premium requests');
 
-    // Reset
-    await userMetrics.filterByPremium('All users');
-});
+        // octocat (45) and octokitten (28) have premium requests
+        await userMetrics.expectUserInTable('octocat');
+        await userMetrics.expectUserInTable('octokitten');
+        // monalisa has 0 premium requests
+        await userMetrics.expectUserNotInTable('monalisa');
 
-test('premium filter "No premium requests" shows only users with no premium usage', tag, async () => {
-    const userMetrics = await dashboard.gotoUserMetricsTab();
+        // Reset
+        await userMetrics.filterByPremium('All users');
+    });
 
-    await userMetrics.filterByPremium('No premium requests');
+    test('premium filter "No premium requests" shows only users with no premium usage', tag, async () => {
+        const userMetrics = await dashboard.gotoUserMetricsTab();
 
-    // monalisa has 0 premium requests
-    await userMetrics.expectUserInTable('monalisa');
-    await userMetrics.expectUserNotInTable('octocat');
-    await userMetrics.expectUserNotInTable('octokitten');
+        await userMetrics.filterByPremium('No premium requests');
 
-    // Reset
-    await userMetrics.filterByPremium('All users');
+        // monalisa has 0 premium requests
+        await userMetrics.expectUserInTable('monalisa');
+        await userMetrics.expectUserNotInTable('octocat');
+        await userMetrics.expectUserNotInTable('octokitten');
+
+        // Reset
+        await userMetrics.filterByPremium('All users');
+    });
 });
 
