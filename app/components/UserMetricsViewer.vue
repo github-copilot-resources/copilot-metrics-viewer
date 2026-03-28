@@ -60,6 +60,7 @@
               v-model="search"
               prepend-inner-icon="mdi-magnify"
               label="Search users…"
+              placeholder="Search users…"
               single-line
               hide-details
               density="compact"

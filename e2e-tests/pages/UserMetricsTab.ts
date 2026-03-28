@@ -33,13 +33,12 @@ export class UserMetricsTab {
             .filter({ has: page.getByText('Avg Acceptance Rate', { exact: true }) })
             .locator('.text-h4');
         this.premiumRequestsLabel = page.getByText('Premium Requests', { exact: true });
-        // Use a structural locator: find the .v-text-field whose label reads "Search users…"
-        // then target the <input> inside it. This is consistent with the v-select pattern
-        // and avoids relying on Vuetify 3's aria-labelledby wiring which differs between
-        // dev/built modes and across browsers.
-        this.searchInput = page.locator('.v-text-field')
-            .filter({ has: page.locator('label', { hasText: 'Search users…' }) })
-            .locator('input[type="text"]');
+        // Use getByPlaceholder() to target the search input directly by its placeholder
+        // attribute. In Vuetify 3, single-line v-text-field suppresses the <label> element
+        // entirely (hasLabel = !singleLine && ...), so label-based locators don't work.
+        // The placeholder attribute is reliably rendered on the underlying <input> element
+        // in all browsers and in both dev and production builds.
+        this.searchInput = page.getByPlaceholder('Search users…');
         this.dataTable = page.locator('.v-data-table').first();
         this.tableBody = this.dataTable.locator('tbody');
         // Click the outer .v-select container, not just the inner <input>.
