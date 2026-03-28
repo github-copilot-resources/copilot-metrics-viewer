@@ -39,8 +39,16 @@ export class UserMetricsTab {
         this.searchInput = page.getByRole('textbox', { name: 'Search users…' });
         this.dataTable = page.locator('.v-data-table').first();
         this.tableBody = this.dataTable.locator('tbody');
-        this.activityFilterSelect = page.getByLabel('Activity filter');
-        this.premiumFilterSelect = page.getByLabel('Premium requests');
+        // Click the outer .v-select container, not just the inner <input>.
+        // Vuetify 3's dropdown is opened by the click handler on the field wrapper;
+        // clicking only the readonly <input> works in Chromium but not in Firefox/WebKit
+        // because those browsers do not bubble the click to the parent handler.
+        this.activityFilterSelect = page.locator('.v-select').filter({
+            has: page.locator('label', { hasText: 'Activity filter' })
+        });
+        this.premiumFilterSelect = page.locator('.v-select').filter({
+            has: page.locator('label', { hasText: 'Premium requests' })
+        });
     }
 
     async expectTotalUsersVisible() {
