@@ -33,7 +33,10 @@ export class UserMetricsTab {
             .filter({ has: page.getByText('Avg Acceptance Rate', { exact: true }) })
             .locator('.text-h4');
         this.premiumRequestsLabel = page.getByText('Premium Requests', { exact: true });
-        this.searchInput = page.getByLabel('Search users…');
+        // Use getByRole('textbox') to target only the <input> element, not the Vuetify
+        // clear icon button (which also carries aria-label="Clear Search users…" and would
+        // be matched incorrectly by getByLabel in some browsers).
+        this.searchInput = page.getByRole('textbox', { name: 'Search users…' });
         this.dataTable = page.locator('.v-data-table').first();
         this.tableBody = this.dataTable.locator('tbody');
         this.activityFilterSelect = page.getByLabel('Activity filter');
@@ -101,7 +104,7 @@ export class UserMetricsTab {
     }
 
     async clearSearch() {
-        await this.searchInput.clear();
+        await this.searchInput.fill('');
         // Wait for the table to restore all rows
         await this.tableBody.waitFor({ state: 'visible' });
     }
