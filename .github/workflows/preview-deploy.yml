@@ -96,7 +96,7 @@ jobs:
       deployments: write
 
     environment:
-      name: preview-pr-${{ needs.build-and-push.outputs.pr_number }}
+      name: preview
       url: ${{ steps.app-url.outputs.url }}
 
     env:
