@@ -5,10 +5,10 @@ on:
     types: [labeled, unlabeled, synchronize]
   workflow_dispatch:
     inputs:
-      pr_number:
-        description: 'PR number to deploy or clean up'
+      branch:
+        description: 'Branch name of the PR to deploy or clean up'
         required: true
-        type: number
+        type: string
       action:
         description: 'Action to perform'
         type: choice
@@ -16,9 +16,6 @@ on:
           - deploy
           - cleanup
         default: deploy
-
-env:
-  PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
 
 jobs:
   build-and-push:
@@ -32,21 +29,33 @@ jobs:
       contents: read
       packages: write
 
+    outputs:
+      pr_number: ${{ steps.resolve-pr.outputs.pr_number }}
+
     steps:
-      - name: Get PR head SHA (workflow_dispatch only)
-        if: github.event_name == 'workflow_dispatch'
-        id: pr-ref
+      - name: Resolve PR number
+        id: resolve-pr
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PR_HEAD_SHA=$(gh pr view ${{ env.PR_NUMBER }} --json headRefOid -q .headRefOid) \
-            || { echo "Failed to get PR head SHA for PR #${{ env.PR_NUMBER }}"; exit 1; }
-          echo "sha=${PR_HEAD_SHA}" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_NUMBER=$(gh pr list --head "${{ github.event.inputs.branch }}" --repo "${{ github.repository }}" --json number -q '.[0].number') \
+              || { echo "Failed to find open PR for branch '${{ github.event.inputs.branch }}'"; exit 1; }
+            if [ -z "$PR_NUMBER" ]; then
+              echo "No open PR found for branch '${{ github.event.inputs.branch }}'"; exit 1
+            fi
+            PR_HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json headRefOid -q .headRefOid)
+            echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            echo "pr_head_sha=${PR_HEAD_SHA}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "pr_head_sha=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || steps.pr-ref.outputs.sha }}
+          ref: ${{ steps.resolve-pr.outputs.pr_head_sha }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -61,7 +70,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}-preview:preview-pr-${{ env.PR_NUMBER }}
+          tags: ghcr.io/${{ github.repository }}-preview:preview-pr-${{ steps.resolve-pr.outputs.pr_number }}
 
       - name: Build and push sync image
         uses: docker/build-push-action@v5
@@ -69,7 +78,7 @@ jobs:
           context: .
           file: Dockerfile.sync
           push: true
-          tags: ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ env.PR_NUMBER }}
+          tags: ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ steps.resolve-pr.outputs.pr_number }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -84,6 +93,14 @@ jobs:
       contents: read
       packages: write
       pull-requests: write
+      deployments: write
+
+    environment:
+      name: preview-pr-${{ needs.build-and-push.outputs.pr_number }}
+      url: ${{ steps.app-url.outputs.url }}
+
+    env:
+      PR_NUMBER: ${{ needs.build-and-push.outputs.pr_number }}
 
     steps:
       - name: Azure Login
@@ -95,14 +112,11 @@ jobs:
 
       - name: Create ACA Environment
         run: |
-          az containerapp env show \
+          az containerapp env create \
             --name cmv-preview-pr-${{ env.PR_NUMBER }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            > /dev/null 2>&1 \
-          || az containerapp env create \
-            --name cmv-preview-pr-${{ env.PR_NUMBER }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --location ${{ secrets.AZURE_LOCATION }}
+            --location ${{ secrets.AZURE_LOCATION }} \
+            || true
 
       - name: Generate PostgreSQL password
         id: pgpass
@@ -121,14 +135,6 @@ jobs:
             --min-replicas 1 --max-replicas 1 \
             --ingress internal --transport tcp --target-port 5432 \
             --env-vars \
-              POSTGRES_DB=copilot_metrics \
-              POSTGRES_USER=metrics_user \
-              POSTGRES_PASSWORD=${{ steps.pgpass.outputs.pgpassword }} \
-          || az containerapp update \
-            --name cmv-db \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image postgres:15-alpine \
-            --replace-env-vars \
               POSTGRES_DB=copilot_metrics \
               POSTGRES_USER=metrics_user \
               POSTGRES_PASSWORD=${{ steps.pgpass.outputs.pgpassword }}
@@ -154,23 +160,7 @@ jobs:
             --image ghcr.io/${{ github.repository }}-preview:preview-pr-${{ env.PR_NUMBER }} \
             --ingress external --target-port 80 \
             --min-replicas 1 --max-replicas 1 \
-            --registry-server ghcr.io \
-            --registry-username ${{ github.actor }} \
-            --registry-password ${{ secrets.GITHUB_TOKEN }} \
             --env-vars \
-              NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
-              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
-              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-              ENABLE_HISTORICAL_MODE=true \
-              SYNC_ENABLED=false \
-              NUXT_PUBLIC_IS_DATA_MOCKED=false \
-              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
-              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
-          || az containerapp update \
-            --name cmv-app \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ghcr.io/${{ github.repository }}-preview:preview-pr-${{ env.PR_NUMBER }} \
-            --replace-env-vars \
               NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
               NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
               DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
@@ -180,6 +170,16 @@ jobs:
               NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
               NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
 
+      - name: Restrict app ingress to allowed IPs
+        if: ${{ secrets.PREVIEW_ALLOWED_IPS != '' }}
+        run: |
+          az containerapp ingress access-restriction set \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --rule-name allow-preview-ips \
+            --ip-address "${{ secrets.PREVIEW_ALLOWED_IPS }}" \
+            --action Allow
+
       - name: Deploy sync container
         run: |
           az containerapp create \
@@ -188,21 +188,7 @@ jobs:
             --environment cmv-preview-pr-${{ env.PR_NUMBER }} \
             --image ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ env.PR_NUMBER }} \
             --min-replicas 0 --max-replicas 1 \
-            --registry-server ghcr.io \
-            --registry-username ${{ github.actor }} \
-            --registry-password ${{ secrets.GITHUB_TOKEN }} \
             --env-vars \
-              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
-              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-              SYNC_ENABLED=true \
-              NUXT_PUBLIC_IS_DATA_MOCKED=false \
-              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
-              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
-          || az containerapp update \
-            --name cmv-sync \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ env.PR_NUMBER }} \
-            --replace-env-vars \
               NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
               DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
               SYNC_ENABLED=true \
@@ -247,8 +233,21 @@ jobs:
       id-token: write
       contents: read
       pull-requests: write
+      deployments: write
+
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.branch }}
 
     steps:
+      - name: Resolve PR number (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER=$(gh pr list --head "${{ github.event.inputs.branch }}" --repo "${{ github.repository }}" --json number -q '.[0].number') \
+            || { echo "Failed to find PR for branch '${{ github.event.inputs.branch }}'"; exit 1; }
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -301,4 +300,5 @@ jobs:
               issue_number: prNumber,
               body
             });
+
 
