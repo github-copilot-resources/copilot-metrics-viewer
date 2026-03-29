@@ -48,6 +48,9 @@ function calcAcceptanceRate(generated: number, accepted: number): number {
   return generated > 0 ? parseFloat(((accepted / generated) * 100).toFixed(1)) : 0;
 }
 
+/** Number of days in the "latest" user metrics window (inclusive). */
+const LATEST_WINDOW_DAYS = 28;
+
 /**
  * Get the latest user metrics by aggregating all records in the most recent
  * 28-day window stored in user_day_metrics.
@@ -67,7 +70,8 @@ export async function getLatestUserMetrics(
   if (!maxRows[0].max_date) return null;
 
   const maxDate = new Date(maxRows[0].max_date).toISOString().slice(0, 10);
-  const minDate = new Date(new Date(maxDate).getTime() - 27 * 24 * 60 * 60 * 1000)
+  // LATEST_WINDOW_DAYS - 1 prior days plus the max date itself = 28-day inclusive window
+  const minDate = new Date(new Date(maxDate).getTime() - (LATEST_WINDOW_DAYS - 1) * 24 * 60 * 60 * 1000)
     .toISOString().slice(0, 10);
 
   const { rows } = await pool.query(
@@ -124,6 +128,9 @@ export async function getUserMetricsHistory(
       report_start_day: dates[0],
       report_end_day: dates[dates.length - 1],
       total_users: totals.length,
+      // A user is "active" if they appear in any stored record for this month.
+      // (The original 7-day threshold was designed for a fixed 28-day window;
+      // in monthly grouping every stored record represents at least one active day.)
       active_users: totals.filter(u => u.total_active_days >= 1).length,
       total_premium_requests: totals.reduce((s, u) => s + (u.premium_requests_total ?? 0), 0),
       avg_acceptance_rate: calcAcceptanceRate(totalGen, totalAcc),

@@ -395,7 +395,7 @@ describe('PostgreSQL Storage Layer', () => {
 
     it('should return the latest 28-day window aggregated', async () => {
       await saveUserDayMetricsBatch('organization', 'test-org', [
-        makeDayRecord('alice', 1, '2026-01-15'),
+        makeDayRecord('alice', 1, '2026-01-15'), // 47 days before 2026-03-03 → outside window
         makeDayRecord('alice', 1, '2026-03-03'),
         makeDayRecord('bob', 2, '2026-03-03'),
       ]);
@@ -403,9 +403,12 @@ describe('PostgreSQL Storage Layer', () => {
       const result = await getLatestUserMetrics('organization', 'test-org');
       expect(result).not.toBeNull();
       expect(new Date(result!.reportEndDay).toISOString().startsWith('2026-03-03')).toBe(true);
-      // Only records within 28 days of max date (2026-03-03) should be included
-      // 2026-01-15 is 47 days before 2026-03-03 → excluded
-      expect(result!.userTotals).toHaveLength(2); // alice and bob on 2026-03-03
+      // Only records within 28 days of max date are included
+      expect(result!.userTotals).toHaveLength(2); // alice (2026-03-03 only) and bob
+      // alice's old 2026-01-15 record is excluded → total_active_days = 1, not 2
+      const alice = result!.userTotals.find(u => u.login === 'alice');
+      expect(alice).toBeDefined();
+      expect(alice!.total_active_days).toBe(1);
     });
 
     it('should return null when no records exist', async () => {
@@ -454,7 +457,8 @@ describe('PostgreSQL Storage Layer', () => {
 
       const [entry] = await getUserMetricsHistory('organization', 'test-org');
       expect(entry.total_users).toBe(2);
-      expect(entry.active_users).toBe(2); // both have ≥1 active day
+      // active_users = users with ≥1 active day in the month (both alice and bob appear)
+      expect(entry.active_users).toBe(2);
     });
 
     it('should aggregate total_premium_requests', async () => {
