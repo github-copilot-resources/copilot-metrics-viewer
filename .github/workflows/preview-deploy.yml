@@ -1,0 +1,304 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to deploy or clean up'
+        required: true
+        type: number
+      action:
+        description: 'Action to perform'
+        type: choice
+        options:
+          - deploy
+          - cleanup
+        default: deploy
+
+env:
+  PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.pr_number || github.event.pull_request.number }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy') ||
+      (github.event_name == 'pull_request' && github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Get PR head SHA (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        id: pr-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_HEAD_SHA=$(gh pr view ${{ env.PR_NUMBER }} --json headRefOid -q .headRefOid) \
+            || { echo "Failed to get PR head SHA for PR #${{ env.PR_NUMBER }}"; exit 1; }
+          echo "sha=${PR_HEAD_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || steps.pr-ref.outputs.sha }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push app image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}-preview:preview-pr-${{ env.PR_NUMBER }}
+
+      - name: Build and push sync image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.sync
+          push: true
+          tags: ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ env.PR_NUMBER }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy') ||
+      (github.event_name == 'pull_request' && github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
+
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+      pull-requests: write
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create ACA Environment
+        run: |
+          az containerapp env show \
+            --name cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            > /dev/null 2>&1 \
+          || az containerapp env create \
+            --name cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --location ${{ secrets.AZURE_LOCATION }}
+
+      - name: Generate PostgreSQL password
+        id: pgpass
+        run: |
+          PGPASSWORD=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32)
+          echo "::add-mask::$PGPASSWORD"
+          echo "pgpassword=$PGPASSWORD" >> $GITHUB_OUTPUT
+
+      - name: Deploy PostgreSQL container
+        run: |
+          az containerapp create \
+            --name cmv-db \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --image postgres:15-alpine \
+            --min-replicas 1 --max-replicas 1 \
+            --ingress internal --transport tcp --target-port 5432 \
+            --env-vars \
+              POSTGRES_DB=copilot_metrics \
+              POSTGRES_USER=metrics_user \
+              POSTGRES_PASSWORD=${{ steps.pgpass.outputs.pgpassword }} \
+          || az containerapp update \
+            --name cmv-db \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image postgres:15-alpine \
+            --replace-env-vars \
+              POSTGRES_DB=copilot_metrics \
+              POSTGRES_USER=metrics_user \
+              POSTGRES_PASSWORD=${{ steps.pgpass.outputs.pgpassword }}
+
+      - name: Build DATABASE_URL
+        id: dburl
+        run: |
+          DB_FQDN=$(az containerapp show \
+            --name cmv-db \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          DATABASE_URL="postgresql://metrics_user:${{ steps.pgpass.outputs.pgpassword }}@${DB_FQDN}:5432/copilot_metrics"
+          echo "::add-mask::$DATABASE_URL"
+          echo "database_url=${DATABASE_URL}" >> $GITHUB_OUTPUT
+
+      - name: Deploy app container
+        run: |
+          az containerapp create \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --image ghcr.io/${{ github.repository }}-preview:preview-pr-${{ env.PR_NUMBER }} \
+            --ingress external --target-port 80 \
+            --min-replicas 1 --max-replicas 1 \
+            --registry-server ghcr.io \
+            --registry-username ${{ github.actor }} \
+            --registry-password ${{ secrets.GITHUB_TOKEN }} \
+            --env-vars \
+              NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
+              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+              ENABLE_HISTORICAL_MODE=true \
+              SYNC_ENABLED=false \
+              NUXT_PUBLIC_IS_DATA_MOCKED=false \
+              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
+          || az containerapp update \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image ghcr.io/${{ github.repository }}-preview:preview-pr-${{ env.PR_NUMBER }} \
+            --replace-env-vars \
+              NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
+              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+              ENABLE_HISTORICAL_MODE=true \
+              SYNC_ENABLED=false \
+              NUXT_PUBLIC_IS_DATA_MOCKED=false \
+              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
+
+      - name: Deploy sync container
+        run: |
+          az containerapp create \
+            --name cmv-sync \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --image ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ env.PR_NUMBER }} \
+            --min-replicas 0 --max-replicas 1 \
+            --registry-server ghcr.io \
+            --registry-username ${{ github.actor }} \
+            --registry-password ${{ secrets.GITHUB_TOKEN }} \
+            --env-vars \
+              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+              SYNC_ENABLED=true \
+              NUXT_PUBLIC_IS_DATA_MOCKED=false \
+              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
+          || az containerapp update \
+            --name cmv-sync \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ env.PR_NUMBER }} \
+            --replace-env-vars \
+              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+              SYNC_ENABLED=true \
+              NUXT_PUBLIC_IS_DATA_MOCKED=false \
+              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
+
+      - name: Get app URL
+        id: app-url
+        run: |
+          APP_FQDN=$(az containerapp show \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          echo "url=https://${APP_FQDN}" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt('${{ env.PR_NUMBER }}', 10);
+            const url = '${{ steps.app-url.outputs.url }}';
+            const body = `## 🚀 Preview Deployment Ready\n\n` +
+              `Preview environment for PR #${prNumber} has been deployed.\n\n` +
+              `**Preview URL:** ${url}\n\n` +
+              `> This preview will be cleaned up when the \`deploy\` label is removed.`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body
+            });
+
+  cleanup:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'unlabeled' && github.event.label.name == 'deploy') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'cleanup')
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete app container
+        run: |
+          az containerapp delete \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Delete sync container
+        run: |
+          az containerapp delete \
+            --name cmv-sync \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Delete PostgreSQL container
+        run: |
+          az containerapp delete \
+            --name cmv-db \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Delete ACA Environment
+        run: |
+          az containerapp env delete \
+            --name cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Comment on PR about cleanup
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt('${{ env.PR_NUMBER }}', 10);
+            const body = `## 🧹 Preview Environment Cleaned Up\n\n` +
+              `The preview environment for PR #${prNumber} has been removed.`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body
+            });
+
