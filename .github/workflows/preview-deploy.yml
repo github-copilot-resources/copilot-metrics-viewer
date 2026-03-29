@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch name of the PR to deploy or clean up'
+        description: 'Branch name to deploy or clean up (PR not required)'
         required: true
         type: string
       action:
@@ -30,32 +30,40 @@ jobs:
       packages: write
 
     outputs:
-      pr_number: ${{ steps.resolve-pr.outputs.pr_number }}
+      deploy_id: ${{ steps.resolve.outputs.deploy_id }}
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
 
     steps:
-      - name: Resolve PR number
-        id: resolve-pr
+      - name: Resolve deploy target
+        id: resolve
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            PR_NUMBER=$(gh pr list --head "${{ github.event.inputs.branch }}" --repo "${{ github.repository }}" --json number -q '.[0].number') \
-              || { echo "Failed to find open PR for branch '${{ github.event.inputs.branch }}'"; exit 1; }
-            if [ -z "$PR_NUMBER" ]; then
-              echo "No open PR found for branch '${{ github.event.inputs.branch }}'"; exit 1
+            BRANCH="${{ github.event.inputs.branch }}"
+            PR_NUMBER=$(gh pr list --head "$BRANCH" --repo "${{ github.repository }}" --json number -q '.[0].number' 2>/dev/null || true)
+            if [ -n "$PR_NUMBER" ]; then
+              HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json headRefOid -q .headRefOid)
+              DEPLOY_ID="pr-${PR_NUMBER}"
+              echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            else
+              HEAD_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/$BRANCH" -q .object.sha) \
+                || { echo "Branch '$BRANCH' not found"; exit 1; }
+              SAFE_BRANCH=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr '/_.' '-' | tr -cd 'a-z0-9-' | cut -c1-20 | sed 's/-*$//')
+              DEPLOY_ID="branch-${SAFE_BRANCH}"
             fi
-            PR_HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json headRefOid -q .headRefOid)
-            echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
-            echo "pr_head_sha=${PR_HEAD_SHA}" >> $GITHUB_OUTPUT
+            echo "deploy_id=${DEPLOY_ID}" >> $GITHUB_OUTPUT
+            echo "head_sha=${HEAD_SHA}" >> $GITHUB_OUTPUT
           else
             echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
-            echo "pr_head_sha=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+            echo "head_sha=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+            echo "deploy_id=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.resolve-pr.outputs.pr_head_sha }}
+          ref: ${{ steps.resolve.outputs.head_sha }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -70,7 +78,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}-preview:preview-pr-${{ steps.resolve-pr.outputs.pr_number }}
+          tags: ghcr.io/${{ github.repository }}-preview:preview-${{ steps.resolve.outputs.deploy_id }}
 
       - name: Build and push sync image
         uses: docker/build-push-action@v5
@@ -78,7 +86,7 @@ jobs:
           context: .
           file: Dockerfile.sync
           push: true
-          tags: ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ steps.resolve-pr.outputs.pr_number }}
+          tags: ghcr.io/${{ github.repository }}-sync-preview:preview-${{ steps.resolve.outputs.deploy_id }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -100,6 +108,7 @@ jobs:
       url: ${{ steps.app-url.outputs.url }}
 
     env:
+      DEPLOY_ID: ${{ needs.build-and-push.outputs.deploy_id }}
       PR_NUMBER: ${{ needs.build-and-push.outputs.pr_number }}
       PREVIEW_ALLOWED_IPS: ${{ secrets.PREVIEW_ALLOWED_IPS }}
 
@@ -114,9 +123,10 @@ jobs:
       - name: Create ACA Environment
         run: |
           az containerapp env create \
-            --name cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --name cmv-preview-${{ env.DEPLOY_ID }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --location ${{ secrets.AZURE_LOCATION }} \
+            --logs-destination none \
             || true
 
       - name: Generate PostgreSQL password
@@ -131,7 +141,7 @@ jobs:
           az containerapp create \
             --name cmv-db \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --environment cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --environment cmv-preview-${{ env.DEPLOY_ID }} \
             --image postgres:15-alpine \
             --min-replicas 1 --max-replicas 1 \
             --ingress internal --transport tcp --target-port 5432 \
@@ -157,8 +167,8 @@ jobs:
           az containerapp create \
             --name cmv-app \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --environment cmv-preview-pr-${{ env.PR_NUMBER }} \
-            --image ghcr.io/${{ github.repository }}-preview:preview-pr-${{ env.PR_NUMBER }} \
+            --environment cmv-preview-${{ env.DEPLOY_ID }} \
+            --image ghcr.io/${{ github.repository }}-preview:preview-${{ env.DEPLOY_ID }} \
             --ingress external --target-port 80 \
             --min-replicas 1 --max-replicas 1 \
             --env-vars \
@@ -186,8 +196,8 @@ jobs:
           az containerapp create \
             --name cmv-sync \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --environment cmv-preview-pr-${{ env.PR_NUMBER }} \
-            --image ghcr.io/${{ github.repository }}-sync-preview:preview-pr-${{ env.PR_NUMBER }} \
+            --environment cmv-preview-${{ env.DEPLOY_ID }} \
+            --image ghcr.io/${{ github.repository }}-sync-preview:preview-${{ env.DEPLOY_ID }} \
             --min-replicas 0 --max-replicas 1 \
             --env-vars \
               NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
@@ -208,6 +218,7 @@ jobs:
           echo "url=https://${APP_FQDN}" >> $GITHUB_OUTPUT
 
       - name: Comment on PR with preview URL
+        if: ${{ env.PR_NUMBER != '' }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -237,17 +248,24 @@ jobs:
       deployments: write
 
     env:
-      PR_NUMBER: ${{ github.event.pull_request.number || github.event.inputs.branch }}
+      DEPLOY_ID: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || '' }}
+      PR_NUMBER: ${{ github.event.pull_request.number || '' }}
 
     steps:
-      - name: Resolve PR number (workflow_dispatch only)
+      - name: Resolve deploy ID (workflow_dispatch only)
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PR_NUMBER=$(gh pr list --head "${{ github.event.inputs.branch }}" --repo "${{ github.repository }}" --json number -q '.[0].number') \
-            || { echo "Failed to find PR for branch '${{ github.event.inputs.branch }}'"; exit 1; }
-          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          BRANCH="${{ github.event.inputs.branch }}"
+          PR_NUMBER=$(gh pr list --head "$BRANCH" --repo "${{ github.repository }}" --json number -q '.[0].number' 2>/dev/null || true)
+          if [ -n "$PR_NUMBER" ]; then
+            echo "DEPLOY_ID=pr-${PR_NUMBER}" >> $GITHUB_ENV
+            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          else
+            SAFE_BRANCH=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr '/_.' '-' | tr -cd 'a-z0-9-' | cut -c1-20 | sed 's/-*$//')
+            echo "DEPLOY_ID=branch-${SAFE_BRANCH}" >> $GITHUB_ENV
+          fi
 
       - name: Azure Login
         uses: azure/login@v2
@@ -283,12 +301,13 @@ jobs:
       - name: Delete ACA Environment
         run: |
           az containerapp env delete \
-            --name cmv-preview-pr-${{ env.PR_NUMBER }} \
+            --name cmv-preview-${{ env.DEPLOY_ID }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --yes \
             || true
 
       - name: Comment on PR about cleanup
+        if: ${{ env.PR_NUMBER != '' }}
         uses: actions/github-script@v7
         with:
           script: |
