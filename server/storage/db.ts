@@ -104,25 +104,6 @@ export async function initSchema(): Promise<void> {
   `);
 
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS user_metrics (
-      id               SERIAL PRIMARY KEY,
-      scope            TEXT NOT NULL,
-      identifier       TEXT NOT NULL,
-      report_start_day DATE NOT NULL,
-      report_end_day   DATE NOT NULL,
-      user_totals      JSONB NOT NULL,
-      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE (scope, identifier, report_start_day, report_end_day)
-    );
-  `);
-
-  await pool.query(`
-    CREATE INDEX IF NOT EXISTS idx_user_metrics_lookup
-    ON user_metrics (scope, identifier, report_end_day DESC);
-  `);
-
-  await pool.query(`
     CREATE TABLE IF NOT EXISTS user_day_metrics (
       id            SERIAL PRIMARY KEY,
       scope         TEXT NOT NULL,

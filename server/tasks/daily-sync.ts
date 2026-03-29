@@ -1,13 +1,13 @@
 /**
  * Daily sync scheduled task
  * Downloads the latest 28-day report and saves any new days to storage.
- * Also syncs per-user metrics using the users-28-day report.
- * 
+ * Per-user daily records are saved to user_day_metrics by syncBulk automatically.
+ *
  * This task runs on a schedule defined by SYNC_SCHEDULE env var (default: 2 AM daily)
  * Can be disabled by setting SYNC_ENABLED=false
  */
 
-import { syncBulk, syncUserMetrics, syncSeats, type SeatsSyncResult } from '../services/sync-service';
+import { syncBulk, syncSeats, type SeatsSyncResult } from '../services/sync-service';
 
 export default defineTask({
   meta: {
@@ -61,16 +61,6 @@ export default defineTask({
 
       logger.info(`Aggregated sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped, ${result.errors.length} errors`);
 
-      // Also sync per-user metrics
-      const userResult = await syncUserMetrics(
-        scope,
-        identifier,
-        headers,
-        githubTeam || undefined
-      );
-
-      logger.info(`User metrics sync completed: ${userResult.userCount} users, success=${userResult.success}`);
-
       // Sync seats snapshot when historical mode is enabled
       let seatsResult: SeatsSyncResult | undefined;
       if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
@@ -78,11 +68,10 @@ export default defineTask({
         logger.info(`Seats sync completed: ${seatsResult.seatCount} seats, success=${seatsResult.success}`);
       }
 
-      const overallSuccess = result.success && userResult.success && (seatsResult == null || seatsResult.success);
+      const overallSuccess = result.success && (seatsResult == null || seatsResult.success);
       return {
         result: overallSuccess ? 'success' : 'partial',
         syncResult: result,
-        userMetricsSyncResult: userResult,
         ...(seatsResult != null && { seatsSyncResult: seatsResult })
       };
 

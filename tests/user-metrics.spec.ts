@@ -5,25 +5,12 @@
  *   - UserTotals business-logic helpers mirroring UserMetricsViewer.vue
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { UserReport, UserTotals, UserDayRecord } from '../server/services/github-copilot-usage-api';
 import { aggregateUserDayRecords } from '../server/services/github-copilot-usage-api';
 import { mockRequestUserDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
 
 // ── Mock storage + API for sync service tests ─────────────────────────────────
-
-// In-memory user-metrics storage (mirrors user-metrics-storage contract)
-const userStorageMap = new Map<string, unknown>();
-
-vi.mock('../server/storage/user-metrics-storage', () => ({
-  saveUserMetrics: vi.fn(async (scope: string, id: string, start: string, end: string, totals: unknown) => {
-    userStorageMap.set(`${scope}:${id}:${start}:${end}`, { start, end, totals });
-  }),
-  hasUserMetrics: vi.fn(async (scope: string, id: string, start: string, end: string) => {
-    return userStorageMap.has(`${scope}:${id}:${start}:${end}`);
-  }),
-  getLatestUserMetrics: vi.fn(async () => null),
-}));
 
 // Static sample report returned by the mocked API
 const SAMPLE_USER_REPORT: UserReport = {
@@ -107,9 +94,6 @@ vi.mock('../server/services/github-copilot-usage-api', async (importOriginal) =>
     })),
   };
 });
-
-import { syncUserMetrics } from '../server/services/sync-service';
-import { saveUserMetrics, hasUserMetrics } from '../server/storage/user-metrics-storage';
 
 const TEST_HEADERS = {
   'Authorization': 'Bearer test-token',
@@ -294,82 +278,6 @@ describe('mockRequestUserDownloadLinks', () => {
     const resp = mockRequestUserDownloadLinks({ scope: 'organization', identifier: 'test-org' }, '1-day');
 
     expect(resp.report_day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  });
-});
-
-// ── syncUserMetrics ───────────────────────────────────────────────────────────
-
-describe('syncUserMetrics', () => {
-  beforeEach(() => {
-    userStorageMap.clear();
-    vi.clearAllMocks();
-  });
-
-  it('fetches 28-day user report and saves to storage', async () => {
-    const result = await syncUserMetrics('organization', 'test-org', TEST_HEADERS);
-
-    expect(result.success).toBe(true);
-    expect(result.userCount).toBe(SAMPLE_USER_REPORT.user_totals.length);
-    expect(result.reportStartDay).toBe(SAMPLE_USER_REPORT.report_start_day);
-    expect(result.reportEndDay).toBe(SAMPLE_USER_REPORT.report_end_day);
-    expect(saveUserMetrics).toHaveBeenCalledOnce();
-    expect(saveUserMetrics).toHaveBeenCalledWith(
-      'organization',
-      'test-org',
-      SAMPLE_USER_REPORT.report_start_day,
-      SAMPLE_USER_REPORT.report_end_day,
-      SAMPLE_USER_REPORT.user_totals
-    );
-  });
-
-  it('skips save when report period already stored', async () => {
-    // Pre-populate storage so hasUserMetrics returns true
-    userStorageMap.set(
-      `organization:test-org:${SAMPLE_USER_REPORT.report_start_day}:${SAMPLE_USER_REPORT.report_end_day}`,
-      {}
-    );
-
-    const result = await syncUserMetrics('organization', 'test-org', TEST_HEADERS);
-
-    expect(result.success).toBe(true);
-    expect(saveUserMetrics).not.toHaveBeenCalled();
-  });
-
-  it('handles enterprise scope', async () => {
-    const result = await syncUserMetrics('enterprise', 'my-enterprise', TEST_HEADERS);
-
-    expect(result.success).toBe(true);
-    expect(saveUserMetrics).toHaveBeenCalledWith(
-      'enterprise',
-      'my-enterprise',
-      expect.any(String),
-      expect.any(String),
-      expect.any(Array)
-    );
-  });
-
-  it('passes teamSlug to saveUserMetrics when provided', async () => {
-    const result = await syncUserMetrics('team-organization', 'test-org', TEST_HEADERS, 'eng-team');
-
-    expect(result.success).toBe(true);
-    expect(saveUserMetrics).toHaveBeenCalledWith(
-      'team-organization',
-      'test-org',
-      expect.any(String),
-      expect.any(String),
-      expect.any(Array)
-    );
-  });
-
-  it('returns error result when API throws', async () => {
-    const { fetchLatestUserReport } = await import('../server/services/github-copilot-usage-api');
-    (fetchLatestUserReport as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('API unavailable'));
-
-    const result = await syncUserMetrics('organization', 'test-org', TEST_HEADERS);
-
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('API unavailable');
-    expect(saveUserMetrics).not.toHaveBeenCalled();
   });
 });
 

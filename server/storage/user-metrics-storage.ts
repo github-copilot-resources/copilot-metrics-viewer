@@ -1,13 +1,22 @@
 /**
- * User Metrics storage implementation backed by PostgreSQL.
- * Stores per-user Copilot usage metrics aggregated over date ranges.
+ * User Metrics storage — backed entirely by the `user_day_metrics` table.
+ *
+ * There is no longer a separate `user_metrics` period-aggregate table.
+ * All analytics (latest snapshot, historical trends, per-user time series)
+ * are derived on-the-fly from the per-day per-user records that are written
+ * by `saveUserDayMetricsBatch` during the daily sync.
+ *
+ * Windowing strategy for history / time series:
+ *   Records are grouped by calendar month so that charts show one data point
+ *   per month regardless of how many days of activity were stored.
  */
 
-import type { UserTotals } from '../services/github-copilot-usage-api';
+import type { UserDayRecord, UserTotals } from '../services/github-copilot-usage-api';
+import { aggregateUserDayRecords } from '../services/github-copilot-usage-api';
 import { getPool } from './db';
 
 /**
- * Aggregated user-metrics statistics for one stored 28-day snapshot.
+ * Aggregated user-metrics statistics for one stored window (calendar month).
  */
 export interface UserMetricsHistoryEntry {
   report_start_day: string;
@@ -19,97 +28,7 @@ export interface UserMetricsHistoryEntry {
 }
 
 /**
- * Save user metrics data to storage (upsert).
- * Each record covers a report period identified by report_start_day + report_end_day.
- */
-export async function saveUserMetrics(
-  scope: string,
-  scopeIdentifier: string,
-  reportStartDay: string,
-  reportEndDay: string,
-  userTotals: UserTotals[]
-): Promise<void> {
-  const pool = getPool();
-  await pool.query(
-    `INSERT INTO user_metrics (scope, identifier, report_start_day, report_end_day, user_totals)
-     VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (scope, identifier, report_start_day, report_end_day)
-     DO UPDATE SET user_totals = $5, updated_at = NOW()`,
-    [scope, scopeIdentifier, reportStartDay, reportEndDay, JSON.stringify(userTotals)]
-  );
-}
-
-/**
- * Get user metrics for a specific report period.
- */
-export async function getUserMetrics(
-  scope: string,
-  scopeIdentifier: string,
-  reportStartDay: string,
-  reportEndDay: string
-): Promise<UserTotals[] | null> {
-  const pool = getPool();
-  const { rows } = await pool.query(
-    `SELECT user_totals FROM user_metrics
-     WHERE scope = $1 AND identifier = $2
-       AND report_start_day = $3 AND report_end_day = $4`,
-    [scope, scopeIdentifier, reportStartDay, reportEndDay]
-  );
-  return rows.length > 0 ? rows[0].user_totals : null;
-}
-
-/**
- * Get the latest user metrics (most recent report_end_day).
- */
-export async function getLatestUserMetrics(
-  scope: string,
-  scopeIdentifier: string
-): Promise<{ reportStartDay: string; reportEndDay: string; userTotals: UserTotals[] } | null> {
-  const pool = getPool();
-  const { rows } = await pool.query(
-    `SELECT report_start_day, report_end_day, user_totals
-     FROM user_metrics
-     WHERE scope = $1 AND identifier = $2
-     ORDER BY report_end_day DESC LIMIT 1`,
-    [scope, scopeIdentifier]
-  );
-  if (rows.length === 0) return null;
-  return {
-    reportStartDay: rows[0].report_start_day,
-    reportEndDay: rows[0].report_end_day,
-    userTotals: rows[0].user_totals
-  };
-}
-
-/**
- * Check if user metrics exist for a specific report period.
- */
-export async function hasUserMetrics(
-  scope: string,
-  scopeIdentifier: string,
-  reportStartDay: string,
-  reportEndDay: string
-): Promise<boolean> {
-  const pool = getPool();
-  const { rows } = await pool.query(
-    `SELECT 1 FROM user_metrics
-     WHERE scope = $1 AND identifier = $2
-       AND report_start_day = $3 AND report_end_day = $4
-     LIMIT 1`,
-    [scope, scopeIdentifier, reportStartDay, reportEndDay]
-  );
-  return rows.length > 0;
-}
-
-/**
- * Compute acceptance rate as a percentage (0–100), rounded to one decimal place.
- */
-function calcAcceptanceRate(generated: number, accepted: number): number {
-  return generated > 0 ? parseFloat(((accepted / generated) * 100).toFixed(1)) : 0;
-}
-
-/**
- * One data point in a single user's time series.
+ * One data point in a single user's time series (one per calendar month).
  */
 export interface UserTimeSeriesEntry {
   report_end_day: string;
@@ -123,9 +42,100 @@ export interface UserTimeSeriesEntry {
 }
 
 /**
- * Return the per-snapshot stats for a single user, ordered by report_end_day ascending.
- * Each stored 28-day snapshot contains a full user_totals array; this function
- * extracts the named user from every snapshot where they appear.
+ * Compute acceptance rate as a percentage (0–100), rounded to one decimal place.
+ */
+function calcAcceptanceRate(generated: number, accepted: number): number {
+  return generated > 0 ? parseFloat(((accepted / generated) * 100).toFixed(1)) : 0;
+}
+
+/**
+ * Get the latest user metrics by aggregating all records in the most recent
+ * 28-day window stored in user_day_metrics.
+ */
+export async function getLatestUserMetrics(
+  scope: string,
+  scopeIdentifier: string
+): Promise<{ reportStartDay: string; reportEndDay: string; userTotals: UserTotals[] } | null> {
+  const pool = getPool();
+
+  // Find the latest date stored
+  const { rows: maxRows } = await pool.query(
+    `SELECT MAX(metrics_date) AS max_date FROM user_day_metrics
+     WHERE scope = $1 AND identifier = $2`,
+    [scope, scopeIdentifier]
+  );
+  if (!maxRows[0].max_date) return null;
+
+  const maxDate = new Date(maxRows[0].max_date).toISOString().slice(0, 10);
+  const minDate = new Date(new Date(maxDate).getTime() - 27 * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 10);
+
+  const { rows } = await pool.query(
+    `SELECT data FROM user_day_metrics
+     WHERE scope = $1 AND identifier = $2
+       AND metrics_date BETWEEN $3 AND $4`,
+    [scope, scopeIdentifier, minDate, maxDate]
+  );
+  if (rows.length === 0) return null;
+
+  const records: UserDayRecord[] = rows.map(r => r.data);
+  return {
+    reportStartDay: minDate,
+    reportEndDay: maxDate,
+    userTotals: aggregateUserDayRecords(records),
+  };
+}
+
+/**
+ * Return aggregated user-metrics statistics for every calendar-month window
+ * that has stored records, ordered by window end date ascending.
+ */
+export async function getUserMetricsHistory(
+  scope: string,
+  scopeIdentifier: string
+): Promise<UserMetricsHistoryEntry[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT data, metrics_date FROM user_day_metrics
+     WHERE scope = $1 AND identifier = $2
+     ORDER BY metrics_date ASC`,
+    [scope, scopeIdentifier]
+  );
+  if (rows.length === 0) return [];
+
+  // Group by calendar month (YYYY-MM)
+  const byMonth = new Map<string, UserDayRecord[]>();
+  for (const row of rows) {
+    const date = new Date(row.metrics_date).toISOString().slice(0, 10);
+    const month = date.slice(0, 7);
+    const existing = byMonth.get(month) ?? [];
+    existing.push(row.data as UserDayRecord);
+    byMonth.set(month, existing);
+  }
+
+  const result: UserMetricsHistoryEntry[] = [];
+  for (const [, monthRecords] of byMonth) {
+    const dates = monthRecords.map(r => r.day).sort();
+    const totals = aggregateUserDayRecords(monthRecords);
+    const totalGen = totals.reduce((s, u) => s + u.code_generation_activity_count, 0);
+    const totalAcc = totals.reduce((s, u) => s + u.code_acceptance_activity_count, 0);
+
+    result.push({
+      report_start_day: dates[0],
+      report_end_day: dates[dates.length - 1],
+      total_users: totals.length,
+      active_users: totals.filter(u => u.total_active_days >= 1).length,
+      total_premium_requests: totals.reduce((s, u) => s + (u.premium_requests_total ?? 0), 0),
+      avg_acceptance_rate: calcAcceptanceRate(totalGen, totalAcc),
+    });
+  }
+
+  return result.sort((a, b) => a.report_end_day.localeCompare(b.report_end_day));
+}
+
+/**
+ * Return the per-month stats for a single user, ordered by window end date ascending.
+ * Only months where the user has at least one record are included.
  */
 export async function getUserTimeSeries(
   scope: string,
@@ -134,68 +144,44 @@ export async function getUserTimeSeries(
 ): Promise<UserTimeSeriesEntry[]> {
   const pool = getPool();
   const { rows } = await pool.query(
-    `SELECT report_end_day, user_totals
-     FROM user_metrics
-     WHERE scope = $1 AND identifier = $2
-     ORDER BY report_end_day ASC`,
-    [scope, scopeIdentifier]
+    `SELECT data, metrics_date FROM user_day_metrics
+     WHERE scope = $1 AND identifier = $2 AND user_login = $3
+     ORDER BY metrics_date ASC`,
+    [scope, scopeIdentifier, login]
   );
+  if (rows.length === 0) return [];
+
+  // Group by calendar month (YYYY-MM)
+  const byMonth = new Map<string, { records: UserDayRecord[]; dates: string[] }>();
+  for (const row of rows) {
+    const date = new Date(row.metrics_date).toISOString().slice(0, 10);
+    const month = date.slice(0, 7);
+    const existing = byMonth.get(month) ?? { records: [], dates: [] };
+    existing.records.push(row.data as UserDayRecord);
+    existing.dates.push(date);
+    byMonth.set(month, existing);
+  }
 
   const series: UserTimeSeriesEntry[] = [];
-
-  for (const row of rows) {
-    const totals: UserTotals[] = row.user_totals;
+  for (const [, { records, dates }] of byMonth) {
+    const totals = aggregateUserDayRecords(records);
     const user = totals.find(u => u.login === login);
-    if (!user) continue; // user not present in this snapshot — skip
+    if (!user) continue;
 
     const gen = user.code_generation_activity_count;
     const acc = user.code_acceptance_activity_count;
 
     series.push({
-      report_end_day:   new Date(row.report_end_day).toISOString().slice(0, 10),
+      report_end_day: dates[dates.length - 1],
       total_active_days: user.total_active_days,
       user_initiated_interaction_count: user.user_initiated_interaction_count,
-      code_generation_activity_count:   gen,
-      code_acceptance_activity_count:   acc,
-      loc_added_sum:          user.loc_added_sum,
+      code_generation_activity_count: gen,
+      code_acceptance_activity_count: acc,
+      loc_added_sum: user.loc_added_sum,
       premium_requests_total: user.premium_requests_total ?? 0,
       acceptance_rate: calcAcceptanceRate(gen, acc),
     });
   }
 
-  return series;
-}
-
-/**
- * Return aggregated user-metrics statistics for every stored snapshot,
- * ordered by report_end_day ascending.
- * Stats (totals, acceptance rate) are computed in TypeScript for compatibility.
- */
-export async function getUserMetricsHistory(
-  scope: string,
-  scopeIdentifier: string
-): Promise<UserMetricsHistoryEntry[]> {
-  const pool = getPool();
-  const { rows } = await pool.query(
-    `SELECT report_start_day, report_end_day, user_totals
-     FROM user_metrics
-     WHERE scope = $1 AND identifier = $2
-     ORDER BY report_end_day ASC`,
-    [scope, scopeIdentifier]
-  );
-
-  return rows.map(row => {
-    const totals: UserTotals[] = row.user_totals;
-    const total_gen = totals.reduce((s, u) => s + u.code_generation_activity_count, 0);
-    const total_acc = totals.reduce((s, u) => s + u.code_acceptance_activity_count, 0);
-
-    return {
-      report_start_day: new Date(row.report_start_day).toISOString().slice(0, 10),
-      report_end_day:   new Date(row.report_end_day).toISOString().slice(0, 10),
-      total_users:      totals.length,
-      active_users:     totals.filter(u => u.total_active_days >= 7).length,
-      total_premium_requests: totals.reduce((s, u) => s + (u.premium_requests_total ?? 0), 0),
-      avg_acceptance_rate: calcAcceptanceRate(total_gen, total_acc),
-    };
-  });
+  return series.sort((a, b) => a.report_end_day.localeCompare(b.report_end_day));
 }
