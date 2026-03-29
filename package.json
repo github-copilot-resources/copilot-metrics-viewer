@@ -51,7 +51,7 @@
     "vuetify-nuxt-module": "^0.19.5"
   },
   "overrides": {
-    "brace-expansion": "^2.0.2",
-    "serialize-javascript": "^7.0.4"
+    "brace-expansion": "^2.0.3",
+    "serialize-javascript": "^7.0.5"
   }
 }
