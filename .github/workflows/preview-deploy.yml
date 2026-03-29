@@ -126,7 +126,6 @@ jobs:
             --name cmv-preview-${{ env.DEPLOY_ID }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --location ${{ secrets.AZURE_LOCATION }} \
-            --logs-destination none \
             || true
 
       - name: Generate PostgreSQL password
