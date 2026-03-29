@@ -11,15 +11,14 @@
 
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import type { H3Event, EventHandlerRequest } from 'h3';
-import type { ReportDayTotals } from '../../server/services/github-copilot-usage-api';
-import type { OrgReport } from '../../server/services/github-copilot-usage-api';
+import type { ReportDayTotals, OrgReport } from '../../server/services/github-copilot-usage-api';
 import { Options } from '@/model/Options';
 import { getLocale } from "./getLocale";
 import { filterHolidaysFromMetrics } from '@/utils/dateUtils';
 import { getMetricsData as getLegacyMetricsData } from './metrics-util';
 import { getMetricsByDateRange, getReportDataByDateRange, saveMetrics } from '../../server/storage/metrics-storage';
-import { saveUserMetricsBatch, getUserMetricsByDateRange } from '../../server/storage/user-metrics-storage';
-import { fetchLatestReport, fetchUsersLatestReport, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
+import { getUserDayMetricsByDateRange, saveUserDayMetricsBatch } from '../../server/storage/user-day-metrics-storage';
+import { fetchLatestReport, fetchRawUserDayRecords, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
 import { transformReportToMetrics } from '../../server/services/report-transformer';
 import { isMockMode } from '../../server/services/github-copilot-usage-api-mock';
 import { aggregateTeamMetrics } from '../../server/services/user-metrics-aggregator';
@@ -49,15 +48,13 @@ function isStorageModeEnabled(): boolean {
 }
 
 /**
- * Fetch metrics using the new download-based API.
- * For team scopes, fetches per-user data and aggregates it for team members only.
+ * Fetch metrics using the new download-based API
  */
 async function fetchFromNewApi(
   options: Options,
   headers: Headers
 ): Promise<MetricsDataResult> {
   const identifier = options.githubOrg || options.githubEnt || '';
-  const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
 
   const request: MetricsReportRequest = {
     scope: options.scope!,
@@ -65,21 +62,7 @@ async function fetchFromNewApi(
     teamSlug: options.githubTeam
   };
 
-  let report;
-  if (isTeamScope && options.githubTeam) {
-    // Fetch team members first; only fetch user report if the team has members.
-    // This avoids an expensive download when the team is empty or doesn't exist.
-    const teamMembers = await fetchAllTeamMembers(options, headers);
-    if (teamMembers.length === 0) {
-      return { metrics: [], reportData: [] };
-    }
-    const userRecords = await fetchUsersLatestReport(request, headers);
-    const teamLogins = new Set(teamMembers.map(m => m.login));
-    report = aggregateTeamMetrics(userRecords, teamLogins);
-  } else {
-    report = await fetchLatestReport(request, headers);
-  }
-
+  const report = await fetchLatestReport(request, headers);
   let metrics = transformReportToMetrics(report);
   let reportData = report.day_totals;
 
@@ -128,10 +111,13 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
       const metrics = await getLegacyMetricsData(event);
       return { metrics, reportData: [] };
     }
-    // Default: exercise full new-API mock pipeline (including team aggregation)
+    // Default: exercise full new-API mock pipeline
     logger.info('Using mocked data mode (new API format via HTTP download)');
-    const result = await fetchFromNewApi(options, new Headers());
-    return { metrics: result.metrics, reportData: result.reportData };
+    const identifier = options.githubOrg || options.githubEnt || 'mock-org';
+    const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
+    const report = await fetchLatestReport({ scope, identifier }, new Headers());
+    const metrics = transformReportToMetrics(report);
+    return { metrics, reportData: report.day_totals };
   }
 
   const identifier = options.githubOrg || options.githubEnt || '';
@@ -149,7 +135,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
       if (isTeamScope && options.githubTeam) {
         // Team path:
         //   1. Resolve team members server-side (always — ensures current membership)
-        //   2. Read per-user records from user_metrics DB
+        //   2. Read per-day per-user records from user_day_metrics DB
         //   3. Aggregate in-memory for the team
         //   4. Fall back to live API only when DB has no data yet
         const teamMembers = await fetchAllTeamMembers(options, event.context.headers);
@@ -158,32 +144,32 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
         }
         const teamLogins = new Set(teamMembers.map(m => m.login));
 
-        const request: MetricsReportRequest = { scope: options.scope!, identifier, teamSlug: options.githubTeam };
+        const request: MetricsReportRequest = { scope: options.scope!, identifier };
 
-        const userRecords = await getUserMetricsByDateRange(options.scope!, identifier, startDate, endDate);
-        if (userRecords.length > 0) {
-          logger.info(`Aggregating team metrics from ${userRecords.length} per-user DB records`);
-          const report = aggregateTeamMetrics(userRecords, teamLogins);
+        const userDayRecords = await getUserDayMetricsByDateRange(options.scope!, identifier, startDate, endDate);
+        if (userDayRecords.length > 0) {
+          logger.info(`Aggregating team metrics from ${userDayRecords.length} per-day user DB records`);
+          const report = aggregateTeamMetrics(userDayRecords, teamLogins);
           return buildFilteredResult(report, options);
         }
 
-        // No per-user data in DB — fetch from API, persist all user records, then aggregate
+        // No per-day data in DB — fetch from API, persist all user records, then aggregate
         const authHeader = event.context.headers.get('Authorization');
         if (!authHeader) {
           throw createError({ statusCode: 401, statusMessage: 'No data in DB and no token to sync from API' });
         }
-        logger.info('No per-user data in DB, fetching from API...');
-        const liveUserRecords = await fetchUsersLatestReport(request, event.context.headers);
+        logger.info('No per-day user data in DB, fetching from API...');
+        const liveUserDayRecords = await fetchRawUserDayRecords(request, event.context.headers);
         try {
-          await saveUserMetricsBatch(options.scope!, identifier, liveUserRecords);
+          await saveUserDayMetricsBatch(options.scope!, identifier, liveUserDayRecords);
         } catch (err) {
-          logger.error('Failed to store per-user records:', err);
+          logger.error('Failed to store per-day user records:', err);
         }
-        const report = aggregateTeamMetrics(liveUserRecords, teamLogins);
+        const report = aggregateTeamMetrics(liveUserDayRecords, teamLogins);
         return buildFilteredResult(report, options);
 
       } else {
-        // Org/Enterprise path: serve pre-aggregated metrics from DB (fast path)
+        // Org/Enterprise path: serve pre-aggregated metrics from DB
         const storedMetrics = await getMetricsByDateRange({
           scope: options.scope!,
           scopeIdentifier: identifier,
@@ -199,7 +185,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
           return { metrics: filteredMetrics, reportData };
         }
 
-        // DB empty — sync on miss: fetch org aggregate + per-user records, store, return
+        // DB empty — sync on miss: fetch org aggregate + per-day user records, store, return
         logger.info('No data in DB, syncing from API...');
         const authHeader = event.context.headers.get('Authorization');
         if (!authHeader) {
@@ -244,8 +230,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 }
 
 /**
- * Build a MetricsDataResult from an OrgReport, applying date-range filtering and
- * holiday exclusion from the options.
+ * Build a MetricsDataResult from an OrgReport, applying date-range filtering
+ * and holiday exclusion from the options.
  */
 function buildFilteredResult(report: OrgReport, options: Options): MetricsDataResult {
   let metrics = transformReportToMetrics(report);
@@ -268,12 +254,11 @@ function buildFilteredResult(report: OrgReport, options: Options): MetricsDataRe
 
 /**
  * Fetch org/enterprise metrics from API and store to DB (sync-on-miss).
- * Also saves per-user records to user_metrics so team queries can be served
- * from DB on subsequent requests.
+ * Also saves per-day per-user records to user_day_metrics so team queries
+ * can be served from DB on subsequent requests.
  *
- * NOTE: This function is only called from the non-team (organization / enterprise)
- * path in getMetricsDataV2. Team-scope queries are fully handled inline in
- * getMetricsDataV2 so that member resolution always precedes data retrieval.
+ * NOTE: Only called for org/enterprise scopes. Team scopes are handled inline
+ * in getMetricsDataV2 (member resolution always precedes data retrieval).
  */
 async function fetchAndStore(
   options: Options,
@@ -281,29 +266,26 @@ async function fetchAndStore(
 ): Promise<MetricsDataResult> {
   const logger = console;
   const identifier = options.githubOrg || options.githubEnt || '';
+  const teamSlug = '';
 
-  const request: MetricsReportRequest = {
-    scope: options.scope!,
-    identifier,
-  };
+  const request: MetricsReportRequest = { scope: options.scope!, identifier };
 
   // Fetch org/enterprise aggregate
   const report = await fetchLatestReport(request, headers);
 
-  // Also save per-user records so team queries can use DB history
+  // Also save per-day user records so team queries can use DB history
   try {
-    const userRecords = await fetchUsersLatestReport(request, headers);
-    await saveUserMetricsBatch(options.scope!, identifier, userRecords);
-    logger.info(`Stored ${userRecords.length} per-user records for ${identifier}`);
+    const userDayRecords = await fetchRawUserDayRecords(request, headers);
+    await saveUserDayMetricsBatch(options.scope!, identifier, userDayRecords);
+    logger.info(`Stored ${userDayRecords.length} per-day user records for ${identifier}`);
   } catch (err) {
-    logger.error('Failed to store per-user records (non-fatal):', err);
+    logger.error('Failed to store per-day user records (non-fatal):', err);
   }
 
   let metrics = transformReportToMetrics(report);
   let reportData = report.day_totals;
 
-  // Store each day's aggregate to DB (no team slug — org/enterprise scope only)
-  const teamSlug = '';
+  // Store each day's aggregate to DB
   for (let i = 0; i < report.day_totals.length; i++) {
     const dayData = report.day_totals[i];
     try {

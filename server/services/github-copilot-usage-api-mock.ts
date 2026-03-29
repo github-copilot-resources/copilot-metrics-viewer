@@ -45,10 +45,10 @@ export function mockRequestDownloadLinks(
 }
 
 /**
- * Mock implementation of requestUsersDownloadLinks.
- * Returns download URLs pointing to local static JSON files for per-user data.
+ * Mock implementation of requestUserDownloadLinks.
+ * Returns download URLs pointing to local static JSON files for per-user metrics.
  */
-export function mockRequestUsersDownloadLinks(
+export function mockRequestUserDownloadLinks(
   request: MetricsReportRequest,
   reportType: '1-day' | '28-day',
   day?: string
@@ -66,7 +66,7 @@ export function mockRequestUsersDownloadLinks(
   return {
     download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-users-28-day-report.json`],
     report_start_day: '2026-02-04',
-    report_end_day: '2026-02-20',
+    report_end_day: '2026-03-03',
   };
 }
 

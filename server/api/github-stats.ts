@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
   } catch (error) {
     const logger = console;
     logger.error('Error in github-stats endpoint:', error);
-    return new Response('Error fetching metrics data: ' + (error instanceof Error ? error.message : String(error)), { status: 500 });
+    throw createError({ statusCode: 500, statusMessage: 'Error fetching metrics data: ' + (error instanceof Error ? error.message : String(error)) });
   }
 });
 

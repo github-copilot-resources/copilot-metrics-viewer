@@ -284,11 +284,11 @@ or navigate using UI:
 2. Provide a home page URL: your company URL or just `http://localhost`.
 3. Add a callback URL for `http://localhost:3000/auth/github`. (We'll add the real redirect URL after the application is deployed.)
 4. Uncheck the "Webhook -> Active" checkbox.
-5. Set the scopes:
+5. Set the permissions:
    - Select **Organization permissions**.
-   - Under **GitHub Copilot Business**, select **Access: Read-only**.
-   - Under **Copilot Metrics**, select **Access: Read-only**. _(Required for v3.0+ — the new Copilot Usage Metrics API)_
    - Under **Members**, select **Access: Read-only**.
+   - Under **Copilot Metrics**, select **Access: Read-only**.
+   - Under **Copilot Seat Management**, select **Access: Read-only**.
 6. Click on 'Create GitHub App' and, in the following page, click on 'Generate a new client secret'.
 7. Note the `Client ID` and `Client Secret` (copy it to a secure location). This is required for the application to authenticate with GitHub.
 8. Install the app in the organization:

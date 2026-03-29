@@ -19,8 +19,11 @@ import type {
   ReportIdeTotals,
   ReportFeatureTotals,
   ReportLanguageFeatureTotals,
-  ReportLanguageModelTotals,
   ReportModelFeatureTotals,
+  UserIdeTotals,
+  UserFeatureTotals,
+  UserLanguageFeatureTotals,
+  UserModelFeatureTotals,
 } from './github-copilot-usage-api';
 
 /**
@@ -88,11 +91,11 @@ function aggregateDayRecords(day: string, records: UserDayRecord[]): ReportDayTo
     loc_suggested_to_delete_sum: sum(records, r => r.loc_suggested_to_delete_sum),
     loc_added_sum: sum(records, r => r.loc_added_sum),
     loc_deleted_sum: sum(records, r => r.loc_deleted_sum),
-    totals_by_ide: mergeIdeTotals(records.flatMap(r => r.totals_by_ide)),
-    totals_by_feature: mergeFeatureTotals(records.flatMap(r => r.totals_by_feature)),
-    totals_by_language_feature: mergeLanguageFeatureTotals(records.flatMap(r => r.totals_by_language_feature)),
-    totals_by_language_model: mergeLanguageModelTotals(records.flatMap(r => r.totals_by_language_model)),
-    totals_by_model_feature: mergeModelFeatureTotals(records.flatMap(r => r.totals_by_model_feature)),
+    totals_by_ide: mergeIdeTotals(records.flatMap(r => r.totals_by_ide ?? [])),
+    totals_by_feature: mergeFeatureTotals(records.flatMap(r => r.totals_by_feature ?? [])),
+    totals_by_language_feature: mergeLanguageFeatureTotals(records.flatMap(r => r.totals_by_language_feature ?? [])),
+    totals_by_language_model: [],
+    totals_by_model_feature: mergeModelFeatureTotals(records.flatMap(r => r.totals_by_model_feature ?? [])),
   };
 }
 
@@ -102,7 +105,7 @@ function sum<T>(items: T[], fn: (item: T) => number): number {
   return items.reduce((acc, item) => acc + (fn(item) || 0), 0);
 }
 
-function mergeIdeTotals(items: ReportIdeTotals[]): ReportIdeTotals[] {
+function mergeIdeTotals(items: UserIdeTotals[]): ReportIdeTotals[] {
   const byIde = new Map<string, ReportIdeTotals>();
   for (const item of items) {
     const existing = byIde.get(item.ide);
@@ -121,7 +124,7 @@ function mergeIdeTotals(items: ReportIdeTotals[]): ReportIdeTotals[] {
   return Array.from(byIde.values());
 }
 
-function mergeFeatureTotals(items: ReportFeatureTotals[]): ReportFeatureTotals[] {
+function mergeFeatureTotals(items: UserFeatureTotals[]): ReportFeatureTotals[] {
   const byFeature = new Map<string, ReportFeatureTotals>();
   for (const item of items) {
     const existing = byFeature.get(item.feature);
@@ -140,7 +143,7 @@ function mergeFeatureTotals(items: ReportFeatureTotals[]): ReportFeatureTotals[]
   return Array.from(byFeature.values());
 }
 
-function mergeLanguageFeatureTotals(items: ReportLanguageFeatureTotals[]): ReportLanguageFeatureTotals[] {
+function mergeLanguageFeatureTotals(items: UserLanguageFeatureTotals[]): ReportLanguageFeatureTotals[] {
   const byKey = new Map<string, ReportLanguageFeatureTotals>();
   for (const item of items) {
     const key = `${item.language}::${item.feature}`;
@@ -159,26 +162,7 @@ function mergeLanguageFeatureTotals(items: ReportLanguageFeatureTotals[]): Repor
   return Array.from(byKey.values());
 }
 
-function mergeLanguageModelTotals(items: ReportLanguageModelTotals[]): ReportLanguageModelTotals[] {
-  const byKey = new Map<string, ReportLanguageModelTotals>();
-  for (const item of items) {
-    const key = `${item.language}::${item.model}`;
-    const existing = byKey.get(key);
-    if (!existing) {
-      byKey.set(key, { ...item });
-    } else {
-      existing.code_generation_activity_count += item.code_generation_activity_count;
-      existing.code_acceptance_activity_count += item.code_acceptance_activity_count;
-      existing.loc_suggested_to_add_sum += item.loc_suggested_to_add_sum;
-      existing.loc_suggested_to_delete_sum += item.loc_suggested_to_delete_sum;
-      existing.loc_added_sum += item.loc_added_sum;
-      existing.loc_deleted_sum += item.loc_deleted_sum;
-    }
-  }
-  return Array.from(byKey.values());
-}
-
-function mergeModelFeatureTotals(items: ReportModelFeatureTotals[]): ReportModelFeatureTotals[] {
+function mergeModelFeatureTotals(items: UserModelFeatureTotals[]): ReportModelFeatureTotals[] {
   const byKey = new Map<string, ReportModelFeatureTotals>();
   for (const item of items) {
     const key = `${item.model}::${item.feature}`;

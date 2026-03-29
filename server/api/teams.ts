@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
         const statusCode = (error && typeof error === 'object' && 'statusCode' in error)
             ? (error as { statusCode: number }).statusCode
             : 500
-        return new Response('Error fetching teams data: ' + errorMessage, { status: statusCode })
+        throw createError({ statusCode, statusMessage: 'Error fetching teams data: ' + errorMessage })
     }
 })
 
@@ -66,7 +66,7 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
         return teams
     }
 
-    if (!event.context.headers.has('Authorization')) {
+    if (!event.context.headers?.has('Authorization')) {
         logger.error('No Authentication provided')
         throw new TeamsError('No Authentication provided', 401)
     }

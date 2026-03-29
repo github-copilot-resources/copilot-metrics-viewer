@@ -1,98 +1,201 @@
 /**
- * Per-user metrics storage backed by PostgreSQL.
- *
- * Each row represents one GitHub user's Copilot activity for a single day.
- * Records are written at the org/enterprise scope level (never team-scoped),
- * so a single daily sync accumulates data for all users across all teams.
- * This enables time-series team queries far beyond the API's 28-day window.
+ * User Metrics storage implementation backed by PostgreSQL.
+ * Stores per-user Copilot usage metrics aggregated over date ranges.
  */
 
-import type { UserDayRecord } from '../services/github-copilot-usage-api';
+import type { UserTotals } from '../services/github-copilot-usage-api';
 import { getPool } from './db';
 
 /**
- * Normalize a scope to its base type (strip 'team-' prefix).
- * User metrics are always stored at the org/enterprise level.
+ * Aggregated user-metrics statistics for one stored 28-day snapshot.
  */
-function baseScope(scope: string): string {
-  if (scope === 'team-organization') return 'organization';
-  if (scope === 'team-enterprise') return 'enterprise';
-  return scope;
+export interface UserMetricsHistoryEntry {
+  report_start_day: string;
+  report_end_day: string;
+  total_users: number;
+  active_users: number;
+  total_premium_requests: number;
+  avg_acceptance_rate: number;
 }
 
-/** Number of columns in a single user_metrics INSERT row. */
-const USER_METRICS_COLUMNS = 6;
-
 /**
- * Save a batch of per-user daily records.
- * Upsert — safe to call multiple times for the same (user, day).
- * Uses a single multi-row INSERT for efficiency.
+ * Save user metrics data to storage (upsert).
+ * Each record covers a report period identified by report_start_day + report_end_day.
  */
-export async function saveUserMetricsBatch(
+export async function saveUserMetrics(
   scope: string,
-  identifier: string,
-  records: UserDayRecord[]
+  scopeIdentifier: string,
+  reportStartDay: string,
+  reportEndDay: string,
+  userTotals: UserTotals[]
 ): Promise<void> {
-  if (records.length === 0) return;
   const pool = getPool();
-  const normalizedScope = baseScope(scope);
-
-  // Build a single multi-row INSERT: ($1,$2,$3,$4,$5,$6), ($7,$8,$9,$10,$11,$12), ...
-  const values: unknown[] = [];
-  const placeholders: string[] = [];
-  records.forEach((record, i) => {
-    const base = i * USER_METRICS_COLUMNS;
-    placeholders.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6})`);
-    values.push(normalizedScope, identifier, record.user_login, record.user_id ?? null, record.day, JSON.stringify(record));
-  });
-
   await pool.query(
-    `INSERT INTO user_metrics (scope, identifier, user_login, user_id, metrics_date, data)
-     VALUES ${placeholders.join(',')}
-     ON CONFLICT (scope, identifier, user_login, metrics_date)
-     DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-    values
+    `INSERT INTO user_metrics (scope, identifier, report_start_day, report_end_day, user_totals)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (scope, identifier, report_start_day, report_end_day)
+     DO UPDATE SET user_totals = $5, updated_at = NOW()`,
+    [scope, scopeIdentifier, reportStartDay, reportEndDay, JSON.stringify(userTotals)]
   );
 }
 
 /**
- * Retrieve all per-user records for a scope/identifier within a date range.
- * Ordered by user_login then date to simplify downstream aggregation.
+ * Get user metrics for a specific report period.
  */
-export async function getUserMetricsByDateRange(
+export async function getUserMetrics(
   scope: string,
-  identifier: string,
-  startDate: string,
-  endDate: string
-): Promise<UserDayRecord[]> {
+  scopeIdentifier: string,
+  reportStartDay: string,
+  reportEndDay: string
+): Promise<UserTotals[] | null> {
   const pool = getPool();
-  const normalizedScope = baseScope(scope);
   const { rows } = await pool.query(
-    `SELECT data FROM user_metrics
+    `SELECT user_totals FROM user_metrics
      WHERE scope = $1 AND identifier = $2
-       AND metrics_date BETWEEN $3 AND $4
-     ORDER BY user_login ASC, metrics_date ASC`,
-    [normalizedScope, identifier, startDate, endDate]
+       AND report_start_day = $3 AND report_end_day = $4`,
+    [scope, scopeIdentifier, reportStartDay, reportEndDay]
   );
-  return rows.map(r => r.data);
+  return rows.length > 0 ? rows[0].user_totals : null;
 }
 
 /**
- * Check whether any per-user records have been stored for a given date.
- * Used to avoid duplicate downloads during bulk sync.
+ * Get the latest user metrics (most recent report_end_day).
  */
-export async function hasUserMetricsForDate(
+export async function getLatestUserMetrics(
   scope: string,
-  identifier: string,
-  date: string
+  scopeIdentifier: string
+): Promise<{ reportStartDay: string; reportEndDay: string; userTotals: UserTotals[] } | null> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT report_start_day, report_end_day, user_totals
+     FROM user_metrics
+     WHERE scope = $1 AND identifier = $2
+     ORDER BY report_end_day DESC LIMIT 1`,
+    [scope, scopeIdentifier]
+  );
+  if (rows.length === 0) return null;
+  return {
+    reportStartDay: rows[0].report_start_day,
+    reportEndDay: rows[0].report_end_day,
+    userTotals: rows[0].user_totals
+  };
+}
+
+/**
+ * Check if user metrics exist for a specific report period.
+ */
+export async function hasUserMetrics(
+  scope: string,
+  scopeIdentifier: string,
+  reportStartDay: string,
+  reportEndDay: string
 ): Promise<boolean> {
   const pool = getPool();
-  const normalizedScope = baseScope(scope);
   const { rows } = await pool.query(
     `SELECT 1 FROM user_metrics
-     WHERE scope = $1 AND identifier = $2 AND metrics_date = $3
+     WHERE scope = $1 AND identifier = $2
+       AND report_start_day = $3 AND report_end_day = $4
      LIMIT 1`,
-    [normalizedScope, identifier, date]
+    [scope, scopeIdentifier, reportStartDay, reportEndDay]
   );
   return rows.length > 0;
+}
+
+/**
+ * Compute acceptance rate as a percentage (0–100), rounded to one decimal place.
+ */
+function calcAcceptanceRate(generated: number, accepted: number): number {
+  return generated > 0 ? parseFloat(((accepted / generated) * 100).toFixed(1)) : 0;
+}
+
+/**
+ * One data point in a single user's time series.
+ */
+export interface UserTimeSeriesEntry {
+  report_end_day: string;
+  total_active_days: number;
+  user_initiated_interaction_count: number;
+  code_generation_activity_count: number;
+  code_acceptance_activity_count: number;
+  loc_added_sum: number;
+  premium_requests_total: number;
+  acceptance_rate: number;
+}
+
+/**
+ * Return the per-snapshot stats for a single user, ordered by report_end_day ascending.
+ * Each stored 28-day snapshot contains a full user_totals array; this function
+ * extracts the named user from every snapshot where they appear.
+ */
+export async function getUserTimeSeries(
+  scope: string,
+  scopeIdentifier: string,
+  login: string
+): Promise<UserTimeSeriesEntry[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT report_end_day, user_totals
+     FROM user_metrics
+     WHERE scope = $1 AND identifier = $2
+     ORDER BY report_end_day ASC`,
+    [scope, scopeIdentifier]
+  );
+
+  const series: UserTimeSeriesEntry[] = [];
+
+  for (const row of rows) {
+    const totals: UserTotals[] = row.user_totals;
+    const user = totals.find(u => u.login === login);
+    if (!user) continue; // user not present in this snapshot — skip
+
+    const gen = user.code_generation_activity_count;
+    const acc = user.code_acceptance_activity_count;
+
+    series.push({
+      report_end_day:   new Date(row.report_end_day).toISOString().slice(0, 10),
+      total_active_days: user.total_active_days,
+      user_initiated_interaction_count: user.user_initiated_interaction_count,
+      code_generation_activity_count:   gen,
+      code_acceptance_activity_count:   acc,
+      loc_added_sum:          user.loc_added_sum,
+      premium_requests_total: user.premium_requests_total ?? 0,
+      acceptance_rate: calcAcceptanceRate(gen, acc),
+    });
+  }
+
+  return series;
+}
+
+/**
+ * Return aggregated user-metrics statistics for every stored snapshot,
+ * ordered by report_end_day ascending.
+ * Stats (totals, acceptance rate) are computed in TypeScript for compatibility.
+ */
+export async function getUserMetricsHistory(
+  scope: string,
+  scopeIdentifier: string
+): Promise<UserMetricsHistoryEntry[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT report_start_day, report_end_day, user_totals
+     FROM user_metrics
+     WHERE scope = $1 AND identifier = $2
+     ORDER BY report_end_day ASC`,
+    [scope, scopeIdentifier]
+  );
+
+  return rows.map(row => {
+    const totals: UserTotals[] = row.user_totals;
+    const total_gen = totals.reduce((s, u) => s + u.code_generation_activity_count, 0);
+    const total_acc = totals.reduce((s, u) => s + u.code_acceptance_activity_count, 0);
+
+    return {
+      report_start_day: new Date(row.report_start_day).toISOString().slice(0, 10),
+      report_end_day:   new Date(row.report_end_day).toISOString().slice(0, 10),
+      total_users:      totals.length,
+      active_users:     totals.filter(u => u.total_active_days >= 7).length,
+      total_premium_requests: totals.reduce((s, u) => s + (u.premium_requests_total ?? 0), 0),
+      avg_acceptance_rate: calcAcceptanceRate(total_gen, total_acc),
+    };
+  });
 }
