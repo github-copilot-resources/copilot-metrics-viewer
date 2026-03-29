@@ -168,7 +168,7 @@ jobs:
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --environment cmv-preview-${{ env.DEPLOY_ID }} \
             --image ghcr.io/${{ github.repository }}-preview:preview-${{ env.DEPLOY_ID }} \
-            --ingress external --target-port 80 \
+            --ingress external --target-port 3000 \
             --min-replicas 1 --max-replicas 1 \
             --env-vars \
               NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
