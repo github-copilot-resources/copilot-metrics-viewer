@@ -86,7 +86,7 @@
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
-      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis')" v-model="tab">
+      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics')" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :date-range-description="dateRangeDescription" />
@@ -103,14 +103,30 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <AgentActivityViewer v-if="item === 'agent activity'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
-            <SeatsAnalysisViewer v-if="item === 'seat analysis'" :seats="seats" />
+            <SeatsAnalysisViewer
+              v-if="item === 'seat analysis'"
+              :seats="seats"
+              :total-seats-count="seatsTotalCount"
+              :current-page="seatsCurrentPage"
+              :total-pages="seatsTotalPages"
+              :per-page="seatsPerPage"
+              :seats-history="seatsHistory"
+              @page-change="handleSeatsPageChange"
+            />
+            <UserMetricsViewer
+              v-if="item === 'user metrics'"
+              :user-metrics="userMetrics"
+              :date-range-description="dateRangeDescription"
+              :user-metrics-history="userMetricsHistory"
+              :query-params="seatsQueryParams"
+            />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
         <v-alert
-          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis') || (seatsReady && seats.length == 0 && tab === 'seat analysis')"
+          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
           density="compact" text="No data available to display" title="No data" type="warning" />
       </v-window>
 
@@ -123,7 +139,10 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
-import type { ReportDayTotals } from "../../server/services/github-copilot-usage-api";
+import type { SeatsApiResponse } from '../server/api/seats';
+import type { ReportDayTotals, UserTotals } from "../../server/services/github-copilot-usage-api";
+import type { SeatHistoryEntry } from "../../server/storage/seats-storage";
+import type { UserMetricsHistoryEntry } from "../../server/storage/user-metrics-storage";
 import type { H3Error } from 'h3'
 
 //Components
@@ -137,6 +156,7 @@ import AgentModeViewer from './AgentModeViewer.vue'
 import AgentActivityViewer from './AgentActivityViewer.vue'
 import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
+import UserMetricsViewer from './UserMetricsViewer.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 
@@ -152,7 +172,8 @@ export default defineNuxtComponent({
     AgentModeViewer,
     AgentActivityViewer,
     PullRequestViewer,
-    DateRangeSelector
+    DateRangeSelector,
+    UserMetricsViewer
   },
   methods: {
     logout() {
@@ -255,12 +276,45 @@ export default defineNuxtComponent({
             break;
         }
       }
+    },
+    /** Handle page navigation from SeatsAnalysisViewer paginator */
+    async handleSeatsPageChange(page: number) {
+      const { data: seatsData, error: seatsError, execute } = this.seatsFetch;
+      // Update setup ref so the reactive query re-evaluates with the new page
+      (this as any).seatsCurrentPage = page;
+      await execute();
+      if (!seatsError.value) {
+        const resp = seatsData.value as SeatsApiResponse | null;
+        if (resp) {
+          this.seats            = resp.seats        || [];
+          this.seatsTotalCount  = resp.total_seats  || 0;
+          this.seatsCurrentPage = resp.page         || page;
+          this.seatsTotalPages  = resp.total_pages  || 1;
+        }
+      }
+    },
+    /** Fetch seats and user-metrics history (DB / historical mode) */
+    async fetchHistory() {
+      const options = Options.fromRoute(this.route);
+      const params  = options.toParams();
+      const qs      = new URLSearchParams(params).toString();
+
+      try {
+        const [seatsH, userH] = await Promise.all([
+          $fetch<SeatHistoryEntry[]>(`/api/seats-history${qs ? '?' + qs : ''}`).catch(() => []),
+          $fetch<UserMetricsHistoryEntry[]>(`/api/user-metrics-history${qs ? '?' + qs : ''}`).catch(() => []),
+        ]);
+        this.seatsHistory        = seatsH;
+        this.userMetricsHistory  = userH;
+      } catch {
+        // history is non-critical — swallow errors
+      }
     }
   },
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'user metrics', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
@@ -270,6 +324,14 @@ export default defineNuxtComponent({
       reportData: [] as ReportDayTotals[],
       seatsReady: false,
       seats: [] as Seat[],
+      seatsTotalCount:  0,
+      seatsCurrentPage: 1,
+      seatsTotalPages:  1,
+      seatsPerPage:     300,
+      seatsHistory:     [] as SeatHistoryEntry[],
+      userMetricsReady: false,
+      userMetrics: [] as UserTotals[],
+      userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
       showMigrationBanner: true,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
@@ -295,6 +357,7 @@ export default defineNuxtComponent({
       await this.fetchMetrics();
 
       const { data: seatsData, error: seatsError, execute: executeSeats } = this.seatsFetch;
+      const { data: userMetricsData, error: userMetricsError, execute: executeUserMetrics } = this.userMetricsFetch;
 
       if (!this.signInRequired) {
         await executeSeats();
@@ -302,8 +365,30 @@ export default defineNuxtComponent({
         if (seatsError.value) {
           this.processError(seatsError.value as H3Error);
         } else {
-          this.seats = (seatsData.value as Seat[]) || [];
+          const resp = seatsData.value as SeatsApiResponse | null;
+          if (resp) {
+            this.seats          = resp.seats          || [];
+            this.seatsTotalCount = resp.total_seats   || 0;
+            this.seatsCurrentPage = resp.page         || 1;
+            this.seatsTotalPages  = resp.total_pages  || 1;
+          }
           this.seatsReady = true;
+        }
+
+        await executeUserMetrics();
+
+        if (userMetricsError.value) {
+          // User metrics errors are non-fatal — log but don't block the UI
+          console.warn('User metrics fetch failed:', userMetricsError.value);
+        } else {
+          this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
+          this.userMetricsReady = true;
+        }
+
+        // Fetch history data if historical mode is enabled
+        const config = useRuntimeConfig();
+        if (config.public.enableHistoricalMode) {
+          await this.fetchHistory();
         }
       }
 
@@ -322,6 +407,7 @@ export default defineNuxtComponent({
     const dateRange = ref({ since: undefined as string | undefined, until: undefined as string | undefined });
     const isLoading = ref(false);
     const route = ref(useRoute());
+    const seatsCurrentPage = ref(1);
 
     const signInRequired = computed(() => {
       return config.public.usingGithubAuth && !loggedIn.value;
@@ -330,6 +416,24 @@ export default defineNuxtComponent({
     const seatsFetch = useFetch('/api/seats', {
       server: true,
       immediate: !signInRequired.value,
+      query: computed(() => {
+        const options = Options.fromRoute(route.value);
+        return { ...options.toParams(), page: String(seatsCurrentPage.value), per_page: '300' };
+      })
+    });
+
+    /** Scope + org/ent params forwarded to history endpoints and user-trend API */
+    const seatsQueryParams = computed(() => {
+      const options = Options.fromRoute(route.value);
+      const p = options.toParams();
+      // Only forward identity params, not pagination
+      const { since: _s, until: _u, ...rest } = p;
+      return rest;
+    });
+
+    const userMetricsFetch = useFetch('/api/user-metrics', {
+      server: true,
+      immediate: false,
       query: computed(() => {
         const options = Options.fromRoute(route.value);
         return options.toParams();
@@ -344,9 +448,12 @@ export default defineNuxtComponent({
       signInRequired,
       user,
       seatsFetch,
+      userMetricsFetch,
       dateRange,
       isLoading,
       route,
+      seatsCurrentPage,
+      seatsQueryParams,
     };
   },
 })

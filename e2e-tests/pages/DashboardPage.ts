@@ -5,6 +5,7 @@ import { SeatAnalysisTab } from "./SeatAnalysisTab";
 import { ApiResponseTab } from "./ApiResponseTab";
 import { CopilotChatTab } from "./CopilotChatTab";
 import { GitHubTab } from "./GitHubTab";
+import { UserMetricsTab } from "./UserMetricsTab";
 
 export class DashboardPage {
     readonly page: Page;
@@ -28,6 +29,7 @@ export class DashboardPage {
     readonly apiResponseTabLink: Locator;
     readonly copilotChatTabLink: Locator;
     readonly githubTabLink: Locator;
+    readonly userMetricsTabLink: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -61,6 +63,7 @@ export class DashboardPage {
         this.apiResponseTabLink = page.getByRole("tab", { name: "api response" });
         this.copilotChatTabLink = page.getByRole("tab", { name: "copilot chat" });
         this.githubTabLink = page.getByRole("tab", { name: "github.com" });
+        this.userMetricsTabLink = page.getByRole("tab", { name: "user metrics" });
 
         this.teamTabLink = page.getByRole("tab", { name: "team" });
         this.teamsTabLink = page.getByRole("tab", { name: "teams" });
@@ -152,6 +155,13 @@ export class DashboardPage {
         await tab.statisticsTitle.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
         // Wait for at least one card with non-zero content or "All Models"
         await this.page.locator('.v-card-title').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        return tab;
+    }
+
+    async gotoUserMetricsTab() {
+        await this.userMetricsTabLink.click();
+        const tab = new UserMetricsTab(this.page);
+        await tab.totalUsersLabel.waitFor({ state: 'visible', timeout: 15000 });
         return tab;
     }
 

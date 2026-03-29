@@ -60,9 +60,9 @@ export default defineEventHandler(async (event) => {
   } catch (error: unknown) {
     logger.error('Error getting sync status:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return new Response(
-      JSON.stringify({ error: 'Failed to get sync status', message: errorMessage }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    throw createError({
+      statusCode: 500,
+      statusMessage: JSON.stringify({ error: 'Failed to get sync status', message: errorMessage })
+    });
   }
 });

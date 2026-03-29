@@ -1,0 +1,93 @@
+{
+  "report_day": "2026-03-03",
+  "organization_id": "100000001",
+  "enterprise_id": "200001",
+  "created_at": "2026-03-04T00:00:00Z",
+  "user_totals": [
+    {
+      "login": "octocat",
+      "user_id": 1,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 18,
+      "code_generation_activity_count": 55,
+      "code_acceptance_activity_count": 38,
+      "loc_suggested_to_add_sum": 220,
+      "loc_suggested_to_delete_sum": 5,
+      "loc_added_sum": 145,
+      "loc_deleted_sum": 4,
+      "premium_requests_total": 3,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 18,
+          "code_generation_activity_count": 55,
+          "code_acceptance_activity_count": 38,
+          "loc_suggested_to_add_sum": 220,
+          "loc_suggested_to_delete_sum": 5,
+          "loc_added_sum": 145,
+          "loc_deleted_sum": 4
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 40,
+          "code_acceptance_activity_count": 28,
+          "loc_suggested_to_add_sum": 160,
+          "loc_suggested_to_delete_sum": 4,
+          "loc_added_sum": 105,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 18,
+          "code_generation_activity_count": 15,
+          "code_acceptance_activity_count": 10,
+          "loc_suggested_to_add_sum": 60,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 40,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_language_feature": [
+        {
+          "language": "typescript",
+          "feature": "code_completion",
+          "code_generation_activity_count": 25,
+          "code_acceptance_activity_count": 18,
+          "loc_suggested_to_add_sum": 100,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 65,
+          "loc_deleted_sum": 2
+        }
+      ],
+      "totals_by_model_feature": [
+        {
+          "model": "auto",
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 40,
+          "code_acceptance_activity_count": 28,
+          "loc_suggested_to_add_sum": 160,
+          "loc_suggested_to_delete_sum": 4,
+          "loc_added_sum": 105,
+          "loc_deleted_sum": 3,
+          "premium_requests_total": 0
+        },
+        {
+          "model": "claude-4.5-sonnet",
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 18,
+          "code_generation_activity_count": 15,
+          "code_acceptance_activity_count": 10,
+          "loc_suggested_to_add_sum": 60,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 40,
+          "loc_deleted_sum": 1,
+          "premium_requests_total": 3
+        }
+      ]
+    }
+  ]
+}

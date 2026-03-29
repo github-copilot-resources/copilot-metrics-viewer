@@ -64,6 +64,14 @@ const tag = { tag: ['@ent', '@org', '@team'] };
             await seatAnalysis.expectTotalAssignedReturned();
         });
 
+        test('user metrics visible', tag, async () => {
+            const userMetrics = await dashboard.gotoUserMetricsTab();
+
+            await userMetrics.expectTotalUsersVisible();
+            await userMetrics.expectTotalUsersReturned();
+            await userMetrics.expectPremiumRequestsVisible();
+        });
+
         test('copilot chat visible', tag, async () => {
           const copilotChat = await dashboard.gotoCopilotChatTab();
         

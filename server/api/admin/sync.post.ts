@@ -3,7 +3,7 @@
  * POST /api/admin/sync
  */
 
-import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk } from '../../services/sync-service';
+import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk, syncUserMetrics } from '../../services/sync-service';
 import { Options } from '@/model/Options';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 
@@ -22,10 +22,10 @@ export default defineEventHandler(async (event) => {
     // Validate scope configuration
     const validation = options.validate();
     if (!validation.isValid) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid options', details: validation.errors }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+      throw createError({
+        statusCode: 400,
+        statusMessage: JSON.stringify({ error: 'Invalid options', details: validation.errors })
+      });
     }
 
     // Get dates to sync
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
     // Prepare headers for GitHub API calls (middleware handles authentication)
     const headers = event.context.headers || new Headers();
     if (!headers.has('Authorization') && !mockEnabled) {
-      return new Response('Authorization header required', { status: 401 });
+      throw createError({ statusCode: 401, statusMessage: 'Authorization header required' });
     }
 
     // Handle different sync actions
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
       case 'sync-date': {
         // Sync single date
         if (!date) {
-          return new Response('date parameter required for sync-date action', { status: 400 });
+          throw createError({ statusCode: 400, statusMessage: 'date parameter required for sync-date action' });
         }
 
         logger.info(`Syncing metrics for ${date}`);
@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
       case 'sync-range': {
         // Sync date range
         if (!options.since || !options.until) {
-          return new Response('since and until parameters required for sync-range action', { status: 400 });
+          throw createError({ statusCode: 400, statusMessage: 'since and until parameters required for sync-range action' });
         }
 
         logger.info(`Syncing metrics from ${options.since} to ${options.until}`);
@@ -92,7 +92,7 @@ export default defineEventHandler(async (event) => {
       case 'sync-gaps': {
         // Sync only missing dates in range
         if (!options.since || !options.until) {
-          return new Response('since and until parameters required for sync-gaps action', { status: 400 });
+          throw createError({ statusCode: 400, statusMessage: 'since and until parameters required for sync-gaps action' });
         }
 
         logger.info(`Syncing gaps from ${options.since} to ${options.until}`);
@@ -133,19 +133,35 @@ export default defineEventHandler(async (event) => {
         };
       }
 
-      default:
-        return new Response(
-          JSON.stringify({ error: `Unknown action: ${action}` }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
+      case 'sync-user-metrics': {
+        // Sync per-user metrics via users-28-day report
+        logger.info(`Running user metrics sync for ${options.scope}:${options.githubOrg || options.githubEnt}`);
+        const userResult = await syncUserMetrics(
+          options.scope!,
+          options.githubOrg || options.githubEnt || 'unknown',
+          headers,
+          options.githubTeam
         );
+
+        return {
+          action: 'sync-user-metrics',
+          ...userResult
+        };
+      }
+
+      default:
+        throw createError({
+          statusCode: 400,
+          statusMessage: JSON.stringify({ error: `Unknown action: ${action}` })
+        });
     }
 
   } catch (error: unknown) {
     logger.error('Error in sync endpoint:', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return new Response(
-      JSON.stringify({ error: 'Sync failed', message: errorMessage }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    throw createError({
+      statusCode: 500,
+      statusMessage: JSON.stringify({ error: 'Sync failed', message: errorMessage })
+    });
   }
 });

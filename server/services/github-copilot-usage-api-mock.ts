@@ -45,6 +45,32 @@ export function mockRequestDownloadLinks(
 }
 
 /**
+ * Mock implementation of requestUserDownloadLinks.
+ * Returns download URLs pointing to local static JSON files for per-user metrics.
+ */
+export function mockRequestUserDownloadLinks(
+  request: MetricsReportRequest,
+  reportType: '1-day' | '28-day',
+  day?: string
+): DownloadLinksResponse {
+  const isOrg = request.scope === 'organization' || request.scope === 'team-organization';
+  const scopePrefix = isOrg ? 'organization' : 'enterprise';
+
+  if (reportType === '1-day') {
+    return {
+      download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-users-1-day-report.json`],
+      report_day: day || new Date().toISOString().split('T')[0],
+    };
+  }
+
+  return {
+    download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-users-28-day-report.json`],
+    report_start_day: '2026-02-04',
+    report_end_day: '2026-03-03',
+  };
+}
+
+/**
  * Check if we're in mock mode.
  * Supports both Nitro runtime config and standalone (tsx) environments.
  */

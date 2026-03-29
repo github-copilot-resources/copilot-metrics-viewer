@@ -87,7 +87,7 @@ Always reference these instructions first and fallback to search or bash command
   - Uses sample data for development and testing
 - **Real GitHub data**: Requires GitHub Personal Access Token
   - `NUXT_GITHUB_TOKEN=<your_token>`
-  - Token needs scopes: copilot, manage_billing:copilot, manage_billing:enterprise, read:enterprise, read:org
+  - Token needs permissions: Read access to members, organization copilot metrics, and organization copilot seat management
 
 ### Scope Configuration
 - **NUXT_PUBLIC_SCOPE**: Sets default scope ('organization', 'enterprise', 'team-organization', 'team-enterprise')
