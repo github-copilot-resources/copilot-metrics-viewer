@@ -101,6 +101,7 @@ jobs:
 
     env:
       PR_NUMBER: ${{ needs.build-and-push.outputs.pr_number }}
+      PREVIEW_ALLOWED_IPS: ${{ secrets.PREVIEW_ALLOWED_IPS }}
 
     steps:
       - name: Azure Login
@@ -171,7 +172,7 @@ jobs:
               NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
 
       - name: Restrict app ingress to allowed IPs
-        if: ${{ secrets.PREVIEW_ALLOWED_IPS != '' }}
+        if: ${{ env.PREVIEW_ALLOWED_IPS != '' }}
         run: |
           az containerapp ingress access-restriction set \
             --name cmv-app \
