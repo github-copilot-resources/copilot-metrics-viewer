@@ -152,12 +152,7 @@ jobs:
       - name: Build DATABASE_URL
         id: dburl
         run: |
-          DB_FQDN=$(az containerapp show \
-            --name cmv-db \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --query "properties.configuration.ingress.fqdn" \
-            -o tsv)
-          DATABASE_URL="postgresql://metrics_user:${{ steps.pgpass.outputs.pgpassword }}@${DB_FQDN}:5432/copilot_metrics"
+          DATABASE_URL="postgresql://metrics_user:${{ steps.pgpass.outputs.pgpassword }}@cmv-db:5432/copilot_metrics"
           echo "::add-mask::$DATABASE_URL"
           echo "database_url=${DATABASE_URL}" >> $GITHUB_OUTPUT
 
