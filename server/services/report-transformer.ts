@@ -21,14 +21,20 @@ const CHAT_FEATURES = [
   'chat_panel_custom_mode', 'chat_panel_unknown_mode', 'chat_inline',
 ];
 
+export function sortReportDayTotalsByDay(dayTotals: ReportDayTotals[]): ReportDayTotals[] {
+  return [...dayTotals].sort((a, b) => a.day.localeCompare(b.day));
+}
+
+export function sortCopilotMetricsByDate(metrics: CopilotMetrics[]): CopilotMetrics[] {
+  return [...metrics].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 /**
  * Transform an entire OrgReport into an array of CopilotMetrics records.
  * Results are sorted chronologically by day.
  */
 export function transformReportToMetrics(report: OrgReport): CopilotMetrics[] {
-  return [...report.day_totals]
-    .sort((a, b) => a.day.localeCompare(b.day))
-    .map(transformDayToMetrics);
+  return sortReportDayTotalsByDay(report.day_totals).map(transformDayToMetrics);
 }
 
 /**
