@@ -30,6 +30,19 @@ describe('API Migration Integration', () => {
       expect(completions?.languages?.length).toBeGreaterThan(0);
     });
 
+    it('should sort transformed metrics chronologically when report day_totals are out of order', () => {
+      const report = generateMockReport('2026-02-20', '2026-02-22');
+      report.day_totals = [report.day_totals[2], report.day_totals[0], report.day_totals[1]];
+
+      const metrics = transformReportToMetrics(report);
+
+      expect(metrics.map(metric => metric.date)).toEqual([
+        '2026-02-20',
+        '2026-02-21',
+        '2026-02-22'
+      ]);
+    });
+
     it('should handle NDJSON parsing (backward compat)', () => {
       const ndjson = '{"date":"2026-02-20","total_active_users":100}\n{"date":"2026-02-21","total_active_users":110}';
       const parsed = parseNDJSON(ndjson);
