@@ -61,7 +61,7 @@ async function fetchFromNewApi(
 
   const report = await fetchLatestReport(request, headers);
   let metrics = transformReportToMetrics(report);
-  let reportData = report.day_totals;
+  let reportData = [...report.day_totals].sort((a, b) => a.day.localeCompare(b.day));
 
   // Filter by date range if specified
   if (options.since || options.until) {
@@ -114,7 +114,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
     const report = await fetchLatestReport({ scope, identifier }, new Headers());
     const metrics = transformReportToMetrics(report);
-    return { metrics, reportData: report.day_totals };
+    return { metrics, reportData: [...report.day_totals].sort((a, b) => a.day.localeCompare(b.day)) };
   }
 
   const identifier = options.githubOrg || options.githubEnt || '';
@@ -218,12 +218,13 @@ async function fetchAndStore(
   };
 
   const report = await fetchLatestReport(request, headers);
+  const sortedDayTotals = [...report.day_totals].sort((a, b) => a.day.localeCompare(b.day));
   let metrics = transformReportToMetrics(report);
-  let reportData = report.day_totals;
+  let reportData = sortedDayTotals;
 
   // Store each day to DB
-  for (let i = 0; i < report.day_totals.length; i++) {
-    const dayData = report.day_totals[i];
+  for (let i = 0; i < sortedDayTotals.length; i++) {
+    const dayData = sortedDayTotals[i];
     try {
       await saveMetrics(
         options.scope!,
@@ -238,7 +239,7 @@ async function fetchAndStore(
     }
   }
 
-  logger.info(`Synced and stored ${report.day_totals.length} days to DB`);
+  logger.info(`Synced and stored ${sortedDayTotals.length} days to DB`);
 
   // Filter by date range
   if (options.since || options.until) {

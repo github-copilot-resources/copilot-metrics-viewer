@@ -23,9 +23,12 @@ const CHAT_FEATURES = [
 
 /**
  * Transform an entire OrgReport into an array of CopilotMetrics records.
+ * Results are sorted chronologically by day.
  */
 export function transformReportToMetrics(report: OrgReport): CopilotMetrics[] {
-  return report.day_totals.map(transformDayToMetrics);
+  return [...report.day_totals]
+    .sort((a, b) => a.day.localeCompare(b.day))
+    .map(transformDayToMetrics);
 }
 
 /**

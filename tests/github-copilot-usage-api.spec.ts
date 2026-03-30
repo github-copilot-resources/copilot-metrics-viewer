@@ -133,6 +133,20 @@ describe('GitHub Copilot Usage API', () => {
       });
     });
 
+    it('should return results in chronological order when input is unordered', () => {
+      const report = generateMockReport('2026-02-18', '2026-02-20');
+      // Shuffle the day_totals to simulate out-of-order API response
+      const shuffled = [report.day_totals[2], report.day_totals[0], report.day_totals[1]];
+      const unorderedReport = { ...report, day_totals: shuffled };
+
+      const metrics = transformReportToMetrics(unorderedReport);
+
+      expect(metrics).toHaveLength(3);
+      expect(metrics[0].date).toBe('2026-02-18');
+      expect(metrics[1].date).toBe('2026-02-19');
+      expect(metrics[2].date).toBe('2026-02-20');
+    });
+
     it('should map language data from totals_by_language_feature', () => {
       const report = generateMockReport('2026-02-20', '2026-02-20');
       const metrics = transformDayToMetrics(report.day_totals[0]);
