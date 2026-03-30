@@ -190,18 +190,21 @@ jobs:
             --ip-address "${{ secrets.PREVIEW_ALLOWED_IPS }}" \
             --action Allow
 
-      - name: Deploy sync container
+      - name: Deploy sync job
         run: |
-          az containerapp create \
+          az containerapp job create \
             --name cmv-sync \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --environment cmv-preview-${{ env.DEPLOY_ID }} \
             --image ghcr.io/${{ github.repository }}-sync-preview:preview-${{ env.DEPLOY_ID }} \
-            --min-replicas 0 --max-replicas 1 \
+            --trigger-type Schedule \
+            --cron-expression "0 2 * * *" \
+            --replica-timeout 1800 \
+            --replica-retry-limit 1 \
             --env-vars \
               NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
               DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-              SYNC_ENABLED=true \
+              ENABLE_HISTORICAL_MODE=true \
               NUXT_PUBLIC_IS_DATA_MOCKED=false \
               NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
               NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
@@ -281,9 +284,9 @@ jobs:
             --yes \
             || true
 
-      - name: Delete sync container
+      - name: Delete sync job
         run: |
-          az containerapp delete \
+          az containerapp job delete \
             --name cmv-sync \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
             --yes \
