@@ -69,8 +69,10 @@ test.describe('Storage Pipeline @storage', () => {
       }
     });
 
-    // Navigate without mock=true — forces DB path
-    await page.goto(`/orgs/${ORG}`);
+    // Navigate without mock=true — forces DB path.
+    // Use since=2000-01-01 so the query covers all dates in the static mock data
+    // regardless of when the test runs (mock data has fixed dates in the past).
+    await page.goto(`/orgs/${ORG}?since=2000-01-01`);
 
     const dashboard = new DashboardPage(page);
     await dashboard.expectMetricLabelsVisible();
