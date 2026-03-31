@@ -114,7 +114,9 @@ export async function syncBulk(
 
     // For org/enterprise scopes also persist per-day per-user records so that
     // team-level metrics can be derived from DB for any historical date range.
-    const isBaseScope = scope === 'organization' || scope === 'enterprise';
+    // Normalize team scopes to base scope since user_day_metrics stores at org/enterprise level.
+    const isBaseScope = scope === 'organization' || scope === 'enterprise' ||
+      scope === 'team-organization' || scope === 'team-enterprise';
     if (isBaseScope) {
       try {
         logger.info(`Fetching per-user day records for ${scope}:${identifier}`);

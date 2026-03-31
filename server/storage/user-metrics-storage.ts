@@ -13,6 +13,7 @@
 
 import type { UserDayRecord, UserTotals } from '../services/github-copilot-usage-api';
 import { aggregateUserDayRecords } from '../services/github-copilot-usage-api';
+import { baseScope } from './user-day-metrics-storage';
 import { getPool } from './db';
 
 /**
@@ -60,12 +61,13 @@ export async function getLatestUserMetrics(
   scopeIdentifier: string
 ): Promise<{ reportStartDay: string; reportEndDay: string; userTotals: UserTotals[] } | null> {
   const pool = getPool();
+  const normalizedScope = baseScope(scope);
 
   // Find the latest date stored
   const { rows: maxRows } = await pool.query(
     `SELECT MAX(metrics_date) AS max_date FROM user_day_metrics
      WHERE scope = $1 AND identifier = $2`,
-    [scope, scopeIdentifier]
+    [normalizedScope, scopeIdentifier]
   );
   if (!maxRows[0].max_date) return null;
 
@@ -78,7 +80,7 @@ export async function getLatestUserMetrics(
     `SELECT data FROM user_day_metrics
      WHERE scope = $1 AND identifier = $2
        AND metrics_date BETWEEN $3 AND $4`,
-    [scope, scopeIdentifier, minDate, maxDate]
+    [normalizedScope, scopeIdentifier, minDate, maxDate]
   );
   if (rows.length === 0) return null;
 
@@ -99,11 +101,12 @@ export async function getUserMetricsHistory(
   scopeIdentifier: string
 ): Promise<UserMetricsHistoryEntry[]> {
   const pool = getPool();
+  const normalizedScope = baseScope(scope);
   const { rows } = await pool.query(
     `SELECT data, metrics_date FROM user_day_metrics
      WHERE scope = $1 AND identifier = $2
      ORDER BY metrics_date ASC`,
-    [scope, scopeIdentifier]
+    [normalizedScope, scopeIdentifier]
   );
   if (rows.length === 0) return [];
 
@@ -150,11 +153,12 @@ export async function getUserTimeSeries(
   login: string
 ): Promise<UserTimeSeriesEntry[]> {
   const pool = getPool();
+  const normalizedScope = baseScope(scope);
   const { rows } = await pool.query(
     `SELECT data, metrics_date FROM user_day_metrics
      WHERE scope = $1 AND identifier = $2 AND user_login = $3
      ORDER BY metrics_date ASC`,
-    [scope, scopeIdentifier, login]
+    [normalizedScope, scopeIdentifier, login]
   );
   if (rows.length === 0) return [];
 

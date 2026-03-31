@@ -16,7 +16,7 @@ import { getPool } from './db';
  * Normalize a scope to its base type (strip 'team-' prefix).
  * Per-day records are always stored at the org/enterprise level.
  */
-function baseScope(scope: string): string {
+export function baseScope(scope: string): string {
   if (scope === 'team-organization') return 'organization';
   if (scope === 'team-enterprise') return 'enterprise';
   return scope;
@@ -26,9 +26,15 @@ function baseScope(scope: string): string {
 const USER_DAY_METRICS_COLUMNS = 6;
 
 /**
+ * Maximum rows per single INSERT statement.
+ * 65535 / USER_DAY_METRICS_COLUMNS = 10922; keeping well below that.
+ */
+const MAX_ROWS_PER_INSERT = 1000;
+
+/**
  * Save a batch of per-user daily records.
  * Upsert — safe to call multiple times for the same (user, day).
- * Uses a single multi-row INSERT for efficiency.
+ * Internally chunked to stay within PostgreSQL's bind-parameter limit.
  */
 export async function saveUserDayMetricsBatch(
   scope: string,
@@ -39,22 +45,27 @@ export async function saveUserDayMetricsBatch(
   const pool = getPool();
   const normalizedScope = baseScope(scope);
 
-  // Build a single multi-row INSERT: ($1,$2,$3,$4,$5,$6), ($7,$8,$9,$10,$11,$12), ...
-  const values: unknown[] = [];
-  const placeholders: string[] = [];
-  records.forEach((record, i) => {
-    const base = i * USER_DAY_METRICS_COLUMNS;
-    placeholders.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6})`);
-    values.push(normalizedScope, identifier, record.user_login, record.user_id ?? null, record.day, JSON.stringify(record));
-  });
+  // Process in chunks to avoid exceeding PostgreSQL's 65535 bind-parameter limit
+  for (let offset = 0; offset < records.length; offset += MAX_ROWS_PER_INSERT) {
+    const chunk = records.slice(offset, offset + MAX_ROWS_PER_INSERT);
 
-  await pool.query(
-    `INSERT INTO user_day_metrics (scope, identifier, user_login, user_id, metrics_date, data)
-     VALUES ${placeholders.join(',')}
-     ON CONFLICT (scope, identifier, user_login, metrics_date)
-     DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
-    values
-  );
+    // Build a single multi-row INSERT: ($1,$2,$3,$4,$5,$6), ($7,$8,$9,$10,$11,$12), ...
+    const values: unknown[] = [];
+    const placeholders: string[] = [];
+    chunk.forEach((record, i) => {
+      const base = i * USER_DAY_METRICS_COLUMNS;
+      placeholders.push(`($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6})`);
+      values.push(normalizedScope, identifier, record.user_login, record.user_id ?? null, record.day, JSON.stringify(record));
+    });
+
+    await pool.query(
+      `INSERT INTO user_day_metrics (scope, identifier, user_login, user_id, metrics_date, data)
+       VALUES ${placeholders.join(',')}
+       ON CONFLICT (scope, identifier, user_login, metrics_date)
+       DO UPDATE SET data = EXCLUDED.data, updated_at = NOW()`,
+      values
+    );
+  }
 }
 
 /**
