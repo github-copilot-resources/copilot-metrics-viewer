@@ -19,7 +19,11 @@ import { getMetricsData as getLegacyMetricsData } from './metrics-util';
 import { getMetricsByDateRange, getReportDataByDateRange, saveMetrics } from '../../server/storage/metrics-storage';
 import { getUserDayMetricsByDateRange, saveUserDayMetricsBatch } from '../../server/storage/user-day-metrics-storage';
 import { fetchLatestReport, fetchRawUserDayRecords, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
-import { transformReportToMetrics } from '../../server/services/report-transformer';
+import {
+  sortCopilotMetricsByDate,
+  sortReportDayTotalsByDay,
+  transformReportToMetrics,
+} from '../../server/services/report-transformer';
 import { isMockMode } from '../../server/services/github-copilot-usage-api-mock';
 import { aggregateTeamMetrics } from '../../server/services/user-metrics-aggregator';
 import { fetchAllTeamMembers } from '../../server/api/seats';
@@ -27,6 +31,13 @@ import { fetchAllTeamMembers } from '../../server/api/seats';
 export interface MetricsDataResult {
   metrics: CopilotMetrics[];
   reportData: ReportDayTotals[];
+}
+
+function sortMetricsDataResult(result: MetricsDataResult): MetricsDataResult {
+  return {
+    metrics: sortCopilotMetricsByDate(result.metrics),
+    reportData: sortReportDayTotalsByDay(result.reportData),
+  };
 }
 
 /**
@@ -80,7 +91,7 @@ async function fetchFromNewApi(
     });
   }
 
-  return { metrics, reportData };
+  return sortMetricsDataResult({ metrics, reportData });
 }
 
 /**
@@ -109,7 +120,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     if (isLegacyMode()) {
       logger.info('Using mocked data mode (legacy format — USE_LEGACY_API=true)');
       const metrics = await getLegacyMetricsData(event);
-      return { metrics, reportData: [] };
+      return sortMetricsDataResult({ metrics, reportData: [] });
     }
     // Default: exercise full new-API mock pipeline
     logger.info('Using mocked data mode (new API format via HTTP download)');
@@ -117,7 +128,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
     const report = await fetchLatestReport({ scope, identifier }, new Headers());
     const metrics = transformReportToMetrics(report);
-    return { metrics, reportData: report.day_totals };
+    return sortMetricsDataResult({ metrics, reportData: report.day_totals });
   }
 
   const identifier = options.githubOrg || options.githubEnt || '';
@@ -182,7 +193,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
           logger.info(`Retrieved ${storedMetrics.length} days from DB`);
           const reportData = await getReportDataByDateRange(options.scope!, identifier, startDate, endDate);
           const filteredMetrics = filterHolidaysFromMetrics(storedMetrics, options.excludeHolidays || false, options.locale);
-          return { metrics: filteredMetrics, reportData };
+          return sortMetricsDataResult({ metrics: filteredMetrics, reportData });
         }
 
         // DB empty — sync on miss: fetch org aggregate + per-day user records, store, return
@@ -193,7 +204,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
         }
         const result = await fetchAndStore(options, event.context.headers);
         const filteredMetrics = filterHolidaysFromMetrics(result.metrics, options.excludeHolidays || false, options.locale);
-        return { metrics: filteredMetrics, reportData: result.reportData };
+        return sortMetricsDataResult({ metrics: filteredMetrics, reportData: result.reportData });
       }
     } catch (error) {
       // If it's already an H3 error (like 401), re-throw
@@ -218,15 +229,18 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   if (isLegacyMode()) {
     logger.info('Using legacy Copilot Metrics API (USE_LEGACY_API=true, direct, no DB)');
     const metrics = await getLegacyMetricsData(event);
-    return { metrics: filterHolidaysFromMetrics(metrics, options.excludeHolidays || false, options.locale), reportData: [] };
+    return sortMetricsDataResult({
+      metrics: filterHolidaysFromMetrics(metrics, options.excludeHolidays || false, options.locale),
+      reportData: []
+    });
   }
 
   logger.info('Using new Copilot Metrics API (direct, no DB)');
   const result = await fetchFromNewApi(options, event.context.headers);
-  return {
+  return sortMetricsDataResult({
     metrics: filterHolidaysFromMetrics(result.metrics, options.excludeHolidays || false, options.locale),
     reportData: result.reportData
-  };
+  });
 }
 
 /**
@@ -311,5 +325,5 @@ async function fetchAndStore(
     });
   }
 
-  return { metrics, reportData };
+  return sortMetricsDataResult({ metrics, reportData });
 }

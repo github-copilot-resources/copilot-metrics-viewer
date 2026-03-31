@@ -2,6 +2,10 @@ import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
 
+function sortMetricsByDay<T extends { day: string }>(metrics: T[]): T[] {
+    return [...metrics].sort((left, right) => left.day.localeCompare(right.day));
+}
+
 export default defineEventHandler(async (event) => {
 
     const logger = console;
@@ -11,7 +15,7 @@ export default defineEventHandler(async (event) => {
         const { metrics: usageData, reportData } = await getMetricsDataV2(event);
 
         // metrics is the old API format
-        const metricsData = convertToMetrics(usageData);
+        const metricsData = sortMetricsByDay(convertToMetrics(usageData));
 
         const result = { metrics: metricsData, usage: usageData, reportData } as MetricsApiResponse;
         return result;

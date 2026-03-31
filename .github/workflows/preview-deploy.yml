@@ -1,0 +1,322 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    types: [labeled, unlabeled, synchronize]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch name to deploy or clean up (PR not required)'
+        required: true
+        type: string
+      action:
+        description: 'Action to perform'
+        type: choice
+        options:
+          - deploy
+          - cleanup
+        default: deploy
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy') ||
+      (github.event_name == 'pull_request' && github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
+
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      deploy_id: ${{ steps.resolve.outputs.deploy_id }}
+      pr_number: ${{ steps.resolve.outputs.pr_number }}
+
+    steps:
+      - name: Resolve deploy target
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+            PR_NUMBER=$(gh pr list --head "$BRANCH" --repo "${{ github.repository }}" --json number -q '.[0].number' 2>/dev/null || true)
+            if [ -n "$PR_NUMBER" ]; then
+              HEAD_SHA=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json headRefOid -q .headRefOid)
+              DEPLOY_ID="pr-${PR_NUMBER}"
+              echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+            else
+              HEAD_SHA=$(gh api "repos/${{ github.repository }}/git/ref/heads/$BRANCH" -q .object.sha) \
+                || { echo "Branch '$BRANCH' not found"; exit 1; }
+              SAFE_BRANCH=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr '/_.' '-' | tr -cd 'a-z0-9-' | cut -c1-20 | sed 's/-*$//')
+              DEPLOY_ID="branch-${SAFE_BRANCH}"
+            fi
+            echo "deploy_id=${DEPLOY_ID}" >> $GITHUB_OUTPUT
+            echo "head_sha=${HEAD_SHA}" >> $GITHUB_OUTPUT
+          else
+            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "head_sha=${{ github.event.pull_request.head.sha }}" >> $GITHUB_OUTPUT
+            echo "deploy_id=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.resolve.outputs.head_sha }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push app image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}-preview:preview-${{ steps.resolve.outputs.deploy_id }}
+
+      - name: Build and push sync image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.sync
+          push: true
+          tags: ghcr.io/${{ github.repository }}-sync-preview:preview-${{ steps.resolve.outputs.deploy_id }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy') ||
+      (github.event_name == 'pull_request' && github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy')) ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy')
+
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+      pull-requests: write
+      deployments: write
+
+    environment:
+      name: preview
+      url: ${{ steps.app-url.outputs.url }}
+
+    env:
+      DEPLOY_ID: ${{ needs.build-and-push.outputs.deploy_id }}
+      PR_NUMBER: ${{ needs.build-and-push.outputs.pr_number }}
+      PREVIEW_ALLOWED_IPS: ${{ secrets.PREVIEW_ALLOWED_IPS }}
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create ACA Environment
+        run: |
+          az containerapp env create \
+            --name cmv-preview-${{ env.DEPLOY_ID }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --location ${{ secrets.AZURE_LOCATION }} \
+            || true
+
+      - name: Generate PostgreSQL password
+        id: pgpass
+        run: |
+          PGPASSWORD=$(openssl rand -base64 32 | tr -dc 'a-zA-Z0-9' | head -c 32)
+          echo "::add-mask::$PGPASSWORD"
+          echo "pgpassword=$PGPASSWORD" >> $GITHUB_OUTPUT
+
+      - name: Deploy PostgreSQL container
+        run: |
+          az containerapp create \
+            --name cmv-db \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment cmv-preview-${{ env.DEPLOY_ID }} \
+            --image postgres:15-alpine \
+            --min-replicas 1 --max-replicas 1 \
+            --ingress internal --transport tcp --target-port 5432 \
+            --env-vars \
+              POSTGRES_DB=copilot_metrics \
+              POSTGRES_USER=metrics_user \
+              POSTGRES_PASSWORD=${{ steps.pgpass.outputs.pgpassword }}
+
+      - name: Build DATABASE_URL
+        id: dburl
+        run: |
+          DATABASE_URL="postgresql://metrics_user:${{ steps.pgpass.outputs.pgpassword }}@cmv-db:5432/copilot_metrics"
+          echo "::add-mask::$DATABASE_URL"
+          echo "database_url=${DATABASE_URL}" >> $GITHUB_OUTPUT
+
+      - name: Deploy app container
+        run: |
+          az containerapp create \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment cmv-preview-${{ env.DEPLOY_ID }} \
+            --image ghcr.io/${{ github.repository }}-preview:preview-${{ env.DEPLOY_ID }} \
+            --ingress external --target-port 3000 \
+            --min-replicas 1 --max-replicas 1 \
+            --env-vars \
+              NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
+              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+              ENABLE_HISTORICAL_MODE=true \
+              SYNC_ENABLED=false \
+              NITRO_PORT=3000 \
+              NUXT_PUBLIC_IS_DATA_MOCKED=false \
+              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
+
+      - name: Restrict app ingress to allowed IPs
+        if: ${{ env.PREVIEW_ALLOWED_IPS != '' }}
+        run: |
+          az containerapp ingress access-restriction set \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --rule-name allow-preview-ips \
+            --ip-address "${{ secrets.PREVIEW_ALLOWED_IPS }}" \
+            --action Allow
+
+      - name: Deploy sync job
+        run: |
+          az containerapp job create \
+            --name cmv-sync \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --environment cmv-preview-${{ env.DEPLOY_ID }} \
+            --image ghcr.io/${{ github.repository }}-sync-preview:preview-${{ env.DEPLOY_ID }} \
+            --trigger-type Schedule \
+            --cron-expression "0 2 * * *" \
+            --replica-timeout 1800 \
+            --replica-retry-limit 1 \
+            --env-vars \
+              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+              ENABLE_HISTORICAL_MODE=true \
+              NUXT_PUBLIC_IS_DATA_MOCKED=false \
+              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
+
+      - name: Get app URL
+        id: app-url
+        run: |
+          APP_FQDN=$(az containerapp show \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            -o tsv)
+          echo "url=https://${APP_FQDN}" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with preview URL
+        if: ${{ env.PR_NUMBER != '' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt('${{ env.PR_NUMBER }}', 10);
+            const url = '${{ steps.app-url.outputs.url }}';
+            const body = `## 🚀 Preview Deployment Ready\n\n` +
+              `Preview environment for PR #${prNumber} has been deployed.\n\n` +
+              `**Preview URL:** ${url}\n\n` +
+              `> This preview will be cleaned up when the \`deploy\` label is removed.`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body
+            });
+
+  cleanup:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'unlabeled' && github.event.label.name == 'deploy') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'cleanup')
+
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+      deployments: write
+
+    env:
+      DEPLOY_ID: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || '' }}
+      PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+
+    steps:
+      - name: Resolve deploy ID (workflow_dispatch only)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="${{ github.event.inputs.branch }}"
+          PR_NUMBER=$(gh pr list --head "$BRANCH" --repo "${{ github.repository }}" --json number -q '.[0].number' 2>/dev/null || true)
+          if [ -n "$PR_NUMBER" ]; then
+            echo "DEPLOY_ID=pr-${PR_NUMBER}" >> $GITHUB_ENV
+            echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          else
+            SAFE_BRANCH=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | tr '/_.' '-' | tr -cd 'a-z0-9-' | cut -c1-20 | sed 's/-*$//')
+            echo "DEPLOY_ID=branch-${SAFE_BRANCH}" >> $GITHUB_ENV
+          fi
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete app container
+        run: |
+          az containerapp delete \
+            --name cmv-app \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Delete sync job
+        run: |
+          az containerapp job delete \
+            --name cmv-sync \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Delete PostgreSQL container
+        run: |
+          az containerapp delete \
+            --name cmv-db \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Delete ACA Environment
+        run: |
+          az containerapp env delete \
+            --name cmv-preview-${{ env.DEPLOY_ID }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --yes \
+            || true
+
+      - name: Comment on PR about cleanup
+        if: ${{ env.PR_NUMBER != '' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = parseInt('${{ env.PR_NUMBER }}', 10);
+            const body = `## 🧹 Preview Environment Cleaned Up\n\n` +
+              `The preview environment for PR #${prNumber} has been removed.`;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body
+            });
+
+
