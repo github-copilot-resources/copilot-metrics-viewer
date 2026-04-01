@@ -4,7 +4,7 @@
  * See: https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics
  */
 
-import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks } from './github-copilot-usage-api-mock';
+import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, generateMockReport } from './github-copilot-usage-api-mock';
 
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
@@ -508,6 +508,15 @@ export async function fetchLatestReport(
   request: MetricsReportRequest,
   headers: HeadersInit
 ): Promise<OrgReport> {
+  // In mock mode, generate a report with dates anchored to today's 28-day window
+  // so that seeded DB data always aligns with the dashboard's default date picker.
+  if (isMockMode()) {
+    const toDate = (d: Date) => d.toISOString().split('T')[0]!;
+    const endDay = toDate(new Date());
+    const startDay = toDate(new Date(Date.now() - 27 * 24 * 60 * 60 * 1000));
+    return generateMockReport(startDay, endDay);
+  }
+
   const { download_links } = await requestDownloadLinks(request, headers, '28-day');
 
   if (!download_links || download_links.length === 0) {
