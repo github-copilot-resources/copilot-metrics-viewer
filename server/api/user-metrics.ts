@@ -51,6 +51,15 @@ export default defineEventHandler(async (event) => {
       logger.info('No user metrics in storage yet, attempting live fetch');
     } catch (err) {
       logger.warn('Storage lookup failed, falling back to live fetch:', err);
+      // If there is no auth header we cannot reach the live API — surface a
+      // clear error instead of letting the request fall through to the auth
+      // check which would return a cryptic 401.
+      if (!event.context.headers?.has('Authorization')) {
+        throw createError({
+          statusCode: 503,
+          statusMessage: 'Historical mode: storage unavailable and no GitHub token configured for live fallback.',
+        });
+      }
     }
   }
 

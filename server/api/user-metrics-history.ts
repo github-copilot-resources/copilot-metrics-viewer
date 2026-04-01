@@ -50,7 +50,10 @@ export default defineEventHandler(async (event) => {
     logger.info(`Returning ${history.length} user-metrics history entries for ${scope}:${identifier}`);
     return history;
   } catch (error: unknown) {
-    logger.error('Error fetching user-metrics history:', error);
-    throw createError({ statusCode: 500, statusMessage: 'Error fetching user-metrics history: ' + String(error) });
+    // Storage is unavailable (e.g. DB misconfigured). Return empty results with
+    // a warning rather than a 500 — the frontend can handle an empty history
+    // gracefully, whereas a 500 breaks the entire analytics tab.
+    logger.warn('user-metrics-history: storage lookup failed, returning empty results:', error);
+    return [];
   }
 });
