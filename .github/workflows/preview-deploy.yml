@@ -123,19 +123,36 @@ jobs:
 
       - name: Deploy PostgreSQL container
         run: |
-          # Create if not exists; ignore error if already running
-          az containerapp create \
-            --name ${{ env.DB_NAME }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --environment ${{ env.PREVIEW_ENV_NAME }} \
-            --image postgres:15-alpine \
-            --min-replicas 1 --max-replicas 1 \
-            --ingress internal --transport tcp --target-port 5432 \
-            --env-vars \
-              POSTGRES_DB=copilot_metrics \
-              POSTGRES_USER=metrics_user \
-              POSTGRES_PASSWORD=${{ secrets.PREVIEW_DB_PASSWORD }} \
-            || true
+          # Create if not exists; if already exists (exit 3), that's fine.
+          if az containerapp show \
+              --name ${{ env.DB_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --query "name" -o tsv 2>/dev/null | grep -q "${{ env.DB_NAME }}"; then
+            echo "DB container already exists, skipping create"
+          else
+            az containerapp create \
+              --name ${{ env.DB_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.PREVIEW_ENV_NAME }} \
+              --image postgres:15-alpine \
+              --min-replicas 1 --max-replicas 1 \
+              --ingress internal --transport tcp --target-port 5432 \
+              --env-vars \
+                POSTGRES_DB=copilot_metrics \
+                POSTGRES_USER=metrics_user \
+                POSTGRES_PASSWORD=${{ secrets.PREVIEW_DB_PASSWORD }}
+          fi
+          # Wait for DB container to reach Running state (up to 3 minutes)
+          echo "Waiting for DB container to be running..."
+          for i in $(seq 1 18); do
+            STATE=$(az containerapp show \
+              --name ${{ env.DB_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --query "properties.runningStatus" -o tsv 2>/dev/null || echo "unknown")
+            echo "  State: $STATE (attempt $i/18)"
+            [ "$STATE" = "Running" ] && break
+            sleep 10
+          done
 
       - name: Build DATABASE_URL
         id: dburl
