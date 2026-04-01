@@ -113,23 +113,74 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Ensure Log Analytics workspace exists
+        id: logs
+        run: |
+          WS="cmv-preview-logs"
+          if ! az monitor log-analytics workspace show \
+              --workspace-name "$WS" \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              -o none 2>/dev/null; then
+            echo "Creating Log Analytics workspace $WS..."
+            az monitor log-analytics workspace create \
+              --workspace-name "$WS" \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --location ${{ secrets.AZURE_LOCATION }}
+          fi
+          WS_ID=$(az monitor log-analytics workspace show \
+            --workspace-name "$WS" \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "customerId" -o tsv)
+          WS_KEY=$(az monitor log-analytics workspace get-shared-keys \
+            --workspace-name "$WS" \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "primarySharedKey" -o tsv)
+          echo "id=${WS_ID}" >> $GITHUB_OUTPUT
+          echo "::add-mask::${WS_KEY}"
+          echo "key=${WS_KEY}" >> $GITHUB_OUTPUT
+
       - name: Ensure ACA environment exists
         run: |
-          az containerapp env create \
-            --name ${{ env.PREVIEW_ENV_NAME }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --location ${{ secrets.AZURE_LOCATION }} \
-            || true
+          if az containerapp env show \
+              --name ${{ env.PREVIEW_ENV_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              -o none 2>/dev/null; then
+            echo "Environment ${{ env.PREVIEW_ENV_NAME }} already exists"
+          else
+            echo "Creating environment ${{ env.PREVIEW_ENV_NAME }}..."
+            az containerapp env create \
+              --name ${{ env.PREVIEW_ENV_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --location ${{ secrets.AZURE_LOCATION }} \
+              --logs-workspace-id ${{ steps.logs.outputs.id }} \
+              --logs-workspace-key ${{ steps.logs.outputs.key }}
+          fi
 
       - name: Deploy PostgreSQL container
         run: |
-          # Create if not exists; if already exists (exit 3), that's fine.
-          if az containerapp show \
-              --name ${{ env.DB_NAME }} \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-              --query "name" -o tsv 2>/dev/null | grep -q "${{ env.DB_NAME }}"; then
-            echo "DB container already exists, skipping create"
+          # Resolve the expected environment ARM resource ID
+          ENV_ID=$(az containerapp env show \
+            --name ${{ env.PREVIEW_ENV_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "id" -o tsv)
+
+          # Check where the DB container currently lives (empty = doesn't exist)
+          CURRENT_ENV=$(az containerapp show \
+            --name ${{ env.DB_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "properties.managedEnvironmentId" -o tsv 2>/dev/null || echo "")
+
+          if [ "$CURRENT_ENV" = "$ENV_ID" ]; then
+            echo "DB container already in correct environment ✓"
           else
+            if [ -n "$CURRENT_ENV" ]; then
+              echo "DB container is in a different environment — deleting and recreating..."
+              az containerapp delete \
+                --name ${{ env.DB_NAME }} \
+                --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+                --yes
+            fi
+            echo "Creating DB container in ${{ env.PREVIEW_ENV_NAME }}..."
             az containerapp create \
               --name ${{ env.DB_NAME }} \
               --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
@@ -177,26 +228,48 @@ jobs:
 
       - name: Deploy or update app container
         run: |
-          # Try to create; if it already exists, update instead
-          az containerapp create \
+          # Resolve the expected environment ARM resource ID
+          ENV_ID=$(az containerapp env show \
+            --name ${{ env.PREVIEW_ENV_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "id" -o tsv)
+
+          # Check where the app container currently lives (empty = doesn't exist)
+          CURRENT_ENV=$(az containerapp show \
             --name ${{ env.APP_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --environment ${{ env.PREVIEW_ENV_NAME }} \
-            --image ghcr.io/${{ github.repository }}-preview:preview-latest \
-            --ingress external --target-port 3000 \
-            --min-replicas 1 --max-replicas 1 \
-            --env-vars \
-              NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
-              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
-              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-              ENABLE_HISTORICAL_MODE=true \
-              SYNC_ENABLED=false \
-              NITRO_PORT=3000 \
-              NUXT_PUBLIC_IS_DATA_MOCKED=false \
-              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
-              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
-              NUXT_PUBLIC_DEPLOY_INFO="${{ steps.deploy-info.outputs.deploy_info }}" \
-            || az containerapp update \
+            --query "properties.managedEnvironmentId" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$CURRENT_ENV" ] && [ "$CURRENT_ENV" != "$ENV_ID" ]; then
+            echo "App container is in a different environment — deleting and recreating..."
+            az containerapp delete \
+              --name ${{ env.APP_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --yes
+            CURRENT_ENV=""
+          fi
+
+          if [ -z "$CURRENT_ENV" ]; then
+            az containerapp create \
+              --name ${{ env.APP_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.PREVIEW_ENV_NAME }} \
+              --image ghcr.io/${{ github.repository }}-preview:preview-latest \
+              --ingress external --target-port 3000 \
+              --min-replicas 1 --max-replicas 1 \
+              --env-vars \
+                NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
+                NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+                DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+                ENABLE_HISTORICAL_MODE=true \
+                SYNC_ENABLED=false \
+                NITRO_PORT=3000 \
+                NUXT_PUBLIC_IS_DATA_MOCKED=false \
+                NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+                NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
+                NUXT_PUBLIC_DEPLOY_INFO="${{ steps.deploy-info.outputs.deploy_info }}"
+          else
+            az containerapp update \
               --name ${{ env.APP_NAME }} \
               --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
               --image ghcr.io/${{ github.repository }}-preview:preview-latest \
@@ -211,6 +284,7 @@ jobs:
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
                 NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
                 "NUXT_PUBLIC_DEPLOY_INFO=${{ steps.deploy-info.outputs.deploy_info }}"
+          fi
 
       - name: Restrict app ingress to allowed IPs
         if: ${{ env.PREVIEW_ALLOWED_IPS != '' }}
@@ -224,26 +298,50 @@ jobs:
 
       - name: Deploy or update sync job
         run: |
-          az containerapp job create \
+          # Resolve the expected environment ARM resource ID
+          ENV_ID=$(az containerapp env show \
+            --name ${{ env.PREVIEW_ENV_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "id" -o tsv)
+
+          # Check where the sync job currently lives (empty = doesn't exist)
+          CURRENT_ENV=$(az containerapp job show \
             --name ${{ env.SYNC_NAME }} \
             --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --environment ${{ env.PREVIEW_ENV_NAME }} \
-            --image ghcr.io/${{ github.repository }}-sync-preview:preview-latest \
-            --trigger-type Schedule \
-            --cron-expression "0 2 * * *" \
-            --replica-timeout 1800 \
-            --replica-retry-limit 1 \
-            --env-vars \
-              NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
-              DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-              ENABLE_HISTORICAL_MODE=true \
-              NUXT_PUBLIC_IS_DATA_MOCKED=false \
-              NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
-              NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
-            || az containerapp job update \
+            --query "properties.environmentId" -o tsv 2>/dev/null || echo "")
+
+          if [ -n "$CURRENT_ENV" ] && [ "$CURRENT_ENV" != "$ENV_ID" ]; then
+            echo "Sync job is in a different environment — deleting and recreating..."
+            az containerapp job delete \
+              --name ${{ env.SYNC_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --yes
+            CURRENT_ENV=""
+          fi
+
+          if [ -z "$CURRENT_ENV" ]; then
+            az containerapp job create \
+              --name ${{ env.SYNC_NAME }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.PREVIEW_ENV_NAME }} \
+              --image ghcr.io/${{ github.repository }}-sync-preview:preview-latest \
+              --trigger-type Schedule \
+              --cron-expression "0 2 * * *" \
+              --replica-timeout 1800 \
+              --replica-retry-limit 1 \
+              --env-vars \
+                NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+                DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
+                ENABLE_HISTORICAL_MODE=true \
+                NUXT_PUBLIC_IS_DATA_MOCKED=false \
+                NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
+                NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}
+          else
+            az containerapp job update \
               --name ${{ env.SYNC_NAME }} \
               --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
               --image ghcr.io/${{ github.repository }}-sync-preview:preview-latest
+          fi
 
       - name: Get app URL
         id: app-url
