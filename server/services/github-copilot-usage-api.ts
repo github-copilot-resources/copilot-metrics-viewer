@@ -500,6 +500,12 @@ export async function downloadReport(
   return response;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function toDateString(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
 /**
  * Shift all day_totals dates so the most recent day equals today.
  * Used in mock mode to keep mock data within the current date window,
@@ -510,16 +516,16 @@ function shiftReportDatesToToday(report: OrgReport): OrgReport {
 
   const sorted = [...report.day_totals].sort((a, b) => a.day.localeCompare(b.day));
   const lastDay = sorted[sorted.length - 1].day;
-  const today = new Date().toISOString().split('T')[0];
+  const today = toDateString(new Date());
   const daysDiff = Math.round(
-    (new Date(today).getTime() - new Date(lastDay).getTime()) / (24 * 60 * 60 * 1000)
+    (new Date(today).getTime() - new Date(lastDay).getTime()) / MS_PER_DAY
   );
 
   if (daysDiff <= 0) return report; // Data is already current
 
   const shiftedTotals = sorted.map(d => {
-    const shifted = new Date(new Date(d.day).getTime() + daysDiff * 24 * 60 * 60 * 1000);
-    return { ...d, day: shifted.toISOString().split('T')[0] };
+    const shifted = new Date(new Date(d.day).getTime() + daysDiff * MS_PER_DAY);
+    return { ...d, day: toDateString(shifted) };
   });
 
   return {
