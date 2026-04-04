@@ -500,6 +500,42 @@ export async function downloadReport(
   return response;
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function toDateString(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Shift all day_totals dates so the most recent day equals today.
+ * Used in mock mode to keep mock data within the current date window,
+ * regardless of the hardcoded dates in the static mock file.
+ */
+function shiftReportDatesToToday(report: OrgReport): OrgReport {
+  if (!report.day_totals || report.day_totals.length === 0) return report;
+
+  const sorted = [...report.day_totals].sort((a, b) => a.day.localeCompare(b.day));
+  const lastDay = sorted[sorted.length - 1].day;
+  const today = toDateString(new Date());
+  const daysDiff = Math.round(
+    (new Date(today).getTime() - new Date(lastDay).getTime()) / MS_PER_DAY
+  );
+
+  if (daysDiff <= 0) return report; // Data is already current
+
+  const shiftedTotals = sorted.map(d => {
+    const shifted = new Date(new Date(d.day).getTime() + daysDiff * MS_PER_DAY);
+    return { ...d, day: toDateString(shifted) };
+  });
+
+  return {
+    ...report,
+    report_start_day: shiftedTotals[0].day,
+    report_end_day: shiftedTotals[shiftedTotals.length - 1].day,
+    day_totals: shiftedTotals,
+  };
+}
+
 /**
  * Fetch the latest 28-day metrics report.
  * This is the most efficient endpoint — one API call + one download for 28 days of data.
@@ -523,6 +559,12 @@ export async function fetchLatestReport(
   const merged = { ...reports[0] };
   if (reports.length > 1) {
     merged.day_totals = reports.flatMap(r => r.day_totals);
+  }
+
+  // In mock mode, shift dates to be relative to today so they fall within
+  // the default "last 30 days" window used by sync-status and other queries.
+  if (isMockMode()) {
+    return shiftReportDatesToToday(merged);
   }
 
   return merged;
