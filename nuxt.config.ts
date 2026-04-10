@@ -105,7 +105,8 @@ export default defineNuxtConfig({
       isPublicApp: false,
       // New API migration flags
       useLegacyApi: false,  // Set true to use deprecated /copilot/metrics API (USE_LEGACY_API)
-      enableHistoricalMode: false  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)
+      enableHistoricalMode: false,  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)
+      hiddenTabs: ''  // Comma-separated list of tab names to hide (NUXT_PUBLIC_HIDDEN_TABS)
     }
   }
 })

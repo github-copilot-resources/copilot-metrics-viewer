@@ -349,6 +349,17 @@ export default defineNuxtComponent({
     }
     
     this.config = useRuntimeConfig();
+
+    // Filter out hidden tabs based on NUXT_PUBLIC_HIDDEN_TABS environment variable
+    const hiddenTabsConfig = this.config.public.hiddenTabs as string;
+    if (hiddenTabsConfig) {
+      const hiddenTabs = hiddenTabsConfig.split(',').map((t: string) => t.trim().toLowerCase()).filter(Boolean);
+      if (hiddenTabs.length > 0) {
+        this.tabItems = this.tabItems.filter(
+          (tab: string) => !hiddenTabs.includes(tab.toLowerCase())
+        );
+      }
+    }
   },
   async mounted() {
     // Load initial data

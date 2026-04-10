@@ -6,6 +6,8 @@ import { isCI } from 'std-env'
 // set the runtimeConfig values for the test
 process.env.NUXT_PUBLIC_USING_GITHUB_AUTH = 'false'
 process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'true'
+// Hide 'agent activity' tab to test the configurable tabs feature
+process.env.NUXT_PUBLIC_HIDDEN_TABS = 'agent activity'
 
 export default defineConfig<ConfigOptions>({
     testDir: 'e2e-tests',
