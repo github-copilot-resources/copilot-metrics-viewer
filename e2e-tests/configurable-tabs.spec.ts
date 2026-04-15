@@ -34,6 +34,12 @@ test.describe('Configurable Tabs', () => {
         await expect(dashboard.apiResponseTabLink).toBeVisible();
     });
 
+    test('should show the teams tab when NUXT_PUBLIC_ENABLE_HISTORICAL_MODE is true', async () => {
+        // Teams tab requires historical mode (DB); it is visible here because
+        // NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true is set in playwright.config.ts
+        await expect(dashboard.teamsTabLink).toBeVisible();
+    });
+
     test('should still show the organization scope tab', async () => {
         await expect(dashboard.orgTabLink).toBeVisible();
     });

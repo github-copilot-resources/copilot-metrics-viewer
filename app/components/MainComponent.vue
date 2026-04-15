@@ -350,6 +350,12 @@ export default defineNuxtComponent({
     
     this.config = useRuntimeConfig();
 
+    // Auto-hide teams tab when historical mode is disabled (team metrics require DB)
+    const historicalMode = this.config.public.enableHistoricalMode === true || this.config.public.enableHistoricalMode === 'true';
+    if (!historicalMode && this.tabItems.includes('teams')) {
+      this.tabItems = this.tabItems.filter((t: string) => t !== 'teams');
+    }
+
     // Filter out hidden tabs based on NUXT_PUBLIC_HIDDEN_TABS environment variable
     const hiddenTabsConfig = this.config.public.hiddenTabs as string;
     if (hiddenTabsConfig) {
