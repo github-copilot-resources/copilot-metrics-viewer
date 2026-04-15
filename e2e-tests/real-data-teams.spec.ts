@@ -23,6 +23,12 @@ import { expect, test, type Page } from '@playwright/test';
 import { DashboardPage } from './pages/DashboardPage';
 import { UserMetricsTab } from './pages/UserMetricsTab';
 
+// Skip entire file when running with mock data (CI/Docker).
+// Note: playwright.config.ts forces NUXT_PUBLIC_IS_DATA_MOCKED=true at import time,
+// so we check for the RUN_REAL_DATA_TESTS env var instead.
+const skipRealData = process.env.RUN_REAL_DATA_TESTS !== 'true';
+test.skip(() => skipRealData, 'Skipped: set RUN_REAL_DATA_TESTS=true to run real-data tests');
+
 const ORG = 'cody-test-org';
 const tag = { tag: ['@real-data'] };
 
