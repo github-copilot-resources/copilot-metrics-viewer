@@ -606,3 +606,143 @@ describe('/api/user-metrics-history handler – storage failure returns empty ar
     expect(result).toEqual([])
   })
 })
+
+// ── /api/user-metrics handler — team filtering ──────────────────────────────
+//
+// Tests that team-scoped requests filter user totals by team membership.
+// Uses the same Nitro global stub pattern as the historical mode tests above.
+
+const mockFetchAllTeamMembers = vi.fn()
+
+vi.mock('../server/api/seats', () => ({
+  fetchAllTeamMembers: (...args: any[]) => mockFetchAllTeamMembers(...args),
+}))
+
+describe('/api/user-metrics handler – team filtering', () => {
+  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
+  const ORIGINAL_GET_QUERY = (globalThis as any).getQuery
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
+    mockFetchAllTeamMembers.mockResolvedValue([
+      { login: 'octocat', id: 1 },
+    ])
+  })
+
+  afterEach(() => {
+    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
+    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
+    else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED
+    ;(globalThis as any).getQuery = ORIGINAL_GET_QUERY
+  })
+
+  it('filters user totals by team members in historical mode', async () => {
+    // Override getQuery to return team scope
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'team-organization',
+      githubOrg: 'test-org',
+      githubTeam: 'the-a-team',
+    })
+
+    // Storage returns both users
+    const stored = {
+      reportStartDay: '2026-03-05',
+      reportEndDay: '2026-04-01',
+      userTotals: SAMPLE_USER_REPORT.user_totals, // octocat (id:1) + octokitten (id:2)
+    }
+    mockGetLatestUserMetrics.mockResolvedValue(stored)
+
+    // Team has only octocat (id:1)
+    mockFetchAllTeamMembers.mockResolvedValue([{ login: 'octocat', id: 1 }])
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = await handler(makeEvent(true))
+
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(1)
+    expect((result as any[])[0].login).toBe('octocat')
+  })
+
+  it('returns all users for org scope (no team filtering)', async () => {
+    // Override getQuery to return org scope
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'organization',
+      githubOrg: 'test-org',
+    })
+
+    const stored = {
+      reportStartDay: '2026-03-05',
+      reportEndDay: '2026-04-01',
+      userTotals: SAMPLE_USER_REPORT.user_totals,
+    }
+    mockGetLatestUserMetrics.mockResolvedValue(stored)
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = await handler(makeEvent(false))
+
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(2) // both octocat and octokitten
+    expect(mockFetchAllTeamMembers).not.toHaveBeenCalled()
+  })
+
+  it('throws 503 for team scope without auth in historical mode', async () => {
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'team-organization',
+      githubOrg: 'test-org',
+      githubTeam: 'the-a-team',
+    })
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    await expect(handler(makeEvent(false))).rejects.toMatchObject({ statusCode: 503 })
+  })
+
+  it('returns empty array when team has no members', async () => {
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'team-organization',
+      githubOrg: 'test-org',
+      githubTeam: 'empty-team',
+    })
+
+    const stored = {
+      reportStartDay: '2026-03-05',
+      reportEndDay: '2026-04-01',
+      userTotals: SAMPLE_USER_REPORT.user_totals,
+    }
+    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockFetchAllTeamMembers.mockResolvedValue([])
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = await handler(makeEvent(true))
+
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(0)
+  })
+
+  it('filters by user_id when login case differs', async () => {
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'team-organization',
+      githubOrg: 'test-org',
+      githubTeam: 'case-team',
+    })
+
+    const stored = {
+      reportStartDay: '2026-03-05',
+      reportEndDay: '2026-04-01',
+      userTotals: SAMPLE_USER_REPORT.user_totals,
+    }
+    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    // Team member has uppercase login but matching user_id
+    mockFetchAllTeamMembers.mockResolvedValue([{ login: 'OCTOKITTEN', id: 2 }])
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = await handler(makeEvent(true))
+
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(1)
+    expect((result as any[])[0].login).toBe('octokitten')
+  })
+})
