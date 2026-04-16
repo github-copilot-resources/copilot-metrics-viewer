@@ -75,10 +75,20 @@
               <div class="text-body-2">
                 <h4 class="mb-2">📊 What the numbers mean</h4>
                 <ul class="ml-4 mb-3">
+                  <li><strong>Copilot LOC</strong> (Lines of Code) is the <em>total</em> lines of code added via all Copilot features — inline completions, Chat apply/insert, and Agent edits combined. It is <strong>not</strong> limited to code completions.</li>
                   <li><strong>Acceptance Rate</strong> measures <em>inline code completions only</em> — the ghost-text suggestions shown in the editor. It does <strong>not</strong> include Chat, Agent mode, Copilot CLI, or GitHub.com interactions.</li>
                   <li><strong>Interactions</strong> counts all user-initiated events across features (completions, chat messages, agent requests).</li>
-                  <li><strong>Chat</strong> shows total activity across Copilot Chat modes (ask, agent, edit, inline). Hover for a breakdown.</li>
+                  <li><strong>Chat</strong> shows total activity across Copilot Chat modes (ask, agent, edit, inline). Hover for a per-mode breakdown.</li>
                   <li><strong>Agent</strong> shows activity specifically in agent mode and agent edit. Users working primarily with agents will have high numbers here but may show low acceptance rates — that's expected.</li>
+                  <li><strong>Agent LOC</strong> shows lines of code added specifically by agent features (agent mode + agent edit). Compare with Copilot LOC to see how much of a user's Copilot-generated code comes from agents.</li>
+                </ul>
+
+                <h4 class="mb-2">🧑‍💻 How users are using Copilot</h4>
+                <ul class="ml-4 mb-3">
+                  <li><strong>Inline completions users</strong> — high Completions/Accepted counts, high Acceptance Rate, Copilot LOC mostly from completions (Agent LOC near zero).</li>
+                  <li><strong>Chat-first users</strong> — high Chat count, moderate Copilot LOC from copy/apply actions, low Acceptance Rate (they don't rely on ghost-text).</li>
+                  <li><strong>Agent-heavy users</strong> — high Agent count, Copilot LOC ≈ Agent LOC (almost all their code comes from agents). Often have near-zero acceptance rates — this is normal and expected.</li>
+                  <li><strong>CLI / GitHub.com users</strong> — may show surprisingly low numbers because CLI usage is only tracked at the org aggregate level (no per-user breakdown), and GitHub.com Copilot interactions may only partially appear in Chat metrics.</li>
                 </ul>
 
                 <h4 class="mb-2">🔍 What's not captured per user</h4>
@@ -86,12 +96,14 @@
                   <li><strong>Copilot CLI</strong> usage is only tracked as an aggregate count at the organization level — there is no per-user CLI breakdown.</li>
                   <li><strong>GitHub.com Copilot</strong> (PR summaries, issue chat) shows partially under Chat features but detailed stats are aggregate-only.</li>
                   <li><strong>Pull request metrics</strong> (Copilot-authored PRs, reviews) are available in the Agent Activity tab but not broken down per user.</li>
+                  <li><strong>Merged PR lines</strong> — when you merge a Copilot agent PR, the merge itself is not counted in Copilot LOC; only the original agent code generation event is tracked.</li>
                 </ul>
 
                 <h4 class="mb-2">💡 Tips for adoption tracking</h4>
                 <ul class="ml-4 mb-3">
                   <li>A <strong>low acceptance rate</strong> doesn't mean low Copilot value — users who rely on Chat and Agent mode get significant value without triggering inline completions.</li>
                   <li>Look at <strong>Active Days</strong> and <strong>Interactions</strong> for a fuller picture of engagement rather than acceptance rate alone.</li>
+                  <li>Compare <strong>Copilot LOC</strong> vs <strong>Agent LOC</strong> — if they're nearly equal, the user is primarily agent-driven.</li>
                   <li>Use the <strong>Chat</strong> and <strong>Agent</strong> columns to identify users who have adopted advanced Copilot features beyond code completion.</li>
                   <li>Users with <strong>0 active days</strong> may need onboarding support or may not have Copilot configured in their IDE.</li>
                 </ul>
@@ -173,7 +185,17 @@
               <td class="text-center">{{ item.code_generation_activity_count.toLocaleString() }}</td>
               <td class="text-center">{{ item.code_acceptance_activity_count.toLocaleString() }}</td>
               <td class="text-center">{{ getAcceptanceRate(item) }}%</td>
-              <td class="text-center">{{ item.loc_added_sum.toLocaleString() }}</td>
+              <td class="text-center">
+                <v-tooltip v-if="item.loc_added_sum > 0" location="top" :z-index="2147483647">
+                  <template #activator="{ props: tip }">
+                    <span v-bind="tip" class="font-weight-medium" style="cursor: help;">{{ item.loc_added_sum.toLocaleString() }}</span>
+                  </template>
+                  <v-card class="pa-3 metric-tooltip">
+                    <span class="tooltip-text" style="white-space: pre-line">{{ getLocBreakdown(item) }}</span>
+                  </v-card>
+                </v-tooltip>
+                <span v-else class="text-disabled">0</span>
+              </td>
               <td class="text-center">{{ getTopIde(item) }}</td>
               <td class="text-center">{{ getTopLanguage(item) }}</td>
               <td class="text-center">
@@ -278,7 +300,7 @@
 import { defineComponent, ref, computed, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
 import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
-import { CHAT_FEATURES, AGENT_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
+import { CHAT_FEATURES, AGENT_FEATURES, COMPLETION_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -499,6 +521,22 @@ export default defineComponent({
       return getFeatureLoc(user, AGENT_FEATURES);
     }
 
+    function getLocBreakdown(user: UserTotals): string {
+      const total = user.loc_added_sum || 0;
+      const completionLoc = getFeatureLoc(user, COMPLETION_FEATURES);
+      const chatLoc = getFeatureLoc(user, CHAT_FEATURES.filter(f => !AGENT_FEATURES.includes(f)));
+      const agentLoc = getFeatureLoc(user, AGENT_FEATURES);
+      const lines: string[] = [`Total Copilot LOC: ${total.toLocaleString()}`];
+      if (completionLoc > 0) lines.push(`  Inline completions: ${completionLoc.toLocaleString()}`);
+      if (chatLoc > 0) lines.push(`  Chat (ask/edit/inline): ${chatLoc.toLocaleString()}`);
+      if (agentLoc > 0) lines.push(`  Agent: ${agentLoc.toLocaleString()}`);
+      if (agentLoc > 0 && total > 0) {
+        const pct = Math.round((agentLoc / total) * 100);
+        lines.push(`${pct}% of LOC from agents`);
+      }
+      return lines.join('\n');
+    }
+
     function usesChat(user: UserTotals): boolean {
       return hasFeatureActivity(user, CHAT_FEATURES);
     }
@@ -535,7 +573,7 @@ export default defineComponent({
         { title: 'Completions',    key: 'code_generation_activity_count',   sortable: true  },
         { title: 'Accepted',       key: 'code_acceptance_activity_count',   sortable: true  },
         { title: 'Accept Rate',    key: 'acceptance_rate',                  sortable: false },
-        { title: 'Lines Accepted', key: 'loc_added_sum',                    sortable: true  },
+        { title: 'Copilot LOC',  key: 'loc_added_sum',                    sortable: true  },
       ];
       cols.push(
         { title: 'Top IDE',        key: 'top_ide',                          sortable: false },
@@ -615,6 +653,7 @@ export default defineComponent({
       getChatInteractions,
       getAgentActivity,
       getAgentLoc,
+      getLocBreakdown,
       getFeatureTooltip,
       CHAT_FEATURES,
       AGENT_FEATURES,
