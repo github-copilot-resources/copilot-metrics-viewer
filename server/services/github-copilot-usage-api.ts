@@ -225,8 +225,6 @@ export interface UserModelFeatureTotals {
   loc_suggested_to_delete_sum: number;
   loc_added_sum: number;
   loc_deleted_sum: number;
-  /** Premium requests count for this model+feature combination */
-  premium_requests_total?: number;
 }
 
 /** Aggregated metrics for a single user over a time period */
@@ -249,8 +247,6 @@ export interface UserTotals {
   /** Total lines of code accepted (added) */
   loc_added_sum: number;
   loc_deleted_sum: number;
-  /** Total premium requests consumed (e.g. Claude Sonnet, GPT-5, etc.) */
-  premium_requests_total?: number;
   /** Breakdown by IDE */
   totals_by_ide?: UserIdeTotals[];
   /** Breakdown by feature */
@@ -310,8 +306,6 @@ const METRIC_FIELDS = [
 ];
 
 const METRIC_FIELDS_NO_INTERACTION = METRIC_FIELDS.filter(f => f !== 'user_initiated_interaction_count');
-
-const MODEL_METRIC_FIELDS = [...METRIC_FIELDS, 'premium_requests_total'];
 
 /**
  * Aggregate an array of per-user-per-day records (from the real GitHub API)
@@ -380,24 +374,12 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
     );
     agg.totals_by_model_feature = mergeBreakdown(
       agg.totals_by_model_feature, rec.totals_by_model_feature,
-      (mf) => `${mf.model}:${mf.feature}`, MODEL_METRIC_FIELDS
+      (mf) => `${mf.model}:${mf.feature}`, METRIC_FIELDS
     );
   }
 
   const result: UserTotals[] = [];
   for (const [login, agg] of byUser) {
-    // Premium requests: the real API does not include a premium_requests_total
-    // field. Premium request cost depends on model multipliers that aren't in this
-    // data.  If the source records carried the field (e.g. mock data) we sum it;
-    // otherwise we leave it undefined so the UI can hide the column.
-    const premiumFromSource = agg.totals_by_model_feature.reduce(
-      (sum, mf) => sum + (mf.premium_requests_total ?? 0), 0
-    );
-    const hasPremiumData = agg.totals_by_model_feature.some(
-      mf => mf.premium_requests_total !== undefined && mf.premium_requests_total !== null
-    );
-    const premiumTotal = hasPremiumData ? premiumFromSource : undefined;
-
     result.push({
       login,
       user_id: agg.user_id,
@@ -409,7 +391,6 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
       loc_suggested_to_delete_sum: agg.loc_suggested_to_delete_sum,
       loc_added_sum: agg.loc_added_sum,
       loc_deleted_sum: agg.loc_deleted_sum,
-      premium_requests_total: premiumTotal,
       totals_by_ide: agg.totals_by_ide,
       totals_by_feature: agg.totals_by_feature,
       totals_by_language_feature: agg.totals_by_language_feature,

@@ -15,7 +15,6 @@
       "loc_suggested_to_delete_sum": 5,
       "loc_added_sum": 145,
       "loc_deleted_sum": 4,
-      "premium_requests_total": 3,
       "totals_by_ide": [
         {
           "ide": "vscode",
@@ -72,8 +71,7 @@
           "loc_suggested_to_add_sum": 160,
           "loc_suggested_to_delete_sum": 4,
           "loc_added_sum": 105,
-          "loc_deleted_sum": 3,
-          "premium_requests_total": 0
+          "loc_deleted_sum": 3
         },
         {
           "model": "claude-4.5-sonnet",
@@ -84,8 +82,7 @@
           "loc_suggested_to_add_sum": 60,
           "loc_suggested_to_delete_sum": 1,
           "loc_added_sum": 40,
-          "loc_deleted_sum": 1,
-          "premium_requests_total": 3
+          "loc_deleted_sum": 1
         }
       ]
     }

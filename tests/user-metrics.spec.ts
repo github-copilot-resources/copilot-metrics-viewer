@@ -30,7 +30,6 @@ const SAMPLE_USER_REPORT: UserReport = {
       loc_suggested_to_delete_sum: 120,
       loc_added_sum: 3200,
       loc_deleted_sum: 85,
-      premium_requests_total: 45,
       totals_by_ide: [
         { ide: 'vscode', user_initiated_interaction_count: 350, code_generation_activity_count: 1050, code_acceptance_activity_count: 720, loc_suggested_to_add_sum: 4100, loc_suggested_to_delete_sum: 100, loc_added_sum: 2750, loc_deleted_sum: 70 },
         { ide: 'visualstudio', user_initiated_interaction_count: 60, code_generation_activity_count: 190, code_acceptance_activity_count: 140, loc_suggested_to_add_sum: 700, loc_suggested_to_delete_sum: 20, loc_added_sum: 450, loc_deleted_sum: 15 },
@@ -47,9 +46,6 @@ const SAMPLE_USER_REPORT: UserReport = {
         { language: 'typescript', feature: 'agent_edit', code_generation_activity_count: 80, code_acceptance_activity_count: 40, loc_suggested_to_add_sum: 200, loc_suggested_to_delete_sum: 5, loc_added_sum: 80, loc_deleted_sum: 3 },
       ],
       totals_by_model_feature: [
-        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 800, code_acceptance_activity_count: 620, loc_suggested_to_add_sum: 3200, loc_suggested_to_delete_sum: 80, loc_added_sum: 2100, loc_deleted_sum: 55, premium_requests_total: 0 },
-        { model: 'claude-4.5-sonnet', feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 180, code_generation_activity_count: 200, code_acceptance_activity_count: 120, loc_suggested_to_add_sum: 800, loc_suggested_to_delete_sum: 20, loc_added_sum: 600, loc_deleted_sum: 15, premium_requests_total: 30 },
-        { model: 'claude-opus-4.5', feature: 'chat_panel_agent_mode', user_initiated_interaction_count: 100, code_generation_activity_count: 110, code_acceptance_activity_count: 60, loc_suggested_to_add_sum: 500, loc_suggested_to_delete_sum: 12, loc_added_sum: 380, loc_deleted_sum: 10, premium_requests_total: 15 },
       ],
     },
     {
@@ -63,7 +59,6 @@ const SAMPLE_USER_REPORT: UserReport = {
       loc_suggested_to_delete_sum: 20,
       loc_added_sum: 500,
       loc_deleted_sum: 15,
-      premium_requests_total: 0,
       totals_by_ide: [
         { ide: 'vscode', user_initiated_interaction_count: 80, code_generation_activity_count: 200, code_acceptance_activity_count: 120, loc_suggested_to_add_sum: 800, loc_suggested_to_delete_sum: 20, loc_added_sum: 500, loc_deleted_sum: 15 },
       ],
@@ -76,7 +71,6 @@ const SAMPLE_USER_REPORT: UserReport = {
         { language: 'python', feature: 'code_completion', code_generation_activity_count: 60, code_acceptance_activity_count: 35, loc_suggested_to_add_sum: 240, loc_suggested_to_delete_sum: 6, loc_added_sum: 150, loc_deleted_sum: 4 },
       ],
       totals_by_model_feature: [
-        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 150, code_acceptance_activity_count: 90, loc_suggested_to_add_sum: 600, loc_suggested_to_delete_sum: 15, loc_added_sum: 380, loc_deleted_sum: 10, premium_requests_total: 0 },
       ],
     },
   ],
@@ -121,8 +115,6 @@ describe('aggregateUserDayRecords', () => {
         { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 40, code_acceptance_activity_count: 25, loc_suggested_to_add_sum: 80, loc_suggested_to_delete_sum: 5, loc_added_sum: 60, loc_deleted_sum: 3 },
       ],
       totals_by_model_feature: [
-        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 40, code_acceptance_activity_count: 25, loc_suggested_to_add_sum: 80, loc_suggested_to_delete_sum: 5, loc_added_sum: 60, loc_deleted_sum: 3, premium_requests_total: 0 },
-        { model: 'claude-opus-4.6', feature: 'chat_panel_agent_mode', user_initiated_interaction_count: 10, code_generation_activity_count: 10, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 20, loc_suggested_to_delete_sum: 0, loc_added_sum: 20, loc_deleted_sum: 0, premium_requests_total: 10 },
       ],
     },
     {
@@ -141,7 +133,6 @@ describe('aggregateUserDayRecords', () => {
         { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 20, code_acceptance_activity_count: 12, loc_suggested_to_add_sum: 40, loc_suggested_to_delete_sum: 2, loc_added_sum: 30, loc_deleted_sum: 1 },
       ],
       totals_by_model_feature: [
-        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 20, code_acceptance_activity_count: 12, loc_suggested_to_add_sum: 40, loc_suggested_to_delete_sum: 2, loc_added_sum: 30, loc_deleted_sum: 1, premium_requests_total: 0 },
       ],
     },
     {
@@ -160,7 +151,6 @@ describe('aggregateUserDayRecords', () => {
         { language: 'python', feature: 'code_completion', code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0 },
       ],
       totals_by_model_feature: [
-        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0, premium_requests_total: 0 },
       ],
     },
   ];
@@ -207,26 +197,6 @@ describe('aggregateUserDayRecords', () => {
     // agent_mode only appeared on day 1
     const agentMode = alice.totals_by_feature!.find(f => f.feature === 'chat_panel_agent_mode')!;
     expect(agentMode.code_generation_activity_count).toBe(10);
-  });
-
-  it('sums premium_requests_total when source records include it', () => {
-    // The test DAY_RECORDS have explicit premium_requests_total on model_feature entries
-    const result = aggregateUserDayRecords(DAY_RECORDS);
-    const alice = result.find(u => u.login === 'alice')!;
-    // alice: auto=0 + claude-opus-4.6=10 = 10
-    expect(alice.premium_requests_total).toBe(10);
-  });
-
-  it('leaves premium_requests_total undefined when source records lack the field', () => {
-    // Simulate real API data: no premium_requests_total on any model_feature entry
-    const realApiRecords: UserDayRecord[] = [{
-      ...DAY_RECORDS[2], // bob's record
-      totals_by_model_feature: [
-        { model: 'auto', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 8, code_acceptance_activity_count: 4, loc_suggested_to_add_sum: 15, loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0 },
-      ],
-    }];
-    const result = aggregateUserDayRecords(realApiRecords);
-    expect(result[0].premium_requests_total).toBeUndefined();
   });
 
   it('preserves user_id', () => {
@@ -328,17 +298,6 @@ describe('UserTotals business logic', () => {
     const inactive = customUsers.filter(u => u.total_active_days === 0);
     expect(inactive.map(u => u.login)).toContain('ghost');
     expect(inactive.map(u => u.login)).not.toContain('octocat');
-  });
-
-  it('premium filter surfaces only users with premium_requests_total > 0', () => {
-    const premiumUsers = users.filter(u => (u.premium_requests_total ?? 0) > 0);
-    expect(premiumUsers.map(u => u.login)).toContain('octocat');        // 45
-    expect(premiumUsers.map(u => u.login)).not.toContain('octokitten'); // 0
-  });
-
-  it('total premium requests sums across all users', () => {
-    const total = users.reduce((sum, u) => sum + (u.premium_requests_total ?? 0), 0);
-    expect(total).toBe(45); // octocat=45, octokitten=0
   });
 
   it('acceptance rate calculation is correct', () => {
@@ -460,13 +419,6 @@ describe('User report payload field names match real GitHub API', () => {
         );
       }
     }
-  });
-
-  it('premium_requests_total is present on model_feature entries', () => {
-    const hasPremium = SAMPLE_USER_REPORT.user_totals.some(u =>
-      (u.totals_by_model_feature ?? []).some(mf => mf.premium_requests_total !== undefined)
-    );
-    expect(hasPremium).toBe(true);
   });
 
   it('report dates are valid ISO YYYY-MM-DD strings', () => {

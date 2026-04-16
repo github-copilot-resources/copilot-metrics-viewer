@@ -8,11 +8,9 @@ export class UserMetricsTab {
     readonly activeUsersValue: Locator;
     readonly avgAcceptanceRateLabel: Locator;
     readonly avgAcceptanceRateValue: Locator;
-    readonly premiumRequestsLabel: Locator;
     readonly searchInput: Locator;
     readonly dataTable: Locator;
     readonly activityFilterSelect: Locator;
-    readonly premiumFilterSelect: Locator;
     readonly tableBody: Locator;
 
     constructor(page: Page) {
@@ -32,7 +30,6 @@ export class UserMetricsTab {
             .locator('.v-card-item')
             .filter({ has: page.getByText('Avg Acceptance Rate', { exact: true }) })
             .locator('.text-h4');
-        this.premiumRequestsLabel = page.getByText('Premium Requests', { exact: true });
         // Use getByPlaceholder() to target the search input directly by its placeholder
         // attribute. In Vuetify 3, single-line v-text-field suppresses the <label> element
         // entirely (hasLabel = !singleLine && ...), so label-based locators don't work.
@@ -47,9 +44,6 @@ export class UserMetricsTab {
         // because those browsers do not bubble the click to the parent handler.
         this.activityFilterSelect = page.locator('.v-select').filter({
             has: page.locator('label', { hasText: 'Activity filter' })
-        });
-        this.premiumFilterSelect = page.locator('.v-select').filter({
-            has: page.locator('label', { hasText: 'Premium requests' })
         });
     }
 
@@ -83,10 +77,6 @@ export class UserMetricsTab {
         const rate = parseFloat((text as string).replace('%', ''));
         expect(rate).toBeGreaterThan(0);
         expect(rate).toBeLessThanOrEqual(100);
-    }
-
-    async expectPremiumRequestsVisible() {
-        await expect(this.premiumRequestsLabel).toBeVisible();
     }
 
     async expectDataTableVisible() {
@@ -125,19 +115,6 @@ export class UserMetricsTab {
      */
     async filterByActivity(option: string) {
         await this.activityFilterSelect.click();
-        await this.page.getByRole('option', { name: option }).click();
-        // Wait for the dropdown overlay to close before asserting table state.
-        // The overlay may already be gone if the selection resolved instantly — swallowing
-        // the timeout error is intentional here.
-        await this.page.locator('.v-overlay--active').waitFor({ state: 'hidden' }).catch(() => {});
-    }
-
-    /**
-     * Select an option from the Premium requests filter dropdown.
-     * @param option Display text of the option, e.g. 'Has premium requests'
-     */
-    async filterByPremium(option: string) {
-        await this.premiumFilterSelect.click();
         await this.page.getByRole('option', { name: option }).click();
         // Wait for the dropdown overlay to close before asserting table state.
         // The overlay may already be gone if the selection resolved instantly — swallowing

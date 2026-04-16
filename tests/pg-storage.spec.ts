@@ -430,7 +430,7 @@ describe('PostgreSQL Storage Layer', () => {
         loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0,
         loc_added_sum: 40, loc_deleted_sum: 2,
         totals_by_ide: [], totals_by_feature: [], totals_by_language_feature: [],
-        totals_by_model_feature: [{ model: 'claude-4.5-sonnet', feature: 'chat', user_initiated_interaction_count: 5, code_generation_activity_count: genCount, code_acceptance_activity_count: accCount, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 40, loc_deleted_sum: 2, premium_requests_total: 10 }],
+        totals_by_model_feature: [{ model: 'claude-4.5-sonnet', feature: 'chat', user_initiated_interaction_count: 5, code_generation_activity_count: genCount, code_acceptance_activity_count: accCount, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 40, loc_deleted_sum: 2 }],
       };
     }
 
@@ -461,17 +461,6 @@ describe('PostgreSQL Storage Layer', () => {
       expect(entry.active_users).toBe(2);
     });
 
-    it('should aggregate total_premium_requests', async () => {
-      await saveUserDayMetricsBatch('organization', 'test-org', [
-        mockDayRecord('alice', 1, '2026-02-15'),
-        mockDayRecord('bob', 2, '2026-02-15'),
-      ]);
-
-      const [entry] = await getUserMetricsHistory('organization', 'test-org');
-      // each record has premium_requests_total=10 per user
-      expect(entry.total_premium_requests).toBe(20);
-    });
-
     it('should compute avg_acceptance_rate', async () => {
       await saveUserDayMetricsBatch('organization', 'test-org', [
         mockDayRecord('alice', 1, '2026-02-15', 40, 20),
@@ -500,7 +489,7 @@ describe('PostgreSQL Storage Layer', () => {
         loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0,
         loc_added_sum: 40, loc_deleted_sum: 2,
         totals_by_ide: [], totals_by_feature: [], totals_by_language_feature: [],
-        totals_by_model_feature: [{ model: 'claude-4.5-sonnet', feature: 'chat', user_initiated_interaction_count: 5, code_generation_activity_count: 20, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 40, loc_deleted_sum: 2, premium_requests_total: 45 }],
+        totals_by_model_feature: [{ model: 'claude-4.5-sonnet', feature: 'chat', user_initiated_interaction_count: 5, code_generation_activity_count: 20, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 40, loc_deleted_sum: 2 }],
       };
     }
 
@@ -524,7 +513,6 @@ describe('PostgreSQL Storage Layer', () => {
 
       const [entry] = await getUserTimeSeries('organization', 'test-org', 'octocat');
       expect(entry.total_active_days).toBe(1);
-      expect(entry.premium_requests_total).toBe(45);
       expect(entry.code_generation_activity_count).toBe(1240);
     });
 

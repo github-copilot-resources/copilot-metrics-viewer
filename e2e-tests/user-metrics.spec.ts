@@ -6,9 +6,9 @@ const tag = { tag: ['@org', '@user-metrics'] };
 
 /**
  * Mock data users (from public/mock-data/new-api/organization-users-28-day-report.json):
- *   octocat    – 22 active days, 45 premium requests  (active ≥ 14 → "success" chip)
- *   octokitten – 18 active days, 28 premium requests  (active ≥ 14 → "success" chip)
- *   monalisa   –  5 active days,  0 premium requests  (occasional 1–6 → "warning" chip)
+ *   octocat    – 22 active days  (active ≥ 14 → "success" chip)
+ *   octokitten – 18 active days  (active ≥ 14 → "success" chip)
+ *   monalisa   –  5 active days  (occasional 1–6 → "warning" chip)
  */
 
 test.describe('User Metrics tab', () => {
@@ -54,12 +54,6 @@ test.describe('User Metrics tab', () => {
         await userMetrics.expectActiveUsersReturned();
     });
 
-    test('user metrics tab shows premium requests tile', tag, async () => {
-        const userMetrics = await dashboard.gotoUserMetricsTab();
-
-        await userMetrics.expectPremiumRequestsVisible();
-    });
-
     test('user metrics tab shows avg acceptance rate tile', tag, async () => {
         const userMetrics = await dashboard.gotoUserMetricsTab();
 
@@ -81,7 +75,6 @@ test.describe('User Metrics tab', () => {
         await expect(dashboard.page.getByText('Active Days', { exact: true })).toBeVisible();
         await expect(dashboard.page.getByText('Interactions', { exact: true })).toBeVisible();
         await expect(dashboard.page.getByText('Accept Rate', { exact: true })).toBeVisible();
-        await expect(dashboard.page.getByText('Premium Req.', { exact: true })).toBeVisible();
         await expect(dashboard.page.getByText('Top IDE', { exact: true })).toBeVisible();
         await expect(dashboard.page.getByText('Top Language', { exact: true })).toBeVisible();
     });
@@ -162,37 +155,6 @@ test.describe('User Metrics tab', () => {
 
         // Reset
         await userMetrics.filterByActivity('All users');
-    });
-
-    // ── Premium filter ────────────────────────────────────────────────────────────
-
-    test('premium filter "Has premium requests" hides users without premium usage', tag, async () => {
-        const userMetrics = await dashboard.gotoUserMetricsTab();
-
-        await userMetrics.filterByPremium('Has premium requests');
-
-        // octocat (45) and octokitten (28) have premium requests
-        await userMetrics.expectUserInTable('octocat');
-        await userMetrics.expectUserInTable('octokitten');
-        // monalisa has 0 premium requests
-        await userMetrics.expectUserNotInTable('monalisa');
-
-        // Reset
-        await userMetrics.filterByPremium('All users');
-    });
-
-    test('premium filter "No premium requests" shows only users with no premium usage', tag, async () => {
-        const userMetrics = await dashboard.gotoUserMetricsTab();
-
-        await userMetrics.filterByPremium('No premium requests');
-
-        // monalisa has 0 premium requests
-        await userMetrics.expectUserInTable('monalisa');
-        await userMetrics.expectUserNotInTable('octocat');
-        await userMetrics.expectUserNotInTable('octokitten');
-
-        // Reset
-        await userMetrics.filterByPremium('All users');
     });
 });
 

@@ -5,7 +5,7 @@
  *
  * 1. Without ?login=  → aggregate snapshots
  *    Returns UserMetricsHistoryEntry[] — one entry per stored 28-day window with
- *    org-level totals (total_users, active_users, premium_requests, acceptance_rate).
+ *    org-level totals (total_users, active_users, acceptance_rate).
  *
  * 2. With ?login=<username>  → per-user time series
  *    Returns UserTimeSeriesEntry[] — one entry per snapshot where the user appears,

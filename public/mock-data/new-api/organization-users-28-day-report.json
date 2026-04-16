@@ -16,7 +16,6 @@
       "loc_suggested_to_delete_sum": 120,
       "loc_added_sum": 3200,
       "loc_deleted_sum": 85,
-      "premium_requests_total": 45,
       "totals_by_ide": [
         {
           "ide": "vscode",
@@ -143,8 +142,7 @@
           "loc_suggested_to_add_sum": 3200,
           "loc_suggested_to_delete_sum": 80,
           "loc_added_sum": 2100,
-          "loc_deleted_sum": 55,
-          "premium_requests_total": 0
+          "loc_deleted_sum": 55
         },
         {
           "model": "claude-4.5-sonnet",
@@ -155,8 +153,7 @@
           "loc_suggested_to_add_sum": 800,
           "loc_suggested_to_delete_sum": 20,
           "loc_added_sum": 600,
-          "loc_deleted_sum": 15,
-          "premium_requests_total": 30
+          "loc_deleted_sum": 15
         },
         {
           "model": "claude-opus-4.5",
@@ -167,8 +164,7 @@
           "loc_suggested_to_add_sum": 500,
           "loc_suggested_to_delete_sum": 12,
           "loc_added_sum": 380,
-          "loc_deleted_sum": 10,
-          "premium_requests_total": 15
+          "loc_deleted_sum": 10
         },
         {
           "model": "gpt-5.2",
@@ -179,8 +175,7 @@
           "loc_suggested_to_add_sum": 300,
           "loc_suggested_to_delete_sum": 8,
           "loc_added_sum": 120,
-          "loc_deleted_sum": 5,
-          "premium_requests_total": 0
+          "loc_deleted_sum": 5
         }
       ]
     },
@@ -195,7 +190,6 @@
       "loc_suggested_to_delete_sum": 90,
       "loc_added_sum": 2350,
       "loc_deleted_sum": 62,
-      "premium_requests_total": 28,
       "totals_by_ide": [
         {
           "ide": "vscode",
@@ -282,8 +276,7 @@
           "loc_suggested_to_add_sum": 2400,
           "loc_suggested_to_delete_sum": 60,
           "loc_added_sum": 1600,
-          "loc_deleted_sum": 42,
-          "premium_requests_total": 0
+          "loc_deleted_sum": 42
         },
         {
           "model": "claude-4.5-sonnet",
@@ -294,8 +287,7 @@
           "loc_suggested_to_add_sum": 800,
           "loc_suggested_to_delete_sum": 20,
           "loc_added_sum": 560,
-          "loc_deleted_sum": 14,
-          "premium_requests_total": 28
+          "loc_deleted_sum": 14
         }
       ]
     },
@@ -310,7 +302,6 @@
       "loc_suggested_to_delete_sum": 14,
       "loc_added_sum": 310,
       "loc_deleted_sum": 9,
-      "premium_requests_total": 0,
       "totals_by_ide": [
         {
           "ide": "visualstudio",
@@ -367,8 +358,7 @@
           "loc_suggested_to_add_sum": 420,
           "loc_suggested_to_delete_sum": 10,
           "loc_added_sum": 250,
-          "loc_deleted_sum": 7,
-          "premium_requests_total": 0
+          "loc_deleted_sum": 7
         }
       ]
     }

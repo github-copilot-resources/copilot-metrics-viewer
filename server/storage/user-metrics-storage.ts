@@ -24,7 +24,6 @@ export interface UserMetricsHistoryEntry {
   report_end_day: string;
   total_users: number;
   active_users: number;
-  total_premium_requests: number;
   avg_acceptance_rate: number;
 }
 
@@ -38,7 +37,6 @@ export interface UserTimeSeriesEntry {
   code_generation_activity_count: number;
   code_acceptance_activity_count: number;
   loc_added_sum: number;
-  premium_requests_total: number;
   acceptance_rate: number;
 }
 
@@ -135,9 +133,6 @@ export async function getUserMetricsHistory(
       // (The original 7-day threshold was designed for a fixed 28-day window;
       // in monthly grouping every stored record represents at least one active day.)
       active_users: totals.filter(u => u.total_active_days >= 1).length,
-      total_premium_requests: totals.some(u => u.premium_requests_total != null)
-        ? totals.reduce((s, u) => s + (u.premium_requests_total ?? 0), 0)
-        : 0,
       avg_acceptance_rate: calcAcceptanceRate(totalGen, totalAcc),
     });
   }
@@ -191,7 +186,6 @@ export async function getUserTimeSeries(
       code_generation_activity_count: gen,
       code_acceptance_activity_count: acc,
       loc_added_sum: user.loc_added_sum,
-      premium_requests_total: user.premium_requests_total,
       acceptance_rate: calcAcceptanceRate(gen, acc),
     });
   }

@@ -24,17 +24,6 @@
         </v-card-item>
       </v-card>
 
-      <v-card v-if="hasPremiumData" elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center">
-          <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-            <div class="text-h6 mb-1">Premium Requests</div>
-            <div class="text-caption">Total premium model requests</div>
-            <p class="text-h4">{{ totalPremiumRequests }}</p>
-          </div>
-        </v-card-item>
-      </v-card>
-
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 260px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center">
           <div class="tiles-text">
@@ -79,17 +68,6 @@
               hide-details
             />
           </v-col>
-          <v-col v-if="hasPremiumData" cols="12" md="3">
-            <v-select
-              v-model="premiumFilter"
-              :items="premiumFilterOptions"
-              :menu-props="{ zIndex: 2400 }"
-              label="Premium requests"
-              density="compact"
-              variant="outlined"
-              hide-details
-            />
-          </v-col>
         </v-row>
 
         <v-data-table
@@ -118,17 +96,6 @@
               <td class="text-center">{{ item.code_acceptance_activity_count.toLocaleString() }}</td>
               <td class="text-center">{{ getAcceptanceRate(item) }}%</td>
               <td class="text-center">{{ item.loc_added_sum.toLocaleString() }}</td>
-              <td v-if="hasPremiumData" class="text-center">
-                <v-chip
-                  v-if="(item.premium_requests_total ?? 0) > 0"
-                  color="purple"
-                  size="small"
-                  variant="flat"
-                >
-                  {{ item.premium_requests_total }}
-                </v-chip>
-                <span v-else class="text-disabled">0</span>
-              </td>
               <td class="text-center">{{ getTopIde(item) }}</td>
               <td class="text-center">{{ getTopLanguage(item) }}</td>
               <td class="text-center">
@@ -193,7 +160,6 @@
                 <td>{{ item.report_end_day }}</td>
                 <td class="text-center">{{ item.total_users }}</td>
                 <td class="text-center">{{ item.active_users }}</td>
-                <td v-if="hasHistoryPremiumData" class="text-center">{{ item.total_premium_requests.toLocaleString() }}</td>
                 <td class="text-center">{{ item.avg_acceptance_rate }}%</td>
               </tr>
             </template>
@@ -249,7 +215,6 @@ export default defineComponent({
   setup(props) {
     const search = ref('');
     const activityFilter = ref('all');
-    const premiumFilter = ref('all');
 
     // ── Per-user trend dialog ──────────────────────────────────────────────
     const trendDialog  = ref(false);
@@ -309,17 +274,6 @@ export default defineComponent({
           yAxisID: 'yCount',
         },
       ];
-      if (trendData.value.some(e => e.premium_requests_total > 0)) {
-        datasets.push({
-          label: 'Premium Req.',
-          data: trendData.value.map(e => e.premium_requests_total),
-          borderColor: 'rgba(156, 39, 176, 0.9)',
-          backgroundColor: 'rgba(156, 39, 176, 0.1)',
-          fill: false,
-          tension: 0.3,
-          yAxisID: 'yCount',
-        });
-      }
       return { labels: trendData.value.map(e => e.report_end_day), datasets };
     });
 
@@ -341,28 +295,10 @@ export default defineComponent({
       { title: 'Inactive (0 days)', value: 'inactive' }
     ];
 
-    const premiumFilterOptions = [
-      { title: 'All users', value: 'all' },
-      { title: 'Has premium requests', value: 'premium' },
-      { title: 'No premium requests', value: 'no-premium' }
-    ];
-
     const totalUsers = computed(() => props.userMetrics.length);
 
     const activeUsers = computed(() =>
       props.userMetrics.filter(u => u.total_active_days >= 7).length
-    );
-
-    const totalPremiumRequests = computed(() =>
-      props.userMetrics.reduce((sum, u) => sum + (u.premium_requests_total ?? 0), 0)
-    );
-
-    const hasPremiumData = computed(() =>
-      props.userMetrics.some(u => u.premium_requests_total !== undefined && u.premium_requests_total !== null)
-    );
-
-    const hasHistoryPremiumData = computed(() =>
-      props.userMetricsHistory.some(e => e.total_premium_requests > 0)
     );
 
     const avgAcceptanceRate = computed(() => {
@@ -381,12 +317,6 @@ export default defineComponent({
         result = result.filter(u => u.total_active_days >= 1 && u.total_active_days < 7);
       } else if (activityFilter.value === 'inactive') {
         result = result.filter(u => u.total_active_days === 0);
-      }
-
-      if (premiumFilter.value === 'premium') {
-        result = result.filter(u => (u.premium_requests_total ?? 0) > 0);
-      } else if (premiumFilter.value === 'no-premium') {
-        result = result.filter(u => (u.premium_requests_total ?? 0) === 0);
       }
 
       return result;
@@ -440,9 +370,6 @@ export default defineComponent({
         { title: 'Accept Rate',    key: 'acceptance_rate',                  sortable: false },
         { title: 'Lines Accepted', key: 'loc_added_sum',                    sortable: true  },
       ];
-      if (hasPremiumData.value) {
-        cols.push({ title: 'Premium Req.', key: 'premium_requests_total', sortable: true });
-      }
       cols.push(
         { title: 'Top IDE',        key: 'top_ide',                          sortable: false },
         { title: 'Top Language',   key: 'top_language',                     sortable: false },
@@ -475,17 +402,6 @@ export default defineComponent({
           yAxisID: 'yUsers',
         },
       ];
-      if (hasHistoryPremiumData.value) {
-        datasets.push({
-          label: 'Premium Requests',
-          data: props.userMetricsHistory.map(e => e.total_premium_requests),
-          borderColor: 'rgba(156, 39, 176, 0.9)',
-          backgroundColor: 'rgba(156, 39, 176, 0.1)',
-          fill: false,
-          tension: 0.3,
-          yAxisID: 'yPremium',
-        });
-      }
       return { labels: props.userMetricsHistory.map(e => e.report_end_day), datasets };
     });
 
@@ -493,9 +409,6 @@ export default defineComponent({
       const scales: Record<string, object> = {
         yUsers: { type: 'linear' as const, position: 'left' as const, beginAtZero: true, title: { display: true, text: 'Users' } },
       };
-      if (hasHistoryPremiumData.value) {
-        scales.yPremium = { type: 'linear' as const, position: 'right' as const, beginAtZero: true, title: { display: true, text: 'Premium Req.' }, grid: { drawOnChartArea: false } };
-      }
       return {
         responsive: true,
         maintainAspectRatio: true,
@@ -509,25 +422,17 @@ export default defineComponent({
         { title: 'Snapshot (end day)', key: 'report_end_day' },
         { title: 'Total Users',        key: 'total_users' },
         { title: 'Active Users',       key: 'active_users' },
+        { title: 'Avg Acceptance',     key: 'avg_acceptance_rate' },
       ];
-      if (hasHistoryPremiumData.value) {
-        cols.push({ title: 'Premium Requests', key: 'total_premium_requests' });
-      }
-      cols.push({ title: 'Avg Acceptance', key: 'avg_acceptance_rate' });
       return cols;
     });
 
     return {
       search,
       activityFilter,
-      premiumFilter,
       activityFilterOptions,
-      premiumFilterOptions,
       totalUsers,
       activeUsers,
-      totalPremiumRequests,
-      hasPremiumData,
-      hasHistoryPremiumData,
       avgAcceptanceRate,
       filteredUsers,
       tableHeaders,
