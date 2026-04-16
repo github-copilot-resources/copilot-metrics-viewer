@@ -3,7 +3,7 @@
  * POST /api/admin/sync
  */
 
-import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk, syncUserMetrics } from '../../services/sync-service';
+import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk } from '../../services/sync-service';
 import { Options } from '@/model/Options';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 
@@ -130,22 +130,6 @@ export default defineEventHandler(async (event) => {
         return {
           action: 'sync-bulk',
           ...bulkResult
-        };
-      }
-
-      case 'sync-user-metrics': {
-        // Sync per-user metrics via users-28-day report
-        logger.info(`Running user metrics sync for ${options.scope}:${options.githubOrg || options.githubEnt}`);
-        const userResult = await syncUserMetrics(
-          options.scope!,
-          options.githubOrg || options.githubEnt || 'unknown',
-          headers,
-          options.githubTeam
-        );
-
-        return {
-          action: 'sync-user-metrics',
-          ...userResult
         };
       }
 

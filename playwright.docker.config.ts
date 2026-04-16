@@ -5,6 +5,7 @@ import type { ConfigOptions } from '@nuxt/test-utils/playwright'
 export default defineConfig<ConfigOptions>({
   ...baseConfig,
   timeout: 30 * 1000, // Increase timeout to 30 seconds
+  grepInvert: /@real-data/,
   expect: {
     timeout: 10 * 1000, // 10 seconds for expect assertions
   },

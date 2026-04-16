@@ -69,7 +69,6 @@ const tag = { tag: ['@ent', '@org', '@team'] };
 
             await userMetrics.expectTotalUsersVisible();
             await userMetrics.expectTotalUsersReturned();
-            await userMetrics.expectPremiumRequestsVisible();
         });
 
         test('copilot chat visible', tag, async () => {

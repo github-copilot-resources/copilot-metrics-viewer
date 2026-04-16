@@ -103,6 +103,8 @@ export default defineNuxtConfig({
       usingGithubAuth: false,
       version,
       isPublicApp: false,
+      // Deployment metadata (set via NUXT_PUBLIC_DEPLOY_INFO for preview environments)
+      deployInfo: '',
       // New API migration flags
       useLegacyApi: false,  // Set true to use deprecated /copilot/metrics API (USE_LEGACY_API)
       enableHistoricalMode: false,  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)

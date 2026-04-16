@@ -15,9 +15,36 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import {
   fetchLatestUserReport,
-  type UserReport
+  type UserReport,
+  type UserTotals
 } from '../services/github-copilot-usage-api';
 import { getLatestUserMetrics } from '../storage/user-metrics-storage';
+import { fetchAllTeamMembers } from './seats';
+
+/**
+ * If the request is for a team scope, resolve team members and filter
+ * the user totals to only include team members.
+ * Returns the original array unchanged for non-team scopes.
+ */
+async function filterByTeamIfNeeded(
+  userTotals: UserTotals[],
+  options: Options,
+  headers: Headers
+): Promise<UserTotals[]> {
+  const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
+  if (!isTeamScope || !options.githubTeam) return userTotals;
+
+  const teamMembers = await fetchAllTeamMembers(options, headers);
+  if (teamMembers.length === 0) return [];
+
+  const memberIds = new Set(teamMembers.map(m => m.id));
+  const memberLogins = new Set(teamMembers.map(m => m.login.toLowerCase()));
+
+  return userTotals.filter(u =>
+    (u.user_id && memberIds.has(u.user_id)) ||
+    (u.login && memberLogins.has(u.login.toLowerCase()))
+  );
+}
 
 export default defineEventHandler(async (event) => {
   const logger = console;
@@ -40,17 +67,36 @@ export default defineEventHandler(async (event) => {
 
   // ── Storage / historical mode ───────────────────────────────────────────────
   if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+    const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
+
+    // Team-scoped queries require auth to resolve current team membership
+    if (isTeamScope && !event.context.headers?.has('Authorization')) {
+      throw createError({
+        statusCode: 503,
+        statusMessage: 'Team-scoped user metrics require a GitHub token to resolve team membership.',
+      });
+    }
+
     try {
       const scope = options.scope || 'organization';
       const identifier = options.githubOrg || options.githubEnt || '';
       const stored = await getLatestUserMetrics(scope, identifier);
       if (stored) {
-        logger.info(`Returning ${stored.userTotals.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay})`);
-        return stored.userTotals;
+        const filtered = await filterByTeamIfNeeded(stored.userTotals, options, event.context.headers);
+        logger.info(`Returning ${filtered.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay})`);
+        return filtered;
       }
       logger.info('No user metrics in storage yet, attempting live fetch');
     } catch (err) {
+      // Re-throw H3 errors (like 503 above)
+      if (err && typeof err === 'object' && 'statusCode' in err) throw err;
       logger.warn('Storage lookup failed, falling back to live fetch:', err);
+      if (!event.context.headers?.has('Authorization')) {
+        throw createError({
+          statusCode: 503,
+          statusMessage: 'Historical mode: storage unavailable and no GitHub token configured for live fallback.',
+        });
+      }
     }
   }
 
@@ -77,8 +123,9 @@ export default defineEventHandler(async (event) => {
     );
 
     const userTotals = report.user_totals ?? [];
-    logger.info(`Returned ${userTotals.length} user records for ${scope}:${identifier}`);
-    return userTotals;
+    const filtered = await filterByTeamIfNeeded(userTotals, options, event.context.headers);
+    logger.info(`Returned ${filtered.length} user records for ${scope}:${identifier} (${userTotals.length} before team filter)`);
+    return filtered;
 
   } catch (error: unknown) {
     logger.error('Error fetching user metrics:', error);
