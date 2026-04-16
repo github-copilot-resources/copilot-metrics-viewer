@@ -156,7 +156,7 @@
               <td class="text-center">{{ getTopIde(item) }}</td>
               <td class="text-center">{{ getTopLanguage(item) }}</td>
               <td class="text-center">
-                <v-tooltip v-if="getChatInteractions(item) > 0" location="top">
+                <v-tooltip v-if="getChatInteractions(item) > 0" location="top" :z-index="2147483647">
                   <template #activator="{ props: tip }">
                     <span v-bind="tip" class="text-indigo font-weight-medium">{{ getChatInteractions(item).toLocaleString() }}</span>
                   </template>
@@ -165,7 +165,7 @@
                 <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">
-                <v-tooltip v-if="getAgentActivity(item) > 0" location="top">
+                <v-tooltip v-if="getAgentActivity(item) > 0" location="top" :z-index="2147483647">
                   <template #activator="{ props: tip }">
                     <span v-bind="tip" class="text-deep-purple font-weight-medium">{{ getAgentActivity(item).toLocaleString() }}</span>
                   </template>

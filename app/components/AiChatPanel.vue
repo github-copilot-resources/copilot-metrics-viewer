@@ -12,7 +12,7 @@
       @click="isOpen = true"
     >
       <v-icon>mdi-robot-outline</v-icon>
-      <v-tooltip activator="parent" location="left">Ask AI about metrics</v-tooltip>
+      <v-tooltip activator="parent" :z-index="2147483647" location="left">Ask AI about metrics</v-tooltip>
     </v-btn>
 
     <!-- Chat Dialog -->
@@ -32,11 +32,11 @@
         <v-spacer />
         <v-btn v-if="userToken" icon size="small" variant="text" @click="clearUserToken" title="Disconnect token">
           <v-icon size="small">mdi-key-remove</v-icon>
-          <v-tooltip activator="parent" location="bottom">Disconnect personal token</v-tooltip>
+          <v-tooltip activator="parent" :z-index="2147483647" location="bottom">Disconnect personal token</v-tooltip>
         </v-btn>
         <v-btn icon size="small" variant="text" @click="clearConversation">
           <v-icon size="small">mdi-delete-outline</v-icon>
-          <v-tooltip activator="parent" location="bottom">Clear conversation</v-tooltip>
+          <v-tooltip activator="parent" :z-index="2147483647" location="bottom">Clear conversation</v-tooltip>
         </v-btn>
         <v-btn icon size="small" variant="text" @click="isOpen = false">
           <v-icon size="small">mdi-close</v-icon>
