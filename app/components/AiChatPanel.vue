@@ -369,14 +369,14 @@ watch(messages, () => scrollToBottom(), { deep: true });
   position: fixed;
   bottom: 16px;
   right: 16px;
-  z-index: 10001;
+  z-index: 100000;
 }
 
 .ai-chat-fab {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 10001;
+  z-index: 100000;
 }
 
 .ai-chat-card {
@@ -384,7 +384,7 @@ watch(messages, () => scrollToBottom(), { deep: true });
   max-height: 600px;
   display: flex;
   flex-direction: column;
-  z-index: 10001;
+  z-index: 100000;
 }
 
 .ai-chat-messages {

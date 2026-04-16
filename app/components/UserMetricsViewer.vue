@@ -99,22 +99,22 @@
               <td class="text-center">{{ getTopIde(item) }}</td>
               <td class="text-center">{{ getTopLanguage(item) }}</td>
               <td class="text-center">
-                <v-tooltip v-if="usesChat(item)" location="top">
+                <v-tooltip v-if="getChatInteractions(item) > 0" location="top">
                   <template #activator="{ props: tip }">
-                    <v-icon v-bind="tip" color="indigo" size="small">mdi-chat</v-icon>
+                    <span v-bind="tip" class="text-indigo font-weight-medium">{{ getChatInteractions(item).toLocaleString() }}</span>
                   </template>
                   <span style="white-space: pre-line">{{ getFeatureTooltip(item, CHAT_FEATURES) }}</span>
                 </v-tooltip>
-                <span v-else class="text-disabled">—</span>
+                <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">
-                <v-tooltip v-if="usesAgent(item)" location="top">
+                <v-tooltip v-if="getAgentActivity(item) > 0" location="top">
                   <template #activator="{ props: tip }">
-                    <v-icon v-bind="tip" color="deep-purple" size="small">mdi-robot</v-icon>
+                    <span v-bind="tip" class="text-deep-purple font-weight-medium">{{ getAgentActivity(item).toLocaleString() }}</span>
                   </template>
                   <span style="white-space: pre-line">{{ getFeatureTooltip(item, AGENT_FEATURES) }}</span>
                 </v-tooltip>
-                <span v-else class="text-disabled">—</span>
+                <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">
                 <v-btn
@@ -387,6 +387,21 @@ export default defineComponent({
       );
     }
 
+    function getFeatureActivityCount(user: UserTotals, features: string[]): number {
+      if (!user.totals_by_feature) return 0;
+      return user.totals_by_feature
+        .filter(f => features.includes(f.feature))
+        .reduce((sum, f) => sum + f.user_initiated_interaction_count + f.code_generation_activity_count, 0);
+    }
+
+    function getChatInteractions(user: UserTotals): number {
+      return getFeatureActivityCount(user, CHAT_FEATURES);
+    }
+
+    function getAgentActivity(user: UserTotals): number {
+      return getFeatureActivityCount(user, AGENT_FEATURES);
+    }
+
     function usesChat(user: UserTotals): boolean {
       return hasFeatureActivity(user, CHAT_FEATURES);
     }
@@ -428,8 +443,8 @@ export default defineComponent({
       cols.push(
         { title: 'Top IDE',        key: 'top_ide',                          sortable: false },
         { title: 'Top Language',   key: 'top_language',                     sortable: false },
-        { title: 'Chat',           key: 'uses_chat',                        sortable: false },
-        { title: 'Agent',          key: 'uses_agent',                       sortable: false },
+        { title: 'Chat',           key: 'uses_chat',                        sortable: true  },
+        { title: 'Agent',          key: 'uses_agent',                       sortable: true  },
       );
       if (showTrendButtons.value) {
         cols.push({ title: 'Trend', key: 'trend', sortable: false });
@@ -499,6 +514,8 @@ export default defineComponent({
       getTopLanguage,
       usesChat,
       usesAgent,
+      getChatInteractions,
+      getAgentActivity,
       getFeatureTooltip,
       CHAT_FEATURES,
       AGENT_FEATURES,
