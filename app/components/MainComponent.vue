@@ -132,6 +132,18 @@ v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMet
 
     </div>
 
+    <!-- AI Chat Panel (feature-gated) -->
+    <AiChatPanel
+      v-if="config?.public?.enableAiChat"
+      :current-tab="tab"
+      :query-params="aiQueryParams"
+      :metrics="metrics"
+      :seats="seats"
+      :total-seats="seatsTotalCount"
+      :user-metrics="userMetrics"
+      :report-data="reportData"
+    />
+
   </div>
 </template>
 <script lang='ts'>
@@ -157,6 +169,7 @@ import AgentActivityViewer from './AgentActivityViewer.vue'
 import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
+import AiChatPanel from './AiChatPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
@@ -174,7 +187,8 @@ export default defineNuxtComponent({
     AgentActivityViewer,
     PullRequestViewer,
     DateRangeSelector,
-    UserMetricsViewer
+    UserMetricsViewer,
+    AiChatPanel
   },
   methods: {
     logout() {
@@ -447,6 +461,11 @@ export default defineNuxtComponent({
       })
     });
 
+    const aiQueryParams = computed(() => {
+      const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
+      return options.toParams();
+    });
+
     return {
       showLogoutButton,
       mockedDataMessage,
@@ -461,6 +480,7 @@ export default defineNuxtComponent({
       route,
       seatsCurrentPage,
       seatsQueryParams,
+      aiQueryParams,
     };
   },
 })
