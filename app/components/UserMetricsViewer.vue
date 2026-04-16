@@ -174,6 +174,10 @@
                 <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">
+                <span v-if="getAgentLoc(item) > 0" class="text-deep-purple font-weight-medium">{{ getAgentLoc(item).toLocaleString() }}</span>
+                <span v-else class="text-disabled">0</span>
+              </td>
+              <td class="text-center">
                 <v-btn
                   v-if="showTrendButtons"
                   icon
@@ -459,6 +463,17 @@ export default defineComponent({
       return getFeatureActivityCount(user, AGENT_FEATURES);
     }
 
+    function getFeatureLoc(user: UserTotals, features: string[]): number {
+      if (!user.totals_by_feature) return 0;
+      return user.totals_by_feature
+        .filter(f => features.includes(f.feature))
+        .reduce((sum, f) => sum + (f.loc_added_sum || 0), 0);
+    }
+
+    function getAgentLoc(user: UserTotals): number {
+      return getFeatureLoc(user, AGENT_FEATURES);
+    }
+
     function usesChat(user: UserTotals): boolean {
       return hasFeatureActivity(user, CHAT_FEATURES);
     }
@@ -502,6 +517,7 @@ export default defineComponent({
         { title: 'Top Language',   key: 'top_language',                     sortable: false },
         { title: 'Chat',           key: 'uses_chat',                        sortable: true  },
         { title: 'Agent',          key: 'uses_agent',                       sortable: true  },
+        { title: 'Agent LOC',      key: 'agent_loc',                        sortable: true  },
       );
       if (showTrendButtons.value) {
         cols.push({ title: 'Trend', key: 'trend', sortable: false });
@@ -573,6 +589,7 @@ export default defineComponent({
       usesAgent,
       getChatInteractions,
       getAgentActivity,
+      getAgentLoc,
       getFeatureTooltip,
       CHAT_FEATURES,
       AGENT_FEATURES,
