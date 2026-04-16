@@ -13,6 +13,8 @@
 
 import { aiTools, buildSystemPrompt } from '../../services/ai-tools';
 import { executeTool, type ToolCallRequest } from '../../services/ai-tool-executor';
+import { isMockMode } from '../../services/github-copilot-usage-api-mock';
+import { generateMockChatResponse } from '../../services/ai-chat-mock';
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
@@ -74,19 +76,32 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const githubToken = config.githubToken;
-  if (!githubToken) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: 'GitHub token not configured. AI Chat requires a GitHub token with models:read scope.',
-    });
-  }
-
   const body = await readBody<ChatRequest>(event);
   if (!body?.question?.trim()) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Question is required.',
+    });
+  }
+
+  // Mock mode: return canned responses without calling GitHub Models API
+  if (isMockMode()) {
+    const mockCachedData = {
+      metrics: body.dashboardData?.metrics as any,
+      originalMetrics: undefined,
+      reportData: body.dashboardData?.reportData as any,
+      seats: body.dashboardData?.seats as any,
+      totalSeats: body.dashboardData?.totalSeats,
+      userMetrics: body.dashboardData?.userMetrics as any,
+    };
+    return generateMockChatResponse(body.question, body.currentTab, mockCachedData);
+  }
+
+  const githubToken = config.githubToken;
+  if (!githubToken) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'GitHub token not configured. AI Chat requires a GitHub token with models:read scope.',
     });
   }
 
