@@ -53,6 +53,7 @@ interface ChatRequest {
   conversationHistory?: ChatMessage[];
   currentTab?: string;
   queryParams?: Record<string, string>;
+  userToken?: string;
   dashboardData?: {
     metrics?: unknown[];
     seats?: unknown[];
@@ -97,13 +98,18 @@ export default defineEventHandler(async (event) => {
     return generateMockChatResponse(body.question, body.currentTab, mockCachedData);
   }
 
-  // Use dedicated AI token if set, otherwise fall back to the general GitHub token
+  // Use dedicated AI token if set, then fall back to GitHub token, then user-provided token
   const aiToken = (config as Record<string, unknown>).aiToken as string;
-  const githubToken = aiToken || config.githubToken;
+  const userToken = body.userToken?.trim();
+  const githubToken = aiToken || config.githubToken || userToken;
   if (!githubToken) {
     throw createError({
-      statusCode: 500,
-      statusMessage: 'No AI token configured. Set NUXT_AI_TOKEN (recommended) or ensure NUXT_GITHUB_TOKEN has models:read scope.',
+      statusCode: 401,
+      statusMessage: 'missing_token',
+      data: {
+        code: 'missing_token',
+        message: 'No AI token configured. An administrator can set NUXT_AI_TOKEN in the server environment, or you can provide a personal GitHub token with models:read scope.',
+      },
     });
   }
 
@@ -162,10 +168,14 @@ export default defineEventHandler(async (event) => {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`GitHub Models API error (round ${round}):`, message);
 
-      if (message.includes('401') || message.includes('403')) {
+      if (message.includes('401') || message.includes('403') || message.includes('no_access')) {
         throw createError({
           statusCode: 401,
-          statusMessage: 'GitHub Models API authentication failed. Ensure your token has the "models:read" scope.',
+          statusMessage: 'invalid_token',
+          data: {
+            code: 'invalid_token',
+            message: 'GitHub Models API rejected the token. Ensure your token is a personal (not org-scoped) fine-grained PAT with the "models:read" permission.',
+          },
         });
       }
       if (message.includes('429')) {

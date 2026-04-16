@@ -28,6 +28,10 @@
           AI Metrics Assistant
         </v-toolbar-title>
         <v-spacer />
+        <v-btn v-if="userToken" icon size="small" variant="text" @click="clearUserToken" title="Disconnect token">
+          <v-icon size="small">mdi-key-remove</v-icon>
+          <v-tooltip activator="parent" location="bottom">Disconnect personal token</v-tooltip>
+        </v-btn>
         <v-btn icon size="small" variant="text" @click="clearConversation">
           <v-icon size="small">mdi-delete-outline</v-icon>
           <v-tooltip activator="parent" location="bottom">Clear conversation</v-tooltip>
@@ -40,7 +44,7 @@
       <!-- Messages -->
       <div ref="messagesContainer" class="ai-chat-messages">
         <!-- Welcome message -->
-        <div v-if="messages.length === 0" class="ai-chat-welcome">
+        <div v-if="messages.length === 0 && !tokenSetupNeeded" class="ai-chat-welcome">
           <v-icon size="48" color="grey-lighten-1" class="mb-3">mdi-robot-happy-outline</v-icon>
           <p class="text-body-2 text-grey-darken-1 mb-4">
             Ask me anything about your Copilot metrics!
@@ -60,6 +64,71 @@
               {{ q }}
             </v-chip>
           </div>
+        </div>
+
+        <!-- Token setup guide -->
+        <div v-if="tokenSetupNeeded" class="ai-chat-token-setup pa-3">
+          <v-icon size="40" color="warning" class="mb-2">mdi-key-alert</v-icon>
+          <p class="text-body-2 font-weight-medium mb-2">AI Token Required</p>
+          <p class="text-body-2 text-grey-darken-1 mb-3">
+            {{ tokenErrorMessage }}
+          </p>
+
+          <v-expansion-panels variant="accordion" class="mb-3">
+            <v-expansion-panel>
+              <v-expansion-panel-title class="text-body-2 py-2">
+                <v-icon size="small" class="mr-2">mdi-server</v-icon>
+                Option 1: Server environment variable
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <p class="text-caption text-grey-darken-1 mb-2">
+                  An administrator can set the <code>NUXT_AI_TOKEN</code> environment variable on the server
+                  with a GitHub fine-grained PAT that has <strong>Models → Read</strong> permission.
+                </p>
+                <p class="text-caption text-grey-darken-1">
+                  The token must be scoped to a <strong>personal account</strong> (not an organization).
+                </p>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+            <v-expansion-panel>
+              <v-expansion-panel-title class="text-body-2 py-2">
+                <v-icon size="small" class="mr-2">mdi-account-key</v-icon>
+                Option 2: Provide your personal token
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <p class="text-caption text-grey-darken-1 mb-2">
+                  Create a
+                  <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" class="text-indigo">
+                    fine-grained personal access token
+                  </a>
+                  scoped to your <strong>personal account</strong> with <strong>Models → Read</strong> permission.
+                </p>
+                <v-text-field
+                  v-model="userTokenInput"
+                  type="password"
+                  placeholder="github_pat_..."
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  class="mb-2"
+                  prepend-inner-icon="mdi-key"
+                />
+                <v-btn
+                  color="indigo"
+                  size="small"
+                  block
+                  :disabled="!userTokenInput.trim()"
+                  @click="saveUserToken"
+                >
+                  Save &amp; connect
+                </v-btn>
+                <p class="text-caption text-grey-darken-2 mt-2">
+                  <v-icon size="x-small">mdi-information-outline</v-icon>
+                  Token is stored in your browser session only and sent securely to the server per request.
+                </p>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
         </div>
 
         <!-- Message bubbles -->
@@ -164,12 +233,42 @@ const isLoading = ref(false);
 const loadingText = ref('Thinking...');
 const errorMessage = ref('');
 const messagesContainer = ref<HTMLElement | null>(null);
+const tokenSetupNeeded = ref(false);
+const tokenErrorMessage = ref('');
+const userTokenInput = ref('');
+const userToken = ref('');
+
+// Restore user token from sessionStorage
+if (import.meta.client) {
+  const stored = sessionStorage.getItem('ai-chat-user-token');
+  if (stored) userToken.value = stored;
+}
 
 const suggestedQuestions = computed(() => getSuggestedQuestions(props.currentTab));
 
 function clearConversation() {
   messages.value = [];
   errorMessage.value = '';
+  tokenSetupNeeded.value = false;
+}
+
+function saveUserToken() {
+  const token = userTokenInput.value.trim();
+  if (!token) return;
+  userToken.value = token;
+  userTokenInput.value = '';
+  tokenSetupNeeded.value = false;
+  if (import.meta.client) {
+    sessionStorage.setItem('ai-chat-user-token', token);
+  }
+}
+
+function clearUserToken() {
+  userToken.value = '';
+  userTokenInput.value = '';
+  if (import.meta.client) {
+    sessionStorage.removeItem('ai-chat-user-token');
+  }
 }
 
 function askQuestion(question: string) {
@@ -205,6 +304,7 @@ async function sendMessage() {
         conversationHistory: history,
         currentTab: props.currentTab,
         queryParams: props.queryParams,
+        userToken: userToken.value || undefined,
         dashboardData: {
           metrics: props.metrics,
           seats: props.seats,
@@ -222,9 +322,18 @@ async function sendMessage() {
       content: result.answer,
     });
   } catch (error: unknown) {
-    const err = error as { statusCode?: number; statusMessage?: string; data?: { statusMessage?: string }; message?: string };
-    const msg = err.data?.statusMessage || err.statusMessage || err.message || 'An error occurred';
-    errorMessage.value = msg;
+    const err = error as { statusCode?: number; statusMessage?: string; data?: { statusMessage?: string; data?: { code?: string; message?: string } }; message?: string };
+    const errorCode = err.data?.data?.code || err.statusMessage;
+    const errorMsg = err.data?.data?.message || err.data?.statusMessage || err.message || 'An error occurred';
+
+    if (errorCode === 'missing_token' || errorCode === 'invalid_token') {
+      tokenSetupNeeded.value = true;
+      tokenErrorMessage.value = errorMsg;
+      // Remove the user's message that triggered the error so they can retry
+      messages.value.pop();
+    } else {
+      errorMessage.value = errorMsg;
+    }
   } finally {
     isLoading.value = false;
     await scrollToBottom();
@@ -291,6 +400,25 @@ watch(messages, () => scrollToBottom(), { deep: true });
   justify-content: center;
   padding: 24px 12px;
   text-align: center;
+}
+
+.ai-chat-token-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.ai-chat-token-setup .v-expansion-panels {
+  width: 100%;
+  text-align: left;
+}
+
+.ai-chat-token-setup code {
+  background-color: rgba(0, 0, 0, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.85em;
 }
 
 .ai-chat-suggestions {
