@@ -4,34 +4,55 @@
     <div class="tiles-container">
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center">
-          <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-            <div class="text-h6 mb-1">Total Users</div>
-            <div class="text-caption">Users with Copilot activity</div>
-            <p class="text-h4">{{ totalUsers }}</p>
-          </div>
+          <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
+            <template #activator="{ props }">
+              <div v-bind="props" class="tiles-text">
+                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                <div class="text-h6 mb-1">Total Users</div>
+                <div class="text-caption">Users with Copilot activity</div>
+                <p class="text-h4">{{ totalUsers }}</p>
+              </div>
+            </template>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Total number of users who had any Copilot activity (code completions, chat, or agent) during the reporting period.</span>
+            </v-card>
+          </v-tooltip>
         </v-card-item>
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center">
-          <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-            <div class="text-h6 mb-1">Active Users</div>
-            <div class="text-caption">Active in last 7 days of period</div>
-            <p class="text-h4">{{ activeUsers }}</p>
-          </div>
+          <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
+            <template #activator="{ props }">
+              <div v-bind="props" class="tiles-text">
+                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                <div class="text-h6 mb-1">Active Users</div>
+                <div class="text-caption">Active in last 7 days of period</div>
+                <p class="text-h4">{{ activeUsers }}</p>
+              </div>
+            </template>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Users who were active in the last 7 days of the reporting window. Helps identify current engagement vs dormant users.</span>
+            </v-card>
+          </v-tooltip>
         </v-card-item>
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 260px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center">
-          <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
-            <div class="text-h6 mb-1">Avg Acceptance Rate</div>
-            <div class="text-caption">Code completions accepted</div>
-            <p class="text-h4">{{ avgAcceptanceRate }}%</p>
-          </div>
+          <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
+            <template #activator="{ props }">
+              <div v-bind="props" class="tiles-text">
+                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+                <div class="text-h6 mb-1">Avg Acceptance Rate</div>
+                <div class="text-caption">Code completions accepted</div>
+                <p class="text-h4">{{ avgAcceptanceRate }}%</p>
+              </div>
+            </template>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Average ratio of accepted inline code completions to total suggestions across all users. Only measures ghost-text suggestions — does not include Chat, Agent, CLI, or GitHub.com interactions.</span>
+            </v-card>
+          </v-tooltip>
         </v-card-item>
       </v-card>
     </div>
@@ -158,23 +179,27 @@
               <td class="text-center">
                 <v-tooltip v-if="getChatInteractions(item) > 0" location="top" :z-index="2147483647">
                   <template #activator="{ props: tip }">
-                    <span v-bind="tip" class="text-indigo font-weight-medium">{{ getChatInteractions(item).toLocaleString() }}</span>
+                    <span v-bind="tip" class="text-indigo font-weight-medium" style="cursor: help;">{{ getChatInteractions(item).toLocaleString() }}</span>
                   </template>
-                  <span style="white-space: pre-line">{{ getFeatureTooltip(item, CHAT_FEATURES) }}</span>
+                  <v-card class="pa-3 metric-tooltip">
+                    <span class="tooltip-text" style="white-space: pre-line">{{ getFeatureTooltip(item, CHAT_FEATURES) }}</span>
+                  </v-card>
                 </v-tooltip>
                 <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">
                 <v-tooltip v-if="getAgentActivity(item) > 0" location="top" :z-index="2147483647">
                   <template #activator="{ props: tip }">
-                    <span v-bind="tip" class="text-deep-purple font-weight-medium">{{ getAgentActivity(item).toLocaleString() }}</span>
+                    <span v-bind="tip" class="text-deep-purple font-weight-medium" style="cursor: help;">{{ getAgentActivity(item).toLocaleString() }}</span>
                   </template>
-                  <span style="white-space: pre-line">{{ getFeatureTooltip(item, AGENT_FEATURES) }}</span>
+                  <v-card class="pa-3 metric-tooltip">
+                    <span class="tooltip-text" style="white-space: pre-line">{{ getFeatureTooltip(item, AGENT_FEATURES) }}</span>
+                  </v-card>
                 </v-tooltip>
                 <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">
-                <span v-if="getAgentLoc(item) > 0" class="text-deep-purple font-weight-medium">{{ getAgentLoc(item).toLocaleString() }}</span>
+                <span v-if="getAgentLoc(item) > 0" class="font-weight-medium">{{ getAgentLoc(item).toLocaleString() }}</span>
                 <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">

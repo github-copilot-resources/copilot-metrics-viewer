@@ -80,8 +80,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 <template #activator="{ props }">
                   <div v-bind="props" class="text-h6 mb-1">Teams Selected</div>
                 </template>
-                <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                  <span class="text-caption" style="font-size: 10px !important;">Number of teams currently selected for
+                <v-card class="pa-3 metric-tooltip">
+                  <span class="tooltip-text">Number of teams currently selected for
                     comparison</span>
                 </v-card>
               </v-tooltip>
@@ -101,8 +101,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
                 <template #activator="{ props }">
                   <div v-bind="props" class="text-h6 mb-1">Total Active Users</div>
                 </template>
-                <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                  <span class="text-caption" style="font-size: 10px !important;">Combined total active users across all
+                <v-card class="pa-3 metric-tooltip">
+                  <span class="tooltip-text">Combined total active users across all
                     selected teams</span>
                 </v-card>
               </v-tooltip>
@@ -121,8 +121,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">Acceptance Rate by Count (%)</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Comparison of acceptance rates across
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Comparison of acceptance rates across
                 selected
                 teams over time</span>
             </v-card>
@@ -134,8 +134,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">Total Code Completions | Total Accepted</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Total code completion events and accepted completions over time for selected teams</span>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Total code completion events and accepted completions over time for selected teams</span>
             </v-card>
           </v-tooltip>
           <LineChart :data="suggestionsAcceptancesChartData" :options="chartOptions" />
@@ -145,8 +145,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">Acceptance Rate by Lines (%)</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Comparison of line-based acceptance rates
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Comparison of line-based acceptance rates
                 across selected teams</span>
             </v-card>
           </v-tooltip>
@@ -157,8 +157,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">Total Lines Suggested | Total Lines Accepted</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Total lines of code suggested and accepted
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Total lines of code suggested and accepted
                 over
                 time for selected teams</span>
             </v-card>
@@ -170,8 +170,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">Total Active Users</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Number of active users over time for
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Number of active users over time for
                 selected
                 teams</span>
             </v-card>
@@ -183,8 +183,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">IDE Code Completions Usage</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Users with IDE code completions activity
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Users with IDE code completions activity
                 across
                 selected teams</span>
             </v-card>
@@ -195,8 +195,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">IDE Chat Usage</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Users with IDE chat activity across
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Users with IDE chat activity across
                 selected
                 teams</span>
             </v-card>
@@ -207,8 +207,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">GitHub.com Chat Usage</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Users with GitHub.com chat activity across
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Users with GitHub.com chat activity across
                 selected teams</span>
             </v-card>
           </v-tooltip>
@@ -218,8 +218,8 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
             <template #activator="{ props }">
               <h2 v-bind="props" class="mb-1">GitHub.com PR Usage</h2>
             </template>
-            <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-              <span class="text-caption" style="font-size: 10px !important;">Users with GitHub.com PR activity across
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Users with GitHub.com PR activity across
                 selected teams</span>
             </v-card>
           </v-tooltip>
