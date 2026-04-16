@@ -297,11 +297,12 @@ async function fetchAndStore(
   }
 
   let metrics = transformReportToMetrics(report);
-  let reportData = report.day_totals;
+  let reportData = sortReportDayTotalsByDay(report.day_totals);
 
   // Store each day's aggregate to DB
-  for (let i = 0; i < report.day_totals.length; i++) {
-    const dayData = report.day_totals[i];
+  // Both metrics and reportData are sorted by day, so indices align
+  for (let i = 0; i < reportData.length; i++) {
+    const dayData = reportData[i];
     try {
       await saveMetrics(options.scope!, identifier, dayData.day, metrics[i], teamSlug, dayData);
     } catch (err) {
