@@ -134,7 +134,7 @@ v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMet
 
     <!-- AI Chat Panel (feature-gated) -->
     <AiChatPanel
-      v-if="config?.public?.enableAiChat"
+      v-if="config?.public?.enableAiChat === true || config?.public?.enableAiChat === 'true'"
       :current-tab="tab"
       :query-params="aiQueryParams"
       :metrics="metrics"
