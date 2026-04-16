@@ -75,9 +75,24 @@
                   <li>Users with <strong>0 active days</strong> may need onboarding support or may not have Copilot configured in their IDE.</li>
                 </ul>
 
-                <div class="text-caption">
+                <div class="text-caption d-flex flex-column ga-1">
                   <a href="https://docs.github.com/en/copilot/rolling-out-github-copilot-at-scale/analyzing-usage-over-time" target="_blank" rel="noopener">
-                    📖 GitHub Docs: Analyzing Copilot usage over time
+                    📖 Analyzing Copilot usage over time
+                  </a>
+                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale" target="_blank" rel="noopener">
+                    🚀 Rolling out GitHub Copilot at scale
+                  </a>
+                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/enable-developers/drive-adoption" target="_blank" rel="noopener">
+                    📈 Driving Copilot adoption in your company
+                  </a>
+                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/measure-success" target="_blank" rel="noopener">
+                    🎯 Measuring the success of a Copilot trial
+                  </a>
+                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/assign-licenses/track-usage-and-adoption" target="_blank" rel="noopener">
+                    📋 Tracking license activation and usage
+                  </a>
+                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/maintain-codebase-standards" target="_blank" rel="noopener">
+                    🔒 Maintaining codebase standards in a rollout
                   </a>
                 </div>
               </div>
