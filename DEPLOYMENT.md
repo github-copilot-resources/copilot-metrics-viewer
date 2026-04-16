@@ -6,7 +6,17 @@ The app runs in a Docker container, so it can be deployed anywhere containers ar
 
 ## Architecture
 
-The application consists of three components:
+The application supports two operating modes:
+
+### Direct API Mode (no database)
+The simplest setup — the web app fetches metrics directly from GitHub's Copilot Usage Metrics API on each page load, returning the latest 28-day rolling window.
+
+| Component | Description | Required |
+|-----------|-------------|----------|
+| **Web App** | Nuxt 3 dashboard (port 3000/80) | Yes |
+
+### Historical Mode (with database)
+Adds a PostgreSQL database and sync service for persistent storage. This enables metrics beyond the 28-day API window, per-user time-series history, and full historical team views.
 
 | Component | Description | Required |
 |-----------|-------------|----------|
@@ -14,10 +24,18 @@ The application consists of three components:
 | **PostgreSQL** | Database for historical metrics storage | Yes |
 | **Sync Service** | Scheduled job that downloads metrics from GitHub API to PostgreSQL | Yes |
 
-The sync service runs daily (2 AM UTC by default) and downloads the latest Copilot usage metrics from GitHub's async download API. The web app reads from the database for fast, reliable dashboard rendering.
+The sync service runs daily (2 AM UTC by default) and downloads the latest Copilot usage metrics from GitHub's API. The web app reads from the database for fast, reliable dashboard rendering.
 
-> [!NOTE]
-> **Legacy API mode**: Set `USE_LEGACY_API=true` to use the deprecated synchronous API (shutting down April 2, 2026). This mode does not require PostgreSQL but provides limited data.
+#### How Team Metrics Work
+
+GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Instead, this application **derives team metrics** by:
+1. Downloading per-user daily metrics from the organization/enterprise endpoint
+2. Resolving team membership via the GitHub Teams API
+3. Filtering and aggregating per-user data in-memory for each team
+
+This approach works in both modes:
+- **Direct API mode**: Team data covers the latest 28-day rolling window
+- **Historical mode**: Team data covers the full stored history, enabling long-term team trend analysis
 
 ## Deployment options
 
@@ -129,7 +147,27 @@ docker compose up web
 # Open http://localhost:3000/orgs/your-org?mock=true
 ```
 
-### Running with Real GitHub Data
+### Running with Real GitHub Data (Direct API — no database)
+
+The simplest setup — metrics come directly from the GitHub API (28-day rolling window):
+
+```bash
+export NUXT_GITHUB_TOKEN=github_pat_...    # Fine-grained PAT with "Copilot metrics" permission
+export NUXT_PUBLIC_GITHUB_ORG=your-org
+export NUXT_PUBLIC_IS_DATA_MOCKED=false
+
+docker compose up web
+# Open http://localhost:3000/orgs/your-org
+```
+
+Team-scoped views also work in this mode (28-day window only):
+```bash
+# Open http://localhost:3000/orgs/your-org/teams/your-team
+```
+
+### Running with Historical Mode (database + sync)
+
+Adds PostgreSQL for persistent storage — enables metrics beyond 28 days, per-user time-series history, and full historical team views:
 
 ```bash
 export NUXT_GITHUB_TOKEN=github_pat_...    # Fine-grained PAT with "Copilot metrics" permission
@@ -250,16 +288,15 @@ These endpoints respond in ~200ms without making external API calls and do not r
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `NUXT_GITHUB_TOKEN` | GitHub PAT with Copilot metrics permission | Yes (unless OAuth) |
-| `NUXT_PUBLIC_SCOPE` | `organization`, `enterprise`, or `team` | Yes |
-| `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
-| `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise scope |
-| `NUXT_PUBLIC_GITHUB_TEAM` | GitHub team slug | For team scope |
+| `NUXT_PUBLIC_SCOPE` | `organization`, `enterprise`, `team-organization`, or `team-enterprise` | Yes |
+| `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org/team-org scope |
+| `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise/team-ent scope |
+| `NUXT_PUBLIC_GITHUB_TEAM` | GitHub team slug | For team scopes |
 | `NUXT_SESSION_PASSWORD` | Session encryption key (min 32 chars) | Yes |
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Yes |
-| `SYNC_ENABLED` | `true` for sync service, `false` for web app | Per service |
+| `DATABASE_URL` | PostgreSQL connection string | Historical mode only |
+| `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |
+| `SYNC_ENABLED` | `true` for sync service, `false` for web app | Historical mode only |
 | `SYNC_DAYS_BACK` | Days to sync (default: 1 for daily, 28 for bulk) | Sync only |
-| `USE_LEGACY_API` | `true` to use deprecated API (no DB required) | Optional |
 | `NUXT_PUBLIC_USING_GITHUB_AUTH` | `true` to enable GitHub OAuth | Optional |
 | `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub App client ID | For OAuth |
 | `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub App client secret | For OAuth |
