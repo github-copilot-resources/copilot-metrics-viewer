@@ -202,6 +202,8 @@ Public variables:
 - `NUXT_PUBLIC_GITHUB_ENT`
 - `NUXT_PUBLIC_GITHUB_ORG`
 - `NUXT_PUBLIC_GITHUB_TEAM`
+- `NUXT_PUBLIC_HIDDEN_TABS`
+- `NUXT_PUBLIC_ENABLE_HISTORICAL_MODE`
 
 can be overridden by route parameters, e.g.
 - `http://localhost:3000/enterprises/octo-demo-ent`
@@ -284,6 +286,28 @@ Variables required for GitHub Auth are:
 
 >[!WARNING]
 > Only users with permissions (scopes listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN)) can view copilot metrics, GitHub uses the authenticated users permissions to make API calls for data.
+
+#### NUXT_PUBLIC_HIDDEN_TABS
+
+Comma-separated list of dashboard tab names to hide. Applies at startup without requiring a rebuild — useful for pre-built Docker deployments. The filter is case-insensitive and trims surrounding whitespace.
+
+Available tab names: `languages`, `editors`, `copilot chat`, `agent activity`, `pull requests`, `github.com`, `seat analysis`, `user metrics`, `api response`
+
+````
+# Hide the "Agent Activity" and "API Response" tabs
+NUXT_PUBLIC_HIDDEN_TABS=agent activity,api response
+````
+
+#### NUXT_PUBLIC_ENABLE_HISTORICAL_MODE
+
+Default is `false`. When set to `true`, the application uses a PostgreSQL database (configured via `DATABASE_URL`) to store and query historical Copilot metrics.
+
+> [!IMPORTANT]
+> The **Teams** tab is automatically hidden when `NUXT_PUBLIC_ENABLE_HISTORICAL_MODE` is not `true`. Team-level metrics are derived from per-user daily records in the database (`user_day_metrics` table). Without the database, the teams comparison tab would display identical org-wide data for every team.
+
+````
+NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false
+````
 
 #### HTTP_PROXY
 

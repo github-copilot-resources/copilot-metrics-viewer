@@ -159,6 +159,7 @@ import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
+import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -349,6 +350,12 @@ export default defineNuxtComponent({
     }
     
     this.config = useRuntimeConfig();
+
+    // Auto-hide teams tab when historical mode is disabled (team metrics require DB)
+    this.tabItems = applyHistoricalModeFilter(this.tabItems, this.config.public.enableHistoricalMode as boolean | string);
+
+    // Filter out hidden tabs based on NUXT_PUBLIC_HIDDEN_TABS environment variable
+    this.tabItems = applyHiddenTabs(this.tabItems, this.config.public.hiddenTabs as string);
   },
   async mounted() {
     // Load initial data

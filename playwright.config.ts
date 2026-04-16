@@ -6,6 +6,10 @@ import { isCI } from 'std-env'
 // set the runtimeConfig values for the test
 process.env.NUXT_PUBLIC_USING_GITHUB_AUTH = 'false'
 process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'true'
+// Enable historical mode for e2e tests so the teams tab is visible for teams-comparison tests
+process.env.NUXT_PUBLIC_ENABLE_HISTORICAL_MODE = 'true'
+// Hide 'agent activity' tab to test the configurable tabs feature
+process.env.NUXT_PUBLIC_HIDDEN_TABS = 'agent activity'
 
 export default defineConfig<ConfigOptions>({
     testDir: 'e2e-tests',
