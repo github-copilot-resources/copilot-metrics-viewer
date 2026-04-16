@@ -33,8 +33,8 @@ GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Instea
 2. Resolving team membership via the GitHub Teams API
 3. Filtering and aggregating per-user data in-memory for each team
 
-This approach works in both modes:
-- **Direct API mode**: Team data covers the latest 28-day rolling window
+This approach works in **Historical mode** only:
+- **Direct API mode**: Team-scoped views are not available (no per-user data stored to filter)
 - **Historical mode**: Team data covers the full stored history, enabling long-term team trend analysis
 
 ## Deployment options
@@ -160,10 +160,8 @@ docker compose up web
 # Open http://localhost:3000/orgs/your-org
 ```
 
-Team-scoped views also work in this mode (28-day window only):
-```bash
-# Open http://localhost:3000/orgs/your-org/teams/your-team
-```
+> [!NOTE]
+> **Team-scoped views** (e.g., `/orgs/your-org/teams/your-team`) require **Historical mode** with PostgreSQL. Without the database, team metrics cannot be computed because team data is derived by filtering per-user records stored in the database. The Teams Comparison tab is available to browse teams, but individual team drill-down requires Historical mode.
 
 ### Running with Historical Mode (database + sync)
 

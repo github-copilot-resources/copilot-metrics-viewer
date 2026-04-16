@@ -26,15 +26,15 @@ The application supports two operating modes:
 
 | Mode | Description | Requirements | Team Metrics | Data Retention |
 |------|-------------|--------------|--------------|----------------|
-| **Direct API** | Fetches metrics directly from GitHub's API on each page load | GitHub token only | ✅ Live 28-day window | Rolling 28 days |
+| **Direct API** | Fetches metrics directly from GitHub's API on each page load | GitHub token only | ❌ Not available | Rolling 28 days |
 | **Historical Mode** | Reads from a local PostgreSQL database, synced daily | PostgreSQL + Sync service | ✅ Full history | Unlimited |
 
-**Direct API mode** is the simplest setup — no database required. It returns the latest 28-day rolling window of data from the [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics).
+**Direct API mode** is the simplest setup — no database required. It returns the latest 28-day rolling window of data from the [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics). Team-scoped views are not available in this mode because team metrics are derived from per-user records stored in the database.
 
 **Historical mode** adds a PostgreSQL database and a sync service that downloads metrics daily. This enables:
 - Viewing metrics **beyond the 28-day API window**
 - **Per-user time-series history** with trend charts
-- **Team metrics with full historical data** (not limited to 28 days)
+- **Team metrics** — derived from stored per-user data filtered by team membership
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for setup instructions for each mode.
 
@@ -70,7 +70,9 @@ View individual user-level Copilot usage metrics including code completions, cha
 
 In **Historical mode** (with PostgreSQL), the User Metrics tab also displays per-user time-series history charts, allowing you to track individual adoption trends over time.
 
-<!-- TODO: Add user-metrics screenshot -->
+<p align="center">
+  <img width="800" alt="Per-User Metrics" src="./images/user-metrics.png">
+</p>
 ### GitHub.com Integration & Model Analytics
 View comprehensive statistics for GitHub.com features including Chat, PR Summaries, and detailed model usage analytics. Each section provides expandable details showing model types, editors, and usage patterns.
 
