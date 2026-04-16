@@ -43,6 +43,48 @@
         <h2>Per-User Copilot Usage Metrics</h2>
         <div class="text-caption mb-4">{{ dateRangeDescription }}</div>
 
+        <!-- Understanding your metrics -->
+        <v-expansion-panels variant="accordion" class="mb-4">
+          <v-expansion-panel>
+            <v-expansion-panel-title>
+              <v-icon size="small" class="mr-2">mdi-information-outline</v-icon>
+              Understanding your metrics
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div class="text-body-2">
+                <h4 class="mb-2">📊 What the numbers mean</h4>
+                <ul class="ml-4 mb-3">
+                  <li><strong>Acceptance Rate</strong> measures <em>inline code completions only</em> — the ghost-text suggestions shown in the editor. It does <strong>not</strong> include Chat, Agent mode, Copilot CLI, or GitHub.com interactions.</li>
+                  <li><strong>Interactions</strong> counts all user-initiated events across features (completions, chat messages, agent requests).</li>
+                  <li><strong>Chat</strong> shows total activity across Copilot Chat modes (ask, agent, edit, inline). Hover for a breakdown.</li>
+                  <li><strong>Agent</strong> shows activity specifically in agent mode and agent edit. Users working primarily with agents will have high numbers here but may show low acceptance rates — that's expected.</li>
+                </ul>
+
+                <h4 class="mb-2">🔍 What's not captured per user</h4>
+                <ul class="ml-4 mb-3">
+                  <li><strong>Copilot CLI</strong> usage is only tracked as an aggregate count at the organization level — there is no per-user CLI breakdown.</li>
+                  <li><strong>GitHub.com Copilot</strong> (PR summaries, issue chat) shows partially under Chat features but detailed stats are aggregate-only.</li>
+                  <li><strong>Pull request metrics</strong> (Copilot-authored PRs, reviews) are available in the Agent Activity tab but not broken down per user.</li>
+                </ul>
+
+                <h4 class="mb-2">💡 Tips for adoption tracking</h4>
+                <ul class="ml-4 mb-3">
+                  <li>A <strong>low acceptance rate</strong> doesn't mean low Copilot value — users who rely on Chat and Agent mode get significant value without triggering inline completions.</li>
+                  <li>Look at <strong>Active Days</strong> and <strong>Interactions</strong> for a fuller picture of engagement rather than acceptance rate alone.</li>
+                  <li>Use the <strong>Chat</strong> and <strong>Agent</strong> columns to identify users who have adopted advanced Copilot features beyond code completion.</li>
+                  <li>Users with <strong>0 active days</strong> may need onboarding support or may not have Copilot configured in their IDE.</li>
+                </ul>
+
+                <div class="text-caption">
+                  <a href="https://docs.github.com/en/copilot/rolling-out-github-copilot-at-scale/analyzing-usage-over-time" target="_blank" rel="noopener">
+                    📖 GitHub Docs: Analyzing Copilot usage over time
+                  </a>
+                </div>
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+
         <v-row class="mb-4" align="center">
           <v-col cols="12" md="4">
             <v-text-field
