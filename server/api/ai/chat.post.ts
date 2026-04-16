@@ -98,10 +98,10 @@ export default defineEventHandler(async (event) => {
     return generateMockChatResponse(body.question, body.currentTab, mockCachedData);
   }
 
-  // Use dedicated AI token if set, then fall back to GitHub token, then user-provided token
+  // Priority: dedicated AI token > user-provided token > general GitHub token
   const aiToken = (config as Record<string, unknown>).aiToken as string;
   const userToken = body.userToken?.trim();
-  const githubToken = aiToken || config.githubToken || userToken;
+  const githubToken = aiToken || userToken || config.githubToken;
   if (!githubToken) {
     throw createError({
       statusCode: 401,
