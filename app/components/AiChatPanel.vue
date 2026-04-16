@@ -1,5 +1,5 @@
 <template>
-  <div class="ai-chat-panel">
+  <div class="ai-chat-panel" style="position: fixed; bottom: 16px; right: 16px; z-index: 2147483647;">
     <!-- Floating Action Button -->
     <v-btn
       v-if="!isOpen"
@@ -8,6 +8,7 @@
       icon
       size="large"
       elevation="6"
+      style="position: fixed; bottom: 24px; right: 24px; z-index: 2147483647;"
       @click="isOpen = true"
     >
       <v-icon>mdi-robot-outline</v-icon>
@@ -20,6 +21,7 @@
       class="ai-chat-card"
       elevation="12"
       rounded="lg"
+      style="z-index: 2147483647;"
     >
       <!-- Header -->
       <v-toolbar color="indigo" density="compact" flat>
@@ -369,14 +371,12 @@ watch(messages, () => scrollToBottom(), { deep: true });
   position: fixed;
   bottom: 16px;
   right: 16px;
-  z-index: 100000;
 }
 
 .ai-chat-fab {
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 100000;
 }
 
 .ai-chat-card {
@@ -384,7 +384,6 @@ watch(messages, () => scrollToBottom(), { deep: true });
   max-height: 600px;
   display: flex;
   flex-direction: column;
-  z-index: 100000;
 }
 
 .ai-chat-messages {
