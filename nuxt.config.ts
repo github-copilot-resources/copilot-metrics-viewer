@@ -112,7 +112,7 @@ export default defineNuxtConfig({
       useLegacyApi: false,  // Set true to use deprecated /copilot/metrics API (USE_LEGACY_API)
       enableHistoricalMode: false,  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)
       hiddenTabs: '',  // Comma-separated list of tab names to hide (NUXT_PUBLIC_HIDDEN_TABS)
-      enableAiChat: false,  // Enable AI-powered chat for metrics Q&A (NUXT_PUBLIC_ENABLE_AI_CHAT)
+      enableAiChat: true,  // Enable AI-powered chat for metrics Q&A (NUXT_PUBLIC_ENABLE_AI_CHAT)
     }
   }
 })
