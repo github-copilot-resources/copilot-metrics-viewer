@@ -1,22 +1,8 @@
 import { describe, test, expect } from 'vitest'
+import { applyHiddenTabs, applyHistoricalModeFilter } from '../app/utils/tabUtils'
 
 describe('MainComponent hidden tabs filtering', () => {
   const ALL_BASE_TABS = ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'user metrics', 'api response']
-
-  function applyHiddenTabs(tabItems: string[], hiddenTabsConfig: string): string[] {
-    if (!hiddenTabsConfig) return tabItems
-    const hiddenTabs = hiddenTabsConfig.split(',').map((t: string) => t.trim().toLowerCase()).filter(Boolean)
-    if (hiddenTabs.length === 0) return tabItems
-    return tabItems.filter((tab: string) => !hiddenTabs.includes(tab.toLowerCase()))
-  }
-
-  function applyHistoricalModeFilter(tabItems: string[], enableHistoricalMode: boolean | string): string[] {
-    const historicalMode = enableHistoricalMode === true || enableHistoricalMode === 'true'
-    if (!historicalMode && tabItems.includes('teams')) {
-      return tabItems.filter((t: string) => t !== 'teams')
-    }
-    return tabItems
-  }
 
   test('should keep all tabs when hiddenTabs is empty', () => {
     const tabs = ['organization', 'teams', ...ALL_BASE_TABS]
