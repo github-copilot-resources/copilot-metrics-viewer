@@ -83,6 +83,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     githubToken: '',
+    aiToken: '',  // Dedicated token for GitHub Models API (NUXT_AI_TOKEN). Falls back to githubToken.
     aiModel: 'gpt-4o',  // Model for AI chat (NUXT_AI_MODEL)
     aiMaxToolRounds: '5',  // Max tool-calling iterations (NUXT_AI_MAX_TOOL_ROUNDS)
     session: {

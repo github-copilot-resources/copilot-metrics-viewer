@@ -97,11 +97,13 @@ export default defineEventHandler(async (event) => {
     return generateMockChatResponse(body.question, body.currentTab, mockCachedData);
   }
 
-  const githubToken = config.githubToken;
+  // Use dedicated AI token if set, otherwise fall back to the general GitHub token
+  const aiToken = (config as Record<string, unknown>).aiToken as string;
+  const githubToken = aiToken || config.githubToken;
   if (!githubToken) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'GitHub token not configured. AI Chat requires a GitHub token with models:read scope.',
+      statusMessage: 'No AI token configured. Set NUXT_AI_TOKEN (recommended) or ensure NUXT_GITHUB_TOKEN has models:read scope.',
     });
   }
 
