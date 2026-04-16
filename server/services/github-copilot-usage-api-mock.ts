@@ -151,6 +151,7 @@ function _generateMinimalDay(day: string) {
     totals_by_feature: [
       { feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 60, code_acceptance_activity_count: 45, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 50, loc_deleted_sum: 0 },
       { feature: 'agent_edit', user_initiated_interaction_count: 0, code_generation_activity_count: 90, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 500, loc_deleted_sum: 50 },
+      { feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 25, code_generation_activity_count: 0, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
     ],
     totals_by_language_feature: [
       { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 40, code_acceptance_activity_count: 30, loc_suggested_to_add_sum: 60, loc_suggested_to_delete_sum: 0, loc_added_sum: 30, loc_deleted_sum: 0 },
@@ -161,6 +162,7 @@ function _generateMinimalDay(day: string) {
     totals_by_model_feature: [
       { model: 'gpt-5.3-codex', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 60, code_acceptance_activity_count: 45, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 50, loc_deleted_sum: 0 },
       { model: 'claude-opus-4.6', feature: 'agent_edit', user_initiated_interaction_count: 0, code_generation_activity_count: 90, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 500, loc_deleted_sum: 50 },
+      { model: 'gpt-5.3-codex', feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 25, code_generation_activity_count: 0, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
     ],
     loc_suggested_to_add_sum: 300,
     loc_suggested_to_delete_sum: 0,

@@ -1,26 +1,17 @@
 _NOTE: For information on support and assistance, click [here](https://github.com/github-copilot-resources/copilot-metrics-viewer/tree/main?tab=readme-ov-file#support)._
 
-> **🚨 ACTION REQUIRED — Legacy API Shutdown on April 2, 2026**
+> **ℹ️ v3.0 — New Copilot Usage Metrics API**
 >
-> GitHub is **shutting down the legacy Copilot Metrics API on April 2, 2026**. Versions 2.x and earlier will **stop working** after this date.
+> As of v3.0, Copilot Metrics Viewer uses the [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics). The legacy Copilot Metrics API was shut down on April 2, 2026 and is no longer available.
 >
-> **You must upgrade to v3.0.0** to continue using Copilot Metrics Viewer.
+> **What's new in v3.0:**
+> - Uses the async Copilot Usage Metrics API for all data
+> - **Historical mode** with PostgreSQL for data beyond the 28-day rolling window
+> - **Per-user metrics** tab with individual usage breakdowns
+> - **Team metrics derived from per-user data** — no longer requires the deprecated team-level API endpoints
+> - Sync service for automated daily data collection
 >
-> | | Details |
-> |---|---|
-> | **Last legacy release** | `v2.1.4` — Docker image: `ghcr.io/github-copilot-resources/copilot-metrics-viewer:v2.1.4` |
-> | **New release** | `v3.0.0` — uses the new [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics) |
-> | **GitHub App update** | Add **"Organization Copilot metrics: Read"** permission ([setup guide](./DEPLOYMENT.md#github-app-registration)) |
-> | **PostgreSQL (optional)** | Enable historical data storage with PostgreSQL ([migration guide](./MIGRATION_GUIDE.md#step-2-enable-historical-mode-optional)) |
->
-> **Quick upgrade**: Pull `ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest`, update your GitHub App permissions, and redeploy. Set `USE_LEGACY_API=true` to temporarily keep using the old API until the shutdown date.
-
-> **Migration Resources**:
-> - 📖 [Migration Guide](./MIGRATION_GUIDE.md) - Step-by-step migration instructions
-> - 🧪 [Testing Guide](./TESTING_GUIDE.md) - How to test the migration
-> - 📋 [Architecture Design](./API_MIGRATION_DESIGN.md) - Technical design details
-> - 📚 [API Quick Reference](./API_QUICK_REFERENCE.md) - Legacy vs New API comparison
-> - 📢 [GitHub Blog Announcement](https://github.blog/changelog/2026-01-29-closing-down-notice-of-legacy-copilot-metrics-apis/)
+> Your GitHub App needs **"Organization Copilot metrics: Read"** permission. See [GitHub App Registration](./DEPLOYMENT.md#github-app-registration) for setup details.
 
 # GitHub Copilot Metrics Viewer
 <p align="center">
@@ -29,10 +20,23 @@ _NOTE: For information on support and assistance, click [here](https://github.co
 
 This application displays a set of charts with various metrics related to GitHub Copilot for your <i>GitHub Organization</i> or <i>Enterprise Account</i>. These visualizations are designed to provide clear representations of the data, making it easy to understand and analyze the impact and adoption of GitHub Copilot. 
 
-**API Support**:
-- Legacy API (default) - Works until April 2, 2026
-- New Usage Metrics API (opt-in) - Future-proof, async downloads
-- See [Migration Guide](./MIGRATION_GUIDE.md) for switching to new API
+## Operating Modes
+
+The application supports two operating modes:
+
+| Mode | Description | Requirements | Team Metrics | Data Retention |
+|------|-------------|--------------|--------------|----------------|
+| **Direct API** | Fetches metrics directly from GitHub's API on each page load | GitHub token only | ❌ Not available | Rolling 28 days |
+| **Historical Mode** | Reads from a local PostgreSQL database, synced daily | PostgreSQL + Sync service | ✅ Full history | Unlimited |
+
+**Direct API mode** is the simplest setup — no database required. It returns the latest 28-day rolling window of data from the [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics). Team-scoped views are not available in this mode because team metrics are derived from per-user records stored in the database.
+
+**Historical mode** adds a PostgreSQL database and a sync service that downloads metrics daily. This enables:
+- Viewing metrics **beyond the 28-day API window**
+- **Per-user time-series history** with trend charts
+- **Team metrics** — derived from stored per-user data filtered by team membership
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for setup instructions for each mode.
 
 ## Application Overview
 
@@ -54,10 +58,21 @@ Users can now filter metrics for custom date ranges up to 100 days, with an intu
 ### Teams Comparison
 Compare Copilot metrics across multiple teams within your organization to understand adoption patterns and identify high-performing teams.
 
+> [!NOTE]
+> GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Team metrics are **derived** by fetching per-user daily metrics from the organization/enterprise endpoint, resolving team membership via the GitHub Teams API, and aggregating per-user data in-memory. This works in both Direct API mode (28-day window) and Historical mode (full history).
+
 <p align="center">
   <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">
 </p>
 
+### Per-User Metrics
+View individual user-level Copilot usage metrics including code completions, chat interactions, and code review activity. Summary tiles show total users, active users, and average acceptance rate.
+
+In **Historical mode** (with PostgreSQL), the User Metrics tab also displays per-user time-series history charts, allowing you to track individual adoption trends over time.
+
+<p align="center">
+  <img width="800" alt="Per-User Metrics" src="./images/user-metrics.png">
+</p>
 ### GitHub.com Integration & Model Analytics
 View comprehensive statistics for GitHub.com features including Chat, PR Summaries, and detailed model usage analytics. Each section provides expandable details showing model types, editors, and usage patterns.
 
@@ -80,7 +95,7 @@ Export your metrics data in multiple formats for further analysis or reporting. 
 
 ## Key Metrics
 >[!NOTE]
-> Metrics details are described in detail in [GitHub API response schema](https://docs.github.com/en/rest/copilot/copilot-metrics?apiVersion=2022-11-28#get-copilot-metrics-for-an-organization)
+> Metrics details are described in detail in the [Copilot Usage Metrics API documentation](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics)
 
 Here are the key metrics visualized in these charts:
 <p align="center">
@@ -166,6 +181,9 @@ Organizations can compare metrics across different teams to:
 - Share best practices across teams
 - Monitor team-specific engagement levels
 
+> [!NOTE]
+> Team metrics are derived from per-user data by resolving GitHub team membership and aggregating. The GitHub Copilot Usage Metrics API does not have dedicated team endpoints — this application computes team views automatically. In Direct API mode, team data covers the latest 28-day window. In Historical mode (with PostgreSQL), full historical team trends are available.
+
 ### Model Usage Analytics
 Detailed insights into AI model usage including:
 - IDE Code Completions by editor and model type
@@ -198,7 +216,7 @@ The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the d
 
 - If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
 - If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
-- If set to 'team', the application will target API calls to GitHub Team defined in the `NUXT_PUBLIC_GITHUB_TEAM` variable under `NUXT_PUBLIC_GITHUB_ORG` GitHub Organization.
+- If set to 'team-organization' or 'team-enterprise', the application will display team-level metrics derived from per-user data for the team defined in `NUXT_PUBLIC_GITHUB_TEAM` within the specified organization or enterprise.
 
 For example, if you want to target the API calls to an organization, you would set `NUXT_PUBLIC_SCOPE=organization` in the `.env` file.
 
@@ -216,11 +234,11 @@ NUXT_PUBLIC_GITHUB_ENT=
 
 #### NUXT_PUBLIC_GITHUB_TEAM
 
-The `NUXT_PUBLIC_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Enterprise or Organization account.
+The `NUXT_PUBLIC_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Organization or Enterprise account.
 ‼️ Important ‼️ When this variable is set, all displayed metrics will pertain exclusively to the specified team. To view metrics for the entire Organization or Enterprise, remove this environment variable.
 
->[!WARNING]
-> GitHub provides Team metrics [for a given day if the team had five or more members with active Copilot licenses, as evaluated at the end of that day.](https://docs.github.com/en/rest/copilot/copilot-usage?apiVersion=2022-11-28#get-a-summary-of-copilot-usage-for-a-team).
+> [!NOTE]
+> Team metrics are **derived from per-user data**, not from a dedicated team API endpoint. The application resolves team membership via the GitHub Teams API and aggregates per-user metrics for team members. There is no minimum team size requirement.
 
 ````
 NUXT_PUBLIC_GITHUB_TEAM=

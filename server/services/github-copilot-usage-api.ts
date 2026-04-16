@@ -4,7 +4,7 @@
  * See: https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics
  */
 
-import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks } from './github-copilot-usage-api-mock';
+import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, generateMockReport } from './github-copilot-usage-api-mock';
 
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
@@ -225,8 +225,6 @@ export interface UserModelFeatureTotals {
   loc_suggested_to_delete_sum: number;
   loc_added_sum: number;
   loc_deleted_sum: number;
-  /** Premium requests count for this model+feature combination */
-  premium_requests_total?: number;
 }
 
 /** Aggregated metrics for a single user over a time period */
@@ -249,8 +247,6 @@ export interface UserTotals {
   /** Total lines of code accepted (added) */
   loc_added_sum: number;
   loc_deleted_sum: number;
-  /** Total premium requests consumed (e.g. Claude Sonnet, GPT-5, etc.) */
-  premium_requests_total?: number;
   /** Breakdown by IDE */
   totals_by_ide?: UserIdeTotals[];
   /** Breakdown by feature */
@@ -310,8 +306,6 @@ const METRIC_FIELDS = [
 ];
 
 const METRIC_FIELDS_NO_INTERACTION = METRIC_FIELDS.filter(f => f !== 'user_initiated_interaction_count');
-
-const MODEL_METRIC_FIELDS = [...METRIC_FIELDS, 'premium_requests_total'];
 
 /**
  * Aggregate an array of per-user-per-day records (from the real GitHub API)
@@ -380,24 +374,12 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
     );
     agg.totals_by_model_feature = mergeBreakdown(
       agg.totals_by_model_feature, rec.totals_by_model_feature,
-      (mf) => `${mf.model}:${mf.feature}`, MODEL_METRIC_FIELDS
+      (mf) => `${mf.model}:${mf.feature}`, METRIC_FIELDS
     );
   }
 
   const result: UserTotals[] = [];
   for (const [login, agg] of byUser) {
-    // Premium requests: the real API does not include a premium_requests_total
-    // field. Premium request cost depends on model multipliers that aren't in this
-    // data.  If the source records carried the field (e.g. mock data) we sum it;
-    // otherwise we leave it undefined so the UI can hide the column.
-    const premiumFromSource = agg.totals_by_model_feature.reduce(
-      (sum, mf) => sum + (mf.premium_requests_total ?? 0), 0
-    );
-    const hasPremiumData = agg.totals_by_model_feature.some(
-      mf => mf.premium_requests_total !== undefined && mf.premium_requests_total !== null
-    );
-    const premiumTotal = hasPremiumData ? premiumFromSource : undefined;
-
     result.push({
       login,
       user_id: agg.user_id,
@@ -409,7 +391,6 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
       loc_suggested_to_delete_sum: agg.loc_suggested_to_delete_sum,
       loc_added_sum: agg.loc_added_sum,
       loc_deleted_sum: agg.loc_deleted_sum,
-      premium_requests_total: premiumTotal,
       totals_by_ide: agg.totals_by_ide,
       totals_by_feature: agg.totals_by_feature,
       totals_by_language_feature: agg.totals_by_language_feature,
@@ -544,6 +525,15 @@ export async function fetchLatestReport(
   request: MetricsReportRequest,
   headers: HeadersInit
 ): Promise<OrgReport> {
+  // In mock mode, generate a report with dates anchored to today's 28-day window
+  // so that seeded DB data always aligns with the dashboard's default date picker.
+  if (isMockMode()) {
+    const toDate = (d: Date) => d.toISOString().split('T')[0]!;
+    const endDay = toDate(new Date());
+    const startDay = toDate(new Date(Date.now() - 27 * 24 * 60 * 60 * 1000));
+    return generateMockReport(startDay, endDay);
+  }
+
   const { download_links } = await requestDownloadLinks(request, headers, '28-day');
 
   if (!download_links || download_links.length === 0) {
@@ -802,4 +792,65 @@ export async function fetchUserReportForDate(
   merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
 
   return merged;
+}
+
+/**
+ * Download a user-level report file and return the raw per-day per-user records
+ * without aggregating into UserTotals[].
+ *
+ * Used for storing individual daily records in the user_day_metrics table so that
+ * team-level metrics can be computed for any arbitrary date range beyond 28 days.
+ */
+export async function downloadUserDayRecords(downloadUrl: string): Promise<UserDayRecord[]> {
+  const raw = await _fetch<unknown>(downloadUrl, { responseType: 'text' });
+
+  let records: unknown[];
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        records = parsed;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as Record<string, unknown>).user_totals)) {
+        // Pre-aggregated mock format — no per-day records available
+        return [];
+      } else {
+        records = [parsed];
+      }
+    } catch {
+      const lines = trimmed.split('\n').filter(l => l.trim());
+      records = lines.map(line => JSON.parse(line));
+    }
+  } else if (Array.isArray(raw)) {
+    records = raw;
+  } else {
+    return [];
+  }
+
+  if (records.length === 0) return [];
+
+  const first = records[0] as Record<string, unknown>;
+  // Only return raw records that have the per-day shape (user_login + day)
+  if ('user_login' in first && 'day' in first) {
+    return records as UserDayRecord[];
+  }
+  return [];
+}
+
+/**
+ * Fetch the latest 28-day user report and return raw per-day per-user records.
+ * Multiple download links (large enterprises) are merged into a single flat array.
+ */
+export async function fetchRawUserDayRecords(
+  request: MetricsReportRequest,
+  headers: HeadersInit
+): Promise<UserDayRecord[]> {
+  const { download_links } = await requestUserDownloadLinks(request, headers, '28-day');
+
+  if (!download_links || download_links.length === 0) {
+    return [];
+  }
+
+  const batches = await Promise.all(download_links.map(url => downloadUserDayRecords(url)));
+  return batches.flat();
 }

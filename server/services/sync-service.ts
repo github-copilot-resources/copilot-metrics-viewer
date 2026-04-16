@@ -8,10 +8,10 @@
  *     transformed CopilotMetrics (for UI consumption)
  */
 
-import { fetchLatestReport, fetchReportForDate, fetchLatestUserReport, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
+import { fetchLatestReport, fetchReportForDate, fetchRawUserDayRecords, type MetricsReportRequest, type ReportDayTotals, type UserDayRecord } from './github-copilot-usage-api';
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
-import { saveUserMetrics, hasUserMetrics } from '../storage/user-metrics-storage';
+import { saveUserDayMetricsBatch, hasUserDayMetricsForDate } from '../storage/user-day-metrics-storage';
 import { saveSeats, hasSeats, getLatestSeats } from '../storage/seats-storage';
 import { Seat } from '@/model/Seat';
 // ofetch fallback for standalone (non-Nitro) environments
@@ -66,6 +66,10 @@ async function saveDayData(
  * Sync metrics using the 28-day bulk download.
  * One API call fetches up to 28 days, then saves each day individually.
  * Skips days that are already stored.
+ *
+ * For org/enterprise scopes, also fetches the raw per-user report and saves
+ * individual daily records to user_day_metrics. This accumulates a time-series
+ * history enabling accurate team-level queries for any historical date range.
  */
 export async function syncBulk(
   scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
@@ -105,6 +109,38 @@ export async function syncBulk(
         const msg = error instanceof Error ? error.message : String(error);
         result.errors.push({ date: dayData.day, error: msg });
         logger.error(`Failed to save ${dayData.day}: ${msg}`);
+      }
+    }
+
+    // For org/enterprise scopes also persist per-day per-user records so that
+    // team-level metrics can be derived from DB for any historical date range.
+    // Normalize team scopes to base scope since user_day_metrics stores at org/enterprise level.
+    const isBaseScope = scope === 'organization' || scope === 'enterprise' ||
+      scope === 'team-organization' || scope === 'team-enterprise';
+    if (isBaseScope) {
+      try {
+        logger.info(`Fetching per-user day records for ${scope}:${identifier}`);
+        const userDayRecords = await fetchRawUserDayRecords({ scope, identifier }, headers);
+
+        // Group by day so we check existence once per day before saving
+        const byDay = new Map<string, UserDayRecord[]>();
+        for (const record of userDayRecords) {
+          const existing = byDay.get(record.day) ?? [];
+          existing.push(record);
+          byDay.set(record.day, existing);
+        }
+
+        for (const [day, records] of byDay) {
+          const alreadyStored = await hasUserDayMetricsForDate(scope, identifier, day);
+          if (!alreadyStored) {
+            await saveUserDayMetricsBatch(scope, identifier, records);
+            logger.info(`Saved per-user day records for ${day} (${records.length} users)`);
+          }
+        }
+      } catch (error) {
+        // Per-user sync failure is non-fatal — aggregate metrics are already saved.
+        const msg = error instanceof Error ? error.message : String(error);
+        logger.warn(`Per-user day sync failed (non-fatal): ${msg}`);
       }
     }
 
@@ -317,84 +353,6 @@ export async function getSyncStats(
   }
 
   return { totalDays, syncedDays, missingDays: totalDays - syncedDays, missingDates };
-}
-
-export interface UserMetricsSyncResult {
-  success: boolean;
-  reportStartDay: string;
-  reportEndDay: string;
-  userCount: number;
-  error?: string;
-}
-
-/**
- * Sync per-user metrics using the 28-day bulk download.
- * Designed for large enterprises: handles multiple download links in parallel.
- * Skips the period if already stored.
- */
-export async function syncUserMetrics(
-  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
-  identifier: string,
-  headers: HeadersInit,
-  teamSlug?: string
-): Promise<UserMetricsSyncResult> {
-  const logger = console;
-
-  try {
-    const request: MetricsReportRequest = { scope, identifier, teamSlug };
-    logger.info(`Starting user metrics sync for ${scope}:${identifier}`);
-
-    const report = await fetchLatestUserReport(request, headers);
-
-    if (!report.user_totals || report.user_totals.length === 0) {
-      logger.info('No user totals in report, skipping save');
-      return {
-        success: true,
-        reportStartDay: report.report_start_day,
-        reportEndDay: report.report_end_day,
-        userCount: 0
-      };
-    }
-
-    const alreadySynced = await hasUserMetrics(
-      scope,
-      identifier,
-      report.report_start_day,
-      report.report_end_day
-    );
-
-    if (alreadySynced) {
-      logger.info(`User metrics for ${report.report_start_day}–${report.report_end_day} already synced, skipping`);
-      return {
-        success: true,
-        reportStartDay: report.report_start_day,
-        reportEndDay: report.report_end_day,
-        userCount: report.user_totals.length
-      };
-    }
-
-    await saveUserMetrics(scope, identifier, report.report_start_day, report.report_end_day, report.user_totals);
-
-    logger.info(`Saved user metrics: ${report.user_totals.length} users for ${report.report_start_day}–${report.report_end_day}`);
-
-    return {
-      success: true,
-      reportStartDay: report.report_start_day,
-      reportEndDay: report.report_end_day,
-      userCount: report.user_totals.length
-    };
-
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`User metrics sync failed: ${msg}`);
-    return {
-      success: false,
-      reportStartDay: '',
-      reportEndDay: '',
-      userCount: 0,
-      error: msg
-    };
-  }
 }
 
 export interface SeatsSyncResult {

@@ -17,7 +17,7 @@ COPY shared ./shared
 COPY app/model ./app/model
 COPY app/types ./app/types
 COPY app/utils ./app/utils
-COPY nuxt.config.ts tsconfig.json ./
+COPY nuxt.config.ts tsconfig.json tsconfig.sync.json ./
 
 # Production stage
 FROM base AS runner
@@ -35,6 +35,8 @@ COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/app ./app
 COPY --from=builder /app/nuxt.config.ts ./nuxt.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/tsconfig.sync.json ./tsconfig.sync.json
 
 # Run sync entry point with tsx for TypeScript support
-CMD ["npx", "tsx", "server/sync-entry.ts"]
+# Use tsconfig.sync.json which defines @/* path aliases (normally provided by Nuxt)
+CMD ["npx", "tsx", "--tsconfig", "tsconfig.sync.json", "server/sync-entry.ts"]
