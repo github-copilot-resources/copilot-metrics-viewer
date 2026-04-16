@@ -1,28 +1,29 @@
 <template>
-  <div class="ai-chat-panel" style="position: fixed; bottom: 16px; right: 16px; z-index: 2147483647;">
-    <!-- Floating Action Button -->
-    <v-btn
-      v-if="!isOpen"
-      class="ai-chat-fab"
-      color="indigo"
-      icon
-      size="large"
-      elevation="6"
-      style="position: fixed; bottom: 24px; right: 24px; z-index: 2147483647;"
-      @click="isOpen = true"
-    >
-      <v-icon>mdi-robot-outline</v-icon>
-      <v-tooltip activator="parent" :z-index="2147483647" location="left">Ask AI about metrics</v-tooltip>
-    </v-btn>
+  <Teleport to="body">
+    <div class="ai-chat-panel" style="position: fixed; bottom: 16px; right: 16px; z-index: 2147483647;">
+      <!-- Floating Action Button -->
+      <v-btn
+        v-if="!isOpen"
+        class="ai-chat-fab"
+        color="indigo"
+        icon
+        size="large"
+        elevation="6"
+        style="position: fixed; bottom: 24px; right: 24px; z-index: 2147483647;"
+        @click="isOpen = true"
+      >
+        <v-icon>mdi-robot-outline</v-icon>
+        <v-tooltip activator="parent" :z-index="2147483647" location="left">Ask AI about metrics</v-tooltip>
+      </v-btn>
 
-    <!-- Chat Dialog -->
-    <v-card
-      v-if="isOpen"
-      class="ai-chat-card"
-      elevation="12"
-      rounded="lg"
-      style="z-index: 2147483647;"
-    >
+      <!-- Chat Dialog -->
+      <v-card
+        v-if="isOpen"
+        class="ai-chat-card"
+        elevation="12"
+        rounded="lg"
+        style="z-index: 2147483647; background: #ffffff;"
+      >
       <!-- Header -->
       <v-toolbar color="indigo" density="compact" flat>
         <v-icon class="ml-3">mdi-robot-outline</v-icon>
@@ -197,6 +198,7 @@
       </div>
     </v-card>
   </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -451,13 +453,13 @@ watch(messages, () => scrollToBottom(), { deep: true });
 }
 
 .ai-chat-message-user .ai-chat-bubble {
-  background-color: rgb(var(--v-theme-primary));
+  background-color: #3f51b5;
   color: white;
   border-bottom-right-radius: 4px;
 }
 
 .ai-chat-message-assistant .ai-chat-bubble {
-  background-color: rgb(var(--v-theme-surface-variant));
+  background-color: #f5f5f5;
   border-bottom-left-radius: 4px;
 }
 
@@ -474,7 +476,7 @@ watch(messages, () => scrollToBottom(), { deep: true });
 }
 
 .ai-chat-input {
-  background-color: rgb(var(--v-theme-surface));
+  background-color: #ffffff;
 }
 
 @media (max-width: 480px) {
