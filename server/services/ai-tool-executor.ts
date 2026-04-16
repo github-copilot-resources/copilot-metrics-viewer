@@ -12,6 +12,7 @@ import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { ReportDayTotals } from '../services/github-copilot-usage-api';
 import type { Seat } from '@/model/Seat';
 import type { UserTotals } from '../services/github-copilot-usage-api';
+import { CHAT_FEATURES, AGENT_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
 
 export interface ToolCallRequest {
   name: string;
@@ -287,10 +288,12 @@ function getUserMetrics(data: CachedData, args: Record<string, string>): ToolCal
 
   const lines = [`Per-User Metrics (top ${topN} of ${userMetrics.length} users by activity):`];
   for (const user of sorted) {
+    const flags = getUserFeatureFlags(user);
     lines.push(
       `- ${user.login}: ${(user.user_initiated_interaction_count || 0).toLocaleString()} interactions, ` +
       `${(user.code_generation_activity_count || 0).toLocaleString()} code gen, ` +
-      `${(user.code_acceptance_activity_count || 0).toLocaleString()} accepted`,
+      `${(user.code_acceptance_activity_count || 0).toLocaleString()} accepted` +
+      (flags ? ` [${flags}]` : ''),
     );
   }
 
@@ -298,14 +301,48 @@ function getUserMetrics(data: CachedData, args: Record<string, string>): ToolCal
 }
 
 function formatUserTotals(user: UserTotals): string {
-  return [
+  const lines = [
     `User: ${user.login}`,
     `- Interactions: ${(user.user_initiated_interaction_count || 0).toLocaleString()}`,
     `- Code generation events: ${(user.code_generation_activity_count || 0).toLocaleString()}`,
     `- Code acceptance events: ${(user.code_acceptance_activity_count || 0).toLocaleString()}`,
     `- Lines suggested to add: ${(user.loc_suggested_to_add_sum || 0).toLocaleString()}`,
     `- Lines added: ${(user.loc_added_sum || 0).toLocaleString()}`,
-  ].join('\n');
+  ];
+
+  if (user.totals_by_feature && user.totals_by_feature.length > 0) {
+    lines.push('- Feature breakdown:');
+    for (const f of user.totals_by_feature) {
+      if (f.user_initiated_interaction_count > 0 || f.code_generation_activity_count > 0) {
+        const label = FEATURE_LABELS[f.feature] || f.feature;
+        const parts: string[] = [];
+        if (f.user_initiated_interaction_count > 0)
+          parts.push(`${f.user_initiated_interaction_count} interactions`);
+        if (f.code_generation_activity_count > 0)
+          parts.push(`${f.code_generation_activity_count} code gen`);
+        if (f.loc_added_sum > 0)
+          parts.push(`${f.loc_added_sum} LOC added`);
+        lines.push(`  - ${label}: ${parts.join(', ')}`);
+      }
+    }
+  }
+
+  return lines.join('\n');
+}
+
+function getUserFeatureFlags(user: UserTotals): string {
+  const flags: string[] = [];
+  if (hasFeature(user, CHAT_FEATURES)) flags.push('Chat');
+  if (hasFeature(user, AGENT_FEATURES)) flags.push('Agent');
+  return flags.join(', ');
+}
+
+function hasFeature(user: UserTotals, features: string[]): boolean {
+  if (!user.totals_by_feature) return false;
+  return user.totals_by_feature.some(
+    f => features.includes(f.feature) &&
+      (f.user_initiated_interaction_count > 0 || f.code_generation_activity_count > 0),
+  );
 }
 
 function getTrendData(data: CachedData, args: Record<string, string>): ToolCallResult {

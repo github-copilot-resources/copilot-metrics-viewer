@@ -99,6 +99,24 @@
               <td class="text-center">{{ getTopIde(item) }}</td>
               <td class="text-center">{{ getTopLanguage(item) }}</td>
               <td class="text-center">
+                <v-tooltip v-if="usesChat(item)" location="top">
+                  <template #activator="{ props: tip }">
+                    <v-icon v-bind="tip" color="indigo" size="small">mdi-chat</v-icon>
+                  </template>
+                  <span style="white-space: pre-line">{{ getFeatureTooltip(item, CHAT_FEATURES) }}</span>
+                </v-tooltip>
+                <span v-else class="text-disabled">—</span>
+              </td>
+              <td class="text-center">
+                <v-tooltip v-if="usesAgent(item)" location="top">
+                  <template #activator="{ props: tip }">
+                    <v-icon v-bind="tip" color="deep-purple" size="small">mdi-robot</v-icon>
+                  </template>
+                  <span style="white-space: pre-line">{{ getFeatureTooltip(item, AGENT_FEATURES) }}</span>
+                </v-tooltip>
+                <span v-else class="text-disabled">—</span>
+              </td>
+              <td class="text-center">
                 <v-btn
                   v-if="showTrendButtons"
                   icon
@@ -174,6 +192,7 @@
 import { defineComponent, ref, computed, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
 import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
+import { CHAT_FEATURES, AGENT_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -360,6 +379,42 @@ export default defineComponent({
       return topLang;
     }
 
+    function hasFeatureActivity(user: UserTotals, features: string[]): boolean {
+      if (!user.totals_by_feature) return false;
+      return user.totals_by_feature.some(
+        f => features.includes(f.feature) &&
+          (f.user_initiated_interaction_count > 0 || f.code_generation_activity_count > 0),
+      );
+    }
+
+    function usesChat(user: UserTotals): boolean {
+      return hasFeatureActivity(user, CHAT_FEATURES);
+    }
+
+    function usesAgent(user: UserTotals): boolean {
+      return hasFeatureActivity(user, AGENT_FEATURES);
+    }
+
+    function getFeatureTooltip(user: UserTotals, features: string[]): string {
+      if (!user.totals_by_feature) return 'No feature data';
+      const active = user.totals_by_feature.filter(
+        f => features.includes(f.feature) &&
+          (f.user_initiated_interaction_count > 0 || f.code_generation_activity_count > 0),
+      );
+      if (active.length === 0) return 'No activity';
+      return active.map(f => {
+        const label = FEATURE_LABELS[f.feature] || f.feature;
+        const parts: string[] = [];
+        if (f.user_initiated_interaction_count > 0)
+          parts.push(`${f.user_initiated_interaction_count} interactions`);
+        if (f.code_generation_activity_count > 0)
+          parts.push(`${f.code_generation_activity_count} code gen`);
+        if (f.loc_added_sum > 0)
+          parts.push(`${f.loc_added_sum} LOC`);
+        return `${label}: ${parts.join(', ')}`;
+      }).join('\n');
+    }
+
     const tableHeaders = computed(() => {
       const cols: { title: string; key: string; sortable?: boolean }[] = [
         { title: 'User',           key: 'login',                            sortable: true  },
@@ -373,6 +428,8 @@ export default defineComponent({
       cols.push(
         { title: 'Top IDE',        key: 'top_ide',                          sortable: false },
         { title: 'Top Language',   key: 'top_language',                     sortable: false },
+        { title: 'Chat',           key: 'uses_chat',                        sortable: false },
+        { title: 'Agent',          key: 'uses_agent',                       sortable: false },
       );
       if (showTrendButtons.value) {
         cols.push({ title: 'Trend', key: 'trend', sortable: false });
@@ -440,6 +497,11 @@ export default defineComponent({
       getActivityColor,
       getTopIde,
       getTopLanguage,
+      usesChat,
+      usesAgent,
+      getFeatureTooltip,
+      CHAT_FEATURES,
+      AGENT_FEATURES,
       historyChartData,
       historyChartOptions,
       historyHeaders,
