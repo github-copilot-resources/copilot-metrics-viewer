@@ -106,8 +106,8 @@
                 </ul>
 
                 <div class="text-caption d-flex flex-column ga-1">
-                  <a href="https://docs.github.com/en/copilot/rolling-out-github-copilot-at-scale/analyzing-usage-over-time" target="_blank" rel="noopener">
-                    📖 Analyzing Copilot usage over time
+                  <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics/interpret-copilot-metrics" target="_blank" rel="noopener">
+                    📖 Interpreting Copilot usage and adoption metrics
                   </a>
                   <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale" target="_blank" rel="noopener">
                     🚀 Rolling out GitHub Copilot at scale
