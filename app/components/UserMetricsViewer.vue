@@ -3,11 +3,10 @@
     <!-- Summary tiles -->
     <div class="tiles-container">
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center">
+        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                 <div class="text-h6 mb-1">Total Users</div>
                 <div class="text-caption">Users with Copilot activity</div>
                 <p class="text-h4">{{ totalUsers }}</p>
@@ -21,11 +20,10 @@
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center">
+        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                 <div class="text-h6 mb-1">Active Users</div>
                 <div class="text-caption">Active in last 7 days of period</div>
                 <p class="text-h4">{{ activeUsers }}</p>
@@ -39,11 +37,10 @@
       </v-card>
 
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 260px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center">
+        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
-                <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
                 <div class="text-h6 mb-1">Avg Acceptance Rate</div>
                 <div class="text-caption">Code completions accepted</div>
                 <p class="text-h4">{{ avgAcceptanceRate }}%</p>
