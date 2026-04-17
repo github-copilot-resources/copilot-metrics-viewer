@@ -60,6 +60,7 @@ jobs:
           NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
           NUXT_PUBLIC_GITHUB_ORG=octodemo \
           NUXT_PUBLIC_IS_DATA_MOCKED=true \
+          ENABLE_HISTORICAL_MODE=false \
           RUN_COMMAND='npm run preview' npx playwright test --grep-invert "@seed|@storage"
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
@@ -88,6 +89,7 @@ jobs:
           -e NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
           -e NUXT_PUBLIC_GITHUB_ORG=octodemo \
           -e NUXT_PUBLIC_IS_DATA_MOCKED=true \
+          -e ENABLE_HISTORICAL_MODE=false \
           app:pw npx playwright test --grep-invert "@seed|@storage"
     - uses: actions/upload-artifact@v4
       if: always()
