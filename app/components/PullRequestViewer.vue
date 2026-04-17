@@ -4,55 +4,76 @@
       <!-- PRs Created -->
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"/>
-            <div class="text-h6 mb-1">PRs Created</div>
-            <div class="text-caption">{{ dateRangeDescription }}</div>
-            <p class="text-h4">{{ totalCreated }}</p>
-          </div>
+          <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
+            <template #activator="{ props }">
+              <div v-bind="props" class="tiles-text">
+                <div class="spacing-10"/>
+                <div class="text-h6 mb-1">PRs Created</div>
+                <div class="text-caption">{{ dateRangeDescription }}</div>
+                <p class="text-h4">{{ totalCreated }}</p>
+              </div>
+            </template>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Total pull requests created during the reporting period. Includes PRs created by both developers and Copilot agents.</span>
+            </v-card>
+          </v-tooltip>
         </v-card-item>
       </v-card>
 
       <!-- PRs Reviewed -->
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"/>
-            <div class="text-h6 mb-1">PRs Reviewed</div>
-            <div class="text-caption">{{ dateRangeDescription }}</div>
-            <p class="text-h4">{{ totalReviewed }}</p>
-          </div>
+          <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
+            <template #activator="{ props }">
+              <div v-bind="props" class="tiles-text">
+                <div class="spacing-10"/>
+                <div class="text-h6 mb-1">PRs Reviewed</div>
+                <div class="text-caption">{{ dateRangeDescription }}</div>
+                <p class="text-h4">{{ totalReviewed }}</p>
+              </div>
+            </template>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Pull requests that received at least one code review during the period. Indicates team collaboration and code quality practices.</span>
+            </v-card>
+          </v-tooltip>
         </v-card-item>
       </v-card>
 
       <!-- PRs Merged -->
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"/>
-            <div class="text-h6 mb-1">PRs Merged</div>
-            <div class="text-caption">{{ dateRangeDescription }}</div>
-            <p class="text-h4">{{ totalMerged }}</p>
-          </div>
+          <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
+            <template #activator="{ props }">
+              <div v-bind="props" class="tiles-text">
+                <div class="spacing-10"/>
+                <div class="text-h6 mb-1">PRs Merged</div>
+                <div class="text-caption">{{ dateRangeDescription }}</div>
+                <p class="text-h4">{{ totalMerged }}</p>
+              </div>
+            </template>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Pull requests successfully merged into target branches. Represents completed work delivered to the codebase.</span>
+            </v-card>
+          </v-tooltip>
         </v-card-item>
       </v-card>
 
       <!-- PRs by Copilot -->
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
-          <div class="tiles-text">
-            <div class="spacing-10"/>
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">Created by Copilot</div>
-              </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">Pull requests created by Copilot coding agent.</span>
-              </v-card>
-            </v-tooltip>
-            <div class="text-caption">{{ dateRangeDescription }}</div>
-            <p class="text-h4">{{ totalCreatedByCopilot }}</p>
-          </div>
+          <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
+            <template #activator="{ props }">
+              <div v-bind="props" class="tiles-text">
+                <div class="spacing-10"/>
+                <div class="text-h6 mb-1">Created by Copilot</div>
+                <div class="text-caption">{{ dateRangeDescription }}</div>
+                <p class="text-h4">{{ totalCreatedByCopilot }}</p>
+              </div>
+            </template>
+            <v-card class="pa-3 metric-tooltip">
+              <span class="tooltip-text">Pull requests created by Copilot coding agent. Shows automated code contributions from agent-driven workflows.</span>
+            </v-card>
+          </v-tooltip>
         </v-card-item>
       </v-card>
     </div>

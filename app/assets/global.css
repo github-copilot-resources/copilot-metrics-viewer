@@ -198,3 +198,15 @@
   .v-data-table .v-data-table-footer .v-btn:hover { 
     background-color: var(--app-accent-weak) !important; 
   }
+
+  /* ── Global tooltip card style ── */
+  .metric-tooltip {
+    background-color: #1a237e !important;
+    max-width: 380px;
+    border-radius: 8px !important;
+  }
+  .metric-tooltip .tooltip-text {
+    color: #ffffff !important;
+    font-size: 13px !important;
+    line-height: 1.45;
+  }

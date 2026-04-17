@@ -8,8 +8,8 @@
                       <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">Cumulative Chat Interactions</div>
                       </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">Total number of user-initiated chat interactions across all modes (agent, ask, edit, custom, inline). Each interaction is one user prompt sent to Copilot.</span>
+                      <v-card class="pa-3 metric-tooltip">
+                        <span class="tooltip-text">Total number of user-initiated chat interactions across all modes (agent, ask, edit, custom, inline). Each interaction is one user prompt sent to Copilot.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">{{ dateRangeDescription }}</div>
@@ -26,8 +26,8 @@
                       <template #activator="{ props }">
                         <div v-bind="props" class="text-h6 mb-1">Cumulative Code Actions</div>
                       </template>
-                      <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                        <span class="text-caption" style="font-size: 10px !important;">Total number of code actions taken from chat responses — includes applying code to file, inserting at cursor, and using the Copy button.</span>
+                      <v-card class="pa-3 metric-tooltip">
+                        <span class="tooltip-text">Total number of code actions taken from chat responses — includes applying code to file, inserting at cursor, and using the Copy button.</span>
                       </v-card>
                     </v-tooltip>
                     <div class="text-caption">{{ dateRangeDescription }}</div>
@@ -44,8 +44,8 @@
               <template #activator="{ props }">
                 <h2 v-bind="props" class="mb-1">Code Actions | Chat Interactions</h2>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">Daily count of chat interactions (user prompts) and code actions (apply, insert, copy from chat responses).</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Daily count of chat interactions (user prompts) and code actions (apply, insert, copy from chat responses).</span>
               </v-card>
             </v-tooltip>
             <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
@@ -54,8 +54,8 @@
               <template #activator="{ props }">
                 <h2 v-bind="props" class="mb-1">Total Active Copilot Chat Users</h2>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">A bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">A bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.</span>
               </v-card>
             </v-tooltip>
             <Bar :data="totalActiveCopilotChatUsersChartData" :options="totalActiveChatUsersChartOptions" />

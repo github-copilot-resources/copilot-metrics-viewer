@@ -267,6 +267,8 @@ jobs:
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
                 NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
+                NUXT_PUBLIC_ENABLE_AI_CHAT=true \
+                NUXT_AI_TOKEN=${{ secrets.PREVIEW_AI_TOKEN }} \
                 NUXT_PUBLIC_DEPLOY_INFO="${{ steps.deploy-info.outputs.deploy_info }}"
           else
             az containerapp update \
@@ -283,6 +285,8 @@ jobs:
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
                 NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }} \
+                NUXT_PUBLIC_ENABLE_AI_CHAT=true \
+                NUXT_AI_TOKEN=${{ secrets.PREVIEW_AI_TOKEN }} \
                 "NUXT_PUBLIC_DEPLOY_INFO=${{ steps.deploy-info.outputs.deploy_info }}"
           fi
 

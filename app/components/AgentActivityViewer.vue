@@ -10,8 +10,8 @@
               <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Agent Lines Added</div>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">Total lines of code added by Copilot agents (agent mode and edit mode) across all IDEs.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Total lines of code added by Copilot agents (agent mode and edit mode) across all IDEs.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption">{{ dateRangeDescription }}</div>
@@ -29,8 +29,8 @@
               <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Agent Lines Deleted</div>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">Total lines of code deleted by Copilot agents across all IDEs.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Total lines of code deleted by Copilot agents across all IDEs.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption">{{ dateRangeDescription }}</div>
@@ -48,8 +48,8 @@
               <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Agent Code Generations</div>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">Number of distinct code generation events by Copilot agents. Each event represents one code change applied by an agent.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Number of distinct code generation events by Copilot agents. Each event represents one code change applied by an agent.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption">{{ dateRangeDescription }}</div>

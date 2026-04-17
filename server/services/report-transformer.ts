@@ -14,12 +14,10 @@
 
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { OrgReport, ReportDayTotals } from './github-copilot-usage-api';
-
-const COMPLETION_FEATURES = ['code_completion'];
-const CHAT_FEATURES = [
-  'chat_panel_agent_mode', 'chat_panel_ask_mode', 'chat_panel_edit_mode',
-  'chat_panel_custom_mode', 'chat_panel_unknown_mode', 'chat_inline',
-];
+import {
+  COMPLETION_FEATURES,
+  CHAT_FEATURES,
+} from '../../shared/utils/feature-classification';
 
 export function sortReportDayTotalsByDay(dayTotals: ReportDayTotals[]): ReportDayTotals[] {
   return [...dayTotals].sort((left, right) => left.day.localeCompare(right.day));

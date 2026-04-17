@@ -10,8 +10,8 @@
               <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Total Assigned  </div>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">This metric represents the total number of Copilot seats assigned {{ isTeamView ? `to team "${currentTeam}"` : 'within the current organization/enterprise' }}.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">This metric represents the total number of Copilot seats assigned {{ isTeamView ? `to team "${currentTeam}"` : 'within the current organization/enterprise' }}.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption">
@@ -30,8 +30,8 @@
               <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">Assigned But Never Used</div>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">This metric shows seats that were assigned but never used {{ isTeamView ? `within team "${currentTeam}"` : 'within the current organization/enterprise' }}. The assigned timestamp is also displayed in the chart.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">This metric shows seats that were assigned but never used {{ isTeamView ? `within team "${currentTeam}"` : 'within the current organization/enterprise' }}. The assigned timestamp is also displayed in the chart.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption">
@@ -50,8 +50,8 @@
               <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 7 days </div>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">Never used seats or seats used, but with no activity in the past 7 days.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Never used seats or seats used, but with no activity in the past 7 days.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption">
@@ -70,8 +70,8 @@
               <template #activator="{ props }">
                 <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 30 days </div>
               </template>
-              <v-card class="pa-2" style="background-color: #f0f0f0; max-width: 350px;">
-                <span class="text-caption" style="font-size: 10px !important;">This metric represents seats with no activity in the last 30 days, including those never used.</span>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">This metric represents seats with no activity in the last 30 days, including those never used.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption">

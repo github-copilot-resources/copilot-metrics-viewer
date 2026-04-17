@@ -10,6 +10,8 @@ process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'true'
 process.env.NUXT_PUBLIC_ENABLE_HISTORICAL_MODE = 'true'
 // Hide 'agent activity' tab to test the configurable tabs feature
 process.env.NUXT_PUBLIC_HIDDEN_TABS = 'agent activity'
+// Enable AI chat for e2e testing (uses mock responses in mock mode)
+process.env.NUXT_PUBLIC_ENABLE_AI_CHAT = 'true'
 
 export default defineConfig<ConfigOptions>({
     testDir: 'e2e-tests',
