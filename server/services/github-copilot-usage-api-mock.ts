@@ -27,7 +27,7 @@ export function mockRequestDownloadLinks(
   reportType: '1-day' | '28-day',
   day?: string
 ): DownloadLinksResponse {
-  const isOrg = request.scope === 'organization' || request.scope === 'team-organization';
+  const isOrg = request.scope === 'organization';
   const scopePrefix = isOrg ? 'organization' : 'enterprise';
 
   if (reportType === '1-day') {
@@ -53,7 +53,7 @@ export function mockRequestUserDownloadLinks(
   reportType: '1-day' | '28-day',
   day?: string
 ): DownloadLinksResponse {
-  const isOrg = request.scope === 'organization' || request.scope === 'team-organization';
+  const isOrg = request.scope === 'organization';
   const scopePrefix = isOrg ? 'organization' : 'enterprise';
 
   if (reportType === '1-day') {

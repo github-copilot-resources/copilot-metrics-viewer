@@ -19,12 +19,8 @@ if (route.params.ent || route.params.org) {
 
   
   // update scope
-  if (route.params.org && route.params.team) {
-    config.public.scope = 'team-organization'
-  } else if (route.params.org) {
+  if (route.params.org) {
     config.public.scope = 'organization'
-  } else if (route.params.ent && route.params.team) {
-    config.public.scope = 'team-enterprise'
   } else if (route.params.ent) {
     config.public.scope = 'enterprise'
   } 

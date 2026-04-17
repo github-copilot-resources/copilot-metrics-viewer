@@ -199,16 +199,10 @@ export default defineNuxtComponent({
     },
     getDisplayTabName(itemName: string): string {
       // Transform scope names to display names for tabs
-      switch (itemName) {
-        case 'team-organization':
-        case 'team-enterprise':
-          return 'team';
-        case 'organization':
-        case 'enterprise':
-          return itemName;
-        default:
-          return itemName;
-      }
+      // When a team is configured, display 'team' regardless of base scope
+      const cfg = useRuntimeConfig();
+      if (cfg.public.githubTeam) return 'team';
+      return itemName;
     },
     async handleDateRangeChange(newDateRange: { 
       since?: string; 
@@ -259,7 +253,7 @@ export default defineNuxtComponent({
         this.reportData = response.reportData || [];
         this.metricsReady = true;
 
-        if (config.public.scope && config.public.scope.includes('team') && this.metrics.length === 0 && !this.apiError) {
+        if (config.public.githubTeam && this.metrics.length === 0 && !this.apiError) {
           this.apiError = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
         }
 
@@ -358,13 +352,13 @@ export default defineNuxtComponent({
   created() {
     this.tabItems.unshift(this.getDisplayTabName(this.itemName));
     
-    // Add teams tab for organization and enterprise scopes to allow team comparison
-    if (this.itemName === 'organization' || this.itemName === 'enterprise') {
+    this.config = useRuntimeConfig();
+
+    // Add teams tab for organization/enterprise (no specific team) to allow team comparison
+    if (!this.config.public.githubTeam && (this.itemName === 'organization' || this.itemName === 'enterprise')) {
       this.tabItems.splice(1, 0, 'teams'); // Insert after the first tab
     }
     
-    this.config = useRuntimeConfig();
-
     // Auto-hide teams tab when historical mode is disabled (team metrics require DB)
     this.tabItems = applyHistoricalModeFilter(this.tabItems, this.config.public.enableHistoricalMode as boolean | string);
 

@@ -286,10 +286,10 @@ These endpoints respond in ~200ms without making external API calls and do not r
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `NUXT_GITHUB_TOKEN` | GitHub PAT with Copilot metrics permission | Yes (unless OAuth) |
-| `NUXT_PUBLIC_SCOPE` | `organization`, `enterprise`, `team-organization`, or `team-enterprise` | Yes |
-| `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org/team-org scope |
-| `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise/team-ent scope |
-| `NUXT_PUBLIC_GITHUB_TEAM` | GitHub team slug | For team scopes |
+| `NUXT_PUBLIC_SCOPE` | `organization` or `enterprise` (legacy `team-organization`/`team-enterprise` auto-normalized) | Yes |
+| `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
+| `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise scope |
+| `NUXT_PUBLIC_GITHUB_TEAM` | GitHub team slug (optional — adds team filtering to org/enterprise scope) | For team views |
 | `NUXT_SESSION_PASSWORD` | Session encryption key (min 32 chars) | Yes |
 | `DATABASE_URL` | PostgreSQL connection string | Historical mode only |
 | `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |

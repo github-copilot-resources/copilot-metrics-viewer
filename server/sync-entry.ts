@@ -22,7 +22,10 @@ async function runSync() {
   const logger = console;
 
   // Get configuration from environment
-  const scope = process.env.NUXT_PUBLIC_SCOPE || 'organization';
+  const rawScope = process.env.NUXT_PUBLIC_SCOPE || 'organization';
+  const scope = (rawScope === 'team-organization' ? 'organization'
+    : rawScope === 'team-enterprise' ? 'enterprise'
+    : rawScope) as 'organization' | 'enterprise';
   const githubOrg = process.env.NUXT_PUBLIC_GITHUB_ORG;
   const githubEnt = process.env.NUXT_PUBLIC_GITHUB_ENT;
   const githubTeam = process.env.NUXT_PUBLIC_GITHUB_TEAM;
@@ -56,7 +59,7 @@ async function runSync() {
 
     // Use bulk download — one API call for up to 28 days
     const result = await syncBulk(
-      scope as any,
+      scope,
       identifier,
       headers,
       githubTeam || undefined

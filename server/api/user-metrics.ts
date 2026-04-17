@@ -31,8 +31,7 @@ async function filterByTeamIfNeeded(
   options: Options,
   headers: Headers
 ): Promise<UserTotals[]> {
-  const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
-  if (!isTeamScope || !options.githubTeam) return userTotals;
+  if (!options.githubTeam) return userTotals;
 
   const teamMembers = await fetchAllTeamMembers(options, headers);
   if (teamMembers.length === 0) return [];
@@ -67,7 +66,7 @@ export default defineEventHandler(async (event) => {
 
   // ── Storage / historical mode ───────────────────────────────────────────────
   if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
-    const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
+    const isTeamScope = !!options.githubTeam;
 
     // Team-scoped queries require auth to resolve current team membership
     if (isTeamScope && !event.context.headers?.has('Authorization')) {

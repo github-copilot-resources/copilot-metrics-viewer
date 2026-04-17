@@ -25,7 +25,7 @@ export interface DownloadLinksResponse {
 
 /** Options for requesting a metrics report */
 export interface MetricsReportRequest {
-  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise';
+  scope: 'organization' | 'enterprise';
   identifier: string;
   teamSlug?: string;
 }
@@ -413,7 +413,7 @@ function buildReportUrl(
 ): string {
   const { scope, identifier } = request;
   const base = 'https://api.github.com';
-  const isOrg = scope === 'organization' || scope === 'team-organization';
+  const isOrg = scope === 'organization';
 
   if (isOrg) {
     const prefix = reportType === '1-day'
@@ -624,7 +624,7 @@ function buildUserReportUrl(
 ): string {
   const { scope, identifier } = request;
   const base = 'https://api.github.com';
-  const isOrg = scope === 'organization' || scope === 'team-organization';
+  const isOrg = scope === 'organization';
 
   if (isOrg) {
     const prefix = reportType === '1-day'

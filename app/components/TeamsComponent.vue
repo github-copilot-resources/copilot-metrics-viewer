@@ -400,9 +400,7 @@ export default defineComponent({
     const loadMetricsForTeam = async (teamSlug: string) => {
       const route = useRoute();
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until);
-      // Force scope to team variant based on current broader scope
-      if (options.scope === 'enterprise') options.scope = 'team-enterprise';
-      else if (options.scope === 'organization') options.scope = 'team-organization';
+      // Set team slug for filtering — scope stays as organization/enterprise
       options.githubTeam = teamSlug;
       const params = options.toParams();
       const response = await $fetch<MetricsApiResponse>('/api/metrics', { params })

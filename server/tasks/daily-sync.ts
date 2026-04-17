@@ -26,7 +26,10 @@ export default defineTask({
     }
 
     // Get configuration
-    const scope = (config.public.scope as 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise') || 'organization';
+    const rawScope = config.public.scope as string;
+    const scope = (rawScope === 'team-organization' ? 'organization'
+      : rawScope === 'team-enterprise' ? 'enterprise'
+      : rawScope || 'organization') as 'organization' | 'enterprise';
     const githubOrg = config.public.githubOrg;
     const githubEnt = config.public.githubEnt;
     const githubTeam = config.public.githubTeam;

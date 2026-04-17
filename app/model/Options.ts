@@ -5,7 +5,7 @@
 import type { QueryObject } from 'ufo';
 import type { RouteLocationNormalizedLoadedGeneric } from 'vue-router';
 
-export type Scope = 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise';
+export type Scope = 'organization' | 'enterprise';
 
 export interface OptionsData {
     since?: string;
@@ -88,25 +88,23 @@ export class Options {
         // Handle GitHub organization/enterprise/team parameters
         if (route.params.org) {
             options.githubOrg = route.params.org as string;
-
-            if (route.params.team) {
-                options.githubTeam = route.params.team as string;
-                options.scope = 'team-organization';
-            } else {
-                options.scope = 'organization';
-            }
+            options.scope = 'organization';
+            if (route.params.team) options.githubTeam = route.params.team as string;
         } else if (route.params.ent) {
             options.githubEnt = route.params.ent as string;
-
-            if (route.params.team) {
-                options.githubTeam = route.params.team as string;
-                options.scope = 'team-enterprise';
-            } else {
-                options.scope = 'enterprise';
-            }
+            options.scope = 'enterprise';
+            if (route.params.team) options.githubTeam = route.params.team as string;
         } else {
             // Use defaults from runtime config
-            options.scope = (config.public.scope as Scope) || 'organization';
+            // Normalize legacy 'team-organization'/'team-enterprise' values to base scope
+            const rawScope = config.public.scope as string;
+            if (rawScope === 'team-organization') {
+                options.scope = 'organization';
+            } else if (rawScope === 'team-enterprise') {
+                options.scope = 'enterprise';
+            } else {
+                options.scope = (rawScope as Scope) || 'organization';
+            }
             if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
             if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
             if (config.public.githubTeam) options.githubTeam = config.public.githubTeam;
@@ -120,13 +118,17 @@ export class Options {
      * Create Options from URLSearchParams
      */
     static fromURLSearchParams(params: URLSearchParams): Options {
+        const rawScope = params.get('scope');
+        const scope = rawScope === 'team-organization' ? 'organization'
+            : rawScope === 'team-enterprise' ? 'enterprise'
+            : (rawScope as Scope) || undefined;
         const options = new Options({
             since: params.get('since') || undefined,
             until: params.get('until') || undefined,
             githubOrg: params.get('githubOrg') || undefined,
             githubEnt: params.get('githubEnt') || undefined,
             githubTeam: params.get('githubTeam') || undefined,
-            scope: (params.get('scope') as Scope) || undefined,
+            scope,
             locale: params.get('locale') || undefined
         });
 
@@ -143,13 +145,17 @@ export class Options {
     }
 
     static fromQuery(query: QueryObject): Options {
+        const rawScope = query.scope as string | undefined;
+        const scope = rawScope === 'team-organization' ? 'organization'
+            : rawScope === 'team-enterprise' ? 'enterprise'
+            : (rawScope as Scope) || undefined;
         const options = new Options({
             since: query.since as string | undefined,
             until: query.until as string | undefined,
             githubOrg: query.githubOrg as string | undefined,
             githubEnt: query.githubEnt as string | undefined,
             githubTeam: query.githubTeam as string | undefined,
-            scope: (query.scope as Scope) || undefined,
+            scope,
             locale: query.locale as string | undefined
         });
 
@@ -270,25 +276,11 @@ export class Options {
         let url = '';
 
         switch (this.scope) {
-            case 'team-organization':
-                if (!this.githubOrg || !this.githubTeam) {
-                    throw new Error('GitHub organization and team must be set for team-organization scope');
-                }
-                url = `${baseUrl}/orgs/${this.githubOrg}/team/${this.githubTeam}/copilot/metrics`;
-                break
-
             case 'organization':
                 if (!this.githubOrg) {
                     throw new Error('GitHub organization must be set for organization scope');
                 }
                 url = `${baseUrl}/orgs/${this.githubOrg}/copilot/metrics`;
-                break;
-
-            case 'team-enterprise':
-                if (!this.githubEnt || !this.githubTeam) {
-                    throw new Error('GitHub enterprise and team must be set for team-enterprise scope');
-                }
-                url = `${baseUrl}/enterprises/${this.githubEnt}/team/${this.githubTeam}/copilot/metrics`;
                 break;
 
             case 'enterprise':
@@ -318,14 +310,12 @@ export class Options {
         const baseUrl = 'https://api.github.com';
 
         switch (this.scope) {
-            case 'team-organization':
             case 'organization':
                 if (!this.githubOrg) {
                     throw new Error('GitHub organization must be set for organization scope');
                 }
                 return `${baseUrl}/orgs/${this.githubOrg}/copilot/billing/seats`;
 
-            case 'team-enterprise':
             case 'enterprise':
                 if (!this.githubEnt) {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
@@ -344,14 +334,12 @@ export class Options {
         const baseUrl = 'https://api.github.com';
 
         switch (this.scope) {
-            case 'team-organization':
             case 'organization':
                 if (!this.githubOrg) {
                     throw new Error('GitHub organization must be set for organization scope');
                 }
                 return `${baseUrl}/orgs/${this.githubOrg}/teams`;
 
-            case 'team-enterprise':
             case 'enterprise':
                 if (!this.githubEnt) {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
@@ -370,14 +358,12 @@ export class Options {
         const baseUrl = 'https://api.github.com';
 
         switch (this.scope) {
-            case 'team-organization':
             case 'organization':
                 if (!this.githubOrg || !this.githubTeam) {
                     throw new Error('GitHub organization and team must be set for organization scope');
                 }
                 return `${baseUrl}/orgs/${this.githubOrg}/teams/${this.githubTeam}/members`;
 
-            case 'team-enterprise':
             case 'enterprise':
                 if (!this.githubEnt || !this.githubTeam) {
                     throw new Error('GitHub enterprise and team must be set for enterprise scope');
@@ -394,11 +380,6 @@ export class Options {
      */
     getMockDataPath(): string {
         switch (this.scope) {
-            case 'team-organization':
-            case 'organization':
-                return 'public/mock-data/organization_metrics_response_sample.json';
-
-            case 'team-enterprise':
             case 'enterprise':
                 return 'public/mock-data/enterprise_metrics_response_sample.json';
 
@@ -412,11 +393,6 @@ export class Options {
  */
     getSeatsMockDataPath(): string {
         switch (this.scope) {
-            case 'team-organization':
-            case 'organization':
-                return 'public/mock-data/organization_seats_response_sample.json';
-
-            case 'team-enterprise':
             case 'enterprise':
                 return 'public/mock-data/enterprise_seats_response_sample.json';
 
@@ -430,11 +406,6 @@ export class Options {
      */
     getUserMetricsMockDataPath(): string {
         switch (this.scope) {
-            case 'team-organization':
-            case 'organization':
-                return 'public/mock-data/new-api/organization-users-28-day-report.json';
-
-            case 'team-enterprise':
             case 'enterprise':
                 return 'public/mock-data/new-api/enterprise-users-28-day-report.json';
 
@@ -449,20 +420,13 @@ export class Options {
     validate(): { isValid: boolean; errors: string[] } {
         const errors: string[] = [];
 
-        // Validate scope-specific requirements
-        if (this.scope === 'team-organization' || this.scope === 'team-enterprise') {
-            if (!this.githubTeam) {
-                errors.push('GitHub team must be set for team scopes');
-            }
-        }
-
-        if (this.scope === 'organization' || this.scope === 'team-organization') {
+        if (this.scope === 'organization') {
             if (!this.githubOrg) {
                 errors.push('GitHub organization must be set for organization scopes');
             }
         }
 
-        if (this.scope === 'enterprise' || this.scope === 'team-enterprise') {
+        if (this.scope === 'enterprise') {
             if (!this.githubEnt) {
                 errors.push('GitHub enterprise must be set for enterprise scopes');
             }

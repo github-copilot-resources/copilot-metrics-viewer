@@ -214,11 +214,13 @@ can be overridden by route parameters, e.g.
 
 #### NUXT_PUBLIC_SCOPE (Required!)
 
-The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization', 'team-organization' or 'team-enterprise'.
+The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to `'enterprise'` or `'organization'`.
 
-- If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
-- If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
-- If set to 'team-organization' or 'team-enterprise', the application will display team-level metrics derived from per-user data for the team defined in `NUXT_PUBLIC_GITHUB_TEAM` within the specified organization or enterprise.
+- If set to `'enterprise'`, the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
+- If set to `'organization'`, the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
+- To view team-level metrics, set `NUXT_PUBLIC_GITHUB_TEAM` with either scope — team filtering is applied as a post-processing step.
+
+> **Note:** Legacy values `'team-organization'` and `'team-enterprise'` are still accepted and automatically normalized to `'organization'` and `'enterprise'` respectively for backward compatibility.
 
 For example, if you want to target the API calls to an organization, you would set `NUXT_PUBLIC_SCOPE=organization` in the `.env` file.
 
