@@ -239,7 +239,7 @@ export default defineComponent({
     );
 
     const config      = useRuntimeConfig();
-    const isTeamView  = computed(() => config.public.scope?.includes('team') && config.public.githubTeam);
+    const isTeamView  = computed(() => !!config.public.githubTeam);
     const currentTeam = computed(() => config.public.githubTeam || '');
 
     // Seats history chart datasets

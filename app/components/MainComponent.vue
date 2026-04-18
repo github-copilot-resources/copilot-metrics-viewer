@@ -53,6 +53,24 @@
       </template>
     </v-banner>
 
+    <!-- Team + no Historical mode warning banner -->
+    <v-banner
+      v-if="showTeamHistoricalWarning"
+      color="warning"
+      icon="mdi-alert"
+      lines="two"
+      class="migration-banner"
+    >
+      <v-banner-text>
+        <strong>Historical mode is required for team metrics.</strong>
+        Team-level metrics are derived from per-user data stored in the database.
+        Enable Historical mode by setting <code>ENABLE_HISTORICAL_MODE=true</code> in your environment.
+      </v-banner-text>
+      <template #actions>
+        <v-btn text="Dismiss" @click="showTeamHistoricalWarning = false" />
+      </template>
+    </v-banner>
+
     <!-- Date Range Selector - Hidden for seats tab -->
     <DateRangeSelector 
       v-show="tab !== 'seat analysis' && !signInRequired" 
@@ -343,6 +361,7 @@ export default defineNuxtComponent({
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
       showMigrationBanner: true,
+      showTeamHistoricalWarning: false,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
@@ -364,6 +383,11 @@ export default defineNuxtComponent({
 
     // Filter out hidden tabs based on NUXT_PUBLIC_HIDDEN_TABS environment variable
     this.tabItems = applyHiddenTabs(this.tabItems, this.config.public.hiddenTabs as string);
+
+    // Warn when a team URL is accessed without Historical mode — team data requires DB
+    if (this.config.public.githubTeam && !this.config.public.enableHistoricalMode) {
+      this.showTeamHistoricalWarning = true;
+    }
   },
   async mounted() {
     // Load initial data
