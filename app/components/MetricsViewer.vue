@@ -17,8 +17,8 @@
     </v-card>
 
     <!-- KPI Row 1: Adoption metrics (from reportData) -->
-    <div v-if="ideActiveUsers > 0" class="tiles-container">
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 320px; min-height: 175px;">
+    <div v-if="ideActiveUsers > 0" class="tiles-container" style="justify-content: center;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-2 my-3" style="width: 260px; min-height: 175px;">
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"/>
@@ -36,7 +36,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 320px; min-height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-2 my-3" style="width: 260px; min-height: 175px;">
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"/>
@@ -55,7 +55,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 320px; min-height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-2 my-3" style="width: 260px; min-height: 175px;">
         <v-card-item>
           <div class="tiles-text">
             <div class="spacing-10"/>
@@ -69,6 +69,42 @@
             </v-tooltip>
             <div class="text-caption">{{ dateRangeDescription }}</div>
             <p class="text-h5 font-weight-bold mt-2" style="word-break: break-word;">{{ mostUsedChatModel || '—' }}</p>
+          </div>
+        </v-card-item>
+      </v-card>
+
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-2 my-3" style="width: 260px; min-height: 175px;">
+        <v-card-item>
+          <div class="tiles-text">
+            <div class="spacing-10"/>
+            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+              <template #activator="{ props }">
+                <div v-bind="props" class="text-h6 mb-1">Most used chat mode</div>
+              </template>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Chat feature (Agent, Ask, Edit, etc.) with the most user-initiated requests in the last 28 days, excluding code completions.</span>
+              </v-card>
+            </v-tooltip>
+            <div class="text-caption">{{ dateRangeDescription }}</div>
+            <p class="text-h5 font-weight-bold mt-2" style="word-break: break-word;">{{ mostUsedChatMode || '—' }}</p>
+          </div>
+        </v-card-item>
+      </v-card>
+
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-2 my-3" style="width: 260px; min-height: 175px;">
+        <v-card-item>
+          <div class="tiles-text">
+            <div class="spacing-10"/>
+            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+              <template #activator="{ props }">
+                <div v-bind="props" class="text-h6 mb-1">Total chat requests</div>
+              </template>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Total user-initiated chat interactions across all modes (Agent, Ask, Edit, Inline, etc.) in the last 28 days. Excludes IDE code completions.</span>
+              </v-card>
+            </v-tooltip>
+            <div class="text-caption">{{ dateRangeDescription }}</div>
+            <p class="text-h3 font-weight-bold mt-2">{{ formatCompact(totalChatRequests) }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -133,16 +169,16 @@
           <v-col v-if="ideDauChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">IDE daily active users</div>
-              <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot on a given day, either via chat or code completions</div>
-              <div style="height:220px"><Line :data="ideDauChartData" :options="integerYOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot on a given day, either via chat or code completions · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:220px"><Line :data="ideDauChartData" :options="integerYOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
           <v-col v-if="ideWauChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">IDE weekly active users</div>
-              <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot in a given week, either via chat or code completions</div>
-              <div style="height:220px"><Line :data="ideWauChartData" :options="integerYOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot in a given week, either via chat or code completions · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:220px"><Line :data="ideWauChartData" :options="integerYOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
@@ -150,16 +186,16 @@
           <v-col v-if="avgChatReqChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">Average chat requests per active user</div>
-              <div class="text-caption text-medium-emphasis mb-2">User-initiated requests across all chat modes, excluding code completions</div>
-              <div style="height:220px"><Line :data="avgChatReqChartData" :options="compactChartOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">User-initiated requests across all chat modes, excluding code completions · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:220px"><Line :data="avgChatReqChartData" :options="compactChartOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
           <v-col v-if="requestsPerModeChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">Requests per chat mode</div>
-              <div class="text-caption text-medium-emphasis mb-2">User-initiated chat requests across all modes</div>
-              <div style="height:220px"><Bar :data="requestsPerModeChartData" :options="stackedBarOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">User-initiated chat requests across all modes · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:220px"><Bar :data="requestsPerModeChartData" :options="stackedBarOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
@@ -167,16 +203,16 @@
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">Code completions</div>
-              <div class="text-caption text-medium-emphasis mb-2">Inline code suggestions shown and accepted</div>
-              <div style="height:220px"><Line :data="totalSuggestionsAndAcceptanceChartData" :options="compactChartOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">Inline code suggestions shown and accepted · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:220px"><Line :data="totalSuggestionsAndAcceptanceChartData" :options="compactChartOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">Code completions acceptance rate</div>
-              <div class="text-caption text-medium-emphasis mb-2">Percentage of shown inline completions that were accepted</div>
-              <div style="height:220px"><Bar :data="acceptanceRateByCountChartData" :options="compactChartOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">Percentage of shown inline completions that were accepted · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:220px"><Bar :data="acceptanceRateByCountChartData" :options="compactChartOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
@@ -184,8 +220,8 @@
           <v-col v-if="modelUsagePerDayChartData.labels.length" cols="12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">Model usage per day</div>
-              <div class="text-caption text-medium-emphasis mb-2">Daily breakdown of models used in requests across all chat modes, excluding code completions</div>
-              <div style="height:260px"><Line :data="modelUsagePerDayChartData" :options="stackedAreaOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">Daily breakdown of models used in requests across all chat modes, excluding code completions · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:260px"><Line :data="modelUsagePerDayChartData" :options="stackedAreaOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
@@ -211,8 +247,8 @@
           <v-col v-if="langUsagePerDayChartData.labels.length" cols="12">
             <v-card variant="outlined" class="pa-3">
               <div class="text-subtitle-1 font-weight-bold">Language usage per day</div>
-              <div class="text-caption text-medium-emphasis mb-2">Daily breakdown of language usage in requests across all chat modes and code completions</div>
-              <div style="height:260px"><Line :data="langUsagePerDayChartData" :options="stackedAreaOptions" /></div>
+              <div class="text-caption text-medium-emphasis mb-2">Daily breakdown of language usage in requests across all chat modes and code completions · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:260px"><Line :data="langUsagePerDayChartData" :options="stackedAreaOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
@@ -297,6 +333,34 @@ function featureLabel(key: string) {
   return FEATURE_DISPLAY[key] ?? key;
 }
 
+function formatCompact(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(n);
+}
+
+// Shades weekend (Sat/Sun) columns on any date-labelled chart
+const weekendPlugin = {
+  id: 'weekendHighlight',
+  beforeDraw(chart: any) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea || !scales.x) return;
+    const labels: string[] = chart.data.labels ?? [];
+    const xScale = scales.x;
+    const bw = labels.length > 1 ? (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) : 20;
+    ctx.save();
+    ctx.fillStyle = 'rgba(128,128,128,0.10)';
+    labels.forEach((label, i) => {
+      const d = new Date(label as string);
+      if (d.getDay() === 0 || d.getDay() === 6) {
+        const x = xScale.getPixelForValue(i);
+        ctx.fillRect(x - bw / 2, chartArea.top, bw, chartArea.bottom - chartArea.top);
+      }
+    });
+    ctx.restore();
+  }
+};
+
 export default defineComponent({
   name: 'MetricsViewer',
   components: { Line, Bar, Doughnut },
@@ -328,6 +392,8 @@ export default defineComponent({
     const agentAdoptionPct = ref(0);
     const agentAdoptionNum = ref(0);
     const mostUsedChatModel = ref('');
+    const mostUsedChatMode = ref('');
+    const totalChatRequests = ref(0);
 
     // ── Legacy completion charts ──────────────────────────────────────────
     const acceptanceRateByCountChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -475,6 +541,21 @@ export default defineComponent({
       }
       const topModel = Object.entries(modelTotals).sort((a, b) => b[1] - a[1])[0];
       mostUsedChatModel.value = topModel ? topModel[0] : '';
+
+      // Most used chat mode + total chat requests
+      const featureTotals: Record<string, number> = {};
+      let chatTotal = 0;
+      for (const day of data) {
+        for (const f of (day.totals_by_feature ?? [])) {
+          if (f.feature === 'code_completion') continue;
+          const cnt = f.user_initiated_interaction_count ?? 0;
+          featureTotals[f.feature ?? ''] = (featureTotals[f.feature ?? ''] ?? 0) + cnt;
+          chatTotal += cnt;
+        }
+      }
+      const topFeature = Object.entries(featureTotals).sort((a, b) => b[1] - a[1])[0];
+      mostUsedChatMode.value = topFeature ? featureLabel(topFeature[0]) : '';
+      totalChatRequests.value = chatTotal;
 
       const labels = data.map(d => d.date ?? '');
 
@@ -697,12 +778,15 @@ export default defineComponent({
     return {
       // KPI tiles
       ideActiveUsers, agentAdoptionPct, agentAdoptionNum, mostUsedChatModel,
+      mostUsedChatMode, totalChatRequests, formatCompact,
       acceptanceRateAverageByLines, acceptanceRateAverageByCount,
       cumulativeNumberSuggestions, cumulativeNumberAcceptances,
       cumulativeNumberLOCAccepted, totalLinesSuggested,
       // Chart options
       compactChartOptions, integerYOptions, stackedBarOptions, groupedBarOptions,
       stackedAreaOptions, donutOptions,
+      // Weekend plugin
+      weekendPlugin,
       // Charts
       acceptanceRateByCountChartData, totalSuggestionsAndAcceptanceChartData,
       ideDauChartData, ideWauChartData, avgChatReqChartData, requestsPerModeChartData,
