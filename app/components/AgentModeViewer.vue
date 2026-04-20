@@ -20,7 +20,7 @@
                     <h2 class="mb-4">Copilot Statistics</h2>
 
                     <!-- Date Range -->
-                    <v-card v-if="dateRangeDescription" flat class="pa-3 mb-4" color="blue-grey lighten-5">
+                    <v-card v-if="dateRangeDescription" flat class="pa-3 mb-4" color="surface-variant" variant="tonal">
                         <div class="text-body-2 text-center">
                             <v-icon left small>mdi-calendar-range</v-icon>
                             {{ dateRangeDescription }}
@@ -28,7 +28,7 @@
                     </v-card>
 
                     <!-- Overview Cards -->
-                    <v-row class="mb-4">
+                    <v-row class="mb-4" justify="center">
                         <v-col cols="12" md="6" lg="3">
                             <v-card elevation="4" color="blue lighten-4">
                                 <v-card-title class="text-h6">Code Completions</v-card-title>
