@@ -2,7 +2,7 @@
   <div>
     <!-- Summary tiles -->
     <div class="tiles-container">
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
         <v-card-item class="d-flex justify-center align-center">
           <div class="tiles-text">
             <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -22,7 +22,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
         <v-card-item class="d-flex justify-center align-center">
           <div class="tiles-text">
             <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -42,7 +42,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
         <v-card-item class="d-flex justify-center align-center">
           <div class="tiles-text">
             <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
@@ -62,7 +62,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
         <v-card-item class="d-flex justify-center align-center">
           <div class="tiles-text">
             <div class="text-overline mb-1" style="visibility: hidden;">filler</div>

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="tiles-container">
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
           <v-card-item>
             <div class="tiles-text">
               <div class="spacing-25"/>
@@ -20,17 +20,30 @@
 
         <!-- ── Enhanced view from new API reportData ────────────────────── -->
         <template v-if="useEnhancedView">
-          <v-alert type="info" variant="tonal" icon="mdi-information-outline" class="mb-4" density="compact">
-            <span v-if="breakdownKey === 'language'">
-              Showing languages across all language-attributed code-generating features (code completions, agent edits, inline chat, agent mode chat).
-            </span>
-            <span v-else>
-              Showing all IDE editors with any Copilot activity. Code acceptance applies to inline completions only.
-            </span>
-          </v-alert>
+          <!-- Tab intro panel -->
+          <v-card variant="outlined" class="mb-4 pa-3" density="compact">
+            <template v-if="breakdownKey === 'language'">
+              <div class="font-weight-bold text-body-1 mb-1">💬 Languages Deep-Dive</div>
+              <div class="text-medium-emphasis text-body-2 mb-2">
+                Understand <em>where</em> Copilot helps your team write code. Unlike the Organization tab (which shows overall usage trends), this tab breaks down impact by programming language — helping you identify which languages benefit most from AI assistance.
+              </div>
+              <div class="text-body-2 text-medium-emphasis">
+                <strong>What's included:</strong> all language-attributed code-generating features — inline completions, agent edits, inline chat, and agent mode. A language only appears if Copilot generated code in it.
+              </div>
+            </template>
+            <template v-else>
+              <div class="font-weight-bold text-body-1 mb-1">🖥️ Editors Deep-Dive</div>
+              <div class="text-medium-emphasis text-body-2 mb-2">
+                See exactly <em>how</em> your team accesses Copilot. This tab shows every surface where Copilot was used — VS Code, JetBrains, Neovim, the CLI terminal, GitHub.com, and more. Use it to understand IDE adoption, terminal usage, and whether developers are using newer agentic workflows.
+              </div>
+              <div class="text-body-2 text-medium-emphasis">
+                <strong>Note:</strong> Code acceptance rates apply only to IDE inline completions. CLI interactions (session/request counts) and GitHub.com activity are shown separately and don't produce acceptance metrics.
+              </div>
+            </template>
+          </v-card>
 
           <!-- CLI summary card (editors tab only) -->
-          <v-card v-if="breakdownKey === 'editor' && cliSummary" class="mb-4 pa-3" color="blue-grey-lighten-5" variant="tonal">
+          <v-card v-if="breakdownKey === 'editor' && cliSummary" class="mb-4 pa-3" color="surface-variant" variant="tonal">
             <div class="text-subtitle-1 font-weight-bold mb-2">
               <v-icon size="small" class="mr-1">mdi-console</v-icon>CLI (GitHub Copilot in the CLI)
             </div>

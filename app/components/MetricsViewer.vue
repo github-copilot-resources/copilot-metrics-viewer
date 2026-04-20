@@ -1,18 +1,30 @@
 <template>
   <div>
-    <!-- Help links -->
-    <v-card variant="tonal" color="primary" class="mx-4 mt-3 mb-1 pa-3" density="compact">
-      <div class="d-flex align-center flex-wrap gap-4 text-body-2">
-        <span class="font-weight-medium mr-2">How to use this dashboard:</span>
-        <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics" target="_blank" rel="noopener" class="text-primary mr-3">
-          <v-icon size="x-small">mdi-open-in-new</v-icon> How metrics are calculated
-        </a>
-        <a href="https://docs.github.com/en/copilot/reference/interpret-copilot-metrics" target="_blank" rel="noopener" class="text-primary mr-3">
-          <v-icon size="x-small">mdi-open-in-new</v-icon> How to interpret the dashboard
-        </a>
-        <a href="https://resources.github.com/engineering-system-success-playbook/" target="_blank" rel="noopener" class="text-primary">
-          <v-icon size="x-small">mdi-open-in-new</v-icon> Engineering System Success Playbook
-        </a>
+    <!-- Dashboard info panel -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-1 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div class="flex-shrink-0 mr-3">
+          <div class="font-weight-bold text-body-1 mb-1">📊 Organization Dashboard</div>
+          <div class="text-medium-emphasis" style="max-width: 560px;">
+            Copilot activity metrics for the current month. Tracks how developers use Copilot — from AI chat and agent mode to IDE code completions. Acceptance rates reflect <em>inline completions only</em>; CLI, agents, and github.com interactions won't appear there.
+          </div>
+        </div>
+        <v-divider vertical class="mx-2 hidden-sm-and-down" />
+        <div class="d-flex flex-column gap-1">
+          <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+          <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics" target="_blank" rel="noopener" class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">How metrics are calculated</span>
+          </a>
+          <a href="https://docs.github.com/en/copilot/reference/interpret-copilot-metrics" target="_blank" rel="noopener" class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">How to interpret this dashboard</span>
+          </a>
+          <a href="https://resources.github.com/engineering-system-success-playbook/" target="_blank" rel="noopener" class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Engineering System Success Playbook</span>
+          </a>
+        </div>
       </div>
     </v-card>
 

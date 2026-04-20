@@ -71,7 +71,7 @@ v-for="team in selectedTeamObjects" :key="team.slug" :href="getTeamDetailUrl(tea
       <!-- Summary Cards -->
       <div class="tiles-container">
         <v-card
-elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+elevation="4" color="surface" variant="elevated" class="mx-auto my-3"
           style="width: 300px; height: 175px;">
           <v-card-item>
             <div class="tiles-text">
@@ -92,7 +92,7 @@ elevation="4" color="white" variant="elevated" class="mx-auto my-3"
         </v-card>
 
         <v-card
-elevation="4" color="white" variant="elevated" class="mx-auto my-3"
+elevation="4" color="surface" variant="elevated" class="mx-auto my-3"
           style="width: 300px; height: 175px;">
           <v-card-item>
             <div class="tiles-text">

@@ -2,7 +2,7 @@
   <div>
     <div class="tiles-container">
       <!-- PRs Created -->
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
@@ -21,7 +21,7 @@
       </v-card>
 
       <!-- PRs Reviewed -->
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
@@ -40,7 +40,7 @@
       </v-card>
 
       <!-- PRs Merged -->
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
@@ -59,7 +59,7 @@
       </v-card>
 
       <!-- PRs by Copilot -->
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">

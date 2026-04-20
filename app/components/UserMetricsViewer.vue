@@ -2,7 +2,7 @@
   <div>
     <!-- Summary tiles -->
     <div class="tiles-container">
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
@@ -19,7 +19,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
@@ -36,7 +36,7 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 260px; height: 150px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 260px; height: 150px;">
         <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
