@@ -403,15 +403,30 @@ export default defineComponent({
       });
 
       const sorted = Array.from(ideMap.values()).sort((a, b) => b.codeGenerations - a.codeGenerations);
-      enhancedEditorList.value = sorted;
-      numberOfBreakdowns.value = sorted.length + (cliSessions > 0 ? 1 : 0);
+
+      // Inject CLI as a synthetic "editor" row so it appears in the same table and charts
+      const allRows: EnhancedEditorRow[] = [...sorted];
+      if (cliRequests > 0) {
+        allRows.push({
+          ide: 'CLI (copilot_cli)',
+          interactions: cliRequests,
+          codeGenerations: cliRequests,
+          codeAcceptances: 0,
+          linesGenerated: 0,
+          linesAdded: 0,
+        });
+        allRows.sort((a, b) => b.interactions - a.interactions);
+      }
+
+      enhancedEditorList.value = allRows;
+      numberOfBreakdowns.value = allRows.length;
 
       cliSummary.value = cliSessions > 0 ? { session_count: cliSessions, request_count: cliRequests, avg_tokens_per_request: cliAvgTokens } : null;
 
-      const top5 = sorted.slice(0, 5);
+      const top5 = allRows.slice(0, 5);
       enhancedChartDataTop5Generations.value = {
         labels: top5.map(r => r.ide),
-        datasets: [{ data: top5.map(r => r.codeGenerations), backgroundColor: pieChartColors.value }]
+        datasets: [{ data: top5.map(r => r.interactions || r.codeGenerations), backgroundColor: pieChartColors.value }]
       };
       enhancedChartDataTop5LinesAdded.value = {
         labels: top5.map(r => r.ide),

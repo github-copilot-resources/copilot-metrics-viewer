@@ -1,207 +1,281 @@
 <template>
-    <div class="tiles-container">      
-        <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-            <v-card-item>
-                <div class="tiles-text">
-                    <div class="spacing-25"/>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Cumulative Chat Interactions</div>
-                      </template>
-                      <v-card class="pa-3 metric-tooltip">
-                        <span class="tooltip-text">Total number of user-initiated chat interactions across all modes (agent, ask, edit, custom, inline). Each interaction is one user prompt sent to Copilot.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">{{ dateRangeDescription }}</div>
-                    <p class="text-h4">{{ cumulativeNumberTurns }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
+  <div>
+    <!-- Info panel — same style as Organization tab -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div class="flex-shrink-0 mr-3">
+          <div class="font-weight-bold text-body-1 mb-1">💬 Copilot Chat</div>
+          <div class="text-medium-emphasis" style="max-width: 560px;">
+            Daily chat interactions (user prompts sent to Copilot) and code actions (applying,
+            inserting, or copying AI responses). Does <em>not</em> include CLI or agent-initiated
+            edits — see the Agent Activity tab for those.
+          </div>
+        </div>
+        <v-divider vertical class="mx-2 hidden-sm-and-down" />
+        <div class="d-flex flex-column gap-1">
+          <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+          <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">How metrics are calculated</span>
+          </a>
+          <a href="https://docs.github.com/en/copilot/reference/interpret-copilot-metrics" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Interpreting Copilot metrics</span>
+          </a>
+        </div>
+      </div>
+    </v-card>
 
-        <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-            <v-card-item>
-                <div class="tiles-text">
-                    <div class="spacing-10"/>
-                    <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-                      <template #activator="{ props }">
-                        <div v-bind="props" class="text-h6 mb-1">Cumulative Code Actions</div>
-                      </template>
-                      <v-card class="pa-3 metric-tooltip">
-                        <span class="tooltip-text">Total number of code actions taken from chat responses — includes applying code to file, inserting at cursor, and using the Copy button.</span>
-                      </v-card>
-                    </v-tooltip>
-                    <div class="text-caption">{{ dateRangeDescription }}</div>
-                    <p class="text-h4">{{ cumulativeNumberAcceptances }}</p>
-                </div>
-            </v-card-item>
-        </v-card>
+    <!-- KPI tiles -->
+    <div class="tiles-container">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
+          <div class="tiles-text">
+            <div class="spacing-10"/>
+            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+              <template #activator="{ props }">
+                <div v-bind="props" class="text-h6 mb-1">Chat Interactions</div>
+              </template>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Total user-initiated chat prompts sent to Copilot over the period.</span>
+              </v-card>
+            </v-tooltip>
+            <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
+            <p class="text-h3 font-weight-bold text-primary mt-1">{{ formatCompact(cumulativeNumberTurns) }}</p>
+          </div>
+        </v-card-item>
+      </v-card>
+
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
+          <div class="tiles-text">
+            <div class="spacing-10"/>
+            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+              <template #activator="{ props }">
+                <div v-bind="props" class="text-h6 mb-1">Code Actions</div>
+              </template>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Total apply/insert/copy actions taken from chat responses.</span>
+              </v-card>
+            </v-tooltip>
+            <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
+            <p class="text-h3 font-weight-bold text-success mt-1">{{ formatCompact(cumulativeNumberAcceptances) }}</p>
+          </div>
+        </v-card-item>
+      </v-card>
+
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
+          <div class="tiles-text">
+            <div class="spacing-10"/>
+            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+              <template #activator="{ props }">
+                <div v-bind="props" class="text-h6 mb-1">Action Rate</div>
+              </template>
+              <v-card class="pa-3 metric-tooltip">
+                <span class="tooltip-text">Percentage of chat interactions that resulted in a code action (apply/insert/copy).</span>
+              </v-card>
+            </v-tooltip>
+            <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
+            <p class="text-h3 font-weight-bold text-info mt-1">{{ actionRate }}%</p>
+            <v-progress-linear :model-value="Number(actionRate)" color="info" bg-color="surface-variant" rounded height="6" class="mt-2 mx-2" />
+          </div>
+        </v-card-item>
+      </v-card>
     </div>
 
-    <v-main class="p-1" style="min-height: 300px;">
-        <v-container style="min-height: 300px;" class="px-4 elevation-2">
+    <!-- Charts -->
+    <v-row class="mx-1 mt-2">
+      <!-- Chat interactions & code actions over time — full width -->
+      <v-col cols="12">
+        <v-card variant="outlined" class="pa-4">
+          <div class="text-subtitle-1 font-weight-medium mb-1">Daily Chat Interactions &amp; Code Actions</div>
+          <div class="text-caption text-medium-emphasis mb-3">
+            Chat interactions = user prompts · Code actions = apply / insert / copy from chat
+          </div>
+          <div style="height:240px">
+            <Line :data="interactionsChartData" :options="lineOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
 
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <h2 v-bind="props" class="mb-1">Code Actions | Chat Interactions</h2>
-              </template>
-              <v-card class="pa-3 metric-tooltip">
-                <span class="tooltip-text">Daily count of chat interactions (user prompts) and code actions (apply, insert, copy from chat responses).</span>
-              </v-card>
-            </v-tooltip>
-            <Line :data="totalNumberAcceptancesAndTurnsChartData" :options="chartOptions" />
+    <v-row class="mx-1 mt-2 mb-4">
+      <!-- Daily active chat users -->
+      <v-col cols="12" md="7">
+        <v-card variant="outlined" class="pa-4">
+          <div class="text-subtitle-1 font-weight-medium mb-1">Daily Active Chat Users</div>
+          <div class="text-caption text-medium-emphasis mb-3">Users with at least one chat interaction per day</div>
+          <div style="height:220px">
+            <Bar :data="activeUsersChartData" :options="barOptions" :plugins="[weekendPlugin]" />
+          </div>
+        </v-card>
+      </v-col>
 
-            <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
-              <template #activator="{ props }">
-                <h2 v-bind="props" class="mb-1">Total Active Copilot Chat Users</h2>
-              </template>
-              <v-card class="pa-3 metric-tooltip">
-                <span class="tooltip-text">A bar chart that illustrates the total number of users who have actively interacted with Copilot over the past 28 days.</span>
-              </v-card>
-            </v-tooltip>
-            <Bar :data="totalActiveCopilotChatUsersChartData" :options="totalActiveChatUsersChartOptions" />
-
-        </v-container>
-    </v-main>
+      <!-- Actions per interaction ratio -->
+      <v-col cols="12" md="5">
+        <v-card variant="outlined" class="pa-4">
+          <div class="text-subtitle-1 font-weight-medium mb-1">Daily Action Rate</div>
+          <div class="text-caption text-medium-emphasis mb-3">Code actions ÷ chat interactions per day (%)</div>
+          <div style="height:220px">
+            <Line :data="actionRateChartData" :options="pctOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
+  </div>
 </template>
-  
-<script lang="ts">
-  import { defineComponent, ref, toRef } from 'vue';
-  import type { Metrics } from '@/model/Metrics';
-  import { Line, Bar } from 'vue-chartjs'
-  import {
-  Chart as ChartJS,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js'
 
-ChartJS.register(
-  ArcElement, 
+<script lang="ts">
+import { defineComponent, ref, computed, toRef } from 'vue';
+import type { Metrics } from '@/model/Metrics';
+import { Line, Bar } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
   PointElement,
   LineElement,
+  BarElement,
   Title,
   Tooltip,
-  Legend
-)
+  Legend,
+  Filler
+} from 'chart.js';
+import { weekendPlugin, gradientFillPlugin, PALETTE, formatCompact } from '@/utils/chartPlugins';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
 export default defineComponent({
-name: 'CopilotChatViewer',
-components: {
-Bar,
-Line
-},
-props: {
-        metrics: {
-            type: Object,
-            required: true
-        },
-        dateRangeDescription: {
-            type: String,
-            default: 'Over the last 28 days'
-        }
+  name: 'CopilotChatViewer',
+  components: { Line, Bar },
+  props: {
+    metrics: {
+      type: Object,
+      required: true
     },
-setup(props) {
+    dateRangeDescription: {
+      type: String,
+      default: 'Over the last 28 days'
+    }
+  },
+  setup(props) {
+    const data = toRef(props, 'metrics').value as Metrics[];
 
-    const cumulativeNumberAcceptances = ref(0);
+    const cumulativeNumberTurns = ref(
+      data.reduce((s: number, m: Metrics) => s + m.total_chat_turns, 0)
+    );
+    const cumulativeNumberAcceptances = ref(
+      data.reduce((s: number, m: Metrics) => s + m.total_chat_acceptances, 0)
+    );
 
-    const cumulativeNumberTurns = ref(0);
-
-    //Total Copilot Chat Active Users
-    const totalActiveCopilotChatUsersChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });  
-
-    const totalActiveChatUsersChartOptions = {
-    responsive: true,
-    maintainAspectRatio: true,
-    scales: {
-        y: {
-        beginAtZero: true,
-        ticks: {
-            stepSize: 1
-        }
-        }
-    },
-    layout: {
-        padding: {
-        left: 50,
-        right: 50,
-        top: 50,
-        bottom: 50
-        }
-    },
-    };
-
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: true,
-        height: 300,
-        width: 300,
-        layout: {
-            padding: {
-            left: 150,
-            right: 150,
-            top: 20,
-            bottom: 40
-            }
-        },
-    };
-
-    //Total Number Acceptances And Turns
-    const totalNumberAcceptancesAndTurnsChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-
-    const data = toRef(props, 'metrics').value;
-
-    cumulativeNumberTurns.value = 0;
-    const cumulativeNumberTurnsData = data.map((m: Metrics)  => {        
-        cumulativeNumberTurns.value += m.total_chat_turns;
-        return m.total_chat_turns;
+    const actionRate = computed(() => {
+      if (cumulativeNumberTurns.value === 0) return '0.0';
+      return ((cumulativeNumberAcceptances.value / cumulativeNumberTurns.value) * 100).toFixed(1);
     });
 
-    cumulativeNumberAcceptances.value = 0;
-    const cumulativeNumberAcceptancesData = data.map((m: Metrics)  => {        
-        cumulativeNumberAcceptances.value += m.total_chat_acceptances;
-        return m.total_chat_acceptances;
-    });
+    const labels = data.map((m: Metrics) => m.day);
 
-    totalNumberAcceptancesAndTurnsChartData.value = {
-    labels: data.map((m: Metrics)  => m.day),
-        datasets: [
+    const interactionsChartData = ref({
+      labels,
+      datasets: [
         {
-            label: 'Code Actions',
-            data: cumulativeNumberAcceptancesData,
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)'
-
+          label: 'Chat Interactions',
+          data: data.map((m: Metrics) => m.total_chat_turns),
+          borderColor: PALETTE[3].border,
+          backgroundColor: PALETTE[3].bg,
+          fill: true,
+          tension: 0.3,
         },
         {
-            label: 'Chat Interactions',
-            data: cumulativeNumberTurnsData,
-            backgroundColor: 'rgba(153, 102, 255, 0.2)',
-            borderColor: 'rgba(153, 102, 255, 1)'
-        }]
+          label: 'Code Actions',
+          data: data.map((m: Metrics) => m.total_chat_acceptances),
+          borderColor: PALETTE[2].border,
+          backgroundColor: PALETTE[2].bg,
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    });
+
+    const activeUsersChartData = ref({
+      labels,
+      datasets: [
+        {
+          label: 'Active Chat Users',
+          data: data.map((m: Metrics) => m.total_active_chat_users),
+          backgroundColor: PALETTE[0].bg,
+          borderColor: PALETTE[0].border,
+          borderRadius: 4,
+        },
+      ],
+    });
+
+    const actionRateChartData = ref({
+      labels,
+      datasets: [
+        {
+          label: 'Action Rate %',
+          data: data.map((m: Metrics) =>
+            m.total_chat_turns > 0
+              ? Number(((m.total_chat_acceptances / m.total_chat_turns) * 100).toFixed(1))
+              : 0
+          ),
+          borderColor: PALETTE[1].border,
+          backgroundColor: PALETTE[1].bg,
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    });
+
+    const lineOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index' as const, intersect: false },
+      scales: {
+        x: { ticks: { maxTicksLimit: 14 } },
+        y: { beginAtZero: true },
+      },
+      plugins: { legend: { position: 'bottom' as const } },
     };
 
-    totalActiveCopilotChatUsersChartData.value = {
-        labels: data.map((m: Metrics) => m.day),
-        datasets: [
-        {
-            label: 'Total Active Copilot Chat Users',
-            data: data.map((m: Metrics) => m.total_active_chat_users),
-            backgroundColor: 'rgba(0, 0, 139, 0.2)', // dark blue with 20% opacity
-            borderColor: 'rgba(255, 99, 132, 1)'
-        }]
+    const barOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { maxTicksLimit: 14 } },
+        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+      },
+      plugins: { legend: { position: 'bottom' as const } },
     };
-    
-    return {  totalActiveCopilotChatUsersChartData, totalActiveChatUsersChartOptions,cumulativeNumberAcceptances, cumulativeNumberTurns, totalNumberAcceptancesAndTurnsChartData, chartOptions};
-}
+
+    const pctOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { maxTicksLimit: 14 } },
+        y: { beginAtZero: true, max: 100, ticks: { callback: (v: any) => v + '%' } },
+      },
+      plugins: { legend: { position: 'bottom' as const } },
+    };
+
+    return {
+      cumulativeNumberTurns,
+      cumulativeNumberAcceptances,
+      actionRate,
+      interactionsChartData,
+      activeUsersChartData,
+      actionRateChartData,
+      lineOptions,
+      barOptions,
+      pctOptions,
+      weekendPlugin,
+      gradientFillPlugin,
+      formatCompact,
+    };
+  },
 });
-
 </script>

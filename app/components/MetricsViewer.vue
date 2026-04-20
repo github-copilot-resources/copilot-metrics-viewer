@@ -43,7 +43,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Current calendar month</div>
-            <p class="text-h3 font-weight-bold">{{ ideActiveUsers }}</p>
+            <p class="text-h3 font-weight-bold text-primary">{{ ideActiveUsers }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -61,7 +61,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">{{ agentAdoptionNum }} out of {{ ideActiveUsers }} active users</div>
-            <p class="text-h3 font-weight-bold">{{ agentAdoptionPct }}%</p>
+            <p class="text-h3 font-weight-bold text-success">{{ agentAdoptionPct }}%</p>
             <v-progress-linear :model-value="agentAdoptionPct" color="primary" bg-color="primary-lighten-4" rounded height="6" class="mt-2 mx-2" />
           </div>
         </v-card-item>
@@ -80,7 +80,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
-            <p class="text-h5 font-weight-bold mt-2" style="word-break: break-word;">{{ mostUsedChatModel || '—' }}</p>
+            <p class="kpi-text-value font-weight-bold mt-2 text-primary" style="word-break: break-word;">{{ mostUsedChatModel || '—' }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -98,7 +98,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
-            <p class="text-h5 font-weight-bold mt-2" style="word-break: break-word;">{{ mostUsedChatMode || '—' }}</p>
+            <p class="kpi-text-value font-weight-bold mt-2 text-primary" style="word-break: break-word;">{{ mostUsedChatMode || '—' }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -116,7 +116,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
-            <p class="text-h3 font-weight-bold mt-2">{{ formatCompact(totalChatRequests) }}</p>
+            <p class="text-h3 font-weight-bold mt-2 text-primary">{{ formatCompact(totalChatRequests) }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -288,6 +288,7 @@
 import { defineComponent, ref, toRef, watchEffect } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import type { ReportDayTotals } from '@/server/services/github-copilot-usage-api';
+import { weekendPlugin, gradientFillPlugin, PALETTE, formatCompact as fmtCompact } from '@/utils/chartPlugins';
 import {
   Chart as ChartJS,
   ArcElement,
@@ -322,14 +323,7 @@ ChartJS.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", "
 ChartJS.defaults.font.size = 12;
 ChartJS.defaults.plugins.legend.labels.font = { size: 12 } as any;
 
-const PALETTE = [
-  { bg: 'rgba(54, 162, 235, 0.75)', border: 'rgb(54, 162, 235)' },
-  { bg: 'rgba(255, 99, 132, 0.75)', border: 'rgb(255, 99, 132)' },
-  { bg: 'rgba(75, 192, 192, 0.75)', border: 'rgb(75, 192, 192)' },
-  { bg: 'rgba(153, 102, 255, 0.75)', border: 'rgb(153, 102, 255)' },
-  { bg: 'rgba(255, 159, 64, 0.75)', border: 'rgb(255, 159, 64)' },
-  { bg: 'rgba(180, 180, 180, 0.6)', border: 'rgb(180, 180, 180)' },
-];
+function formatCompact(n: number): string { return fmtCompact(n); }
 
 const FEATURE_DISPLAY: Record<string, string> = {
   code_completion: 'Completions',
@@ -347,52 +341,6 @@ function featureLabel(key: string) {
   return FEATURE_DISPLAY[key] ?? key;
 }
 
-function formatCompact(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
-  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
-  return String(n);
-}
-
-// Shades weekend (Sat/Sun) columns on any date-labelled chart
-const weekendPlugin = {
-  id: 'weekendHighlight',
-  beforeDraw(chart: any) {
-    const { ctx, chartArea, scales } = chart;
-    if (!chartArea || !scales.x) return;
-    const labels: string[] = chart.data.labels ?? [];
-    const xScale = scales.x;
-    const bw = labels.length > 1 ? (xScale.getPixelForValue(1) - xScale.getPixelForValue(0)) : 20;
-    ctx.save();
-    ctx.fillStyle = 'rgba(128,128,128,0.10)';
-    labels.forEach((label, i) => {
-      const d = new Date(label as string);
-      if (d.getDay() === 0 || d.getDay() === 6) {
-        const x = xScale.getPixelForValue(i);
-        ctx.fillRect(x - bw / 2, chartArea.top, bw, chartArea.bottom - chartArea.top);
-      }
-    });
-    ctx.restore();
-  }
-};
-
-// Gradient fill for area Line charts — replaces flat rgba backgrounds
-const gradientFillPlugin = {
-  id: 'gradientFill',
-  beforeDatasetsUpdate(chart: any) {
-    const { ctx, chartArea } = chart;
-    if (!chartArea) return;
-    chart.data.datasets.forEach((dataset: any) => {
-      if (!dataset.fill || !dataset.borderColor || typeof dataset.borderColor !== 'string') return;
-      const bc: string = dataset.borderColor;
-      const withAlpha = (c: string, a: number) =>
-        c.startsWith('rgb(') ? c.replace('rgb(', 'rgba(').replace(')', `, ${a})`) : c;
-      const grad = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-      grad.addColorStop(0, withAlpha(bc, 0.45));
-      grad.addColorStop(1, withAlpha(bc, 0.03));
-      dataset.backgroundColor = grad;
-    });
-  }
-};
 
 export default defineComponent({
   name: 'MetricsViewer',

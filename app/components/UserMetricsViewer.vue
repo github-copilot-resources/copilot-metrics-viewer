@@ -1,15 +1,43 @@
 <template>
   <div>
+    <!-- Info panel — same style as Organization tab -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div class="flex-shrink-0 mr-3">
+          <div class="font-weight-bold text-body-1 mb-1">👤 User Metrics</div>
+          <div class="text-medium-emphasis" style="max-width: 560px;">
+            Per-user Copilot activity breakdown for the reporting period. Shows interactions, code
+            completions, acceptance rates, and AI-generated lines of code per developer. Use the
+            "Understanding metrics" section below the charts to learn how to interpret each column.
+          </div>
+        </div>
+        <v-divider vertical class="mx-2 hidden-sm-and-down" />
+        <div class="d-flex flex-column gap-1">
+          <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+          <a href="https://docs.github.com/en/copilot/reference/interpret-copilot-metrics" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Interpreting Copilot metrics</span>
+          </a>
+          <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Rolling out at scale</span>
+          </a>
+        </div>
+      </div>
+    </v-card>
+
     <!-- Summary tiles -->
     <div class="tiles-container">
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Total Users</div>
-                <div class="text-caption">Users with Copilot activity</div>
-                <p class="text-h4">{{ totalUsers }}</p>
+                <div class="text-caption text-medium-emphasis">Users with Copilot activity</div>
+                <p class="text-h3 font-weight-bold text-primary mt-1">{{ totalUsers }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
@@ -19,40 +47,68 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Active Users</div>
-                <div class="text-caption">Active in last 7 days of period</div>
-                <p class="text-h4">{{ activeUsers }}</p>
+                <div class="text-caption text-medium-emphasis">Active ≥ 7 days</div>
+                <p class="text-h3 font-weight-bold text-success mt-1">{{ activeUsers }}</p>
+                <v-progress-linear :model-value="totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0" color="success" bg-color="surface-variant" rounded height="6" class="mt-2 mx-2" />
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Users who were active in the last 7 days of the reporting window. Helps identify current engagement vs dormant users.</span>
+              <span class="tooltip-text">Users who were active in the last 7 days of the reporting window.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 260px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Avg Acceptance Rate</div>
-                <div class="text-caption">Code completions accepted</div>
-                <p class="text-h4">{{ avgAcceptanceRate }}%</p>
+                <div class="text-caption text-medium-emphasis">Inline completions only</div>
+                <p class="text-h3 font-weight-bold text-info mt-1">{{ avgAcceptanceRate }}%</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Average ratio of accepted inline code completions to total suggestions across all users. Only measures ghost-text suggestions — does not include Chat, Agent, CLI, or GitHub.com interactions.</span>
+              <span class="tooltip-text">Average ratio of accepted inline code completions across all users. Does not include Chat, Agent, or CLI interactions.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
       </v-card>
     </div>
+
+    <!-- Charts -->
+    <v-row v-if="userMetrics.length > 0" class="mx-1 mt-2 mb-2">
+      <!-- Top users by interactions -->
+      <v-col cols="12" md="7">
+        <v-card variant="outlined" class="pa-4">
+          <div class="text-subtitle-1 font-weight-medium mb-1">Top Users by Interactions</div>
+          <div class="text-caption text-medium-emphasis mb-3">Total Copilot interactions per developer (chat + completions + agent)</div>
+          <div style="height:280px">
+            <Bar :data="topUsersChartData" :options="topUsersOptions" />
+          </div>
+        </v-card>
+      </v-col>
+
+      <!-- User engagement distribution -->
+      <v-col cols="12" md="5">
+        <v-card variant="outlined" class="pa-4">
+          <div class="text-subtitle-1 font-weight-medium mb-1">Engagement Distribution</div>
+          <div class="text-caption text-medium-emphasis mb-3">
+            High ≥ 14 active days · Medium 7–13 · Low 1–6 · Inactive 0
+          </div>
+          <div style="height:280px">
+            <Doughnut :data="distributionChartData" :options="distributionOptions" />
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- Search and filter controls -->
     <v-main class="p-1" style="min-height: 300px;">
@@ -298,23 +354,25 @@ import { defineComponent, ref, computed, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
 import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
 import { CHAT_FEATURES, AGENT_FEATURES, COMPLETION_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
-import { Line } from 'vue-chartjs';
+import { Line, Bar, Doughnut } from 'vue-chartjs';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
 
 export default defineComponent({
   name: 'UserMetricsViewer',
-  components: { Line },
+  components: { Line, Bar, Doughnut },
   props: {
     userMetrics: {
       type: Array as PropType<UserTotals[]>,
@@ -585,6 +643,78 @@ export default defineComponent({
       return cols;
     });
 
+    // ── Analytics charts ────────────────────────────────────────────────────
+    const DIST_COLORS = ['#4CAF50', '#2196F3', '#FF9800', '#F44336'];
+
+    const topUsersChartData = computed(() => {
+      const top10 = [...props.userMetrics]
+        .sort((a, b) => b.user_initiated_interaction_count - a.user_initiated_interaction_count)
+        .slice(0, 10);
+      return {
+        labels: top10.map(u => u.login),
+        datasets: [
+          {
+            label: 'Interactions',
+            data: top10.map(u => u.user_initiated_interaction_count),
+            backgroundColor: 'rgba(54, 162, 235, 0.75)',
+            borderColor: 'rgb(54, 162, 235)',
+            borderRadius: 4,
+          },
+          {
+            label: 'Copilot LOC',
+            data: top10.map(u => u.loc_added_sum || 0),
+            backgroundColor: 'rgba(75, 192, 192, 0.75)',
+            borderColor: 'rgb(75, 192, 192)',
+            borderRadius: 4,
+          },
+        ],
+      };
+    });
+
+    const topUsersOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      scales: {
+        x: { beginAtZero: true },
+        y: { ticks: { font: { size: 11 } } },
+      },
+      plugins: { legend: { position: 'bottom' as const } },
+    };
+
+    const distributionChartData = computed(() => {
+      const high     = props.userMetrics.filter(u => u.total_active_days >= 14).length;
+      const medium   = props.userMetrics.filter(u => u.total_active_days >= 7 && u.total_active_days < 14).length;
+      const low      = props.userMetrics.filter(u => u.total_active_days >= 1 && u.total_active_days < 7).length;
+      const inactive = props.userMetrics.filter(u => u.total_active_days === 0).length;
+      return {
+        labels: [
+          `High (≥14 days) — ${high}`,
+          `Medium (7–13) — ${medium}`,
+          `Low (1–6) — ${low}`,
+          `Inactive (0) — ${inactive}`,
+        ],
+        datasets: [{ data: [high, medium, low, inactive], backgroundColor: DIST_COLORS, borderWidth: 1 }],
+      };
+    });
+
+    const distributionOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' as const, labels: { padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: (ctx: any) => {
+              const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
+              const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(0) : '0';
+              return ` ${ctx.label} (${pct}%)`;
+            },
+          },
+        },
+      },
+    };
+
     // ── History chart ───────────────────────────────────────────────────────
     const historyChartData = computed(() => {
       const datasets = [
@@ -657,6 +787,10 @@ export default defineComponent({
       historyChartData,
       historyChartOptions,
       historyHeaders,
+      topUsersChartData,
+      topUsersOptions,
+      distributionChartData,
+      distributionOptions,
       // trend dialog
       showTrendButtons,
       trendDialog,
@@ -672,16 +806,3 @@ export default defineComponent({
 });
 </script>
 
-<style scoped>
-.tiles-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  padding: 16px;
-}
-
-.tiles-text {
-  text-align: center;
-}
-</style>

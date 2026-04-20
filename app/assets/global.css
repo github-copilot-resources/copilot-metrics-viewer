@@ -34,6 +34,12 @@
     text-align: center;
   }
 
+/* Auto-scaling KPI value for long text (model names, feature names) */
+.kpi-text-value {
+  font-size: clamp(0.85rem, 2.2vw, 1.35rem);
+  line-height: 1.25;
+}
+
   .error-message {
     color: red;
   }

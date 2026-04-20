@@ -1,15 +1,30 @@
 <template>
   <div>
-    <!-- Help links -->
-    <v-card variant="tonal" color="primary" class="mx-4 mt-3 mb-4 pa-3" density="compact">
-      <div class="d-flex align-center flex-wrap gap-4 text-body-2">
-        <span class="font-weight-medium mr-2">How to use this dashboard:</span>
-        <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics" target="_blank" rel="noopener" class="text-primary mr-3">
-          <v-icon size="x-small">mdi-open-in-new</v-icon> How metrics are calculated
-        </a>
-        <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics/lines-of-code-metrics" target="_blank" rel="noopener" class="text-primary">
-          <v-icon size="x-small">mdi-open-in-new</v-icon> Lines of Code metrics
-        </a>
+    <!-- Info panel — same style as Organization tab -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div class="flex-shrink-0 mr-3">
+          <div class="font-weight-bold text-body-1 mb-1">🤖 Agent Activity</div>
+          <div class="text-medium-emphasis" style="max-width: 560px;">
+            Tracks AI-generated code changes via Copilot's agent and edit features. Shows lines added and deleted
+            by agents vs user-initiated edits, broken down by mode, model, and language. Agent contribution %
+            measures how much of AI code output came from agentic (autonomous) operations vs user-guided edits.
+          </div>
+        </div>
+        <v-divider vertical class="mx-2 hidden-sm-and-down" />
+        <div class="d-flex flex-column gap-1">
+          <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+          <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">How metrics are calculated</span>
+          </a>
+          <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics/lines-of-code-metrics" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Lines of Code metrics</span>
+          </a>
+        </div>
       </div>
     </v-card>
 
