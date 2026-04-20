@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-toolbar color="surface" elevation="0" style="border-bottom: 1px solid rgba(128,128,128,0.2);">
+    <v-toolbar color="surface" elevation="0" class="app-toolbar" style="border-bottom: 1px solid rgba(128,128,128,0.2);">
       <v-btn icon>
         <v-icon>mdi-github</v-icon>
       </v-btn>

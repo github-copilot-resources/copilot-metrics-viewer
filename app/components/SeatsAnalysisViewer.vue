@@ -1,111 +1,128 @@
 <template>
   <div>
+    <!-- Info panel -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div class="mr-3" style="flex: 1; min-width: 250px;">
+          <div class="font-weight-bold text-body-1 mb-1">💺 Seat Analysis</div>
+          <div class="text-medium-emphasis">
+            Shows all Copilot seats assigned in your organization — who has a seat, when it was created,
+            and when each developer last used Copilot. Identify inactive seats to right-size your Copilot
+            subscription. "No show" seats were assigned but never activated.
+          </div>
+        </div>
+        <v-divider vertical class="mx-2 hidden-sm-and-down" />
+        <div class="d-flex flex-column gap-1 flex-shrink-0">
+          <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+          <a href="https://docs.github.com/en/copilot/managing-copilot/managing-copilot-for-your-enterprise/managing-copilot-licenses-for-your-enterprise" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Managing Copilot licenses</span>
+          </a>
+          <a href="https://docs.github.com/en/copilot/managing-copilot/managing-copilot-for-your-organization/reviewing-activity-related-to-github-copilot-in-your-organization" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Reviewing Copilot activity</span>
+          </a>
+        </div>
+      </div>
+    </v-card>
+
     <!-- Summary tiles -->
     <div class="tiles-container">
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
-        <v-card-item class="d-flex justify-center align-center">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-10"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
               <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">Total Assigned  </div>
+                <div v-bind="props" class="text-h6 mb-1">Total Assigned</div>
               </template>
               <v-card class="pa-3 metric-tooltip">
                 <span class="tooltip-text">This metric represents the total number of Copilot seats assigned {{ isTeamView ? `to team "${currentTeam}"` : 'within the current organization/enterprise' }}.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption">
-              {{ isTeamView ? `Seats assigned to team "${currentTeam}"` : 'Currently assigned seats' }}
-            </div>
-            <p class="text-h4">{{ totalSeatsCount }}</p>
+            <div class="text-caption text-medium-emphasis">{{ isTeamView ? `Seats in team "${currentTeam}"` : 'Currently assigned seats' }}</div>
+            <p class="text-h3 font-weight-bold text-primary mt-1">{{ totalSeatsCount }}</p>
           </div>
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
-        <v-card-item class="d-flex justify-center align-center">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-10"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
               <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">Assigned But Never Used</div>
+                <div v-bind="props" class="text-h6 mb-1">Never Used</div>
               </template>
               <v-card class="pa-3 metric-tooltip">
-                <span class="tooltip-text">This metric shows seats that were assigned but never used {{ isTeamView ? `within team "${currentTeam}"` : 'within the current organization/enterprise' }}. The assigned timestamp is also displayed in the chart.</span>
+                <span class="tooltip-text">Seats that were assigned but never used {{ isTeamView ? `within team "${currentTeam}"` : 'within the current organization/enterprise' }}.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption">
-              No show seats{{ totalPages > 1 ? ' (this page)' : '' }}
-            </div>
-            <p class="text-h4">{{ noshowSeats }}</p>
+            <div class="text-caption text-medium-emphasis">No show seats{{ totalPages > 1 ? ' (this page)' : '' }}</div>
+            <p class="text-h3 font-weight-bold text-warning mt-1">{{ noshowSeats }}</p>
           </div>
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
-        <v-card-item class="d-flex justify-center align-center">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-10"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
               <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 7 days </div>
+                <div v-bind="props" class="text-h6 mb-1">Inactive 7 Days</div>
               </template>
               <v-card class="pa-3 metric-tooltip">
-                <span class="tooltip-text">Never used seats or seats used, but with no activity in the past 7 days.</span>
+                <span class="tooltip-text">Seats with no Copilot activity in the past 7 days.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption">
-              No use in the last 7 days{{ totalPages > 1 ? ' (this page)' : '' }}
-            </div>
-            <p class="text-h4">{{ unusedSeatsInSevenDays }}</p>
+            <div class="text-caption text-medium-emphasis">No use in last 7 days{{ totalPages > 1 ? ' (this page)' : '' }}</div>
+            <p class="text-h3 font-weight-bold text-error mt-1">{{ unusedSeatsInSevenDays }}</p>
           </div>
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-4" style="width: 330px; height: 175px;">
-        <v-card-item class="d-flex justify-center align-center">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <div class="tiles-text">
-            <div class="text-overline mb-1" style="visibility: hidden;">filler</div>
+            <div class="spacing-10"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
               <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">No Activity in the Last 30 days </div>
+                <div v-bind="props" class="text-h6 mb-1">Inactive 30 Days</div>
               </template>
               <v-card class="pa-3 metric-tooltip">
-                <span class="tooltip-text">This metric represents seats with no activity in the last 30 days, including those never used.</span>
+                <span class="tooltip-text">Seats with no Copilot activity in the last 30 days, including those never used.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption">
-              No use in the last 30 days{{ totalPages > 1 ? ' (this page)' : '' }}
-            </div>
-            <p class="text-h4">{{ unusedSeatsInThirtyDays }}</p>
+            <div class="text-caption text-medium-emphasis">No use in last 30 days{{ totalPages > 1 ? ' (this page)' : '' }}</div>
+            <p class="text-h3 font-weight-bold text-error mt-1">{{ unusedSeatsInThirtyDays }}</p>
           </div>
         </v-card-item>
       </v-card>
     </div>
 
     <!-- Seats history chart (historical / DB mode only) -->
-    <div v-if="seatsHistory.length > 0">
-      <v-main class="p-1">
-        <v-container class="px-4 elevation-2">
-          <br>
-          <h2>Seat Count History</h2>
-          <div class="text-caption mb-4">Daily snapshots collected by the sync job</div>
+    <div v-if="seatsHistory.length > 0" class="mx-4 mb-4">
+      <v-card variant="elevated" elevation="2">
+        <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Seat Count History</v-card-title>
+        <v-card-subtitle class="px-4 pb-2">Daily snapshots collected by the sync job</v-card-subtitle>
+        <v-card-text>
           <Line :data="historyChartData" :options="historyChartOptions" />
-        </v-container>
-      </v-main>
+        </v-card-text>
+      </v-card>
     </div>
 
     <!-- Seats table with server-side pagination -->
-    <div>
-      <v-main class="p-1" style="min-height: 300px;">
-        <v-container style="min-height: 300px;" class="px-4 elevation-2">
-          <br>
-          <h2>All assigned seats</h2>
-          <div v-if="totalPages > 1" class="text-caption mb-2">
-            Showing page {{ currentPage }} of {{ totalPages }} ({{ totalSeatsCount }} total seats, {{ seats.length }} on this page)
-          </div>
-          <br>
-          <v-data-table :headers="headers" :items="sortedSeats" :items-per-page="-1" hide-default-footer class="elevation-2">
+    <div class="mx-4 mb-4">
+      <v-card variant="elevated" elevation="2">
+        <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">All Assigned Seats</v-card-title>
+        <v-card-subtitle v-if="totalPages > 1" class="px-4 pb-2">
+          Showing page {{ currentPage }} of {{ totalPages }} ({{ totalSeatsCount }} total seats, {{ seats.length }} on this page)
+        </v-card-subtitle>
+        <v-card-text class="pa-0">
+          <v-data-table :headers="headers" :items="sortedSeats" :items-per-page="-1" hide-default-footer class="elevation-0">
             <template #item="{ item, index }">
               <tr>
                 <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
@@ -120,7 +137,7 @@
           </v-data-table>
 
           <!-- Paginator -->
-          <div v-if="totalPages > 1" class="d-flex justify-center mt-4">
+          <div v-if="totalPages > 1" class="d-flex justify-center mt-4 pb-4">
             <v-pagination
               :model-value="currentPage"
               :length="totalPages"
@@ -128,8 +145,8 @@
               @update:model-value="$emit('page-change', $event)"
             />
           </div>
-        </v-container>
-      </v-main>
+        </v-card-text>
+      </v-card>
     </div>
   </div>
 </template>

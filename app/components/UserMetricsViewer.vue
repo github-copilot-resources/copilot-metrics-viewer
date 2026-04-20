@@ -3,9 +3,9 @@
     <!-- Info panel — same style as Organization tab -->
     <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
       <div class="d-flex flex-wrap align-start gap-2 text-body-2">
-        <div class="flex-shrink-0 mr-3">
+        <div class="mr-3" style="flex: 1; min-width: 250px;">
           <div class="font-weight-bold text-body-1 mb-1">👤 User Metrics</div>
-          <div class="text-medium-emphasis" style="max-width: 560px;">
+          <div class="text-medium-emphasis">
             Per-user Copilot activity breakdown for the reporting period. Shows interactions, code
             completions, acceptance rates, and AI-generated lines of code per developer. Use the
             "Understanding metrics" section below the charts to learn how to interpret each column.

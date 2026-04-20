@@ -1,186 +1,234 @@
 <template>
-    <div class="github-com-container">
-        <v-main class="p-1" style="min-height: 300px;">
-            <v-container style="min-height: 300px;" class="px-4 elevation-2">
-                <!-- Loading state -->
-                <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 300px;">
-                    <v-progress-circular indeterminate size="64" color="primary" />
-                </div>
+    <div>
+        <!-- Info panel -->
+        <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+          <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+            <div class="mr-3" style="flex: 1; min-width: 250px;">
+              <div class="font-weight-bold text-body-1 mb-1">🌐 GitHub.com & IDE Features</div>
+              <div class="text-medium-emphasis">
+                Overview of Copilot activity across IDE code completions, IDE chat, GitHub.com chat (Copilot in the browser),
+                and pull request summaries. Shows unique models used and which features are active across your organization.
+                For per-user breakdowns see the User Metrics tab; for agent/edit code-change stats see Agent Activity.
+              </div>
+            </div>
+            <v-divider vertical class="mx-2 hidden-sm-and-down" />
+            <div class="d-flex flex-column gap-1 flex-shrink-0">
+              <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+              <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics" target="_blank" rel="noopener"
+                 class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+                <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+                <span class="text-primary">How metrics are calculated</span>
+              </a>
+              <a href="https://docs.github.com/en/copilot/reference/interpret-copilot-metrics" target="_blank" rel="noopener"
+                 class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+                <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+                <span class="text-primary">Interpreting Copilot metrics</span>
+              </a>
+            </div>
+          </div>
+        </v-card>
 
-                <!-- Error state -->
-                <div v-else-if="error" class="d-flex justify-center align-center" style="min-height: 300px;">
-                    <v-alert type="error" class="mb-4">
-                        <v-alert-title>Error Loading Statistics</v-alert-title>
-                        {{ error }}
-                    </v-alert>
-                </div>
+        <!-- Loading state -->
+        <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 200px;">
+            <v-progress-circular indeterminate size="64" color="primary" />
+        </div>
 
-                <!-- Main content -->
-                <div v-else>
-                    <h2 class="mb-4">Copilot Statistics</h2>
+        <!-- Error state -->
+        <div v-else-if="error" class="mx-4">
+            <v-alert type="error" class="mb-4">
+                <v-alert-title>Error Loading Statistics</v-alert-title>
+                {{ error }}
+            </v-alert>
+        </div>
 
-                    <!-- Date Range -->
-                    <v-card v-if="dateRangeDescription" flat class="pa-3 mb-4" color="surface-variant" variant="tonal">
-                        <div class="text-body-2 text-center">
-                            <v-icon left small>mdi-calendar-range</v-icon>
-                            {{ dateRangeDescription }}
+        <!-- Main content -->
+        <div v-else>
+            <!-- KPI Tiles -->
+            <div class="tiles-container">
+                <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">Code Completions</div>
+                            <div class="text-caption text-medium-emphasis">IDE users with activity</div>
+                            <p class="text-h3 font-weight-bold mt-1 text-primary">{{ stats.totalIdeCodeCompletionUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalIdeCodeCompletionModels }} models used</div>
                         </div>
-                    </v-card>
+                    </v-card-item>
+                </v-card>
 
-                    <!-- Overview Cards -->
-                    <v-row class="mb-4" justify="center">
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="blue lighten-4">
-                                <v-card-title class="text-h6">Code Completions</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalIdeCodeCompletionUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalIdeCodeCompletionModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="green lighten-4">
-                                <v-card-title class="text-h6">Chat</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalIdeChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalIdeChatModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col v-if="stats.hasReportData" cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="purple lighten-4">
-                                <v-card-title class="text-h6">All Models</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.allModels?.length || 0 }}</div>
-                                    <div class="text-caption">Unique AI Models Used</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.allFeatures?.length || 0 }} Features Active</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col v-if="!stats.hasReportData" cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="purple lighten-4">
-                                <v-card-title class="text-h6">GitHub.com Chat</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalDotcomChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalDotcomChatModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col v-if="!stats.hasReportData" cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="orange lighten-4">
-                                <v-card-title class="text-h6">GitHub.com PR</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalDotcomPRUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalDotcomPRModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                    </v-row>
+                <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">IDE Chat</div>
+                            <div class="text-caption text-medium-emphasis">Users with chat activity</div>
+                            <p class="text-h3 font-weight-bold mt-1 text-success">{{ stats.totalIdeChatUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalIdeChatModels }} models used</div>
+                        </div>
+                    </v-card-item>
+                </v-card>
 
-                    <!-- New API: Active Users Over Time -->
-                    <div v-if="stats.hasReportData && activeUsersChartData.labels.length > 0" class="mb-6">
-                        <h2 class="mb-1">Active Users Over Time</h2>
+                <v-card v-if="stats.hasReportData" elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">Unique Models</div>
+                            <div class="text-caption text-medium-emphasis">All AI models in use</div>
+                            <p class="text-h3 font-weight-bold mt-1 text-info">{{ stats.allModels?.length || 0 }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.allFeatures?.length || 0 }} features active</div>
+                        </div>
+                    </v-card-item>
+                </v-card>
+
+                <v-card v-if="!stats.hasReportData" elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">GitHub.com Chat</div>
+                            <div class="text-caption text-medium-emphasis">Users with activity</div>
+                            <p class="text-h3 font-weight-bold mt-1 text-info">{{ stats.totalDotcomChatUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalDotcomChatModels }} models used</div>
+                        </div>
+                    </v-card-item>
+                </v-card>
+
+                <v-card v-if="!stats.hasReportData" elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">GitHub.com PR</div>
+                            <div class="text-caption text-medium-emphasis">Users with PR summaries</div>
+                            <p class="text-h3 font-weight-bold mt-1 text-warning">{{ stats.totalDotcomPRUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalDotcomPRModels }} models used</div>
+                        </div>
+                    </v-card-item>
+                </v-card>
+            </div>
+
+            <!-- New API: Active Users Over Time -->
+            <div v-if="stats.hasReportData && activeUsersChartData.labels.length > 0" class="mx-4 mb-4">
+                <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Active Users Over Time</v-card-title>
+                    <v-card-text>
                         <div class="chart-container">
                             <LineChart :data="activeUsersChartData" :options="chartOptions" />
                         </div>
-                    </div>
+                    </v-card-text>
+                </v-card>
+            </div>
 
-                    <!-- New API: Model Usage by Feature (table) -->
-                    <div v-if="stats.hasReportData && stats.modelFeatureTable?.length > 0" class="mb-6">
-                        <h2 class="mb-4">Model Usage by Feature</h2>
+            <!-- New API: Model Usage by Feature (table) -->
+            <div v-if="stats.hasReportData && stats.modelFeatureTable?.length > 0" class="mx-4 mb-4">
+                <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage by Feature</v-card-title>
+                    <v-card-text class="pa-0">
                         <v-data-table
                             :headers="modelFeatureHeaders"
                             :items="stats.modelFeatureTable"
-                            class="elevation-2"
                             :sort-by="[{ key: 'locAdded', order: 'desc' }]"
                         />
-                    </div>
+                    </v-card-text>
+                </v-card>
+            </div>
 
-                    <!-- New API: Feature Summary -->
-                    <div v-if="stats.hasReportData && stats.featureSummary?.length > 0" class="mb-6">
-                        <h2 class="mb-4">Feature Summary</h2>
+            <!-- New API: Feature Summary -->
+            <div v-if="stats.hasReportData && stats.featureSummary?.length > 0" class="mx-4 mb-4">
+                <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Feature Summary</v-card-title>
+                    <v-card-text class="pa-0">
                         <v-data-table
                             :headers="featureSummaryHeaders"
                             :items="stats.featureSummary"
-                            class="elevation-2"
                             :sort-by="[{ key: 'codeGenerations', order: 'desc' }]"
                         />
-                    </div>
+                    </v-card-text>
+                </v-card>
+            </div>
 
-                    <!-- New API: Model Summary -->
-                    <div v-if="stats.hasReportData && stats.modelSummary?.length > 0" class="mb-6">
-                        <h2 class="mb-4">Model Summary</h2>
+            <!-- New API: Model Summary -->
+            <div v-if="stats.hasReportData && stats.modelSummary?.length > 0" class="mx-4 mb-4">
+                <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Summary</v-card-title>
+                    <v-card-text class="pa-0">
                         <v-data-table
                             :headers="modelSummaryHeaders"
                             :items="stats.modelSummary"
-                            class="elevation-2"
                             :sort-by="[{ key: 'locAdded', order: 'desc' }]"
                         />
-                    </div>
+                    </v-card-text>
+                </v-card>
+            </div>
 
-                    <!-- Legacy: Expansion panels for old API model details -->
-                    <div v-if="!stats.hasReportData">
-                        <h2 class="mb-4">Models by Feature</h2>
-                        <v-expansion-panels class="mb-4">
+            <!-- Legacy: Expansion panels for old API model details -->
+            <div v-if="!stats.hasReportData" class="mx-4 mb-4">
+                <v-card variant="elevated" elevation="2" class="mb-4">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Models by Feature</v-card-title>
+                    <v-card-text class="pa-0">
+                        <v-expansion-panels>
                             <v-expansion-panel v-if="stats.ideCodeCompletionModels.length > 0">
                                 <v-expansion-panel-title>
                                     <v-icon start>mdi-code-braces</v-icon>
                                     IDE Code Completions Models ({{ stats.ideCodeCompletionModels.length }})
                                 </v-expansion-panel-title>
                                 <v-expansion-panel-text>
-                                    <v-data-table :headers="codeCompletionHeaders" :items="stats.ideCodeCompletionModels" class="elevation-1" />
+                                    <v-data-table :headers="codeCompletionHeaders" :items="stats.ideCodeCompletionModels" />
                                 </v-expansion-panel-text>
                             </v-expansion-panel>
-
                             <v-expansion-panel v-if="stats.ideChatModels.length > 0">
                                 <v-expansion-panel-title>
                                     <v-icon start>mdi-chat</v-icon>
                                     IDE Chat Models ({{ stats.ideChatModels.length }})
                                 </v-expansion-panel-title>
                                 <v-expansion-panel-text>
-                                    <v-data-table :headers="ideChatHeaders" :items="stats.ideChatModels" class="elevation-1" />
+                                    <v-data-table :headers="ideChatHeaders" :items="stats.ideChatModels" />
                                 </v-expansion-panel-text>
                             </v-expansion-panel>
-
                             <v-expansion-panel v-if="stats.dotcomChatModels.length > 0">
                                 <v-expansion-panel-title>
                                     <v-icon start>mdi-web</v-icon>
                                     GitHub.com Chat Models ({{ stats.dotcomChatModels.length }})
                                 </v-expansion-panel-title>
                                 <v-expansion-panel-text>
-                                    <v-data-table :headers="dotcomChatHeaders" :items="stats.dotcomChatModels" class="elevation-1" />
+                                    <v-data-table :headers="dotcomChatHeaders" :items="stats.dotcomChatModels" />
                                 </v-expansion-panel-text>
                             </v-expansion-panel>
-
                             <v-expansion-panel v-if="stats.dotcomPRModels.length > 0">
                                 <v-expansion-panel-title>
                                     <v-icon start>mdi-source-pull</v-icon>
                                     GitHub.com PR Summary Models ({{ stats.dotcomPRModels.length }})
                                 </v-expansion-panel-title>
                                 <v-expansion-panel-text>
-                                    <v-data-table :headers="dotcomPRHeaders" :items="stats.dotcomPRModels" class="elevation-1" />
+                                    <v-data-table :headers="dotcomPRHeaders" :items="stats.dotcomPRModels" />
                                 </v-expansion-panel-text>
                             </v-expansion-panel>
                         </v-expansion-panels>
+                    </v-card-text>
+                </v-card>
 
-                        <h2 class="mb-1">Model Usage Distribution</h2>
+                <!-- Model Usage Distribution -->
+                <v-card variant="elevated" elevation="2" class="mb-4">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage Distribution</v-card-title>
+                    <v-card-text>
                         <div class="chart-container">
                             <BarChart v-if="stats.modelUsageChartData.labels.length" :data="stats.modelUsageChartData" :options="barChartOptions" />
                         </div>
-                    </div>
+                    </v-card-text>
+                </v-card>
+            </div>
 
-                    <!-- Feature usage over time chart -->
-                    <h2 class="mb-1">Feature Usage Over Time</h2>
-                    <div class="chart-container">
-                        <LineChart v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData" :options="chartOptions" />
-                    </div>
-                </div>
-            </v-container>
-        </v-main>
+            <!-- Feature usage over time chart -->
+            <div class="mx-4 mb-4">
+                <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Feature Usage Over Time</v-card-title>
+                    <v-card-text>
+                        <div class="chart-container">
+                            <LineChart v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData" :options="chartOptions" />
+                        </div>
+                    </v-card-text>
+                </v-card>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -414,9 +462,5 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.github-com-container { padding: 16px; }
-.v-card { margin-bottom: 16px; }
-.v-expansion-panel { margin-bottom: 8px; }
-.v-data-table { margin-top: 16px; }
 .chart-container { height: 400px; width: 100%; position: relative; }
 </style>

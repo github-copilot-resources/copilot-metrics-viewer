@@ -3,9 +3,9 @@
     <!-- Info panel — same style as Organization tab -->
     <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
       <div class="d-flex flex-wrap align-start gap-2 text-body-2">
-        <div class="flex-shrink-0 mr-3">
+        <div class="mr-3" style="flex: 1; min-width: 250px;">
           <div class="font-weight-bold text-body-1 mb-1">🤖 Agent Activity</div>
-          <div class="text-medium-emphasis" style="max-width: 560px;">
+          <div class="text-medium-emphasis">
             Tracks AI-generated code changes via Copilot's agent and edit features. Shows lines added and deleted
             by agents vs user-initiated edits, broken down by mode, model, and language. Agent contribution %
             measures how much of AI code output came from agentic (autonomous) operations vs user-guided edits.

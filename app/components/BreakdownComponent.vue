@@ -6,97 +6,101 @@
             <div class="tiles-text">
               <div class="spacing-25"/>
               <div class="text-h6 mb-1">Number of {{ breakdownDisplayNamePlural }}</div>
-              <div class="text-caption">
+              <div class="text-caption text-medium-emphasis">
                 {{ dateRangeDescription }}
               </div>
-              <p class="text-h4">{{ numberOfBreakdowns }}</p> 
+              <p class="text-h3 font-weight-bold text-primary mt-1">{{ numberOfBreakdowns }}</p>
+          </div>
+        </v-card-item>
+      </v-card>
+      <!-- Top Language/Editor summary tile (enhanced view only) -->
+      <v-card v-if="useEnhancedView && topItemName" elevation="4" color="surface" variant="elevated" class="my-3">
+        <v-card-item>
+          <div class="tiles-text">
+            <div class="spacing-25"/>
+            <div class="text-h6 mb-1">Top {{ breakdownDisplayName }}</div>
+            <div class="text-caption text-medium-emphasis">Most code generations</div>
+            <p class="kpi-text-value font-weight-bold text-primary mt-1" style="word-break: break-word;">{{ topItemName }}</p>
           </div>
         </v-card-item>
       </v-card>
     </div>
 
-    <v-main class="p-1" style="min-height: 300px;">
-      <v-container style="min-height: 300px;" class="px-4 elevation-2">
+    <!-- ── Enhanced view from new API reportData ────────────────────── -->
+    <template v-if="useEnhancedView">
+      <!-- Tab intro panel — full width above charts -->
+      <v-card variant="outlined" class="mx-4 mt-2 mb-4 pa-3" density="compact">
+        <template v-if="breakdownKey === 'language'">
+          <div class="font-weight-bold text-body-1 mb-1">💬 Languages Deep-Dive</div>
+          <div class="text-medium-emphasis text-body-2 mb-1">
+            Understand <em>where</em> Copilot helps your team write code. This tab breaks down impact by programming language — helping you identify which languages benefit most from AI assistance.
+            A language only appears if Copilot generated code in it.
+          </div>
+        </template>
+        <template v-else>
+          <div class="font-weight-bold text-body-1 mb-1">🖥️ Editors Deep-Dive</div>
+          <div class="text-medium-emphasis text-body-2 mb-1">
+            See exactly <em>how</em> your team accesses Copilot — VS Code, JetBrains, Neovim, CLI terminal, and more.
+            Code acceptance rates apply only to IDE inline completions; CLI interactions are shown separately.
+          </div>
+        </template>
+      </v-card>
 
-        <!-- ── Enhanced view from new API reportData ────────────────────── -->
-        <template v-if="useEnhancedView">
-          <!-- Tab intro panel -->
-          <v-card variant="outlined" class="mb-4 pa-3" density="compact">
-            <template v-if="breakdownKey === 'language'">
-              <div class="font-weight-bold text-body-1 mb-1">💬 Languages Deep-Dive</div>
-              <div class="text-medium-emphasis text-body-2 mb-2">
-                Understand <em>where</em> Copilot helps your team write code. Unlike the Organization tab (which shows overall usage trends), this tab breaks down impact by programming language — helping you identify which languages benefit most from AI assistance.
+      <!-- CLI summary card (editors tab only) -->
+      <v-card v-if="breakdownKey === 'editor' && cliSummary" class="mx-4 mb-4 pa-3" color="surface-variant" variant="tonal">
+        <div class="text-subtitle-1 font-weight-bold mb-2">
+          <v-icon size="small" class="mr-1">mdi-console</v-icon>CLI (GitHub Copilot in the CLI)
+        </div>
+        <v-row dense>
+          <v-col cols="6" sm="3">
+            <div class="text-caption text-medium-emphasis">Sessions</div>
+            <div class="text-h6 text-primary">{{ cliSummary.session_count }}</div>
+          </v-col>
+          <v-col cols="6" sm="3">
+            <div class="text-caption text-medium-emphasis">Requests</div>
+            <div class="text-h6 text-primary">{{ cliSummary.request_count }}</div>
+          </v-col>
+          <v-col v-if="cliSummary.avg_tokens_per_request" cols="6" sm="3">
+            <div class="text-caption text-medium-emphasis">Avg tokens/request</div>
+            <div class="text-h6 text-info">{{ cliSummary.avg_tokens_per_request }}</div>
+          </v-col>
+        </v-row>
+      </v-card>
+
+      <!-- Pie charts: top 5 by code generations and lines added -->
+      <v-row class="mx-2 mb-4">
+        <v-col cols="12" md="6">
+          <v-card variant="elevated" elevation="2">
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top 5 {{ breakdownDisplayNamePlural }} by code generations</v-card-title>
+            <v-card-text class="d-flex justify-center">
+              <div style="width: 280px; height: 280px;">
+                <Pie :data="enhancedChartDataTop5Generations" :options="chartOptions" />
               </div>
-              <div class="text-body-2 text-medium-emphasis">
-                <strong>What's included:</strong> all language-attributed code-generating features — inline completions, agent edits, inline chat, and agent mode. A language only appears if Copilot generated code in it.
-              </div>
-            </template>
-            <template v-else>
-              <div class="font-weight-bold text-body-1 mb-1">🖥️ Editors Deep-Dive</div>
-              <div class="text-medium-emphasis text-body-2 mb-2">
-                See exactly <em>how</em> your team accesses Copilot. This tab shows every surface where Copilot was used — VS Code, JetBrains, Neovim, the CLI terminal, GitHub.com, and more. Use it to understand IDE adoption, terminal usage, and whether developers are using newer agentic workflows.
-              </div>
-              <div class="text-body-2 text-medium-emphasis">
-                <strong>Note:</strong> Code acceptance rates apply only to IDE inline completions. CLI interactions (session/request counts) and GitHub.com activity are shown separately and don't produce acceptance metrics.
-              </div>
-            </template>
+            </v-card-text>
           </v-card>
-
-          <!-- CLI summary card (editors tab only) -->
-          <v-card v-if="breakdownKey === 'editor' && cliSummary" class="mb-4 pa-3" color="surface-variant" variant="tonal">
-            <div class="text-subtitle-1 font-weight-bold mb-2">
-              <v-icon size="small" class="mr-1">mdi-console</v-icon>CLI (GitHub Copilot in the CLI)
-            </div>
-            <v-row dense>
-              <v-col cols="6" sm="3">
-                <div class="text-caption text-medium-emphasis">Sessions</div>
-                <div class="text-h6">{{ cliSummary.session_count }}</div>
-              </v-col>
-              <v-col cols="6" sm="3">
-                <div class="text-caption text-medium-emphasis">Requests</div>
-                <div class="text-h6">{{ cliSummary.request_count }}</div>
-              </v-col>
-              <v-col v-if="cliSummary.avg_tokens_per_request" cols="6" sm="3">
-                <div class="text-caption text-medium-emphasis">Avg tokens/request</div>
-                <div class="text-h6">{{ cliSummary.avg_tokens_per_request }}</div>
-              </v-col>
-            </v-row>
+        </v-col>
+        <v-col cols="12" md="6">
+          <v-card variant="elevated" elevation="2">
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top 5 {{ breakdownDisplayNamePlural }} by lines added</v-card-title>
+            <v-card-text class="d-flex justify-center">
+              <div style="width: 280px; height: 280px;">
+                <Pie :data="enhancedChartDataTop5LinesAdded" :options="chartOptions" />
+              </div>
+            </v-card-text>
           </v-card>
+        </v-col>
+      </v-row>
 
-          <!-- Pie chart: share of code generation by language/editor -->
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-card>
-                <v-card-item class="d-flex justify-center align-center">
-                  <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by code generations</div>
-                  <div style="width: 300px; height: 300px;">
-                    <Pie :data="enhancedChartDataTop5Generations" :options="chartOptions" />
-                  </div>
-                </v-card-item>
-              </v-card>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-card>
-                <v-card-item class="d-flex justify-center align-center">
-                  <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by lines added</div>
-                  <div style="width: 300px; height: 300px;">
-                    <Pie :data="enhancedChartDataTop5LinesAdded" :options="chartOptions" />
-                  </div>
-                </v-card-item>
-              </v-card>
-            </v-col>
-          </v-row>
-
-          <br>
-          <h2>{{ breakdownDisplayNamePlural }} Breakdown (all features)</h2>
-          <br>
+      <div class="mx-4 mb-4">
+        <v-card variant="elevated" elevation="2">
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">{{ breakdownDisplayNamePlural }} Breakdown (all features)</v-card-title>
+          <v-card-text class="pa-0">
 
           <!-- Language enhanced table -->
           <v-data-table
             v-if="breakdownKey === 'language'"
             :headers="enhancedLanguageHeaders"
             :items="enhancedLanguageList"
-            class="elevation-2"
           >
             <template #item="{ item }">
               <tr>
@@ -111,6 +115,7 @@
                     :key="f"
                     size="x-small"
                     class="mr-1"
+                    :color="featureChipColor(f)"
                     variant="tonal"
                   >{{ f }}</v-chip>
                 </td>
@@ -123,7 +128,6 @@
             v-if="breakdownKey === 'editor'"
             :headers="enhancedEditorHeaders"
             :items="enhancedEditorList"
-            class="elevation-2"
           >
             <template #item="{ item }">
               <tr>
@@ -136,73 +140,72 @@
               </tr>
             </template>
           </v-data-table>
-        </template>
 
-        <!-- ── Legacy view (IDE code completions only) ───────────────────── -->
-        <template v-else>
-          <v-alert type="warning" variant="tonal" icon="mdi-alert-outline" class="mb-4" density="compact">
-            Showing IDE inline code completions only. Install the new Copilot metrics API to see data across all features.
-          </v-alert>
+          </v-card-text>
+        </v-card>
+      </div>
+    </template>
 
-          <v-row>
-            <v-col cols="4">
-              <v-card>
-                <v-card-item class="d-flex justify-center align-center">
-                  <div class="spacing-25"/>
-                  <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted code completions</div>
-                  <div style="width: 300px; height: 300px;">
-                    <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
-                  </div>
-                </v-card-item>
-              </v-card>
-            </v-col>
+    <!-- ── Legacy view (IDE code completions only) ───────────────────── -->
+    <template v-else>
+      <div class="mx-4 mb-4">
+        <v-alert type="warning" variant="tonal" icon="mdi-alert-outline" class="mb-4" density="compact">
+          Showing IDE inline code completions only. Install the new Copilot metrics API to see data across all features.
+        </v-alert>
 
-            <v-col cols="4">
-              <v-card>
-                <v-card-item class="d-flex justify-center align-center">
-                  <div class="spacing-25"/>
-                  <div class="text-h6 mb-1">Acceptance Rate (by count) for Top 5 {{ breakdownDisplayNamePlural }}</div>
-                  <div style="width: 300px; height: 300px;">
-                    <Pie :data="breakdownsChartDataTop5AcceptedPromptsByCounts" :options="chartOptions" />
-                  </div>
-                </v-card-item>
-              </v-card>
-            </v-col>
+        <v-row class="mb-4">
+          <v-col cols="12" md="4">
+            <v-card variant="elevated" elevation="2">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top 5 {{ breakdownDisplayNamePlural }} by accepted completions</v-card-title>
+              <v-card-text class="d-flex justify-center">
+                <div style="width: 280px; height: 280px;">
+                  <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card variant="elevated" elevation="2">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Acceptance Rate (by count) Top 5</v-card-title>
+              <v-card-text class="d-flex justify-center">
+                <div style="width: 280px; height: 280px;">
+                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByCounts" :options="chartOptions" />
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card variant="elevated" elevation="2">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Acceptance Rate (by lines) Top 5</v-card-title>
+              <v-card-text class="d-flex justify-center">
+                <div style="width: 280px; height: 280px;">
+                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByLines" :options="chartOptions" />
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
 
-            <v-col cols="4">
-              <v-card>
-                <v-card-item class="d-flex justify-center align-center">
-                  <div class="spacing-25"/>
-                  <div class="text-h6 mb-1">Acceptance Rate (by code lines) for Top 5 {{ breakdownDisplayNamePlural }}</div>
-                  <div style="width: 300px; height: 300px;">
-                    <Pie :data="breakdownsChartDataTop5AcceptedPromptsByLines" :options="chartOptions" />
-                  </div>
-                </v-card-item>
-              </v-card>
-            </v-col>
-          </v-row>
-
-          <br>
-          <h2>{{ breakdownDisplayNamePlural }} Breakdown </h2>
-          <br>
-
-          <v-data-table :headers="headers" :items="breakdownList" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
+        <v-card variant="elevated" elevation="2">
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">{{ breakdownDisplayNamePlural }} Breakdown</v-card-title>
+          <v-card-text class="pa-0">
+            <v-data-table :headers="headers" :items="breakdownList">
               <template #item="{item}">
-                  <tr>
-                      <td>{{ item.name }}</td>
-                      <td>{{ item.acceptedPrompts }}</td>
-                      <td>{{ item.suggestedPrompts }}</td>
-                      <td>{{ item.acceptedLinesOfCode }}</td>
-                      <td>{{ item.suggestedLinesOfCode }}</td>
-                      <td v-if="item.acceptanceRateByCount !== undefined">{{ item.acceptanceRateByCount.toFixed(2) }}%</td>
-                      <td v-if="item.acceptanceRateByLines !== undefined">{{ item.acceptanceRateByLines.toFixed(2) }}%</td>
-                  </tr>
+                <tr>
+                  <td>{{ item.name }}</td>
+                  <td>{{ item.acceptedPrompts }}</td>
+                  <td>{{ item.suggestedPrompts }}</td>
+                  <td>{{ item.acceptedLinesOfCode }}</td>
+                  <td>{{ item.suggestedLinesOfCode }}</td>
+                  <td v-if="item.acceptanceRateByCount !== undefined">{{ item.acceptanceRateByCount.toFixed(2) }}%</td>
+                  <td v-if="item.acceptanceRateByLines !== undefined">{{ item.acceptanceRateByLines.toFixed(2) }}%</td>
+                </tr>
               </template>
-          </v-data-table>
-        </template>
-
-      </v-container>
-    </v-main>
+            </v-data-table>
+          </v-card-text>
+        </v-card>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -566,8 +569,30 @@ export default defineComponent({
         { title: 'Lines Added', key: 'linesAdded' },
       ];
     },
+    topItemName(): string {
+      if (this.breakdownKey === 'language' && this.enhancedLanguageList.length > 0) {
+        return this.enhancedLanguageList[0].language;
+      }
+      if (this.breakdownKey === 'editor' && this.enhancedEditorList.length > 0) {
+        return this.enhancedEditorList[0].ide.replace(/\s*\(copilot_cli\)/, '');
+      }
+      return '';
+    },
   },
-  
-
+  methods: {
+    featureChipColor(feature: string): string {
+      const map: Record<string, string> = {
+        'copilot_ide_agent': 'primary',
+        'copilot_agent': 'primary',
+        'copilot_ide_chat': 'info',
+        'copilot_inline_chat': 'info',
+        'copilot_edit': 'success',
+        'copilot_ide_completions': 'secondary',
+        'copilot_completions': 'secondary',
+        'copilot_cli': 'warning',
+      };
+      return map[feature] || 'surface-variant';
+    },
+  },
 });
 </script>
