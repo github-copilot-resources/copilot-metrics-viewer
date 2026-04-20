@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-toolbar color="indigo" elevation="4">
+    <v-toolbar color="surface" elevation="0" style="border-bottom: 1px solid rgba(128,128,128,0.2);">
       <v-btn icon>
         <v-icon>mdi-github</v-icon>
       </v-btn>
@@ -8,6 +8,10 @@
       <v-toolbar-title class="toolbar-title">{{ displayName }}</v-toolbar-title>
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer />
+
+      <v-btn icon :title="showDateRange ? 'Hide date range' : 'Show date range'" @click="showDateRange = !showDateRange">
+        <v-icon>{{ showDateRange ? 'mdi-calendar-check' : 'mdi-calendar' }}</v-icon>
+      </v-btn>
 
       <v-btn icon :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
@@ -38,7 +42,7 @@
 
     </v-toolbar>
 
-    <!-- v3.0 Migration Banner -->
+      <!-- v3.0 Migration Banner -->
     <v-banner
       v-if="showMigrationBanner"
       color="info"
@@ -75,9 +79,9 @@
       </template>
     </v-banner>
 
-    <!-- Date Range Selector - Hidden for seats tab -->
+    <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
-      v-show="tab !== 'seat analysis' && !signInRequired" 
+      v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
       :loading="isLoading"
       @date-range-changed="handleDateRangeChange" />
 
@@ -364,8 +368,9 @@ export default defineNuxtComponent({
       userMetrics: [] as UserTotals[],
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
-      showMigrationBanner: true,
+      showMigrationBanner: false,
       showTeamHistoricalWarning: false,
+      showDateRange: false,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
