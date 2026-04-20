@@ -9,6 +9,10 @@
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer />
 
+      <v-btn icon :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
+        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
+
       <!-- Conditionally render the logout button -->
       <AuthState>
         <template #default="{ loggedIn, user }">
@@ -104,17 +108,17 @@
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
-      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics')" v-model="tab">
+      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
-            <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :date-range-description="dateRangeDescription" />
+            <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" />
             <BreakdownComponent
-v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
-              :date-range-description="dateRangeDescription" />
+              v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
+              :date-range-description="dateRangeDescription" :report-data="reportData" />
             <BreakdownComponent
-v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
-              :date-range-description="dateRangeDescription" />
+              v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
+              :date-range-description="dateRangeDescription" :report-data="reportData" />
             <CopilotChatViewer
 v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
@@ -436,6 +440,14 @@ export default defineNuxtComponent({
     }
   },
   async setup() {
+    const themeState = useState('app-theme', () => 'light');
+    const isDark = computed(() => themeState.value === 'dark');
+    function toggleTheme() {
+      const next = isDark.value ? 'light' : 'dark';
+      themeState.value = next;
+      if (process.client) localStorage.setItem('copilot-metrics-theme', next);
+    }
+
     const { loggedIn, user } = useUserSession()
     const config = useRuntimeConfig();
     const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
@@ -485,6 +497,8 @@ export default defineNuxtComponent({
     });
 
     return {
+      isDark,
+      toggleTheme,
       showLogoutButton,
       mockedDataMessage,
       itemName,

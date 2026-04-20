@@ -1,7 +1,6 @@
 <template>
   <div>
     <div class="tiles-container">
-      <!-- Acceptance Rate Tile -->  
       <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
           <v-card-item>
             <div class="tiles-text">
@@ -18,71 +17,188 @@
 
     <v-main class="p-1" style="min-height: 300px;">
       <v-container style="min-height: 300px;" class="px-4 elevation-2">
-        <v-row>
-          <v-col cols="4">
-            <v-card>
-              <v-card-item class="d-flex justify-center align-center">
-                <div class="spacing-25"/>
-                <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted code completions</div>
-                <div style="width: 300px; height: 300px;">
-                  <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
-                </div>
-              </v-card-item>
-            </v-card>
-          </v-col>
 
-          <v-col cols="4">
-            <v-card>
-              <v-card-item class="d-flex justify-center align-center">
-                <div class="spacing-25"/>
-                <div class="text-h6 mb-1">Acceptance Rate (by count) for Top 5 {{ breakdownDisplayNamePlural }}</div>
-                <div style="width: 300px; height: 300px;">
-                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByCounts" :options="chartOptions" />
-                </div>
-              </v-card-item>
-            </v-card>
-          </v-col>
+        <!-- ── Enhanced view from new API reportData ────────────────────── -->
+        <template v-if="useEnhancedView">
+          <v-alert type="info" variant="tonal" icon="mdi-information-outline" class="mb-4" density="compact">
+            <span v-if="breakdownKey === 'language'">
+              Showing languages across all language-attributed code-generating features (code completions, agent edits, inline chat, agent mode chat).
+            </span>
+            <span v-else>
+              Showing all IDE editors with any Copilot activity. Code acceptance applies to inline completions only.
+            </span>
+          </v-alert>
 
-          <v-col cols="4">
-            <v-card>
-              <v-card-item class="d-flex justify-center align-center">
-                <div class="spacing-25"/>
-                <div class="text-h6 mb-1">Acceptance Rate (by code lines) for Top 5 {{ breakdownDisplayNamePlural }}</div>
-                <div style="width: 300px; height: 300px;">
-                  <Pie :data="breakdownsChartDataTop5AcceptedPromptsByLines" :options="chartOptions" />
-                </div>
-              </v-card-item>
-            </v-card>
-          </v-col>
-        </v-row>
+          <!-- CLI summary card (editors tab only) -->
+          <v-card v-if="breakdownKey === 'editor' && cliSummary" class="mb-4 pa-3" color="blue-grey-lighten-5" variant="tonal">
+            <div class="text-subtitle-1 font-weight-bold mb-2">
+              <v-icon size="small" class="mr-1">mdi-console</v-icon>CLI (GitHub Copilot in the CLI)
+            </div>
+            <v-row dense>
+              <v-col cols="6" sm="3">
+                <div class="text-caption text-medium-emphasis">Sessions</div>
+                <div class="text-h6">{{ cliSummary.session_count }}</div>
+              </v-col>
+              <v-col cols="6" sm="3">
+                <div class="text-caption text-medium-emphasis">Requests</div>
+                <div class="text-h6">{{ cliSummary.request_count }}</div>
+              </v-col>
+              <v-col v-if="cliSummary.avg_tokens_per_request" cols="6" sm="3">
+                <div class="text-caption text-medium-emphasis">Avg tokens/request</div>
+                <div class="text-h6">{{ cliSummary.avg_tokens_per_request }}</div>
+              </v-col>
+            </v-row>
+          </v-card>
 
-        <br>
-        <h2>{{ breakdownDisplayNamePlural }} Breakdown </h2>
-        <br>
+          <!-- Pie chart: share of code generation by language/editor -->
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-card>
+                <v-card-item class="d-flex justify-center align-center">
+                  <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by code generations</div>
+                  <div style="width: 300px; height: 300px;">
+                    <Pie :data="enhancedChartDataTop5Generations" :options="chartOptions" />
+                  </div>
+                </v-card-item>
+              </v-card>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-card>
+                <v-card-item class="d-flex justify-center align-center">
+                  <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by lines added</div>
+                  <div style="width: 300px; height: 300px;">
+                    <Pie :data="enhancedChartDataTop5LinesAdded" :options="chartOptions" />
+                  </div>
+                </v-card-item>
+              </v-card>
+            </v-col>
+          </v-row>
 
-        <v-data-table :headers="headers" :items="breakdownList" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
-            <template #item="{item}">
-                <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.acceptedPrompts }}</td>
-                    <td>{{ item.suggestedPrompts }}</td>
-                    <td>{{ item.acceptedLinesOfCode }}</td>
-                    <td>{{ item.suggestedLinesOfCode }}</td>
-                    <td v-if="item.acceptanceRateByCount !== undefined">{{ item.acceptanceRateByCount.toFixed(2) }}%</td>
-                    <td v-if="item.acceptanceRateByLines !== undefined">{{ item.acceptanceRateByLines.toFixed(2) }}%</td>
-                </tr>
+          <br>
+          <h2>{{ breakdownDisplayNamePlural }} Breakdown (all features)</h2>
+          <br>
+
+          <!-- Language enhanced table -->
+          <v-data-table
+            v-if="breakdownKey === 'language'"
+            :headers="enhancedLanguageHeaders"
+            :items="enhancedLanguageList"
+            class="elevation-2"
+          >
+            <template #item="{ item }">
+              <tr>
+                <td>{{ item.language }}</td>
+                <td>{{ item.codeGenerations }}</td>
+                <td>{{ item.codeAcceptances }}</td>
+                <td>{{ item.linesGenerated }}</td>
+                <td>{{ item.linesAdded }}</td>
+                <td>
+                  <v-chip
+                    v-for="f in item.features"
+                    :key="f"
+                    size="x-small"
+                    class="mr-1"
+                    variant="tonal"
+                  >{{ f }}</v-chip>
+                </td>
+              </tr>
             </template>
-        </v-data-table>
+          </v-data-table>
+
+          <!-- Editor enhanced table -->
+          <v-data-table
+            v-if="breakdownKey === 'editor'"
+            :headers="enhancedEditorHeaders"
+            :items="enhancedEditorList"
+            class="elevation-2"
+          >
+            <template #item="{ item }">
+              <tr>
+                <td>{{ item.ide }}</td>
+                <td>{{ item.interactions }}</td>
+                <td>{{ item.codeGenerations }}</td>
+                <td>{{ item.codeAcceptances }}</td>
+                <td>{{ item.linesGenerated }}</td>
+                <td>{{ item.linesAdded }}</td>
+              </tr>
+            </template>
+          </v-data-table>
+        </template>
+
+        <!-- ── Legacy view (IDE code completions only) ───────────────────── -->
+        <template v-else>
+          <v-alert type="warning" variant="tonal" icon="mdi-alert-outline" class="mb-4" density="compact">
+            Showing IDE inline code completions only. Install the new Copilot metrics API to see data across all features.
+          </v-alert>
+
+          <v-row>
+            <v-col cols="4">
+              <v-card>
+                <v-card-item class="d-flex justify-center align-center">
+                  <div class="spacing-25"/>
+                  <div class="text-h6 mb-1">Top 5 {{ breakdownDisplayNamePlural }} by accepted code completions</div>
+                  <div style="width: 300px; height: 300px;">
+                    <Pie :data="breakdownsChartDataTop5AcceptedPrompts" :options="chartOptions" />
+                  </div>
+                </v-card-item>
+              </v-card>
+            </v-col>
+
+            <v-col cols="4">
+              <v-card>
+                <v-card-item class="d-flex justify-center align-center">
+                  <div class="spacing-25"/>
+                  <div class="text-h6 mb-1">Acceptance Rate (by count) for Top 5 {{ breakdownDisplayNamePlural }}</div>
+                  <div style="width: 300px; height: 300px;">
+                    <Pie :data="breakdownsChartDataTop5AcceptedPromptsByCounts" :options="chartOptions" />
+                  </div>
+                </v-card-item>
+              </v-card>
+            </v-col>
+
+            <v-col cols="4">
+              <v-card>
+                <v-card-item class="d-flex justify-center align-center">
+                  <div class="spacing-25"/>
+                  <div class="text-h6 mb-1">Acceptance Rate (by code lines) for Top 5 {{ breakdownDisplayNamePlural }}</div>
+                  <div style="width: 300px; height: 300px;">
+                    <Pie :data="breakdownsChartDataTop5AcceptedPromptsByLines" :options="chartOptions" />
+                  </div>
+                </v-card-item>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <br>
+          <h2>{{ breakdownDisplayNamePlural }} Breakdown </h2>
+          <br>
+
+          <v-data-table :headers="headers" :items="breakdownList" class="elevation-2" style="padding-left: 100px; padding-right: 100px;">
+              <template #item="{item}">
+                  <tr>
+                      <td>{{ item.name }}</td>
+                      <td>{{ item.acceptedPrompts }}</td>
+                      <td>{{ item.suggestedPrompts }}</td>
+                      <td>{{ item.acceptedLinesOfCode }}</td>
+                      <td>{{ item.suggestedLinesOfCode }}</td>
+                      <td v-if="item.acceptanceRateByCount !== undefined">{{ item.acceptanceRateByCount.toFixed(2) }}%</td>
+                      <td v-if="item.acceptanceRateByLines !== undefined">{{ item.acceptanceRateByLines.toFixed(2) }}%</td>
+                  </tr>
+              </template>
+          </v-data-table>
+        </template>
+
       </v-container>
     </v-main>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, toRef, watch } from 'vue';
+import { defineComponent, ref, toRef, watch, computed, type PropType } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Breakdown } from '@/model/Breakdown';
 import { Pie } from 'vue-chartjs'
+import type { ReportDayTotals, ReportCliTotals } from '../../server/services/github-copilot-usage-api';
 
 import {
   Chart as ChartJS,
@@ -109,6 +225,30 @@ ChartJS.register(
   Legend
 )
 
+interface EnhancedLanguageRow {
+  language: string;
+  codeGenerations: number;
+  codeAcceptances: number;
+  linesGenerated: number;
+  linesAdded: number;
+  features: string[];
+}
+
+interface EnhancedEditorRow {
+  ide: string;
+  interactions: number;
+  codeGenerations: number;
+  codeAcceptances: number;
+  linesGenerated: number;
+  linesAdded: number;
+}
+
+interface CliSummary {
+  session_count: number;
+  request_count: number;
+  avg_tokens_per_request?: number;
+}
+
 export default defineComponent({
   name: 'BreakdownComponent',
   components: {
@@ -126,6 +266,10 @@ export default defineComponent({
       dateRangeDescription: {
           type: String,
           default: 'Over the last 28 days'
+      },
+      reportData: {
+          type: Array as PropType<ReportDayTotals[]>,
+          default: () => []
       }
   },
   setup(props) {
@@ -161,7 +305,108 @@ export default defineComponent({
     '#7CFC00'  // Lawn Green
 ]);
 
-    // Function to process breakdown data
+    // ── Enhanced view data ─────────────────────────────────────────────
+
+    const enhancedLanguageList = ref<EnhancedLanguageRow[]>([]);
+    const enhancedEditorList = ref<EnhancedEditorRow[]>([]);
+    const cliSummary = ref<CliSummary | null>(null);
+    const enhancedChartDataTop5Generations = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const enhancedChartDataTop5LinesAdded = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+    // Whether to show enhanced view: only when relevant new-API slice is populated
+    const useEnhancedView = computed(() => {
+      const data = toRef(props, 'reportData').value;
+      if (!data || data.length === 0) return false;
+      if (props.breakdownKey === 'language') {
+        return data.some(d => d.totals_by_language_feature && d.totals_by_language_feature.length > 0);
+      }
+      if (props.breakdownKey === 'editor') {
+        return data.some(d => d.totals_by_ide && d.totals_by_ide.length > 0);
+      }
+      return false;
+    });
+
+    // Process enhanced language data from reportData
+    const processEnhancedLanguageData = (data: ReportDayTotals[]) => {
+      const langMap = new Map<string, EnhancedLanguageRow>();
+      data.forEach(day => {
+        (day.totals_by_language_feature || []).forEach(entry => {
+          const key = entry.language;
+          if (!langMap.has(key)) {
+            langMap.set(key, { language: key, codeGenerations: 0, codeAcceptances: 0, linesGenerated: 0, linesAdded: 0, features: [] });
+          }
+          const row = langMap.get(key)!;
+          row.codeGenerations += entry.code_generation_activity_count || 0;
+          row.codeAcceptances += entry.code_acceptance_activity_count || 0;
+          row.linesGenerated += entry.loc_suggested_to_add_sum || 0;
+          row.linesAdded += entry.loc_added_sum || 0;
+          if (!row.features.includes(entry.feature)) {
+            row.features.push(entry.feature);
+          }
+        });
+      });
+
+      const sorted = Array.from(langMap.values()).sort((a, b) => b.codeGenerations - a.codeGenerations);
+      enhancedLanguageList.value = sorted;
+      numberOfBreakdowns.value = sorted.length;
+
+      const top5 = sorted.slice(0, 5);
+      enhancedChartDataTop5Generations.value = {
+        labels: top5.map(r => r.language),
+        datasets: [{ data: top5.map(r => r.codeGenerations), backgroundColor: pieChartColors.value }]
+      };
+      enhancedChartDataTop5LinesAdded.value = {
+        labels: top5.map(r => r.language),
+        datasets: [{ data: top5.map(r => r.linesAdded), backgroundColor: pieChartColors.value }]
+      };
+    };
+
+    // Process enhanced editor data from reportData
+    const processEnhancedEditorData = (data: ReportDayTotals[]) => {
+      const ideMap = new Map<string, EnhancedEditorRow>();
+      let cliSessions = 0, cliRequests = 0, cliAvgTokens: number | undefined;
+
+      data.forEach(day => {
+        (day.totals_by_ide || []).forEach(entry => {
+          const key = entry.ide;
+          if (!ideMap.has(key)) {
+            ideMap.set(key, { ide: key, interactions: 0, codeGenerations: 0, codeAcceptances: 0, linesGenerated: 0, linesAdded: 0 });
+          }
+          const row = ideMap.get(key)!;
+          row.interactions += entry.user_initiated_interaction_count || 0;
+          row.codeGenerations += entry.code_generation_activity_count || 0;
+          row.codeAcceptances += entry.code_acceptance_activity_count || 0;
+          row.linesGenerated += entry.loc_suggested_to_add_sum || 0;
+          row.linesAdded += entry.loc_added_sum || 0;
+        });
+
+        if (day.totals_by_cli) {
+          cliSessions += day.totals_by_cli.session_count || 0;
+          cliRequests += day.totals_by_cli.request_count || 0;
+          if (day.totals_by_cli.token_usage?.avg_tokens_per_request) {
+            cliAvgTokens = day.totals_by_cli.token_usage.avg_tokens_per_request;
+          }
+        }
+      });
+
+      const sorted = Array.from(ideMap.values()).sort((a, b) => b.codeGenerations - a.codeGenerations);
+      enhancedEditorList.value = sorted;
+      numberOfBreakdowns.value = sorted.length + (cliSessions > 0 ? 1 : 0);
+
+      cliSummary.value = cliSessions > 0 ? { session_count: cliSessions, request_count: cliRequests, avg_tokens_per_request: cliAvgTokens } : null;
+
+      const top5 = sorted.slice(0, 5);
+      enhancedChartDataTop5Generations.value = {
+        labels: top5.map(r => r.ide),
+        datasets: [{ data: top5.map(r => r.codeGenerations), backgroundColor: pieChartColors.value }]
+      };
+      enhancedChartDataTop5LinesAdded.value = {
+        labels: top5.map(r => r.ide),
+        datasets: [{ data: top5.map(r => r.linesAdded), backgroundColor: pieChartColors.value }]
+      };
+    };
+
+    // Function to process legacy breakdown data
     const processBreakdownData = (data: Metrics[]) => {
       // Reset the breakdown list
       breakdownList.value = [];
@@ -192,9 +437,6 @@ export default defineComponent({
         // Recalculate the acceptance rates
         breakdown.acceptanceRateByCount = breakdown.suggestedPrompts !== 0 ? (breakdown.acceptedPrompts / breakdown.suggestedPrompts) * 100 : 0;
         breakdown.acceptanceRateByLines = breakdown.suggestedLinesOfCode !== 0 ? (breakdown.acceptedLinesOfCode / breakdown.suggestedLinesOfCode) * 100 : 0;
-
-        // Log each breakdown for debugging
-       // console.log('Breakdown:', breakdown);
       }));
 
       //Sort breakdowns map by accepted prompts
@@ -243,8 +485,20 @@ export default defineComponent({
       }
     }, { immediate: true, deep: true });
 
+    // Watch for changes in reportData and re-process enhanced data
+    watch(() => props.reportData, (newReportData) => {
+      if (!newReportData || newReportData.length === 0) return;
+      if (props.breakdownKey === 'language') {
+        processEnhancedLanguageData(newReportData);
+      } else if (props.breakdownKey === 'editor') {
+        processEnhancedEditorData(newReportData);
+      }
+    }, { immediate: true, deep: true });
+
     return { chartOptions, breakdownList, numberOfBreakdowns, 
-      breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts };
+      breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts,
+      useEnhancedView, enhancedLanguageList, enhancedEditorList, cliSummary,
+      enhancedChartDataTop5Generations, enhancedChartDataTop5LinesAdded };
   },
   computed: {
     breakdownDisplayName() {
@@ -262,6 +516,26 @@ export default defineComponent({
         { title: 'Suggested Lines of Code', key: 'suggestedLinesOfCode' },
         { title: 'Acceptance Rate by Count (%)', key: 'acceptanceRateByCount' },
         { title: 'Acceptance Rate by Lines (%)', key: 'acceptanceRateByLines' },
+      ];
+    },
+    enhancedLanguageHeaders() {
+      return [
+        { title: 'Language', key: 'language' },
+        { title: 'Code Generations', key: 'codeGenerations' },
+        { title: 'Code Acceptances', key: 'codeAcceptances' },
+        { title: 'Lines Generated', key: 'linesGenerated' },
+        { title: 'Lines Added', key: 'linesAdded' },
+        { title: 'Active Features', key: 'features', sortable: false },
+      ];
+    },
+    enhancedEditorHeaders() {
+      return [
+        { title: 'Editor / IDE', key: 'ide' },
+        { title: 'Interactions', key: 'interactions' },
+        { title: 'Code Generations', key: 'codeGenerations' },
+        { title: 'Code Acceptances', key: 'codeAcceptances' },
+        { title: 'Lines Generated', key: 'linesGenerated' },
+        { title: 'Lines Added', key: 'linesAdded' },
       ];
     },
   },

@@ -155,6 +155,9 @@ function _generateMinimalDay(day: string) {
     ],
     totals_by_language_feature: [
       { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 40, code_acceptance_activity_count: 30, loc_suggested_to_add_sum: 60, loc_suggested_to_delete_sum: 0, loc_added_sum: 30, loc_deleted_sum: 0 },
+      { language: 'python',     feature: 'agent_edit',      code_generation_activity_count: 35, code_acceptance_activity_count: 0,  loc_suggested_to_add_sum: 0,  loc_suggested_to_delete_sum: 0, loc_added_sum: 250, loc_deleted_sum: 30 },
+      { language: 'typescript', feature: 'agent_edit',      code_generation_activity_count: 30, code_acceptance_activity_count: 0,  loc_suggested_to_add_sum: 0,  loc_suggested_to_delete_sum: 0, loc_added_sum: 200, loc_deleted_sum: 20 },
+      { language: 'markdown',   feature: 'agent_edit',      code_generation_activity_count: 15, code_acceptance_activity_count: 0,  loc_suggested_to_add_sum: 0,  loc_suggested_to_delete_sum: 0, loc_added_sum: 50,  loc_deleted_sum: 0  },
     ],
     totals_by_language_model: [
       { language: 'typescript', model: 'gpt-5.3-codex', code_generation_activity_count: 40, code_acceptance_activity_count: 30, loc_suggested_to_add_sum: 60, loc_suggested_to_delete_sum: 0, loc_added_sum: 30, loc_deleted_sum: 0 },

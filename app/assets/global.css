@@ -210,3 +210,58 @@
     font-size: 13px !important;
     line-height: 1.45;
   }
+/* ── Vuetify theme CSS variable definitions ──────────────────────────────
+   The vuetify-nuxt-module extracts SCSS at build time without runtime
+   variable injection. We define them here so theme switching works.        */
+
+.v-theme--light {
+  --v-theme-background: 255,255,255;
+  --v-theme-on-background: 0,0,0;
+  --v-theme-surface: 255,255,255;
+  --v-theme-on-surface: 0,0,0;
+  --v-theme-surface-variant: 245,245,245;
+  --v-theme-on-surface-variant: 66,66,66;
+  --v-theme-primary: 25,118,210;
+  --v-theme-on-primary: 255,255,255;
+  --v-theme-secondary: 66,66,66;
+  --v-theme-on-secondary: 255,255,255;
+  --v-theme-error: 255,82,82;
+  --v-theme-info: 33,150,243;
+  --v-theme-success: 76,175,80;
+  --v-theme-warning: 255,193,7;
+  --v-border-color: 0,0,0;
+  --v-border-opacity: 0.12;
+  --v-high-emphasis-opacity: 0.87;
+  --v-medium-emphasis-opacity: 0.6;
+  --v-disabled-opacity: 0.38;
+  --v-hover-opacity: 0.04;
+  --v-focus-opacity: 0.12;
+  --v-activated-opacity: 0.12;
+  --v-theme-overlay-multiplier: 1;
+}
+
+.v-theme--dark {
+  --v-theme-background: 18,18,18;
+  --v-theme-on-background: 255,255,255;
+  --v-theme-surface: 30,30,30;
+  --v-theme-on-surface: 255,255,255;
+  --v-theme-surface-variant: 45,45,45;
+  --v-theme-on-surface-variant: 200,200,200;
+  --v-theme-primary: 144,202,249;
+  --v-theme-on-primary: 0,0,0;
+  --v-theme-secondary: 176,190,197;
+  --v-theme-on-secondary: 0,0,0;
+  --v-theme-error: 239,154,154;
+  --v-theme-info: 100,181,246;
+  --v-theme-success: 165,214,167;
+  --v-theme-warning: 255,224,130;
+  --v-border-color: 255,255,255;
+  --v-border-opacity: 0.12;
+  --v-high-emphasis-opacity: 1;
+  --v-medium-emphasis-opacity: 0.7;
+  --v-disabled-opacity: 0.5;
+  --v-hover-opacity: 0.08;
+  --v-focus-opacity: 0.12;
+  --v-activated-opacity: 0.12;
+  --v-theme-overlay-multiplier: 2;
+}

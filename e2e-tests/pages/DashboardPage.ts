@@ -35,26 +35,26 @@ export class DashboardPage {
         this.page = page;
 
         this.acceptanceRateByCountLabel = page.getByText(
-            "Acceptance Rate (by count)"
+            "IDE Completion Acceptance Rate (count)"
         );
         this.acceptanceRateByCountValue = page
             .locator(".v-card-item")
-            .filter({ has: page.getByText("Acceptance Rate (by count)") })
-            .locator(".text-h4");
+            .filter({ has: page.getByText("IDE Completion Acceptance Rate (count)") })
+            .locator(".text-h5");
         this.totalCountOfSuggestionsLabel = page.getByText(
-            "Total Code Completions", { exact: true }
+            "Total IDE Code Completions", { exact: true }
         );
         this.totalCountOfSuggestionsValue = page
             .locator(".v-card-item")
-            .filter({ has: page.getByText("Total Code Completions", { exact: true }) })
-            .locator(".text-h4");
-        this.totalLinesSuggestedLabel = page.getByRole("heading", {
-            name: "Total Lines Suggested | Total",
-        });
+            .filter({ has: page.getByText("Total IDE Code Completions", { exact: true }) })
+            .locator(".text-h5");
+        this.totalLinesSuggestedLabel = page.getByText(
+            "Total Lines Suggested (IDE completions)", { exact: true }
+        );
         this.totalLinesSuggestedValue = page
             .locator(".v-card-item")
-            .filter({ has: page.getByText("Total Lines of code Suggested") })
-            .locator(".text-h4");
+            .filter({ has: page.getByText("Total Lines Suggested (IDE completions)", { exact: true }) })
+            .locator(".text-h5");
         this.toolbarTitle = page.locator(".toolbar-title");
 
         this.languagesTabLink = page.getByRole("tab", { name: "languages" });
