@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="tiles-container">
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 300px; height: 175px;">
+      <v-card elevation="2" class="my-3">
           <v-card-item>
             <div class="tiles-text">
               <div class="spacing-25"/>
