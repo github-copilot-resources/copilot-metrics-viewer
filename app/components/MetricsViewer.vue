@@ -91,10 +91,10 @@
             <div class="spacing-10"/>
             <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
               <template #activator="{ props }">
-                <div v-bind="props" class="text-h6 mb-1">Most used chat mode</div>
+                <div v-bind="props" class="text-h6 mb-1">Top Copilot feature</div>
               </template>
               <v-card class="pa-3 metric-tooltip">
-                <span class="tooltip-text">Chat feature (Agent, Ask, Edit, etc.) with the most user-initiated requests in the last 28 days, excluding code completions.</span>
+                <span class="tooltip-text">Copilot feature (Agent, Ask, Edit, CLI, etc.) with the most user-initiated interactions in the last 28 days, excluding IDE code completions.</span>
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
@@ -333,6 +333,7 @@ const PALETTE = [
 
 const FEATURE_DISPLAY: Record<string, string> = {
   code_completion: 'Completions',
+  copilot_cli: 'CLI',
   agent_edit: 'Edit',
   chat_panel_ask_mode: 'Ask',
   chat_panel_agent_mode: 'Agent',
