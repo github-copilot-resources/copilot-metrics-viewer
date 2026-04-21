@@ -149,6 +149,18 @@
           </v-col>
         </v-row>
 
+        <!-- Row 2.5: Feature Usage Over Time (full-width) -->
+        <v-row v-if="singleTeamFeatureUsageData.datasets.length" class="mt-2">
+          <v-col cols="12">
+            <v-card class="pa-3">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-2">Feature Usage Over Time</v-card-title>
+              <div style="height:220px">
+                <LineChart :data="singleTeamFeatureUsageData" :options="compactLineOptions" />
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+
         <!-- Row 3: Top Models | Language Acceptance Rate table -->
         <v-row class="mt-2">
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
@@ -377,6 +389,7 @@ import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { ReportDayTotals, UserTotals } from '../../server/services/github-copilot-usage-api';
+import { PALETTE } from '@/utils/chartPlugins'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -389,6 +402,22 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
+
+const FEATURE_DISPLAY: Record<string, string> = {
+  code_completion: 'Completions',
+  copilot_cli: 'CLI',
+  agent_edit: 'Edit',
+  chat_panel_ask_mode: 'Ask',
+  chat_panel_agent_mode: 'Agent',
+  chat_panel_custom_mode: 'Custom',
+  chat_panel_edit_mode: 'Edit',
+  chat_panel_plan_mode: 'Plan',
+  chat_inline: 'Inline',
+  plan_mode: 'Plan',
+}
+function featureLabel(key: string) {
+  return FEATURE_DISPLAY[key] ?? key
+}
 
 ChartJS.register(
   CategoryScale,
@@ -722,6 +751,29 @@ export default defineComponent({
       }
     })
 
+    // ── Feature Usage Over Time ───────────────────────────────────────────────
+    const singleTeamFeatureUsageData = computed<ChartData<'line', number[], string>>(() => {
+      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
+      const data = perTeamData.value[0].reportData
+      const featureKeys = [...new Set(
+        data.flatMap(d => (d.totals_by_feature ?? [])
+          .filter(f => (f.user_initiated_interaction_count ?? 0) > 0)
+          .map(f => f.feature ?? ''))
+      )]
+      if (!featureKeys.length) return { labels: [], datasets: [] }
+      return {
+        labels: data.map(d => d.day),
+        datasets: featureKeys.map((fk, i) => ({
+          label: featureLabel(fk),
+          data: data.map(d => (d.totals_by_feature ?? []).find(f => f.feature === fk)?.user_initiated_interaction_count ?? 0),
+          borderColor: PALETTE[i % PALETTE.length].border,
+          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          fill: false,
+          tension: 0.3,
+        }))
+      }
+    })
+
     // ── User Metrics ──────────────────────────────────────────────────────────
     const singleTeamUserMetrics = ref<UserTotals[]>([])
     const userMetricsError = ref<string | null>(null)
@@ -966,6 +1018,7 @@ export default defineComponent({
       topLanguages,
       singleTeamEditorBarData,
       singleTeamModelsData,
+      singleTeamFeatureUsageData,
       // user metrics
       singleTeamUserMetrics,
       sortedUserMetrics,
