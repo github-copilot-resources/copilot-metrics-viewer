@@ -154,7 +154,7 @@
 
     <!-- Search and filter controls -->
     <v-main class="p-1" style="min-height: 300px;">
-      <v-container class="px-4 elevation-2">
+      <v-container :fluid="chartColumns === 'full'" :class="['elevation-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <br>
         <h2>Per-User Copilot Usage Metrics</h2>
         <div class="text-caption mb-4">{{ dateRangeDescription }}</div>
@@ -295,7 +295,7 @@
     <!-- User metrics history chart (historical / DB mode only) -->
     <div v-if="userMetricsHistory.length > 0">
       <v-main class="p-1">
-        <v-container class="px-4 elevation-2">
+        <v-container :fluid="chartColumns === 'full'" :class="['elevation-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
           <br>
           <h2>User Metrics History</h2>
           <div class="text-caption mb-4">Trends across stored 28-day snapshots</div>
