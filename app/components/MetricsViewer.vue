@@ -263,7 +263,7 @@
             <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Code completions acceptance rate</div>
               <div class="text-caption text-medium-emphasis mb-2">Percentage of shown inline completions that were accepted · <span class="font-italic">Shaded columns = weekends</span></div>
-              <div style="height:220px"><Bar :data="acceptanceRateByCountChartData" :options="compactChartOptions" :plugins="[weekendPlugin]" /></div>
+              <div style="height:220px"><Bar :data="acceptanceRateByCountChartData" :options="percentageChartOptions" :plugins="[weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
@@ -424,6 +424,14 @@ export default defineComponent({
       responsive: true,
       maintainAspectRatio: false,
       scales: { x: xTicks, y: { beginAtZero: true } },
+      plugins: { legend: { position: 'bottom' as const } },
+    };
+
+    const percentageChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index' as const, intersect: false },
+      scales: { x: xTicks, y: { beginAtZero: true, max: 120, ticks: { callback: (v: any) => `${v}%` } } },
       plugins: { legend: { position: 'bottom' as const } },
     };
 
@@ -708,7 +716,7 @@ export default defineComponent({
       // Trend arrows
       trendActiveUsers, trendAdoptionPct, trendChatRequests, trendAcceptanceCount,
       // Chart options
-      compactChartOptions, integerYOptions, dauWauOptions, stackedBarOptions, groupedBarOptions,
+      compactChartOptions, integerYOptions, dauWauOptions, stackedBarOptions, groupedBarOptions, percentageChartOptions,
       // Weekend plugin
       weekendPlugin,
       gradientFillPlugin,
