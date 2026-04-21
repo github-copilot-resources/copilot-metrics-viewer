@@ -73,15 +73,11 @@ In **Historical mode** (with PostgreSQL), the User Metrics tab also displays per
 <p align="center">
   <img width="800" alt="Per-User Metrics" src="./images/user-metrics.png">
 </p>
-### GitHub.com Integration & Model Analytics
-View comprehensive statistics for GitHub.com features including Chat, PR Summaries, and detailed model usage analytics. Each section provides expandable details showing model types, editors, and usage patterns.
+### Models Tab
+View model usage analytics including model adoption over time, chat model distribution, and usage per chat mode (Ask, Agent, Edit, Inline).
 
 <p align="center">
-  <img width="800" alt="GitHub.com Tab" src="./images/github-com-tab.png">
-</p>
-
-<p align="center">
-  <img width="800" alt="Model Usage Details" src="./images/github-com-models-expanded.png">
+  <img width="800" alt="Models Tab" src="./images/models-tab.png">
 </p>
 
 ### CSV Export Functionality
@@ -102,17 +98,17 @@ Here are the key metrics visualized in these charts:
   <img width="800" alt="Key Metrics Overview" src="./images/main-metrics-dashboard.png">
 </p>
 
-1. **Acceptance Rate:** This metric represents the ratio of accepted lines and suggestions to the total suggested by GitHub Copilot. This rate is an indicator of the relevance and usefulness of Copilot's suggestions. However, as with any metric, it should be used with caution as developers use Copilot in many different ways (research, confirm, verify, etc., not always "inject").
+1. **Active Users Over Time:** Tracks daily, weekly, and monthly active users across all Copilot features — IDE completions, chat, agent mode, CLI, and PR summaries.
 <p align="center">
-  <img width="800" alt="image" src="./images/Acceptance_rate_bycount.png">
+  <img width="800" alt="Active Users Over Time" src="./images/Acceptance_rate_bycount.png">
 </p>
 
-2. **Total Suggestions:** This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.
-
-3. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users.
+2. **Feature Usage Over Time:** Shows user-initiated interactions per feature per day, covering IDE chat, agent mode, edit mode, inline chat, CLI, PR summaries, and more.
 <p align="center">
-  <img width="800" alt="image" src="./images/Total_suggestions_count.png">
+  <img width="800" alt="Feature Usage Over Time" src="./images/Total_suggestions_count.png">
 </p>
+
+3. **Code Completions:** Tracks total inline code suggestions shown and accepted over time.
 
 4. **Total Lines Suggested:** Showcases the total number of lines of code suggested by GitHub Copilot. This gives an idea of the volume of code generation and assistance provided.
 
