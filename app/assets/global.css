@@ -238,7 +238,7 @@
 
 /* ── Toolbar ── */
 .app-toolbar {
-  background: #2d3142 !important;
+  background: linear-gradient(135deg, #1565c0 0%, #1976d2 50%, #1e88e5 100%) !important;
   border-bottom: none !important;
 }
 .v-theme--dark .app-toolbar {
