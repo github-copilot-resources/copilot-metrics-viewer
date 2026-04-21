@@ -439,7 +439,7 @@ export default defineComponent({
       layout: { padding: { top: 10, bottom: 20 } },
       scales: {
         yDays: { type: 'linear' as const, position: 'left'  as const, beginAtZero: true, title: { display: true, text: 'Days / Count' } },
-        yRate: { type: 'linear' as const, position: 'right' as const, beginAtZero: true, max: 100, title: { display: true, text: 'Rate %' }, grid: { drawOnChartArea: false } },
+        yRate: { type: 'linear' as const, position: 'right' as const, beginAtZero: true, max: 120, title: { display: true, text: 'Rate %' }, grid: { drawOnChartArea: false } },
         yCount: { display: false },
       },
     };

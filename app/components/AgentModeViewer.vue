@@ -596,7 +596,7 @@ export default defineComponent({
             responsive: true, maintainAspectRatio: false,
             scales: {
                 x: { stacked: true, ticks: { maxTicksLimit: 14 } },
-                y: { stacked: true, min: 0, max: 100, ticks: { callback: (v: any) => v + '%' } },
+                y: { stacked: true, min: 0, max: 120, ticks: { callback: (v: any) => v + '%' } },
             },
             plugins: {
                 legend: { position: 'bottom' as const },

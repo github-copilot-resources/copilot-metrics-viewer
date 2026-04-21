@@ -129,7 +129,7 @@
           <v-card-subtitle class="px-4 pb-1">Code acceptances ÷ code generations per IDE/editor</v-card-subtitle>
           <v-card-text>
             <div style="height:260px">
-              <Bar :data="acceptanceRateByEditorData" :options="{ ...horizBarOptions, scales: { x: { beginAtZero: true, max: 100, ticks: { callback: (v: any) => `${v}%` } } } }" />
+              <Bar :data="acceptanceRateByEditorData" :options="{ ...horizBarOptions, scales: { x: { beginAtZero: true, max: 120, ticks: { callback: (v: any) => `${v}%` } } } }" />
             </div>
           </v-card-text>
         </v-card>
@@ -471,7 +471,7 @@ export default defineComponent({
       plugins: { legend: { position: 'bottom' as const } },
       scales: {
         x: { stacked: true, ticks: { maxTicksLimit: 10 } },
-        y: { stacked: true, min: 0, max: 100, ticks: { callback: (v: any) => `${v}%` } },
+        y: { stacked: true, min: 0, max: 120, ticks: { callback: (v: any) => `${v}%` } },
       },
     };
 

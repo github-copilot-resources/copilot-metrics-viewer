@@ -274,7 +274,7 @@ export default defineComponent({
       maintainAspectRatio: false,
       scales: {
         x: { ticks: { maxTicksLimit: 14 } },
-        y: { beginAtZero: true, max: 100, ticks: { callback: (v: any) => v + '%' } },
+        y: { beginAtZero: true, max: 120, ticks: { callback: (v: any) => v + '%' } },
       },
       plugins: { legend: { position: 'bottom' as const } },
     };
