@@ -32,11 +32,15 @@ test.describe('Teams Comparison tests', () => {
         await dashboard.gotoTeamsTab();
 
         // Verify empty state message when no teams are selected
-        const emptyStateMessage = dashboard.page.getByText('No Teams Selected');
+        const emptyStateMessage = dashboard.page.getByText('No Team Selected');
         await expect(emptyStateMessage).toBeVisible();
 
-        const emptyStateDescription = dashboard.page.getByText('Select one or more teams from the dropdown above to view and compare their metrics.');
-        await expect(emptyStateDescription).toBeVisible();
+        // Verify the helper text explaining the two modes
+        const deepDiveHint = dashboard.page.getByText('1 team → Deep Dive');
+        await expect(deepDiveHint).toBeVisible();
+
+        const comparisonHint = dashboard.page.getByText('2+ teams → Comparison');
+        await expect(comparisonHint).toBeVisible();
     });
 
     test('teams comparison functionality with team selection', tag, async () => {
@@ -55,36 +59,34 @@ test.describe('Teams Comparison tests', () => {
 
         // Select teams using more specific selectors within the listbox
         const theATeamOption = dashboard.page.locator('[role="listbox"]').getByText('The A Team').first();
-
         await expect(theATeamOption).toBeVisible();
         await theATeamOption.click();
 
         await expect(teamsDropdown).toBeVisible();
 
         const devTeamOption = dashboard.page.locator('[role="listbox"]').getByText('Development Team').first();
-
         await expect(devTeamOption).toBeVisible();
         await devTeamOption.click();
 
         // Click outside the dropdown to close it
         await teamsDropdown.click();
 
-        // Verify that teams are selected
-        const selectedTeamsSection = dashboard.page.getByText('Selected Teams', { exact: true })
-        await expect(selectedTeamsSection).toBeVisible();
+        // Verify comparison mode activated (Comparison chip visible)
+        const comparisonChip = dashboard.page.getByText('Comparison', { exact: true });
+        await expect(comparisonChip).toBeVisible();
 
-        // Verify that team metrics cards are visible
-        const teamsSelectedCard = dashboard.page.getByText('Teams Selected', { exact: true })
-        await expect(teamsSelectedCard).toBeVisible();
+        // Verify per-team summary cards are displayed
+        const teamACard = dashboard.page.getByText('The A Team', { exact: true }).first();
+        await expect(teamACard).toBeVisible();
 
-        const totalActiveUsersCard = dashboard.page.locator('div.text-h6.mb-1', { hasText: 'Total Active Users' })
-        await expect(totalActiveUsersCard).toBeVisible();
+        const devTeamCard = dashboard.page.getByText('Development Team', { exact: true }).first();
+        await expect(devTeamCard).toBeVisible();
 
-        // Verify that charts are displayed
-        const languageUsageChart = dashboard.page.getByText('Language Usage by Team');
+        // Verify that comparison charts are displayed
+        const languageUsageChart = dashboard.page.getByText('Language Usage — by Team');
         await expect(languageUsageChart).toBeVisible();
 
-        const editorUsageChart = dashboard.page.getByText('Editor Usage by Team');
+        const editorUsageChart = dashboard.page.getByText('Editor Usage — by Team');
         await expect(editorUsageChart).toBeVisible();
     });
 });
