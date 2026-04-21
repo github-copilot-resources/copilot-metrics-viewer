@@ -174,16 +174,16 @@
 
         <v-row>
           <!-- ── Active Users ───────────────────────────────── -->
-          <v-col v-if="ideDauChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
+          <v-col v-if="ideDauChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">IDE daily active users</div>
               <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot on a given day, either via chat or code completions · <span class="font-italic">Shaded columns = weekends</span></div>
               <div style="height:220px"><Line :data="ideDauChartData" :options="integerYOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
-          <v-col v-if="ideWauChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
+          <v-col v-if="ideWauChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">IDE weekly active users</div>
               <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot in a given week, either via chat or code completions · <span class="font-italic">Shaded columns = weekends</span></div>
               <div style="height:220px"><Line :data="ideWauChartData" :options="integerYOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
@@ -191,16 +191,16 @@
           </v-col>
 
           <!-- ── Chat ───────────────────────────────────────── -->
-          <v-col v-if="avgChatReqChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
+          <v-col v-if="avgChatReqChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Average chat requests per active user</div>
               <div class="text-caption text-medium-emphasis mb-2">User-initiated requests across all chat modes, excluding code completions · <span class="font-italic">Shaded columns = weekends</span></div>
               <div style="height:220px"><Line :data="avgChatReqChartData" :options="compactChartOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
-          <v-col v-if="requestsPerModeChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
+          <v-col v-if="requestsPerModeChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Requests per chat mode</div>
               <div class="text-caption text-medium-emphasis mb-2">User-initiated chat requests across all modes · <span class="font-italic">Shaded columns = weekends</span></div>
               <div style="height:220px"><Bar :data="requestsPerModeChartData" :options="stackedBarOptions" :plugins="[weekendPlugin]" /></div>
@@ -208,16 +208,16 @@
           </v-col>
 
           <!-- ── Code Completions ────────────────────────────── -->
-          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Code completions</div>
               <div class="text-caption text-medium-emphasis mb-2">Inline code suggestions shown and accepted · <span class="font-italic">Shaded columns = weekends</span></div>
               <div style="height:220px"><Line :data="totalSuggestionsAndAcceptanceChartData" :options="compactChartOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
-          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Code completions acceptance rate</div>
               <div class="text-caption text-medium-emphasis mb-2">Percentage of shown inline completions that were accepted · <span class="font-italic">Shaded columns = weekends</span></div>
               <div style="height:220px"><Bar :data="acceptanceRateByCountChartData" :options="compactChartOptions" :plugins="[weekendPlugin]" /></div>
@@ -233,8 +233,8 @@
             </v-card>
           </v-col>
 
-          <v-col v-if="chatModelDonutData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3 d-flex flex-column align-center">
+          <v-col v-if="chatModelDonutData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 d-flex flex-column align-center flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Chat model usage</div>
               <div class="text-caption text-medium-emphasis mb-2">Distribution of models used across all chat modes</div>
               <div style="height:260px; width:100%; display:flex; justify-content:center;">
@@ -243,8 +243,8 @@
             </v-card>
           </v-col>
 
-          <v-col v-if="modelPerChatModeData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
+          <v-col v-if="modelPerChatModeData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Model usage per chat mode</div>
               <div class="text-caption text-medium-emphasis mb-2">Most frequently used models for user-initiated chat requests</div>
               <div style="height:260px"><Bar :data="modelPerChatModeData" :options="groupedBarOptions" /></div>
@@ -365,38 +365,41 @@ export default defineComponent({
     // Language charts moved to BreakdownComponent (Languages tab)
 
     // ── Chart options ─────────────────────────────────────────────────────
+    const xTicks = { ticks: { maxTicksLimit: 14 } };
+
     const compactChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      layout: { padding: { left: 10, right: 10, top: 10, bottom: 10 } },
+      scales: { x: xTicks, y: { beginAtZero: true } },
+      plugins: { legend: { position: 'bottom' as const } },
     };
 
     const integerYOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } },
-      layout: { padding: { left: 10, right: 10, top: 10, bottom: 10 } },
+      scales: { x: xTicks, y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } },
+      plugins: { legend: { position: 'bottom' as const } },
     };
 
     const stackedBarOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
-      layout: { padding: { left: 10, right: 10, top: 10, bottom: 10 } },
+      scales: { x: { stacked: true, ...xTicks }, y: { stacked: true, beginAtZero: true } },
+      plugins: { legend: { position: 'bottom' as const } },
     };
 
     const groupedBarOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { y: { beginAtZero: true } },
-      layout: { padding: { left: 10, right: 10, top: 10, bottom: 10 } },
+      scales: { x: xTicks, y: { beginAtZero: true } },
+      plugins: { legend: { position: 'bottom' as const } },
     };
 
     const stackedAreaOptions = {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { stacked: true },
+        x: { stacked: true, ...xTicks },
         y: {
           stacked: true,
           min: 0,
@@ -404,8 +407,10 @@ export default defineComponent({
           ticks: { callback: (v: any) => v + '%' }
         }
       },
-      plugins: { tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${ctx.raw?.toFixed(1)}%` } } },
-      layout: { padding: { left: 10, right: 10, top: 10, bottom: 10 } },
+      plugins: {
+        legend: { position: 'bottom' as const },
+        tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${ctx.raw?.toFixed(1)}%` } },
+      },
     };
 
     const donutOptions = {
@@ -510,7 +515,7 @@ export default defineComponent({
       mostUsedChatMode.value = topFeature ? featureLabel(topFeature[0]) : '';
       totalChatRequests.value = chatTotal;
 
-      const labels = data.map(d => d.date ?? '');
+      const labels = data.map(d => d.day ?? '');
 
       // ── DAU / WAU ─────────────────────────────────────────────────────
       ideDauChartData.value = {
