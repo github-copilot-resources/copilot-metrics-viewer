@@ -49,11 +49,12 @@
 
     <!-- ── Enhanced view from new API reportData ────────────────────── -->
     <template v-if="useEnhancedView">
-      <v-container class="px-4">
+      <v-container :fluid="chartColumns === 'full'" :class="[chartColumns === 'full' ? 'px-0' : 'px-4']">
       <div class="d-flex justify-end mb-2">
         <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
           <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
           <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+          <v-btn value="full" size="small" icon="mdi-fullscreen" title="Full width" />
         </v-btn-toggle>
       </div>
       <!-- CLI summary card (editors tab only) -->
@@ -157,7 +158,7 @@
         </v-col>
       </v-row>
 
-      <div class="mx-4 mb-4">
+      <div :class="['mb-4', chartColumns !== 'full' ? 'mx-4' : '']">
         <v-card variant="elevated" elevation="2">
           <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">{{ breakdownDisplayNamePlural }} Breakdown (all features)</v-card-title>
           <v-card-text class="pa-0">
@@ -281,7 +282,7 @@
       </v-container>
     </template>
     <template v-else>
-      <div class="mx-4 mb-4">
+      <div :class="['mb-4', chartColumns !== 'full' ? 'mx-4' : '']">
         <v-alert type="warning" variant="tonal" icon="mdi-alert-outline" class="mb-4" density="compact">
           Showing IDE inline code completions only. Install the new Copilot metrics API to see data across all features.
         </v-alert>
