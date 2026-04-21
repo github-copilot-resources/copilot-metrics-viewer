@@ -191,7 +191,7 @@
             <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">IDE daily active users</div>
               <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot on a given day, either via chat or code completions · <span class="font-italic">Shaded columns = weekends</span></div>
-              <div style="height:220px"><Line :data="ideDauChartData" :options="integerYOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
+              <div style="height:220px"><Line :data="ideDauChartData" :options="dauWauOptions ?? integerYOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
             </v-card>
           </v-col>
 
@@ -199,7 +199,37 @@
             <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">IDE weekly active users</div>
               <div class="text-caption text-medium-emphasis mb-2">Unique users who used Copilot in a given week, either via chat or code completions · <span class="font-italic">Shaded columns = weekends</span></div>
-              <div style="height:220px"><Line :data="ideWauChartData" :options="integerYOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
+              <div style="height:220px"><Line :data="ideWauChartData" :options="dauWauOptions ?? integerYOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
+            </v-card>
+          </v-col>
+
+          <!-- ── Active Users Over Time ──────────────────────────────── -->
+          <v-col v-if="activeUsersOverTimeChartData.labels.length" cols="12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
+              <div class="text-subtitle-1 font-weight-bold">Active Users Over Time</div>
+              <div class="text-caption text-medium-emphasis mb-2">
+                <strong>Monthly active users</strong> = anyone who used any Copilot feature at least once in the past 28 days (IDE completions, chat, agent mode, CLI, PR summaries).
+                Daily and weekly counts use shorter rolling windows. · <span class="font-italic">Shaded columns = weekends</span>
+              </div>
+              <div style="height:220px"><Line :data="activeUsersOverTimeChartData" :options="integerYOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
+            </v-card>
+          </v-col>
+
+          <!-- ── Feature Usage Over Time ───────────────────────────────── -->
+          <v-col v-if="featureUsageOverTimeChartData.labels.length" cols="12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
+              <div class="text-subtitle-1 font-weight-bold">Feature Usage Over Time</div>
+              <div class="text-caption text-medium-emphasis mb-2">User-initiated interactions per feature per day — covers all Copilot features: IDE chat, agent mode, edit mode, inline chat, CLI, PR summaries, and more · <span class="font-italic">Shaded columns = weekends</span></div>
+              <div style="height:240px"><Line :data="featureUsageOverTimeChartData" :options="compactChartOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
+            </v-card>
+          </v-col>
+
+          <!-- ── Feature Activity Breakdown ────────────────────────────── -->
+          <v-col v-if="featureActivityChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+            <v-card variant="outlined" class="pa-3 flex-grow-1">
+              <div class="text-subtitle-1 font-weight-bold">Feature Activity Breakdown</div>
+              <div class="text-caption text-medium-emphasis mb-2">Total user-initiated interactions per feature across the entire date range (top 10)</div>
+              <div style="height:240px"><Bar :data="featureActivityChartData" :options="groupedBarOptions" /></div>
             </v-card>
           </v-col>
 
@@ -237,33 +267,6 @@
             </v-card>
           </v-col>
 
-          <!-- ── Model Usage ─────────────────────────────────── -->
-          <v-col v-if="modelUsagePerDayChartData.labels.length" cols="12">
-            <v-card variant="outlined" class="pa-3">
-              <div class="text-subtitle-1 font-weight-bold">Model usage per day</div>
-              <div class="text-caption text-medium-emphasis mb-2">Daily breakdown of models used in requests across all chat modes, excluding code completions · <span class="font-italic">Shaded columns = weekends</span></div>
-              <div style="height:260px"><Line :data="modelUsagePerDayChartData" :options="stackedAreaOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
-            </v-card>
-          </v-col>
-
-          <v-col v-if="chatModelDonutData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
-            <v-card variant="outlined" class="pa-3 d-flex flex-column align-center flex-grow-1">
-              <div class="text-subtitle-1 font-weight-bold">Chat model usage</div>
-              <div class="text-caption text-medium-emphasis mb-2">Distribution of models used across all chat modes</div>
-              <div style="height:260px; width:100%; display:flex; justify-content:center;">
-                <Doughnut :data="chatModelDonutData" :options="donutOptions" />
-              </div>
-            </v-card>
-          </v-col>
-
-          <v-col v-if="modelPerChatModeData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
-            <v-card variant="outlined" class="pa-3 flex-grow-1">
-              <div class="text-subtitle-1 font-weight-bold">Model usage per chat mode</div>
-              <div class="text-caption text-medium-emphasis mb-2">Most frequently used models for user-initiated chat requests</div>
-              <div style="height:260px"><Bar :data="modelPerChatModeData" :options="groupedBarOptions" /></div>
-            </v-card>
-          </v-col>
-
         </v-row>
 
       </v-container>
@@ -278,7 +281,6 @@ import type { ReportDayTotals } from '@/server/services/github-copilot-usage-api
 import { weekendPlugin, gradientFillPlugin, PALETTE, formatCompact as fmtCompact } from '@/utils/chartPlugins';
 import {
   Chart as ChartJS,
-  ArcElement,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -290,10 +292,9 @@ import {
   Filler
 } from 'chart.js'
 
-import { Line, Bar, Doughnut } from 'vue-chartjs'
+import { Line, Bar } from 'vue-chartjs'
 
 ChartJS.register(
-  ArcElement,
   CategoryScale,
   LinearScale,
   BarElement,
@@ -332,7 +333,7 @@ function featureLabel(key: string) {
 
 export default defineComponent({
   name: 'MetricsViewer',
-  components: { Line, Bar, Doughnut },
+  components: { Line, Bar },
   props: {
     metrics: {
       type: Array as PropType<Metrics[]>,
@@ -386,13 +387,13 @@ export default defineComponent({
     // ── New charts from reportData ────────────────────────────────────────
     const ideDauChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const ideWauChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const dauWauOptions = ref<any>(null); // shared y-axis scale for DAU + WAU
+    const activeUsersOverTimeChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const featureUsageOverTimeChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const featureActivityChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const avgChatReqChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const requestsPerModeChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-    const modelUsagePerDayChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-    const chatModelDonutData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-    const modelPerChatModeData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     // Language charts moved to BreakdownComponent (Languages tab)
-
     // ── Chart options ─────────────────────────────────────────────────────
     const xTicks = { ticks: { maxTicksLimit: 14 } };
 
@@ -424,31 +425,6 @@ export default defineComponent({
       maintainAspectRatio: false,
       scales: { x: xTicks, y: { beginAtZero: true } },
       plugins: { legend: { position: 'bottom' as const } },
-    };
-
-    const stackedAreaOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: { stacked: true, ...xTicks },
-        y: {
-          stacked: true,
-          min: 0,
-          max: 100,
-          ticks: { callback: (v: any) => v + '%' }
-        }
-      },
-      plugins: {
-        legend: { position: 'bottom' as const },
-        tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${ctx.raw?.toFixed(1)}%` } },
-      },
-    };
-
-    const donutOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '55%',
-      plugins: { legend: { position: 'right' as const } },
     };
 
     // ── Watch metrics (legacy) ────────────────────────────────────────────
@@ -612,6 +588,77 @@ export default defineComponent({
         }]
       };
 
+      // Shared y-axis scale so DAU and WAU charts are directly comparable
+      const dauVals = data.map(d => d.daily_active_users ?? 0);
+      const wauVals = data.map(d => d.weekly_active_users ?? 0);
+      const yMax = Math.max(...dauVals, ...wauVals, 1);
+      dauWauOptions.value = {
+        ...integerYOptions,
+        scales: { ...integerYOptions.scales, y: { ...integerYOptions.scales.y, suggestedMax: yMax } },
+      };
+
+      // ── Active Users Over Time (3 lines: daily / weekly / monthly) ────
+      activeUsersOverTimeChartData.value = {
+        labels,
+        datasets: [
+          {
+            label: 'Daily active users',
+            data: data.map(d => d.daily_active_users ?? 0),
+            borderColor: 'rgb(54, 162, 235)', backgroundColor: 'rgba(54, 162, 235, 0.15)',
+            fill: false, tension: 0.3,
+          },
+          {
+            label: 'Weekly active users',
+            data: data.map(d => d.weekly_active_users ?? 0),
+            borderColor: 'rgb(75, 192, 192)', backgroundColor: 'rgba(75, 192, 192, 0.15)',
+            fill: false, tension: 0.3,
+          },
+          {
+            label: 'Monthly active users',
+            data: data.map(d => d.monthly_active_users ?? 0),
+            borderColor: 'rgb(153, 102, 255)', backgroundColor: 'rgba(153, 102, 255, 0.15)',
+            fill: false, tension: 0.3,
+          },
+        ]
+      };
+
+      // ── Feature Usage Over Time (all features, line chart) ────────────
+      const allFeatureKeys = [...new Set(
+        data.flatMap(d => (d.totals_by_feature ?? [])
+          .filter(f => (f.user_initiated_interaction_count ?? 0) > 0)
+          .map(f => f.feature ?? ''))
+      )];
+      featureUsageOverTimeChartData.value = {
+        labels,
+        datasets: allFeatureKeys.map((fk, i) => ({
+          label: featureLabel(fk),
+          data: data.map(d => (d.totals_by_feature ?? []).find(f => f.feature === fk)?.user_initiated_interaction_count ?? 0),
+          borderColor: PALETTE[i % PALETTE.length].border,
+          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          fill: false, tension: 0.3,
+        }))
+      };
+
+      // ── Feature activity breakdown (aggregated totals bar chart) ──────
+      const featureTotalMap = new Map<string, number>();
+      for (const d of data) {
+        for (const f of (d.totals_by_feature ?? [])) {
+          const cnt = f.user_initiated_interaction_count ?? 0;
+          if (cnt > 0) featureTotalMap.set(f.feature ?? '', (featureTotalMap.get(f.feature ?? '') ?? 0) + cnt);
+        }
+      }
+      const topFeatures = [...featureTotalMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+      featureActivityChartData.value = {
+        labels: topFeatures.map(([fk]) => featureLabel(fk)),
+        datasets: [{
+          label: 'Total interactions',
+          data: topFeatures.map(([, v]) => v),
+          backgroundColor: topFeatures.map((_, i) => PALETTE[i % PALETTE.length].bg),
+          borderColor: topFeatures.map((_, i) => PALETTE[i % PALETTE.length].border),
+          borderWidth: 1,
+        }]
+      };
+
       // ── Avg chat requests per user ────────────────────────────────────
       avgChatReqChartData.value = {
         labels,
@@ -649,87 +696,6 @@ export default defineComponent({
         }))
       };
 
-      // ── Model usage per day (100% stacked area) ───────────────────────
-      const modelInterByDay: Record<string, number[]> = {};
-      const dayTotals: number[] = data.map(() => 0);
-      data.forEach((d, idx) => {
-        for (const mf of (d.totals_by_model_feature ?? [])) {
-          if (mf.feature === 'code_completion') continue;
-          const model = mf.model ?? 'Unknown';
-          if (!modelInterByDay[model]) modelInterByDay[model] = data.map(() => 0);
-          const cnt = mf.user_initiated_interaction_count ?? 0;
-          modelInterByDay[model][idx] += cnt;
-          dayTotals[idx] += cnt;
-        }
-      });
-      const allModels = Object.entries(modelInterByDay).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
-      const top5Models = allModels.slice(0, 5);
-      const otherModelData = allModels.slice(5).reduce((acc, [, vals]) => acc.map((v, i) => v + vals[i]), data.map(() => 0));
-      const modelStackDatasets = [
-        ...top5Models.map(([model, vals], i) => ({
-          label: model,
-          data: vals.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
-          borderColor: PALETTE[i % PALETTE.length].border,
-          fill: 'stack',
-          tension: 0.3,
-        })),
-        ...(allModels.length > 5 ? [{
-          label: 'Other',
-          data: otherModelData.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
-          backgroundColor: PALETTE[5].bg,
-          borderColor: PALETTE[5].border,
-          fill: 'stack',
-          tension: 0.3,
-        }] : [])
-      ];
-      modelUsagePerDayChartData.value = { labels, datasets: modelStackDatasets };
-
-      // ── Chat model donut ──────────────────────────────────────────────
-      const modelAggregates = Object.entries(modelInterByDay)
-        .map(([model, vals]) => ({ model, total: vals.reduce((s, v) => s + v, 0) }))
-        .sort((a, b) => b.total - a.total);
-      chatModelDonutData.value = {
-        labels: modelAggregates.map(m => m.model),
-        datasets: [{
-          data: modelAggregates.map(m => m.total),
-          backgroundColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].bg),
-          borderColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].border),
-        }]
-      };
-
-      // ── Model per chat mode (grouped bar: x=models, grouped by mode) ──
-      const modeModelMatrix: Record<string, Record<string, number>> = {};
-      for (const day of data) {
-        for (const mf of (day.totals_by_model_feature ?? [])) {
-          if (mf.feature === 'code_completion') continue;
-          const mode = featureLabel(mf.feature ?? '');
-          const model = mf.model ?? 'Unknown';
-          if (!modeModelMatrix[mode]) modeModelMatrix[mode] = {};
-          modeModelMatrix[mode][model] = (modeModelMatrix[mode][model] ?? 0) + (mf.user_initiated_interaction_count ?? 0);
-        }
-      }
-      const topModelLabels = allModels.slice(0, 5).map(([m]) => m);
-      if (allModels.length > 5) topModelLabels.push('Other');
-      const modeKeys = Object.keys(modeModelMatrix);
-      modelPerChatModeData.value = {
-        labels: topModelLabels,
-        datasets: modeKeys.map((mode, i) => {
-          const totals = modeModelMatrix[mode];
-          return {
-            label: mode,
-            data: topModelLabels.map(m => {
-              if (m === 'Other') {
-                return allModels.slice(5).reduce((s, [model]) => s + (totals[model] ?? 0), 0);
-              }
-              return totals[m] ?? 0;
-            }),
-            backgroundColor: PALETTE[i % PALETTE.length].bg,
-            borderColor: PALETTE[i % PALETTE.length].border,
-          };
-        })
-      };
-
     });
 
     return {
@@ -742,15 +708,14 @@ export default defineComponent({
       // Trend arrows
       trendActiveUsers, trendAdoptionPct, trendChatRequests, trendAcceptanceCount,
       // Chart options
-      compactChartOptions, integerYOptions, stackedBarOptions, groupedBarOptions,
-      stackedAreaOptions, donutOptions,
+      compactChartOptions, integerYOptions, dauWauOptions, stackedBarOptions, groupedBarOptions,
       // Weekend plugin
       weekendPlugin,
       gradientFillPlugin,
       // Charts
       acceptanceRateByCountChartData, totalSuggestionsAndAcceptanceChartData,
       ideDauChartData, ideWauChartData, avgChatReqChartData, requestsPerModeChartData,
-      modelUsagePerDayChartData, chatModelDonutData, modelPerChatModeData,
+      activeUsersOverTimeChartData, featureUsageOverTimeChartData, featureActivityChartData,
     };
   },
   data() {

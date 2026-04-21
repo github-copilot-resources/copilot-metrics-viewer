@@ -115,21 +115,6 @@
                 </v-btn-toggle>
               </div>
 
-              <!-- New API: Active Users Over Time -->
-              <v-row v-if="stats.hasReportData && activeUsersChartData.labels.length > 0" class="mb-4">
-                <v-col cols="12">
-                  <v-card variant="elevated" elevation="2">
-                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Active Users Over Time</v-card-title>
-                    <v-card-subtitle class="px-4 pb-1"><span class="font-italic">Shaded columns = weekends</span></v-card-subtitle>
-                    <v-card-text>
-                      <div class="chart-container">
-                        <LineChart :data="activeUsersChartData" :options="chartOptions" :plugins="[weekendPlugin, gradientFillPlugin]" />
-                      </div>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row>
-
               <!-- New API: Model + Feature bar charts -->
               <v-row v-if="stats.hasReportData" class="mb-2">
                 <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
@@ -273,20 +258,48 @@
                 </v-col>
               </v-row>
 
-              <!-- Feature usage over time chart -->
-              <v-row class="mb-4">
+              <!-- Feature usage over time chart — moved to Organization tab -->
+
+              <!-- Model Usage from reportData -->
+              <v-row v-if="modelUsagePerDayChartData.labels.length" class="mb-2">
                 <v-col cols="12">
                   <v-card variant="elevated" elevation="2">
-                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Feature Usage Over Time</v-card-title>
-                    <v-card-subtitle class="px-4 pb-1"><span class="font-italic">Shaded columns = weekends</span></v-card-subtitle>
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage Per Day</v-card-title>
+                    <v-card-subtitle class="px-4 pb-1">Daily breakdown of models used in chat requests (% share) · <span class="font-italic">Shaded columns = weekends</span></v-card-subtitle>
                     <v-card-text>
                       <div class="chart-container">
-                        <LineChart v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData" :options="chartOptions" :plugins="[weekendPlugin, gradientFillPlugin]" />
+                        <LineChart :data="modelUsagePerDayChartData" :options="stackedAreaOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
                       </div>
                     </v-card-text>
                   </v-card>
                 </v-col>
               </v-row>
+
+              <v-row v-if="chatModelDonutData.labels.length" class="mb-2">
+                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+                  <v-card variant="elevated" elevation="2" class="d-flex flex-column align-center">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Chat Model Usage</v-card-title>
+                    <v-card-subtitle class="px-4 pb-1">Distribution of models across all chat modes</v-card-subtitle>
+                    <v-card-text style="width:100%">
+                      <div style="height:260px; display:flex; justify-content:center;">
+                        <Doughnut :data="chatModelDonutData" :options="donutOptions" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+                <v-col v-if="modelPerChatModeData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage Per Chat Mode</v-card-title>
+                    <v-card-subtitle class="px-4 pb-1">Most frequently used models for each chat mode</v-card-subtitle>
+                    <v-card-text>
+                      <div style="height:260px">
+                        <BarChart :data="modelPerChatModeData" :options="groupedModelBarOptions" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
               <!-- Premium requests info card -->
               <v-row class="mb-2">
                 <v-col cols="12">
@@ -309,17 +322,19 @@
 <script lang="ts">
 import { defineComponent, ref, watch, computed, type PropType, shallowRef } from 'vue';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
+import type { ReportDayTotals } from '@/server/services/github-copilot-usage-api';
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
-import { Line as LineChart, Bar as BarChart } from 'vue-chartjs';
+import { Line as LineChart, Bar as BarChart, Doughnut } from 'vue-chartjs';
 import {
-    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend
+    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement,
+    ArcElement, Title, Tooltip, Legend
 } from 'chart.js';
 
 import { PALETTE, weekendPlugin, gradientFillPlugin, makeLineOptions } from '@/utils/chartPlugins';
 
 import { Filler } from 'chart.js';
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
 interface ModelData {
     name: string;
@@ -404,11 +419,12 @@ interface DateRange {
 
 export default defineComponent({
     name: 'AgentModeViewer',
-    components: { LineChart, BarChart },
+    components: { LineChart, BarChart, Doughnut },
     props: {
         dateRange: { type: Object as PropType<DateRange>, required: true },
         originalMetrics: { type: Array as PropType<CopilotMetrics[]>, required: true },
-        dateRangeDescription: { type: String, default: '' }
+        dateRangeDescription: { type: String, default: '' },
+        reportData: { type: Array as PropType<ReportDayTotals[]>, default: () => [] },
     },
     setup(props) {
         const stats = shallowRef<GitHubStats>({ ...defaultStats });
@@ -565,6 +581,113 @@ export default defineComponent({
             return 'https://github.com/settings/billing/copilot';
         });
 
+        // ── Model charts from reportData ─────────────────────────────────
+        const FEATURE_LABEL: Record<string, string> = {
+            code_completion: 'Code Completion', agent_edit: 'Agent Edit',
+            chat_panel_ask_mode: 'Ask', chat_panel_agent_mode: 'Agent', chat_panel_custom_mode: 'Custom',
+            chat_panel_edit_mode: 'Edit', chat_panel_plan_mode: 'Plan', chat_inline: 'Inline',
+            pull_request: 'PR Summary', copilot_cli: 'CLI', plan_mode: 'Plan',
+        };
+        const modelUsagePerDayChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+        const chatModelDonutData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+        const modelPerChatModeData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+        const stackedAreaOptions = {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true, ticks: { maxTicksLimit: 14 } },
+                y: { stacked: true, min: 0, max: 100, ticks: { callback: (v: any) => v + '%' } },
+            },
+            plugins: {
+                legend: { position: 'bottom' as const },
+                tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${ctx.raw?.toFixed(1)}%` } },
+            },
+        };
+        const donutOptions = {
+            responsive: true, maintainAspectRatio: false, cutout: '55%',
+            plugins: { legend: { position: 'right' as const } },
+        };
+        const groupedModelBarOptions = {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { ticks: { maxTicksLimit: 14 } }, y: { beginAtZero: true } },
+            plugins: { legend: { position: 'bottom' as const } },
+        };
+
+        watch(() => props.reportData, (data) => {
+            if (!data || data.length === 0) return;
+            const labels = data.map(d => d.day ?? '');
+
+            // model interactions by day
+            const modelInterByDay: Record<string, number[]> = {};
+            const dayTotals: number[] = data.map(() => 0);
+            data.forEach((d, idx) => {
+                for (const mf of (d.totals_by_model_feature ?? [])) {
+                    if (mf.feature === 'code_completion') continue;
+                    const model = mf.model ?? 'Unknown';
+                    if (!modelInterByDay[model]) modelInterByDay[model] = data.map(() => 0);
+                    const cnt = mf.user_initiated_interaction_count ?? 0;
+                    modelInterByDay[model][idx] += cnt;
+                    dayTotals[idx] += cnt;
+                }
+            });
+            const allModels = Object.entries(modelInterByDay).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
+            const top5 = allModels.slice(0, 5);
+            const otherData = allModels.slice(5).reduce((acc, [, vals]) => acc.map((v, i) => v + vals[i]), data.map(() => 0));
+
+            modelUsagePerDayChartData.value = {
+                labels,
+                datasets: [
+                    ...top5.map(([model, vals], i) => ({
+                        label: model,
+                        data: vals.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
+                        backgroundColor: PALETTE[i % PALETTE.length].bg, borderColor: PALETTE[i % PALETTE.length].border,
+                        fill: 'stack', tension: 0.3,
+                    })),
+                    ...(allModels.length > 5 ? [{
+                        label: 'Other',
+                        data: otherData.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
+                        backgroundColor: PALETTE[5].bg, borderColor: PALETTE[5].border,
+                        fill: 'stack', tension: 0.3,
+                    }] : [])
+                ],
+            };
+
+            const modelAggregates = allModels.map(([model, vals]) => ({ model, total: vals.reduce((s, v) => s + v, 0) }))
+                .sort((a, b) => b.total - a.total);
+            chatModelDonutData.value = {
+                labels: modelAggregates.map(m => m.model),
+                datasets: [{ data: modelAggregates.map(m => m.total), backgroundColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].bg), borderColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].border) }],
+            };
+
+            const modeModelMatrix: Record<string, Record<string, number>> = {};
+            for (const d of data) {
+                for (const mf of (d.totals_by_model_feature ?? [])) {
+                    if (mf.feature === 'code_completion') continue;
+                    const mode = FEATURE_LABEL[mf.feature ?? ''] ?? mf.feature ?? 'Unknown';
+                    const model = mf.model ?? 'Unknown';
+                    if (!modeModelMatrix[mode]) modeModelMatrix[mode] = {};
+                    modeModelMatrix[mode][model] = (modeModelMatrix[mode][model] ?? 0) + (mf.user_initiated_interaction_count ?? 0);
+                }
+            }
+            const topModelLabels = allModels.slice(0, 5).map(([m]) => m);
+            if (allModels.length > 5) topModelLabels.push('Other');
+            const modeKeys = Object.keys(modeModelMatrix);
+            modelPerChatModeData.value = {
+                labels: topModelLabels,
+                datasets: modeKeys.map((mode, i) => {
+                    const totals = modeModelMatrix[mode];
+                    return {
+                        label: mode,
+                        data: topModelLabels.map(m => m === 'Other'
+                            ? allModels.slice(5).reduce((s, [model]) => s + (totals[model] ?? 0), 0)
+                            : totals[m] ?? 0),
+                        backgroundColor: PALETTE[i % PALETTE.length].bg,
+                        borderColor: PALETTE[i % PALETTE.length].border,
+                    };
+                }),
+            };
+        }, { immediate: true, deep: false });
+
         return {
             stats, loading, error, activeUsersChartData,
             modelBarChartData, featureBarChartData, locByFeatureBarData, locByModelBarData, horizBarOpts,
@@ -573,6 +696,8 @@ export default defineComponent({
             chartOptions, barChartOptions,
             weekendPlugin, gradientFillPlugin,
             billingUrl,
+            modelUsagePerDayChartData, chatModelDonutData, modelPerChatModeData,
+            stackedAreaOptions, donutOptions, groupedModelBarOptions,
         };
     },
     data() {

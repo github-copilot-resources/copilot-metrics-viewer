@@ -130,7 +130,7 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
             <AgentActivityViewer v-if="item === 'agent activity'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
-            <AgentModeViewer v-if="item === 'models'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
+            <AgentModeViewer v-if="item === 'models'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" :report-data="reportData" />
             <SeatsAnalysisViewer
               v-if="item === 'seat analysis'"
               :seats="seats"
