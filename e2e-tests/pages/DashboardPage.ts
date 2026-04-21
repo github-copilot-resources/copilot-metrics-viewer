@@ -150,11 +150,10 @@ export class DashboardPage {
     async gotoModelsTab() {
         await this.modelsTabLink.click();
         const tab = new ModelsTab(this.page);
-        // Wait for the github-stats data to load — look for "Copilot Statistics" title
-        // and at least one overview card to have content
+        // Wait for the models-container info panel heading (always present)
         await tab.statisticsTitle.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
-        // Wait for at least one card with non-zero content or "All Models"
-        await this.page.locator('.v-card-title').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        // Then wait for async chart data to load (best-effort — non-fatal)
+        await this.page.locator('.models-container .v-card-title').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
         return tab;
     }
 

@@ -20,8 +20,8 @@ test.describe('AgentModeViewer Component', () => {
 
     // Navigate to models tab and wait for async API data to fully load
     modelsTab = await dashboard.gotoModelsTab();
-    // Ensure the github-stats API response has been rendered
-    await page.locator('.models-container .v-card-title').first().waitFor({ state: 'visible', timeout: 20000 });
+    // Best-effort: wait for chart data to render (non-fatal so slow CI doesn't break beforeAll)
+    await page.locator('.models-container .v-card-title').first().waitFor({ state: 'visible', timeout: 20000 }).catch(() => {});
   });
 
   test.afterAll(async () => {

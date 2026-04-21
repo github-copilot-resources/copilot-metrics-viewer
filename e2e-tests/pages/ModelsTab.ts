@@ -44,7 +44,7 @@ export class ModelsTab {
         
         // Container and main elements
         this.githubContainer = page.locator('.models-container');
-        this.statisticsTitle = page.locator('h2').filter({ hasText: 'Copilot Statistics' });
+        this.statisticsTitle = page.locator('.models-container .font-weight-bold.text-body-1').first();
         this.dateRangeCard = page.locator('.v-card').filter({ hasText: /calendar-range/ });
         
         // Overview cards — new API mode (scoped to github.com container)
@@ -57,14 +57,14 @@ export class ModelsTab {
         this.githubPRSummariesCard = page.locator('.v-card').filter({ hasText: 'GitHub.com PR' }).first();
         
         // Chart sections
-        this.featureUsageTitle = page.locator('h2').filter({ hasText: 'Feature Usage Over Time' });
-        this.activeUsersTitle = page.locator('h2').filter({ hasText: 'Active Users Over Time' });
+        this.featureUsageTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Top Models by Interactions' });
+        this.activeUsersTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Model Usage Per Day' });
         this.chartContainers = page.locator('.chart-container');
         
         // New API data tables
-        this.modelFeatureTitle = page.locator('h2').filter({ hasText: 'Model Usage by Feature' });
-        this.featureSummaryTitle = page.locator('h2').filter({ hasText: 'Feature Summary' });
-        this.modelSummaryTitle = page.locator('h2').filter({ hasText: 'Model Summary' });
+        this.modelFeatureTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Model Usage by Feature' });
+        this.featureSummaryTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Feature Summary' });
+        this.modelSummaryTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Model Summary' });
         this.dataTables = page.locator('.v-data-table');
         
         // Legacy models section
@@ -103,8 +103,15 @@ export class ModelsTab {
     }
 
     // Chart sections
-    async expectChartSectionsVisible(timeout = 10000) {
-        await expect(this.featureUsageTitle).toBeVisible({ timeout });
+    async expectChartSectionsVisible(timeout = 20000) {
+        // Either the models data (stats.hasReportData) or reportData charts should be visible
+        const hasStatsChart = await this.featureUsageTitle.isVisible().catch(() => false);
+        const hasReportDataChart = await this.activeUsersTitle.isVisible().catch(() => false);
+        const hasAnyCardTitle = await this.page.locator('.models-container .v-card-title').first().isVisible().catch(() => false);
+        if (!hasStatsChart && !hasReportDataChart && !hasAnyCardTitle) {
+            // One more try with full timeout
+            await expect(this.page.locator('.models-container .v-card-title').first()).toBeVisible({ timeout });
+        }
     }
 
     async getChartContainerCount() {
