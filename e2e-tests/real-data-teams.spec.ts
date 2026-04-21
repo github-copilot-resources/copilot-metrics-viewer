@@ -162,7 +162,7 @@ for (const [teamSlug, expectedMembers] of Object.entries(TEAMS)) {
             const totalText = await userMetrics.page
                 .locator('.v-card-item')
                 .filter({ has: userMetrics.page.getByText('Total Users', { exact: true }) })
-                .locator('.text-h4')
+                .locator('.kpi-value')
                 .textContent();
 
             const total = parseInt(totalText || '0');
@@ -243,7 +243,7 @@ test.describe('Teams comparison (cody-test-org)', () => {
         const totalActiveUsersCard = dashboard.page
             .locator('.v-card-item')
             .filter({ has: dashboard.page.getByText('Total Active Users') })
-            .locator('.text-h4');
+            .locator('.kpi-value');
 
         const totalText = await totalActiveUsersCard.textContent();
         const total = parseInt(totalText || '0');

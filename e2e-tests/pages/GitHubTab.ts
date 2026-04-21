@@ -75,8 +75,8 @@ export class GitHubTab {
         this.tooltipElements = page.locator('.v-tooltip');
         
         // Legacy locators
-        this.cumulativeNumberOfTurnsLabel = page.getByText('Cumulative Chat Interactions');
-        this.cumulativeNumberOfTurnsValue = page.locator('.v-card-item').filter({ has: this.cumulativeNumberOfTurnsLabel }).locator('.text-h4');
+        this.cumulativeNumberOfTurnsLabel = page.getByText('Chat Interactions', { exact: true });
+        this.cumulativeNumberOfTurnsValue = page.locator('.v-card-item').filter({ has: this.cumulativeNumberOfTurnsLabel }).locator('.kpi-value');
     }
 
     // Main visibility checks
