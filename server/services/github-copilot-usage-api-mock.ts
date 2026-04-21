@@ -9,7 +9,7 @@
  * anonymized real API responses. Nuxt serves them as static assets.
  */
 
-import type { DownloadLinksResponse, MetricsReportRequest, OrgReport } from './github-copilot-usage-api';
+import type { DownloadLinksResponse, MetricsReportRequest, OrgReport, ReportDayTotals } from './github-copilot-usage-api';
 
 /** Base URL for local mock files served by Nuxt's public/ directory */
 function getMockBaseUrl(): string {
@@ -118,19 +118,32 @@ export function generateMockReport(startDay: string, endDay: string): OrgReport 
 
 /** Minimal fallback when static file isn't available */
 function _generateFallbackReport(startDay: string, endDay: string): OrgReport {
+  // Try to use the 1-day report mock file as a per-day template
+  let dayTemplate: ReportDayTotals | null = null;
+  try {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const filePath = resolve('public/mock-data/new-api/organization-1-day-report.json');
+    const data = JSON.parse(readFileSync(filePath, 'utf8')) as OrgReport;
+    dayTemplate = data.day_totals[0] ?? null;
+  } catch {
+    // Template file unavailable — will use hardcoded fallback below
+  }
+
   const start = new Date(startDay);
   const end = new Date(endDay);
-  const dayTotals = [];
+  const dayTotals: ReportDayTotals[] = [];
   const current = new Date(start);
   while (current <= end) {
-    dayTotals.push(_generateMinimalDay(current.toISOString().split('T')[0]));
+    const day = current.toISOString().split('T')[0];
+    dayTotals.push(dayTemplate ? { ...dayTemplate, day } : _generateMinimalDay(day));
     current.setDate(current.getDate() + 1);
   }
   return {
     report_start_day: startDay,
     report_end_day: endDay,
-    organization_id: '100000001',
-    enterprise_id: '200001',
+    organization_id: dayTemplate?.organization_id ?? '100000001',
+    enterprise_id: dayTemplate?.enterprise_id ?? '200001',
     created_at: new Date().toISOString(),
     day_totals: dayTotals,
   };
