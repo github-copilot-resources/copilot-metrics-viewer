@@ -55,12 +55,18 @@ Users can now filter metrics for custom date ranges up to 100 days, with an intu
   <img width="800" alt="Date Range Filter" src="./images/date-range-filter.png">
 </p>
 
-### Teams Comparison
-Compare Copilot metrics across multiple teams within your organization to understand adoption patterns and identify high-performing teams.
+### Teams Tab
+Select **one team** for a full deep-dive view with KPI tiles, time-series charts (acceptance rate, active users, feature usage, model usage), language and editor breakdowns, and a per-user activity table. Select **two or more teams** to compare them side by side.
 
 > [!NOTE]
 > GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Team metrics are **derived** by fetching per-user daily metrics from the organization/enterprise endpoint, resolving team membership via the GitHub Teams API, and aggregating per-user data in-memory. This works in both Direct API mode (28-day window) and Historical mode (full history).
 
+**Single team deep dive:**
+<p align="center">
+  <img width="800" alt="Teams Single Team Deep Dive" src="./images/teams-single-team.png">
+</p>
+
+**Multi-team comparison:**
 <p align="center">
   <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">
 </p>
