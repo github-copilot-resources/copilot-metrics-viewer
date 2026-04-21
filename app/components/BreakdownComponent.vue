@@ -157,23 +157,6 @@
         </v-col>
       </v-row>
 
-      <!-- Bottom 5 least popular (language or editor) -->
-      <v-row v-if="enhancedChartDataBottom5.labels.length > 0" class="mb-4">
-        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-          <v-card variant="elevated" elevation="2">
-            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">
-              5 Least-Used {{ breakdownDisplayNamePlural }}
-              <v-chip size="x-small" variant="tonal" color="secondary" class="ml-2">long tail</v-chip>
-            </v-card-title>
-            <v-card-text>
-              <div style="height:220px">
-                <Bar :data="enhancedChartDataBottom5" :options="horizBarOptions" />
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
-
       <div class="mx-4 mb-4">
         <v-card variant="elevated" elevation="2">
           <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">{{ breakdownDisplayNamePlural }} Breakdown (all features)</v-card-title>
@@ -516,7 +499,6 @@ export default defineComponent({
     const cliSummary = ref<CliSummary | null>(null);
     const enhancedChartDataTop5Generations = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const enhancedChartDataTop5LinesAdded = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-    const enhancedChartDataBottom5 = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     // Charts shared between language and editor tabs (populated by the active branch)
     const usagePerDayChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const distributionDonutData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -570,13 +552,6 @@ export default defineComponent({
       enhancedChartDataTop5LinesAdded.value = {
         labels: top5.map(r => r.language),
         datasets: [{ label: 'Lines Added', data: top5.map(r => r.linesAdded), backgroundColor: paletteColors.map(p => p.bg), borderColor: paletteColors.map(p => p.border), borderWidth: 1 }]
-      };
-
-      // Bottom 5 least-used languages (with at least 1 generation, ascending)
-      const bottom5 = sorted.filter(r => r.codeGenerations > 0).slice(-5).sort((a, b) => a.codeGenerations - b.codeGenerations);
-      enhancedChartDataBottom5.value = {
-        labels: bottom5.map(r => r.language),
-        datasets: [{ label: 'Code Generations', data: bottom5.map(r => r.codeGenerations), backgroundColor: PALETTE.slice(5, 10).map(p => p.bg), borderColor: PALETTE.slice(5, 10).map(p => p.border), borderWidth: 1 }]
       };
 
       // ── Language usage per day (100% stacked area) ─────────────────────
@@ -764,15 +739,6 @@ export default defineComponent({
         }],
       };
 
-      // ── Bottom 5 least-used editors ──────────────────────────────────────
-      const bottom5Editors = [...allRows]
-        .filter(r => r.codeGenerations > 0)
-        .sort((a, b) => a.codeGenerations - b.codeGenerations)
-        .slice(0, 5);
-      enhancedChartDataBottom5.value = {
-        labels: bottom5Editors.map(r => r.ide),
-        datasets: [{ label: 'Code Generations', data: bottom5Editors.map(r => r.codeGenerations), backgroundColor: PALETTE.slice(5, 10).map(p => p.bg), borderColor: PALETTE.slice(5, 10).map(p => p.border), borderWidth: 1 }],
-      };
     };
 
     // Function to process legacy breakdown data
@@ -917,7 +883,7 @@ export default defineComponent({
       breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts,
       pieChartColors,
       useEnhancedView, enhancedLanguageList, enhancedEditorList, cliSummary,
-      enhancedChartDataTop5Generations, enhancedChartDataTop5LinesAdded, enhancedChartDataBottom5,
+      enhancedChartDataTop5Generations, enhancedChartDataTop5LinesAdded,
       usagePerDayChartData, distributionDonutData, modelPerLangChartData, acceptanceRateByEditorData,
       topUsersPerLanguage, topUsersPerEditor,
       weekendPlugin, gradientFillPlugin,
