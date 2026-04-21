@@ -165,18 +165,10 @@
                 </v-col>
               </v-row>
 
-              <!-- New API: Feature Summary + Lines Added by Feature chart -->
-              <v-row v-if="stats.hasReportData && stats.featureSummary?.length > 0" class="mb-4">
-                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-                  <v-card variant="elevated" elevation="2">
-                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Feature Summary</v-card-title>
-                    <v-card-text class="pa-0">
-                      <v-data-table :headers="featureSummaryHeaders" :items="stats.featureSummary" :sort-by="[{ key: 'codeGenerations', order: 'desc' }]" density="compact" />
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-                  <v-card variant="elevated" elevation="2">
+              <!-- New API: Charts side by side -->
+              <v-row v-if="stats.hasReportData && (stats.featureSummary?.length > 0 || stats.modelSummary?.length > 0)" class="mb-4">
+                <v-col v-if="stats.featureSummary?.length > 0" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+                  <v-card variant="elevated" elevation="2" class="flex-grow-1">
                     <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Lines Added by Feature</v-card-title>
                     <v-card-text>
                       <div style="height:240px">
@@ -185,25 +177,37 @@
                     </v-card-text>
                   </v-card>
                 </v-col>
-              </v-row>
-
-              <!-- New API: Model Summary + Lines Added by Model chart -->
-              <v-row v-if="stats.hasReportData && stats.modelSummary?.length > 0" class="mb-4">
-                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-                  <v-card variant="elevated" elevation="2">
-                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Summary</v-card-title>
-                    <v-card-text class="pa-0">
-                      <v-data-table :headers="modelSummaryHeaders" :items="stats.modelSummary" :sort-by="[{ key: 'locAdded', order: 'desc' }]" density="compact" />
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-                  <v-card variant="elevated" elevation="2">
+                <v-col v-if="stats.modelSummary?.length > 0" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+                  <v-card variant="elevated" elevation="2" class="flex-grow-1">
                     <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Lines Added by Model</v-card-title>
                     <v-card-text>
                       <div style="height:240px">
                         <BarChart v-if="locByModelBarData.labels.length" :data="locByModelBarData" :options="horizBarOpts" />
                       </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- New API: Feature Summary table (full width) -->
+              <v-row v-if="stats.hasReportData && stats.featureSummary?.length > 0" class="mb-4">
+                <v-col cols="12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Feature Summary</v-card-title>
+                    <v-card-text class="pa-0">
+                      <v-data-table :headers="featureSummaryHeaders" :items="stats.featureSummary" :sort-by="[{ key: 'codeGenerations', order: 'desc' }]" density="compact" />
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- New API: Model Summary table (full width) -->
+              <v-row v-if="stats.hasReportData && stats.modelSummary?.length > 0" class="mb-4">
+                <v-col cols="12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Summary</v-card-title>
+                    <v-card-text class="pa-0">
+                      <v-data-table :headers="modelSummaryHeaders" :items="stats.modelSummary" :sort-by="[{ key: 'locAdded', order: 'desc' }]" density="compact" />
                     </v-card-text>
                   </v-card>
                 </v-col>
