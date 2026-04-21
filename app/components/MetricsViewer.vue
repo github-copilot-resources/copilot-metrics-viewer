@@ -242,7 +242,7 @@
             </v-card>
           </v-col>
 
-          <v-col v-if="requestsPerModeChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+          <v-col v-if="requestsPerModeChartData.labels.length" cols="12" class="d-flex">
             <v-card variant="outlined" class="pa-3 flex-grow-1">
               <div class="text-subtitle-1 font-weight-bold">Requests per chat mode</div>
               <div class="text-caption text-medium-emphasis mb-2">User-initiated chat requests across all modes · <span class="font-italic">Shaded columns = weekends</span></div>
