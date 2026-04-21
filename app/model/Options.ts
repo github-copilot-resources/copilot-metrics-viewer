@@ -102,8 +102,10 @@ export class Options {
                 options.scope = 'organization';
             } else if (rawScope === 'team-enterprise') {
                 options.scope = 'enterprise';
+            } else if (rawScope === 'organization' || rawScope === 'enterprise') {
+                options.scope = rawScope;
             } else {
-                options.scope = (rawScope as Scope) || 'organization';
+                options.scope = 'organization';
             }
             if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
             if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;

@@ -16,7 +16,7 @@
 }
 
 /* System font stack — matches GitHub's look */
-.v-application, .v-application * {
+.v-application, .v-application *:not(.v-icon):not(.mdi) {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
 }
 

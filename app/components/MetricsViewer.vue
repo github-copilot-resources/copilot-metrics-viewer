@@ -449,11 +449,9 @@ export default defineComponent({
       };
 
       cumulativeNumberLOCAccepted.value = 0;
-      const cumulativeLOCAcceptedData = data.map((m: Metrics) => {
+      data.forEach((m: Metrics) => {
         cumulativeNumberLOCAccepted.value += m.total_lines_accepted;
-        return m.total_lines_accepted;
       });
-      cumulativeLOCAcceptedData; // used via cumulativeNumberLOCAccepted
 
       const acceptanceRatesByCount = data.map((m: Metrics) =>
         m.total_suggestions_count !== 0 ? (m.total_acceptances_count / m.total_suggestions_count) * 100 : 0

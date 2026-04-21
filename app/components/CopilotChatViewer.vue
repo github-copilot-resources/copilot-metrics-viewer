@@ -138,7 +138,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, toRef } from 'vue';
+import { defineComponent, ref, computed, toRef, watchEffect } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Line, Bar } from 'vue-chartjs';
 import {
@@ -171,73 +171,81 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const data = toRef(props, 'metrics').value as Metrics[];
+    const metricsRef = toRef(props, 'metrics');
 
-    const cumulativeNumberTurns = ref(
-      data.reduce((s: number, m: Metrics) => s + m.total_chat_turns, 0)
-    );
-    const cumulativeNumberAcceptances = ref(
-      data.reduce((s: number, m: Metrics) => s + m.total_chat_acceptances, 0)
-    );
+    const cumulativeNumberTurns = ref(0);
+    const cumulativeNumberAcceptances = ref(0);
+
+    const interactionsChartData = ref<any>({ labels: [], datasets: [] });
+    const activeUsersChartData = ref<any>({ labels: [], datasets: [] });
+    const actionRateChartData = ref<any>({ labels: [], datasets: [] });
 
     const actionRate = computed(() => {
       if (cumulativeNumberTurns.value === 0) return '0.0';
       return ((cumulativeNumberAcceptances.value / cumulativeNumberTurns.value) * 100).toFixed(1);
     });
 
-    const labels = data.map((m: Metrics) => m.day);
+    watchEffect(() => {
+      const data = metricsRef.value as Metrics[];
+      if (!data?.length) return;
 
-    const interactionsChartData = ref({
-      labels,
-      datasets: [
-        {
-          label: 'Chat Interactions',
-          data: data.map((m: Metrics) => m.total_chat_turns),
-          borderColor: PALETTE[3].border,
-          backgroundColor: PALETTE[3].bg,
-          fill: true,
-          tension: 0.3,
-        },
-        {
-          label: 'Code Actions',
-          data: data.map((m: Metrics) => m.total_chat_acceptances),
-          borderColor: PALETTE[2].border,
-          backgroundColor: PALETTE[2].bg,
-          fill: true,
-          tension: 0.3,
-        },
-      ],
-    });
+      cumulativeNumberTurns.value = data.reduce((s: number, m: Metrics) => s + m.total_chat_turns, 0);
+      cumulativeNumberAcceptances.value = data.reduce((s: number, m: Metrics) => s + m.total_chat_acceptances, 0);
 
-    const activeUsersChartData = ref({
-      labels,
-      datasets: [
-        {
-          label: 'Active Chat Users',
-          data: data.map((m: Metrics) => m.total_active_chat_users),
-          backgroundColor: PALETTE[0].bg,
-          borderColor: PALETTE[0].border,
-          borderRadius: 4,
-        },
-      ],
-    });
+      const labels = data.map((m: Metrics) => m.day);
 
-    const actionRateChartData = ref({
-      labels,
-      datasets: [
-        {
-          label: 'Action Rate %',
-          data: data.map((m: Metrics) =>
-            m.total_chat_turns > 0
-              ? Number(((m.total_chat_acceptances / m.total_chat_turns) * 100).toFixed(1))
-              : 0
-          ),
-          borderColor: PALETTE[1].border,
-          backgroundColor: PALETTE[1].bg,
-          fill: true,
-          tension: 0.3,
-        },
-      ],
+      interactionsChartData.value = {
+        labels,
+        datasets: [
+          {
+            label: 'Chat Interactions',
+            data: data.map((m: Metrics) => m.total_chat_turns),
+            borderColor: PALETTE[3].border,
+            backgroundColor: PALETTE[3].bg,
+            fill: true,
+            tension: 0.3,
+          },
+          {
+            label: 'Code Actions',
+            data: data.map((m: Metrics) => m.total_chat_acceptances),
+            borderColor: PALETTE[2].border,
+            backgroundColor: PALETTE[2].bg,
+            fill: true,
+            tension: 0.3,
+          },
+        ],
+      };
+
+      activeUsersChartData.value = {
+        labels,
+        datasets: [
+          {
+            label: 'Active Chat Users',
+            data: data.map((m: Metrics) => m.total_active_chat_users),
+            backgroundColor: PALETTE[0].bg,
+            borderColor: PALETTE[0].border,
+            borderRadius: 4,
+          },
+        ],
+      };
+
+      actionRateChartData.value = {
+        labels,
+        datasets: [
+          {
+            label: 'Action Rate %',
+            data: data.map((m: Metrics) =>
+              m.total_chat_turns > 0
+                ? Number(((m.total_chat_acceptances / m.total_chat_turns) * 100).toFixed(1))
+                : 0
+            ),
+            borderColor: PALETTE[1].border,
+            backgroundColor: PALETTE[1].bg,
+            fill: true,
+            tension: 0.3,
+          },
+        ],
+      };
     });
 
     const lineOptions = {

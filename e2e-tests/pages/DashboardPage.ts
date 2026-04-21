@@ -40,21 +40,21 @@ export class DashboardPage {
         this.acceptanceRateByCountValue = page
             .locator(".v-card-item")
             .filter({ has: page.getByText("IDE Completion Acceptance Rate (count)") })
-            .locator(".text-h5");
+            .locator(".kpi-value-sm");
         this.totalCountOfSuggestionsLabel = page.getByText(
             "Total IDE Code Completions", { exact: true }
         );
         this.totalCountOfSuggestionsValue = page
             .locator(".v-card-item")
             .filter({ has: page.getByText("Total IDE Code Completions", { exact: true }) })
-            .locator(".text-h5");
+            .locator(".kpi-value-sm");
         this.totalLinesSuggestedLabel = page.getByText(
             "Total Lines Suggested (IDE completions)", { exact: true }
         );
         this.totalLinesSuggestedValue = page
             .locator(".v-card-item")
             .filter({ has: page.getByText("Total Lines Suggested (IDE completions)", { exact: true }) })
-            .locator(".text-h5");
+            .locator(".kpi-value-sm");
         this.toolbarTitle = page.locator(".toolbar-title");
 
         this.languagesTabLink = page.getByRole("tab", { name: "languages" });
