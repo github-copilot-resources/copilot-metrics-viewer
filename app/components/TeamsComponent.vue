@@ -16,7 +16,7 @@
                 <v-col cols="12" md="8">
                   <v-autocomplete
 v-model="selectedTeams" :items="availableTeams" item-value="slug" item-title="name"
-                    label="Search and select teams to compare" multiple chips clearable variant="outlined" :menu-props="{
+                    label="Search and select teams to compare" multiple chips clearable variant="outlined" :theme="isDark ? 'dark' : 'light'" :menu-props="{
                       contentClass: 'teams-select-menu',
                       maxHeight: 360,
                       scrim: false,
@@ -283,6 +283,7 @@ elevation="4" color="surface" variant="elevated" class="mx-auto my-3"
 
 <script lang="ts">
 import { defineComponent, ref, computed, watch, onMounted, type PropType } from 'vue'
+import { useTheme } from 'vuetify'
 import { Line as LineChart, Bar as BarChart } from 'vue-chartjs'
 import { Options } from '@/model/Options'
 import type { ChartData, ChartDataset } from 'chart.js'
@@ -334,6 +335,8 @@ export default defineComponent({
     dateRangeDescription: { type: String, default: '' }
   },
   setup(props) {
+    const theme = useTheme()
+    const isDark = computed(() => theme.global.current.value.dark)
     const availableTeams = ref<Team[]>([])
     const selectedTeams = ref<string[]>([])
 
@@ -703,7 +706,8 @@ export default defineComponent({
       clearSelection,
       getTeamDetailUrl,
       generateBarChartData,
-  loadTeams
+      loadTeams,
+      isDark,
     }
   }
 })
@@ -713,7 +717,8 @@ export default defineComponent({
 :deep(.teams-select-menu) {
   max-height: 360px;
   overflow-y: auto;
-  background-color: var(--v-theme-surface, #fff) !important;
+  background-color: rgb(var(--v-theme-surface)) !important;
+  color: rgb(var(--v-theme-on-surface)) !important;
   box-shadow: 0 6px 24px rgba(59, 75, 191, 0.15);
   border: 1px solid var(--app-accent-weak);
   z-index: 2000;
@@ -723,10 +728,18 @@ export default defineComponent({
 
 :deep(.teams-select-menu .v-list) {
   padding: 8px 0;
+  background-color: transparent !important;
+  color: inherit !important;
 }
 
 :deep(.teams-select-menu .v-list-item) {
   min-height: 40px;
+  color: rgb(var(--v-theme-on-surface)) !important;
+}
+
+:deep(.teams-select-menu .v-list-item-title),
+:deep(.teams-select-menu .v-list-item-subtitle) {
+  color: rgb(var(--v-theme-on-surface)) !important;
 }
 
 :deep(.teams-select-menu .v-checkbox .v-selection-control) {
