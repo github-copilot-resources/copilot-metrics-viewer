@@ -370,6 +370,7 @@ export default defineComponent({
     const compactChartOptions = {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index' as const, intersect: false },
       scales: { x: xTicks, y: { beginAtZero: true } },
       plugins: { legend: { position: 'bottom' as const } },
     };
@@ -377,7 +378,8 @@ export default defineComponent({
     const integerYOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      scales: { x: xTicks, y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } },
+      interaction: { mode: 'index' as const, intersect: false },
+      scales: { x: xTicks, y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 }, title: { display: true, text: 'Users' } } },
       plugins: { legend: { position: 'bottom' as const } },
     };
 
