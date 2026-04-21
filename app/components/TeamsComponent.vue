@@ -164,7 +164,7 @@
         <!-- Row 3: Top Models | Language Acceptance Rate table -->
         <v-row class="mt-2">
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card class="pa-3">
+            <v-card class="pa-3 mb-2">
               <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-2">Top Models by Interactions</v-card-title>
               <div v-if="singleTeamModelsData.labels.length" style="height:260px">
                 <BarChart :data="singleTeamModelsData" :options="horizontalBarOptions" />
@@ -172,6 +172,12 @@
               <div v-else class="text-center text-medium-emphasis py-6">
                 <v-icon size="40" color="grey-lighten-1">mdi-robot</v-icon>
                 <p class="mt-2 text-body-2">No model data available (requires new Copilot API)</p>
+              </div>
+            </v-card>
+            <v-card v-if="singleTeamModelUsageOverTimeData.datasets.length" class="pa-3">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-2">Model Usage Over Time</v-card-title>
+              <div style="height:220px">
+                <LineChart :data="singleTeamModelUsageOverTimeData" :options="compactLineOptions" />
               </div>
             </v-card>
           </v-col>
@@ -751,6 +757,29 @@ export default defineComponent({
       }
     })
 
+    // ── Model Usage Over Time ─────────────────────────────────────────────────
+    const singleTeamModelUsageOverTimeData = computed<ChartData<'line', number[], string>>(() => {
+      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
+      const data = perTeamData.value[0].reportData
+      const modelKeys = [...new Set(
+        data.flatMap(d => (d.totals_by_model_feature ?? [])
+          .filter(mf => (mf.user_initiated_interaction_count ?? 0) > 0)
+          .map(mf => mf.model))
+      )]
+      if (!modelKeys.length) return { labels: [], datasets: [] }
+      return {
+        labels: data.map(d => d.day),
+        datasets: modelKeys.map((mk, i) => ({
+          label: mk,
+          data: data.map(d => (d.totals_by_model_feature ?? []).find(mf => mf.model === mk)?.user_initiated_interaction_count ?? 0),
+          borderColor: PALETTE[i % PALETTE.length].border,
+          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          fill: false,
+          tension: 0.3,
+        }))
+      }
+    })
+
     // ── Feature Usage Over Time ───────────────────────────────────────────────
     const singleTeamFeatureUsageData = computed<ChartData<'line', number[], string>>(() => {
       if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
@@ -1018,6 +1047,7 @@ export default defineComponent({
       topLanguages,
       singleTeamEditorBarData,
       singleTeamModelsData,
+      singleTeamModelUsageOverTimeData,
       singleTeamFeatureUsageData,
       // user metrics
       singleTeamUserMetrics,
