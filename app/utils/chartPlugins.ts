@@ -58,9 +58,10 @@ export const gradientFillPlugin = {
   }
 };
 
-/** Base options for a responsive time-series chart (maintainAspectRatio: false). */
+/** Base options for a responsive time-series chart (maintainAspectRatio: false).
+ *  Callers may pass partial `scales` — they are deep-merged so x-axis defaults are preserved. */
 export function makeLineOptions(extra: Record<string, any> = {}) {
-  return {
+  const base = {
     responsive: true,
     maintainAspectRatio: false,
     interaction: { mode: 'index' as const, intersect: false },
@@ -69,13 +70,27 @@ export function makeLineOptions(extra: Record<string, any> = {}) {
       y: { beginAtZero: true },
     },
     plugins: { legend: { position: 'bottom' as const } },
-    ...extra,
+  };
+  const { scales: extraScales, plugins: extraPlugins, ...rest } = extra;
+  return {
+    ...base,
+    ...rest,
+    scales: {
+      ...base.scales,
+      ...(extraScales ?? {}),
+      x: { ...base.scales.x, ...(extraScales?.x ?? {}) },
+      y: { ...base.scales.y, ...(extraScales?.y ?? {}) },
+    },
+    plugins: {
+      ...base.plugins,
+      ...(extraPlugins ?? {}),
+    },
   };
 }
 
 /** Base options for a responsive bar chart (maintainAspectRatio: false). */
 export function makeBarOptions(extra: Record<string, any> = {}) {
-  return {
+  const base = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -83,7 +98,21 @@ export function makeBarOptions(extra: Record<string, any> = {}) {
       y: { beginAtZero: true },
     },
     plugins: { legend: { position: 'bottom' as const } },
-    ...extra,
+  };
+  const { scales: extraScales, plugins: extraPlugins, ...rest } = extra;
+  return {
+    ...base,
+    ...rest,
+    scales: {
+      ...base.scales,
+      ...(extraScales ?? {}),
+      x: { ...base.scales.x, ...(extraScales?.x ?? {}) },
+      y: { ...base.scales.y, ...(extraScales?.y ?? {}) },
+    },
+    plugins: {
+      ...base.plugins,
+      ...(extraPlugins ?? {}),
+    },
   };
 }
 

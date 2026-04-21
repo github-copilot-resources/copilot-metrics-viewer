@@ -43,7 +43,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">{{ isTeamView ? `Seats in team "${currentTeam}"` : 'Currently assigned seats' }}</div>
-            <p class="text-h3 font-weight-bold text-primary mt-1">{{ totalSeatsCount }}</p>
+            <p class="kpi-value text-primary mt-1">{{ totalSeatsCount }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -61,7 +61,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">No show seats{{ totalPages > 1 ? ' (this page)' : '' }}</div>
-            <p class="text-h3 font-weight-bold text-warning mt-1">{{ noshowSeats }}</p>
+            <p class="kpi-value text-warning mt-1">{{ noshowSeats }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -79,7 +79,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">No use in last 7 days{{ totalPages > 1 ? ' (this page)' : '' }}</div>
-            <p class="text-h3 font-weight-bold text-error mt-1">{{ unusedSeatsInSevenDays }}</p>
+            <p class="kpi-value text-error mt-1">{{ unusedSeatsInSevenDays }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -97,57 +97,69 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">No use in last 30 days{{ totalPages > 1 ? ' (this page)' : '' }}</div>
-            <p class="text-h3 font-weight-bold text-error mt-1">{{ unusedSeatsInThirtyDays }}</p>
+            <p class="kpi-value text-error mt-1">{{ unusedSeatsInThirtyDays }}</p>
           </div>
         </v-card-item>
       </v-card>
     </div>
 
     <!-- Seats history chart (historical / DB mode only) -->
-    <div v-if="seatsHistory.length > 0" class="mx-4 mb-4">
-      <v-card variant="elevated" elevation="2">
-        <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Seat Count History</v-card-title>
-        <v-card-subtitle class="px-4 pb-2">Daily snapshots collected by the sync job</v-card-subtitle>
-        <v-card-text>
-          <Line :data="historyChartData" :options="historyChartOptions" />
-        </v-card-text>
-      </v-card>
-    </div>
+    <v-container class="px-4 elevation-2">
+      <div class="d-flex justify-end mb-2">
+        <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+          <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+          <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+        </v-btn-toggle>
+      </div>
+      <v-row v-if="seatsHistory.length > 0" class="mb-4">
+        <v-col cols="12">
+          <v-card variant="elevated" elevation="2">
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Seat Count History</v-card-title>
+            <v-card-subtitle class="px-4 pb-2">Daily snapshots collected by the sync job</v-card-subtitle>
+            <v-card-text>
+              <Line :data="historyChartData" :options="historyChartOptions" />
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
-    <!-- Seats table with server-side pagination -->
-    <div class="mx-4 mb-4">
-      <v-card variant="elevated" elevation="2">
-        <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">All Assigned Seats</v-card-title>
-        <v-card-subtitle v-if="totalPages > 1" class="px-4 pb-2">
-          Showing page {{ currentPage }} of {{ totalPages }} ({{ totalSeatsCount }} total seats, {{ seats.length }} on this page)
-        </v-card-subtitle>
-        <v-card-text class="pa-0">
-          <v-data-table :headers="headers" :items="sortedSeats" :items-per-page="-1" hide-default-footer class="elevation-0">
-            <template #item="{ item, index }">
-              <tr>
-                <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
-                <td>{{ item.login }}</td>
-                <td>{{ item.id }}</td>
-                <td>{{ item.team }}</td>
-                <td>{{ item.created_at }} {{ item.plan_type }}</td>
-                <td>{{ item.last_activity_at }}</td>
-                <td>{{ item.last_activity_editor }}</td>
-              </tr>
-            </template>
-          </v-data-table>
+      <!-- Seats table with server-side pagination -->
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <v-card variant="elevated" elevation="2">
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">All Assigned Seats</v-card-title>
+            <v-card-subtitle v-if="totalPages > 1" class="px-4 pb-2">
+              Showing page {{ currentPage }} of {{ totalPages }} ({{ totalSeatsCount }} total seats, {{ seats.length }} on this page)
+            </v-card-subtitle>
+            <v-card-text class="pa-0">
+              <v-data-table :headers="headers" :items="sortedSeats" :items-per-page="-1" hide-default-footer class="elevation-0">
+                <template #item="{ item, index }">
+                  <tr>
+                    <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
+                    <td>{{ item.login }}</td>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.team }}</td>
+                    <td>{{ item.created_at }} {{ item.plan_type }}</td>
+                    <td>{{ item.last_activity_at }}</td>
+                    <td>{{ item.last_activity_editor }}</td>
+                  </tr>
+                </template>
+              </v-data-table>
 
-          <!-- Paginator -->
-          <div v-if="totalPages > 1" class="d-flex justify-center mt-4 pb-4">
-            <v-pagination
-              :model-value="currentPage"
-              :length="totalPages"
-              :total-visible="7"
-              @update:model-value="$emit('page-change', $event)"
-            />
-          </div>
-        </v-card-text>
-      </v-card>
-    </div>
+              <!-- Paginator -->
+              <div v-if="totalPages > 1" class="d-flex justify-center mt-4 pb-4">
+                <v-pagination
+                  :model-value="currentPage"
+                  :length="totalPages"
+                  :total-visible="7"
+                  @update:model-value="$emit('page-change', $event)"
+                />
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 
@@ -319,6 +331,7 @@ export default defineComponent({
         { title: 'Last Activity At',     key: 'last_activity_at' },
         { title: 'Last Activity Editor', key: 'last_activity_editor' },
       ],
+      chartColumns: '2',
     };
   },
 });

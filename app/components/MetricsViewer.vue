@@ -43,7 +43,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Current calendar month</div>
-            <p class="text-h3 font-weight-bold text-primary">{{ ideActiveUsers }}</p>
+            <p class="kpi-value text-primary">{{ ideActiveUsers }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -61,8 +61,8 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">{{ agentAdoptionNum }} out of {{ ideActiveUsers }} active users</div>
-            <p class="text-h3 font-weight-bold text-success">{{ agentAdoptionPct }}%</p>
-            <v-progress-linear :model-value="agentAdoptionPct" color="primary" bg-color="primary-lighten-4" rounded height="6" class="mt-2 mx-2" />
+            <p class="kpi-value text-success">{{ agentAdoptionPct }}%</p>
+            <v-progress-linear :model-value="agentAdoptionPct" color="success" bg-color="#C8E6C9" rounded height="6" class="mt-2 mx-2" />
           </div>
         </v-card-item>
       </v-card>
@@ -80,7 +80,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
-            <p class="kpi-text-value font-weight-bold mt-2 text-primary" style="word-break: break-word;">{{ mostUsedChatModel || '—' }}</p>
+            <p class="kpi-value mt-2 text-primary" style="word-break: break-word;">{{ mostUsedChatModel || '—' }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -98,7 +98,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
-            <p class="kpi-text-value font-weight-bold mt-2 text-primary" style="word-break: break-word;">{{ mostUsedChatMode || '—' }}</p>
+            <p class="kpi-value mt-2 text-primary" style="word-break: break-word;">{{ mostUsedChatMode || '—' }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -116,7 +116,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
-            <p class="text-h3 font-weight-bold mt-2 text-primary">{{ formatCompact(totalChatRequests) }}</p>
+            <p class="kpi-value mt-2 text-primary">{{ formatCompact(totalChatRequests) }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -128,7 +128,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="text-caption text-medium-emphasis mt-1">IDE Completion Acceptance Rate (count)</div>
-            <p class="text-h5 mt-1">{{ acceptanceRateAverageByCount.toFixed(1) }}%</p>
+            <p class="kpi-value-sm mt-1">{{ acceptanceRateAverageByCount.toFixed(1) }}%</p>
           </div>
         </v-card-item>
       </v-card>
@@ -137,7 +137,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="text-caption text-medium-emphasis mt-1">IDE Completion Acceptance Rate (lines)</div>
-            <p class="text-h5 mt-1">{{ acceptanceRateAverageByLines.toFixed(1) }}%</p>
+            <p class="kpi-value-sm mt-1">{{ acceptanceRateAverageByLines.toFixed(1) }}%</p>
           </div>
         </v-card-item>
       </v-card>
@@ -146,7 +146,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="text-caption text-medium-emphasis mt-1">Total IDE Code Completions</div>
-            <p class="text-h5 mt-1">{{ cumulativeNumberSuggestions.toLocaleString() }}</p>
+            <p class="kpi-value-sm mt-1">{{ cumulativeNumberSuggestions.toLocaleString() }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -155,7 +155,7 @@
         <v-card-item>
           <div class="tiles-text">
             <div class="text-caption text-medium-emphasis mt-1">Total Lines Suggested (IDE completions)</div>
-            <p class="text-h5 mt-1">{{ totalLinesSuggested.toLocaleString() }}</p>
+            <p class="kpi-value-sm mt-1">{{ totalLinesSuggested.toLocaleString() }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -251,32 +251,6 @@
             </v-card>
           </v-col>
 
-          <!-- ── Language Usage ──────────────────────────────── -->
-          <v-col v-if="langUsagePerDayChartData.labels.length" cols="12">
-            <v-card variant="outlined" class="pa-3">
-              <div class="text-subtitle-1 font-weight-bold">Language usage per day</div>
-              <div class="text-caption text-medium-emphasis mb-2">Daily breakdown of language usage in requests across all chat modes and code completions · <span class="font-italic">Shaded columns = weekends</span></div>
-              <div style="height:260px"><Line :data="langUsagePerDayChartData" :options="stackedAreaOptions" :plugins="[gradientFillPlugin, weekendPlugin]" /></div>
-            </v-card>
-          </v-col>
-
-          <v-col v-if="langDonutData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3 d-flex flex-column align-center">
-              <div class="text-subtitle-1 font-weight-bold">Language usage</div>
-              <div class="text-caption text-medium-emphasis mb-2">Distribution of languages used across all chat modes and code completions</div>
-              <div style="height:260px; width:100%; display:flex; justify-content:center;">
-                <Doughnut :data="langDonutData" :options="donutOptions" />
-              </div>
-            </v-card>
-          </v-col>
-
-          <v-col v-if="modelPerLangData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
-            <v-card variant="outlined" class="pa-3">
-              <div class="text-subtitle-1 font-weight-bold">Model usage per language</div>
-              <div class="text-caption text-medium-emphasis mb-2">Most frequently used model in each language for user-initiated chat requests</div>
-              <div style="height:260px"><Bar :data="modelPerLangData" :options="groupedBarOptions" /></div>
-            </v-card>
-          </v-col>
         </v-row>
 
       </v-container>
@@ -388,9 +362,7 @@ export default defineComponent({
     const modelUsagePerDayChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const chatModelDonutData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const modelPerChatModeData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-    const langUsagePerDayChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-    const langDonutData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
-    const modelPerLangData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    // Language charts moved to BreakdownComponent (Languages tab)
 
     // ── Chart options ─────────────────────────────────────────────────────
     const compactChartOptions = {
@@ -683,77 +655,6 @@ export default defineComponent({
         })
       };
 
-      // ── Language usage per day (100% stacked area) ────────────────────
-      const langActByDay: Record<string, number[]> = {};
-      const langDayTotals: number[] = data.map(() => 0);
-      data.forEach((d, idx) => {
-        for (const lf of (d.totals_by_language_feature ?? [])) {
-          const lang = lf.language ?? 'Unknown';
-          if (!langActByDay[lang]) langActByDay[lang] = data.map(() => 0);
-          const cnt = lf.code_generation_activity_count ?? 0;
-          langActByDay[lang][idx] += cnt;
-          langDayTotals[idx] += cnt;
-        }
-      });
-      const allLangs = Object.entries(langActByDay).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
-      const top5Langs = allLangs.slice(0, 5);
-      const otherLangData = allLangs.slice(5).reduce((acc, [, vals]) => acc.map((v, i) => v + vals[i]), data.map(() => 0));
-      const langStackDatasets = [
-        ...top5Langs.map(([lang, vals], i) => ({
-          label: lang,
-          data: vals.map((v, idx) => langDayTotals[idx] > 0 ? parseFloat((v / langDayTotals[idx] * 100).toFixed(2)) : 0),
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
-          borderColor: PALETTE[i % PALETTE.length].border,
-          fill: 'stack',
-          tension: 0.3,
-        })),
-        ...(allLangs.length > 5 ? [{
-          label: 'Other',
-          data: otherLangData.map((v, idx) => langDayTotals[idx] > 0 ? parseFloat((v / langDayTotals[idx] * 100).toFixed(2)) : 0),
-          backgroundColor: PALETTE[5].bg,
-          borderColor: PALETTE[5].border,
-          fill: 'stack',
-          tension: 0.3,
-        }] : [])
-      ];
-      langUsagePerDayChartData.value = { labels, datasets: langStackDatasets };
-
-      // ── Language donut ────────────────────────────────────────────────
-      const langAggregates = allLangs
-        .map(([lang, vals]) => ({ lang, total: vals.reduce((s, v) => s + v, 0) }))
-        .sort((a, b) => b.total - a.total);
-      langDonutData.value = {
-        labels: langAggregates.map(l => l.lang),
-        datasets: [{
-          data: langAggregates.map(l => l.total),
-          backgroundColor: langAggregates.map((_, i) => PALETTE[i % PALETTE.length].bg),
-          borderColor: langAggregates.map((_, i) => PALETTE[i % PALETTE.length].border),
-        }]
-      };
-
-      // ── Model per language (stacked bar from totals_by_language_model) ─
-      const langModelMatrix: Record<string, Record<string, number>> = {};
-      for (const day of data) {
-        for (const lm of (day.totals_by_language_model ?? [])) {
-          const lang = lm.language ?? 'Unknown';
-          const model = lm.model ?? 'Unknown';
-          if (!langModelMatrix[lang]) langModelMatrix[lang] = {};
-          langModelMatrix[lang][model] = (langModelMatrix[lang][model] ?? 0) + (lm.code_generation_activity_count ?? 0);
-        }
-      }
-      const topLangLabels = allLangs.slice(0, 8).map(([l]) => l);
-      const langModelKeys = [...new Set(
-        Object.values(langModelMatrix).flatMap(m => Object.keys(m))
-      )];
-      modelPerLangData.value = {
-        labels: topLangLabels,
-        datasets: langModelKeys.map((model, i) => ({
-          label: model,
-          data: topLangLabels.map(lang => langModelMatrix[lang]?.[model] ?? 0),
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
-          borderColor: PALETTE[i % PALETTE.length].border,
-        }))
-      };
     });
 
     return {
@@ -773,7 +674,6 @@ export default defineComponent({
       acceptanceRateByCountChartData, totalSuggestionsAndAcceptanceChartData,
       ideDauChartData, ideWauChartData, avgChatReqChartData, requestsPerModeChartData,
       modelUsagePerDayChartData, chatModelDonutData, modelPerChatModeData,
-      langUsagePerDayChartData, langDonutData, modelPerLangData,
     };
   },
   data() {

@@ -1,5 +1,26 @@
 <template>
   <div>
+    <!-- ── Description card — always at the very top ── -->
+    <template v-if="useEnhancedView">
+      <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+        <template v-if="breakdownKey === 'language'">
+          <div class="font-weight-bold text-body-1 mb-1">💬 Languages Deep-Dive</div>
+          <div class="text-medium-emphasis text-body-2">
+            Understand <em>where</em> Copilot helps your team write code. This tab breaks down impact by programming language — helping you identify which languages benefit most from AI assistance.
+            A language only appears if Copilot generated code in it.
+          </div>
+        </template>
+        <template v-else>
+          <div class="font-weight-bold text-body-1 mb-1">🖥️ Editors Deep-Dive</div>
+          <div class="text-medium-emphasis text-body-2">
+            See exactly <em>how</em> your team accesses Copilot — VS Code, JetBrains, Neovim, CLI terminal, and more.
+            Code acceptance rates apply only to IDE inline completions; CLI interactions are shown separately.
+          </div>
+        </template>
+      </v-card>
+    </template>
+
+    <!-- ── KPI tiles ── -->
     <div class="tiles-container">
       <v-card elevation="2" class="my-3">
           <v-card-item>
@@ -9,7 +30,7 @@
               <div class="text-caption text-medium-emphasis">
                 {{ dateRangeDescription }}
               </div>
-              <p class="text-h3 font-weight-bold text-primary mt-1">{{ numberOfBreakdowns }}</p>
+              <p class="kpi-value text-primary mt-1">{{ numberOfBreakdowns }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -20,7 +41,7 @@
             <div class="spacing-25"/>
             <div class="text-h6 mb-1">Top {{ breakdownDisplayName }}</div>
             <div class="text-caption text-medium-emphasis">Most code generations</div>
-            <p class="kpi-text-value font-weight-bold text-primary mt-1" style="word-break: break-word;">{{ topItemName }}</p>
+            <p class="kpi-value text-primary mt-1" style="word-break: break-word;">{{ topItemName }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -28,26 +49,15 @@
 
     <!-- ── Enhanced view from new API reportData ────────────────────── -->
     <template v-if="useEnhancedView">
-      <!-- Tab intro panel — full width above charts -->
-      <v-card variant="outlined" class="mx-4 mt-2 mb-4 pa-3" density="compact">
-        <template v-if="breakdownKey === 'language'">
-          <div class="font-weight-bold text-body-1 mb-1">💬 Languages Deep-Dive</div>
-          <div class="text-medium-emphasis text-body-2 mb-1">
-            Understand <em>where</em> Copilot helps your team write code. This tab breaks down impact by programming language — helping you identify which languages benefit most from AI assistance.
-            A language only appears if Copilot generated code in it.
-          </div>
-        </template>
-        <template v-else>
-          <div class="font-weight-bold text-body-1 mb-1">🖥️ Editors Deep-Dive</div>
-          <div class="text-medium-emphasis text-body-2 mb-1">
-            See exactly <em>how</em> your team accesses Copilot — VS Code, JetBrains, Neovim, CLI terminal, and more.
-            Code acceptance rates apply only to IDE inline completions; CLI interactions are shown separately.
-          </div>
-        </template>
-      </v-card>
-
+      <v-container class="px-4">
+      <div class="d-flex justify-end mb-2">
+        <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+          <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+          <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+        </v-btn-toggle>
+      </div>
       <!-- CLI summary card (editors tab only) -->
-      <v-card v-if="breakdownKey === 'editor' && cliSummary" class="mx-4 mb-4 pa-3" color="surface-variant" variant="tonal">
+      <v-card v-if="breakdownKey === 'editor' && cliSummary" class="mx-0 mb-4 pa-3" color="surface-variant" variant="tonal">
         <div class="text-subtitle-1 font-weight-bold mb-2">
           <v-icon size="small" class="mr-1">mdi-console</v-icon>CLI (GitHub Copilot in the CLI)
         </div>
@@ -67,24 +77,97 @@
         </v-row>
       </v-card>
 
-      <!-- Pie charts: top 5 by code generations and lines added -->
-      <v-row class="mx-2 mb-4">
-        <v-col cols="12" md="6">
+      <!-- Bar charts: top 5 by code generations and lines added -->
+      <v-row class="mb-4">
+
+      <!-- Usage per day (stacked 100% area — full width) -->
+      <v-col v-if="usagePerDayChartData.labels.length > 1" cols="12">
+        <v-card variant="elevated" elevation="2">
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">
+            {{ breakdownKey === 'language' ? 'Language' : 'Editor' }} usage per day
+          </v-card-title>
+          <v-card-subtitle class="px-4 pb-1">
+            Daily share of code generations per {{ breakdownKey }} · <span class="font-italic">Shaded columns = weekends</span>
+          </v-card-subtitle>
+          <v-card-text>
+            <div style="height:260px">
+              <LineChart :data="usagePerDayChartData" :options="stackedAreaOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Distribution donut | Model per language (or Acceptance rate by editor) -->
+      <v-col v-if="distributionDonutData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
+        <v-card variant="elevated" elevation="2">
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">
+            {{ breakdownKey === 'language' ? 'Language' : 'Editor' }} distribution
+          </v-card-title>
+          <v-card-subtitle class="px-4 pb-1">Total code generations share across all days</v-card-subtitle>
+          <v-card-text>
+            <div style="height:260px">
+              <Doughnut :data="distributionDonutData" :options="donutOptions" />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col v-if="breakdownKey === 'language' && modelPerLangChartData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
+        <v-card variant="elevated" elevation="2">
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model usage per language</v-card-title>
+          <v-card-subtitle class="px-4 pb-1">Top 8 languages — code generations per model</v-card-subtitle>
+          <v-card-text>
+            <div style="height:260px">
+              <Bar :data="modelPerLangChartData" :options="groupedBarOptions" />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col v-if="breakdownKey === 'editor' && acceptanceRateByEditorData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
+        <v-card variant="elevated" elevation="2">
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Acceptance rate by editor</v-card-title>
+          <v-card-subtitle class="px-4 pb-1">Code acceptances ÷ code generations per IDE/editor</v-card-subtitle>
+          <v-card-text>
+            <div style="height:260px">
+              <Bar :data="acceptanceRateByEditorData" :options="{ ...horizBarOptions, scales: { x: { beginAtZero: true, max: 100, ticks: { callback: (v: any) => `${v}%` } } } }" />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Top 5 by code generations and lines added -->
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="elevated" elevation="2">
             <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top 5 {{ breakdownDisplayNamePlural }} by code generations</v-card-title>
-            <v-card-text class="d-flex justify-center">
-              <div style="width: 280px; height: 280px;">
-                <Pie :data="enhancedChartDataTop5Generations" :options="chartOptions" />
+            <v-card-text>
+              <div style="height:220px">
+                <Bar :data="enhancedChartDataTop5Generations" :options="horizBarOptions" />
               </div>
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col cols="12" md="6">
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="elevated" elevation="2">
             <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top 5 {{ breakdownDisplayNamePlural }} by lines added</v-card-title>
-            <v-card-text class="d-flex justify-center">
-              <div style="width: 280px; height: 280px;">
-                <Pie :data="enhancedChartDataTop5LinesAdded" :options="chartOptions" />
+            <v-card-text>
+              <div style="height:220px">
+                <Bar :data="enhancedChartDataTop5LinesAdded" :options="horizBarOptions" />
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Bottom 5 least popular (language or editor) -->
+      <v-row v-if="enhancedChartDataBottom5.labels.length > 0" class="mb-4">
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="elevated" elevation="2">
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">
+              5 Least-Used {{ breakdownDisplayNamePlural }}
+              <v-chip size="x-small" variant="tonal" color="secondary" class="ml-2">long tail</v-chip>
+            </v-card-title>
+            <v-card-text>
+              <div style="height:220px">
+                <Bar :data="enhancedChartDataBottom5" :options="horizBarOptions" />
               </div>
             </v-card-text>
           </v-card>
@@ -116,7 +199,7 @@
                     size="x-small"
                     class="mr-1"
                     :color="featureChipColor(f)"
-                    variant="tonal"
+                    :variant="featureChipVariant(f)"
                   >{{ f }}</v-chip>
                 </td>
               </tr>
@@ -144,9 +227,76 @@
           </v-card-text>
         </v-card>
       </div>
-    </template>
 
-    <!-- ── Legacy view (IDE code completions only) ───────────────────── -->
+      <!-- Top Contributors per Language (full-width, below breakdown table) -->
+      <v-row v-if="breakdownKey === 'language' && topUsersPerLanguage.size > 0" class="mb-4">
+        <v-col cols="12">
+          <v-card variant="elevated" elevation="2">
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top Contributors per Language</v-card-title>
+            <v-card-subtitle class="px-4 pb-1">Top 3 users by code generations · top 15 languages</v-card-subtitle>
+            <v-card-text class="pa-0">
+              <v-table density="compact">
+                <thead>
+                  <tr>
+                    <th class="text-left pl-4">Language</th>
+                    <th class="text-left">🥇 Top User</th>
+                    <th class="text-left">🥈</th>
+                    <th class="text-left">🥉</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in enhancedLanguageList.slice(0, 15)" :key="row.language">
+                    <td class="pl-4 text-caption font-weight-medium">{{ row.language }}</td>
+                    <td v-for="rank in 3" :key="rank" class="text-caption">
+                      <template v-if="topUsersPerLanguage.get(row.language)?.[rank - 1]">
+                        <span class="font-weight-medium">{{ topUsersPerLanguage.get(row.language)![rank - 1].login }}</span>
+                        <span class="text-medium-emphasis ml-1">({{ topUsersPerLanguage.get(row.language)![rank - 1].gen }})</span>
+                      </template>
+                      <span v-else class="text-disabled">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Top Contributors per Editor (full-width, below breakdown table) -->
+      <v-row v-if="breakdownKey === 'editor' && topUsersPerEditor.size > 0" class="mb-4">
+        <v-col cols="12">
+          <v-card variant="elevated" elevation="2">
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top Contributors per Editor</v-card-title>
+            <v-card-subtitle class="px-4 pb-1">Top 3 users by code generations for each IDE/editor</v-card-subtitle>
+            <v-card-text class="pa-0">
+              <v-table density="compact">
+                <thead>
+                  <tr>
+                    <th class="text-left pl-4">Editor / IDE</th>
+                    <th class="text-left">🥇 Top User</th>
+                    <th class="text-left">🥈</th>
+                    <th class="text-left">🥉</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in enhancedEditorList" :key="row.ide">
+                    <td class="pl-4 text-caption font-weight-medium">{{ row.ide }}</td>
+                    <td v-for="rank in 3" :key="rank" class="text-caption">
+                      <template v-if="topUsersPerEditor.get(row.ide)?.[rank - 1]">
+                        <span class="font-weight-medium">{{ topUsersPerEditor.get(row.ide)![rank - 1].login }}</span>
+                        <span class="text-medium-emphasis ml-1">({{ topUsersPerEditor.get(row.ide)![rank - 1].gen }})</span>
+                      </template>
+                      <span v-else class="text-disabled">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+      </v-container>
+    </template>
     <template v-else>
       <div class="mx-4 mb-4">
         <v-alert type="warning" variant="tonal" icon="mdi-alert-outline" class="mb-4" density="compact">
@@ -213,8 +363,9 @@
 import { defineComponent, ref, toRef, watch, computed, type PropType } from 'vue';
 import type { Metrics } from '@/model/Metrics';
 import { Breakdown } from '@/model/Breakdown';
-import { Pie } from 'vue-chartjs'
-import type { ReportDayTotals, ReportCliTotals } from '../../server/services/github-copilot-usage-api';
+import { Pie, Bar, Doughnut, Line as LineChart } from 'vue-chartjs'
+import type { ReportDayTotals, ReportCliTotals, UserTotals } from '../../server/services/github-copilot-usage-api';
+import { PALETTE, PIE_COLORS, weekendPlugin, gradientFillPlugin } from '@/utils/chartPlugins';
 
 import {
   Chart as ChartJS,
@@ -226,11 +377,12 @@ import {
   BarElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 } from 'chart.js'
 
 ChartJS.register(
-  ArcElement, 
+  ArcElement,
   CategoryScale,
   LinearScale,
   BarElement,
@@ -238,7 +390,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 )
 
 interface EnhancedLanguageRow {
@@ -268,7 +421,7 @@ interface CliSummary {
 export default defineComponent({
   name: 'BreakdownComponent',
   components: {
-    Pie
+    Pie, Bar, Doughnut, LineChart
   },
   props: {
       metrics: {
@@ -285,6 +438,10 @@ export default defineComponent({
       },
       reportData: {
           type: Array as PropType<ReportDayTotals[]>,
+          default: () => []
+      },
+      userMetrics: {
+          type: Array as PropType<UserTotals[]>,
           default: () => []
       }
   },
@@ -313,13 +470,44 @@ export default defineComponent({
       maintainAspectRatio: true,
     };
 
-    const pieChartColors = ref([
-    '#4B0082', // Indigo
-    '#41B883', // Vue Green
-    '#6495ED', // Cornflower Blue
-    '#87CEFA', // Light Sky Blue
-    '#7CFC00'  // Lawn Green
-]);
+    // Horizontal bar chart options for the enhanced top-5 charts
+    const horizBarOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true } },
+    };
+
+    // Stacked 100% area chart (usage per day)
+    const stackedAreaOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index' as const, intersect: false },
+      plugins: { legend: { position: 'bottom' as const } },
+      scales: {
+        x: { stacked: true, ticks: { maxTicksLimit: 10 } },
+        y: { stacked: true, min: 0, max: 100, ticks: { callback: (v: any) => `${v}%` } },
+      },
+    };
+
+    // Doughnut distribution chart
+    const donutOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'right' as const } },
+    };
+
+    // Grouped bar for model-per-language / acceptance rate
+    const groupedBarOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' as const } },
+      scales: { x: { ticks: { maxTicksLimit: 10 } }, y: { beginAtZero: true } },
+    };
+
+    const paletteColors = PALETTE.slice(0, 8);
+    const pieChartColors = computed(() => PIE_COLORS);
 
     // ── Enhanced view data ─────────────────────────────────────────────
 
@@ -328,6 +516,14 @@ export default defineComponent({
     const cliSummary = ref<CliSummary | null>(null);
     const enhancedChartDataTop5Generations = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const enhancedChartDataTop5LinesAdded = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const enhancedChartDataBottom5 = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    // Charts shared between language and editor tabs (populated by the active branch)
+    const usagePerDayChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const distributionDonutData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    // Language-only chart
+    const modelPerLangChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    // Editor-only chart
+    const acceptanceRateByEditorData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
     // Whether to show enhanced view: only when relevant new-API slice is populated
     const useEnhancedView = computed(() => {
@@ -369,11 +565,93 @@ export default defineComponent({
       const top5 = sorted.slice(0, 5);
       enhancedChartDataTop5Generations.value = {
         labels: top5.map(r => r.language),
-        datasets: [{ data: top5.map(r => r.codeGenerations), backgroundColor: pieChartColors.value }]
+        datasets: [{ label: 'Code Generations', data: top5.map(r => r.codeGenerations), backgroundColor: paletteColors.map(p => p.bg), borderColor: paletteColors.map(p => p.border), borderWidth: 1 }]
       };
       enhancedChartDataTop5LinesAdded.value = {
         labels: top5.map(r => r.language),
-        datasets: [{ data: top5.map(r => r.linesAdded), backgroundColor: pieChartColors.value }]
+        datasets: [{ label: 'Lines Added', data: top5.map(r => r.linesAdded), backgroundColor: paletteColors.map(p => p.bg), borderColor: paletteColors.map(p => p.border), borderWidth: 1 }]
+      };
+
+      // Bottom 5 least-used languages (with at least 1 generation, ascending)
+      const bottom5 = sorted.filter(r => r.codeGenerations > 0).slice(-5).sort((a, b) => a.codeGenerations - b.codeGenerations);
+      enhancedChartDataBottom5.value = {
+        labels: bottom5.map(r => r.language),
+        datasets: [{ label: 'Code Generations', data: bottom5.map(r => r.codeGenerations), backgroundColor: PALETTE.slice(5, 10).map(p => p.bg), borderColor: PALETTE.slice(5, 10).map(p => p.border), borderWidth: 1 }]
+      };
+
+      // ── Language usage per day (100% stacked area) ─────────────────────
+      const labels = data.map(d => d.day ?? '');
+      const langActByDay: Record<string, number[]> = {};
+      const langDayTotals = data.map(() => 0);
+      data.forEach((d, idx) => {
+        (d.totals_by_language_feature || []).forEach(lf => {
+          const lang = lf.language ?? 'Unknown';
+          if (!langActByDay[lang]) langActByDay[lang] = data.map(() => 0);
+          const cnt = lf.code_generation_activity_count ?? 0;
+          langActByDay[lang][idx] += cnt;
+          langDayTotals[idx] += cnt;
+        });
+      });
+      const allLangsSorted = Object.entries(langActByDay).sort((a, b) =>
+        b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
+      const top5Langs = allLangsSorted.slice(0, 5);
+      const otherLangsData = allLangsSorted.slice(5).reduce(
+        (acc, [, vals]) => acc.map((v, i) => v + vals[i]),
+        data.map(() => 0)
+      );
+      usagePerDayChartData.value = {
+        labels,
+        datasets: [
+          ...top5Langs.map(([lang, vals], i) => ({
+            label: lang,
+            data: vals.map((v, idx) => langDayTotals[idx] > 0 ? parseFloat((v / langDayTotals[idx] * 100).toFixed(2)) : 0),
+            backgroundColor: PALETTE[i % PALETTE.length].bg,
+            borderColor: PALETTE[i % PALETTE.length].border,
+            fill: 'stack' as const,
+            tension: 0.3,
+          })),
+          ...(allLangsSorted.length > 5 ? [{
+            label: 'Other',
+            data: otherLangsData.map((v, idx) => langDayTotals[idx] > 0 ? parseFloat((v / langDayTotals[idx] * 100).toFixed(2)) : 0),
+            backgroundColor: PALETTE[5 % PALETTE.length].bg,
+            borderColor: PALETTE[5 % PALETTE.length].border,
+            fill: 'stack' as const,
+            tension: 0.3,
+          }] : []),
+        ]
+      };
+
+      // ── Language distribution donut ─────────────────────────────────────
+      const langAgg = allLangsSorted.map(([lang, vals]) => ({ lang, total: vals.reduce((s, v) => s + v, 0) }));
+      distributionDonutData.value = {
+        labels: langAgg.map(l => l.lang),
+        datasets: [{
+          data: langAgg.map(l => l.total),
+          backgroundColor: langAgg.map((_, i) => PALETTE[i % PALETTE.length].bg),
+          borderColor: langAgg.map((_, i) => PALETTE[i % PALETTE.length].border),
+        }],
+      };
+
+      // ── Model per language (stacked bar from totals_by_language_model) ──
+      const langModelMatrix: Record<string, Record<string, number>> = {};
+      data.forEach(d => {
+        (d.totals_by_language_model || []).forEach(lm => {
+          const lang = lm.language ?? 'Unknown';
+          const model = lm.model ?? 'Unknown';
+          if (!langModelMatrix[lang]) langModelMatrix[lang] = {};
+          langModelMatrix[lang][model] = (langModelMatrix[lang][model] ?? 0) + (lm.code_generation_activity_count ?? 0);
+        });
+      });
+      const topLangLabels = allLangsSorted.slice(0, 8).map(([l]) => l);
+      const modelKeys = [...new Set(Object.values(langModelMatrix).flatMap(m => Object.keys(m)))];
+      modelPerLangChartData.value = {
+        labels: topLangLabels,
+        datasets: modelKeys.map((model, i) => ({
+          label: model,
+          data: topLangLabels.map(lang => langModelMatrix[lang]?.[model] ?? 0),
+          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          borderColor: PALETTE[i % PALETTE.length].border,
+        })),
       };
     };
 
@@ -429,11 +707,71 @@ export default defineComponent({
       const top5 = allRows.slice(0, 5);
       enhancedChartDataTop5Generations.value = {
         labels: top5.map(r => r.ide),
-        datasets: [{ data: top5.map(r => r.interactions || r.codeGenerations), backgroundColor: pieChartColors.value }]
+        datasets: [{ label: 'Interactions', data: top5.map(r => r.interactions || r.codeGenerations), backgroundColor: paletteColors.map(p => p.bg), borderColor: paletteColors.map(p => p.border), borderWidth: 1 }]
       };
       enhancedChartDataTop5LinesAdded.value = {
         labels: top5.map(r => r.ide),
-        datasets: [{ data: top5.map(r => r.linesAdded), backgroundColor: pieChartColors.value }]
+        datasets: [{ label: 'Lines Added', data: top5.map(r => r.linesAdded), backgroundColor: paletteColors.map(p => p.bg), borderColor: paletteColors.map(p => p.border), borderWidth: 1 }]
+      };
+
+      // ── Editor usage per day (100% stacked area) ────────────────────────
+      const labels = data.map(d => d.day ?? '');
+      const ideActByDay: Record<string, number[]> = {};
+      const ideDayTotals = data.map(() => 0);
+      data.forEach((d, idx) => {
+        (d.totals_by_ide || []).forEach(entry => {
+          const ide = entry.ide;
+          if (!ideActByDay[ide]) ideActByDay[ide] = data.map(() => 0);
+          const cnt = entry.code_generation_activity_count ?? 0;
+          ideActByDay[ide][idx] += cnt;
+          ideDayTotals[idx] += cnt;
+        });
+      });
+      const allIdesSorted = Object.entries(ideActByDay).sort((a, b) =>
+        b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
+      usagePerDayChartData.value = {
+        labels,
+        datasets: allIdesSorted.map(([ide, vals], i) => ({
+          label: ide,
+          data: vals.map((v, idx) => ideDayTotals[idx] > 0 ? parseFloat((v / ideDayTotals[idx] * 100).toFixed(2)) : 0),
+          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          borderColor: PALETTE[i % PALETTE.length].border,
+          fill: 'stack' as const,
+          tension: 0.3,
+        })),
+      };
+
+      // ── Editor distribution donut ────────────────────────────────────────
+      const ideAgg = allIdesSorted.map(([ide, vals]) => ({ ide, total: vals.reduce((s, v) => s + v, 0) }));
+      distributionDonutData.value = {
+        labels: ideAgg.map(l => l.ide),
+        datasets: [{
+          data: ideAgg.map(l => l.total),
+          backgroundColor: ideAgg.map((_, i) => PALETTE[i % PALETTE.length].bg),
+          borderColor: ideAgg.map((_, i) => PALETTE[i % PALETTE.length].border),
+        }],
+      };
+
+      // ── Acceptance rate by editor (horizontal bar) ───────────────────────
+      acceptanceRateByEditorData.value = {
+        labels: allRows.map(r => r.ide),
+        datasets: [{
+          label: 'Acceptance Rate (%)',
+          data: allRows.map(r => r.codeGenerations > 0 ? parseFloat((r.codeAcceptances / r.codeGenerations * 100).toFixed(1)) : 0),
+          backgroundColor: paletteColors.map(p => p.bg),
+          borderColor: paletteColors.map(p => p.border),
+          borderWidth: 1,
+        }],
+      };
+
+      // ── Bottom 5 least-used editors ──────────────────────────────────────
+      const bottom5Editors = [...allRows]
+        .filter(r => r.codeGenerations > 0)
+        .sort((a, b) => a.codeGenerations - b.codeGenerations)
+        .slice(0, 5);
+      enhancedChartDataBottom5.value = {
+        labels: bottom5Editors.map(r => r.ide),
+        datasets: [{ label: 'Code Generations', data: bottom5Editors.map(r => r.codeGenerations), backgroundColor: PALETTE.slice(5, 10).map(p => p.bg), borderColor: PALETTE.slice(5, 10).map(p => p.border), borderWidth: 1 }],
       };
     };
 
@@ -526,10 +864,67 @@ export default defineComponent({
       }
     }, { immediate: true, deep: true });
 
-    return { chartOptions, breakdownList, numberOfBreakdowns, 
+    // Top 3 users per language — computed so it updates when userMetrics arrive later
+    const topUsersPerLanguage = computed(() => {
+      const result = new Map<string, { login: string; gen: number }[]>();
+      const users = props.userMetrics || [];
+      if (!users.length) return result;
+      users.forEach(user => {
+        (user.totals_by_language_feature || []).forEach(lf => {
+          const gen = lf.code_generation_activity_count || 0;
+          if (gen <= 0) return;
+          if (!result.has(lf.language)) result.set(lf.language, []);
+          const arr = result.get(lf.language)!;
+          const existing = arr.find(u => u.login === user.login);
+          if (existing) {
+            existing.gen += gen;
+          } else {
+            arr.push({ login: user.login, gen });
+          }
+        });
+      });
+      // Sort each language descending and keep top 3
+      result.forEach(arr => arr.sort((a, b) => b.gen - a.gen).splice(3));
+      return result;
+    });
+
+    // Top 3 users per editor
+    const topUsersPerEditor = computed(() => {
+      const result = new Map<string, { login: string; gen: number }[]>();
+      const users = props.userMetrics || [];
+      if (!users.length) return result;
+      users.forEach(user => {
+        (user.totals_by_ide || []).forEach(ie => {
+          const gen = (ie as any).code_generation_activity_count || 0;
+          if (gen <= 0) return;
+          const ideName = (ie as any).ide as string;
+          if (!result.has(ideName)) result.set(ideName, []);
+          const arr = result.get(ideName)!;
+          const existing = arr.find(u => u.login === user.login);
+          if (existing) {
+            existing.gen += gen;
+          } else {
+            arr.push({ login: user.login, gen });
+          }
+        });
+      });
+      result.forEach(arr => arr.sort((a, b) => b.gen - a.gen).splice(3));
+      return result;
+    });
+
+    return { chartOptions, horizBarOptions, stackedAreaOptions, donutOptions, groupedBarOptions,
+      breakdownList, numberOfBreakdowns,
       breakdownsChartData, breakdownsChartDataTop5AcceptedPrompts, breakdownsChartDataTop5AcceptedPromptsByLines, breakdownsChartDataTop5AcceptedPromptsByCounts,
+      pieChartColors,
       useEnhancedView, enhancedLanguageList, enhancedEditorList, cliSummary,
-      enhancedChartDataTop5Generations, enhancedChartDataTop5LinesAdded };
+      enhancedChartDataTop5Generations, enhancedChartDataTop5LinesAdded, enhancedChartDataBottom5,
+      usagePerDayChartData, distributionDonutData, modelPerLangChartData, acceptanceRateByEditorData,
+      topUsersPerLanguage, topUsersPerEditor,
+      weekendPlugin, gradientFillPlugin,
+    };
+  },
+  data() {
+    return { chartColumns: '2' };
   },
   computed: {
     breakdownDisplayName() {
@@ -581,17 +976,31 @@ export default defineComponent({
   },
   methods: {
     featureChipColor(feature: string): string {
+      // Feature IDs from new Copilot metrics API
       const map: Record<string, string> = {
-        'copilot_ide_agent': 'primary',
-        'copilot_agent': 'primary',
-        'copilot_ide_chat': 'info',
-        'copilot_inline_chat': 'info',
-        'copilot_edit': 'success',
-        'copilot_ide_completions': 'secondary',
-        'copilot_completions': 'secondary',
-        'copilot_cli': 'warning',
+        'code_completion':           'secondary',
+        'copilot_ide_completions':   'secondary',
+        'copilot_completions':       'secondary',
+        'chat_panel_ask_mode':       'info',
+        'chat_inline':               'info',
+        'copilot_ide_chat':          'info',
+        'copilot_inline_chat':       'info',
+        'chat_panel_custom_mode':    'info',
+        'copilot_edit':              'success',
+        'copilot_ide_edit':          'success',
+        'agent_edit':                'deep-orange',
+        'copilot_ide_agent_edit':    'deep-orange',
+        'chat_panel_agent_mode':     'primary',
+        'copilot_ide_agent':         'primary',
+        'copilot_agent':             'primary',
+        'copilot_cli':               'teal',
+        'others':                    'blue-grey',
       };
-      return map[feature] || 'surface-variant';
+      return map[feature] || 'blue-grey';
+    },
+    featureChipVariant(feature: string): string {
+      // Highlight agent_edit distinctly
+      return (feature === 'agent_edit' || feature === 'copilot_ide_agent_edit') ? 'elevated' : 'tonal';
     },
   },
 });

@@ -1,16 +1,43 @@
 <template>
   <div>
+    <!-- Info header — same style as all other tabs -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div class="mr-3" style="flex: 1; min-width: 250px;">
+          <div class="font-weight-bold text-body-1 mb-1">🔀 Pull Requests</div>
+          <div class="text-medium-emphasis">
+            Track pull request activity for the reporting period — created, reviewed, merged, and Copilot-authored PRs.
+            Copilot coding agent can create PRs autonomously; Copilot code review provides AI-powered suggestions inline.
+          </div>
+        </div>
+        <v-divider vertical class="mx-2 hidden-sm-and-down" />
+        <div class="d-flex flex-column gap-1 flex-shrink-0">
+          <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+          <a href="https://docs.github.com/en/copilot/using-github-copilot/github-copilot-in-github-com/collaborating-with-pull-requests-using-copilot" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Copilot for Pull Requests</span>
+          </a>
+          <a href="https://docs.github.com/en/copilot/using-github-copilot/code-review/using-copilot-code-review" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Copilot code review</span>
+          </a>
+        </div>
+      </div>
+    </v-card>
+
+    <!-- KPI Tiles -->
     <div class="tiles-container">
-      <!-- PRs Created -->
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="spacing-10"/>
                 <div class="text-h6 mb-1">PRs Created</div>
-                <div class="text-caption">{{ dateRangeDescription }}</div>
-                <p class="text-h4">{{ totalCreated }}</p>
+                <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
+                <p class="kpi-value text-primary">{{ totalCreated }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
@@ -20,35 +47,33 @@
         </v-card-item>
       </v-card>
 
-      <!-- PRs Reviewed -->
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="spacing-10"/>
                 <div class="text-h6 mb-1">PRs Reviewed</div>
-                <div class="text-caption">{{ dateRangeDescription }}</div>
-                <p class="text-h4">{{ totalReviewed }}</p>
+                <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
+                <p class="kpi-value text-info">{{ totalReviewed }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Pull requests that received at least one code review during the period. Indicates team collaboration and code quality practices.</span>
+              <span class="tooltip-text">Pull requests that received at least one code review. Indicates team collaboration and code quality practices.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
       </v-card>
 
-      <!-- PRs Merged -->
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="spacing-10"/>
                 <div class="text-h6 mb-1">PRs Merged</div>
-                <div class="text-caption">{{ dateRangeDescription }}</div>
-                <p class="text-h4">{{ totalMerged }}</p>
+                <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
+                <p class="kpi-value text-success">{{ totalMerged }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
@@ -58,16 +83,15 @@
         </v-card-item>
       </v-card>
 
-      <!-- PRs by Copilot -->
-      <v-card elevation="4" color="surface" variant="elevated" class="mx-auto my-3" style="width: 250px; height: 175px;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
         <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="spacing-10"/>
                 <div class="text-h6 mb-1">Created by Copilot</div>
-                <div class="text-caption">{{ dateRangeDescription }}</div>
-                <p class="text-h4">{{ totalCreatedByCopilot }}</p>
+                <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
+                <p class="kpi-value text-warning">{{ totalCreatedByCopilot }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
@@ -78,24 +102,55 @@
       </v-card>
     </div>
 
-    <v-main class="p-1" style="min-height: 300px;">
-      <v-container v-if="hasPrData" style="min-height: 300px;" class="px-4 elevation-2">
-        <!-- PR Activity Over Time -->
-        <h2 class="mb-1">Pull Request Activity Over Time</h2>
-        <Line :data="prActivityChartData" :options="chartOptions" />
-
-        <!-- Copilot PR Contributions -->
-        <h2 class="mb-1 mt-6">Copilot PR Contributions</h2>
-        <Bar :data="copilotPrChartData" :options="chartOptions" />
-
-        <!-- Review Suggestions -->
-        <h2 class="mb-1 mt-6">Review Suggestions</h2>
-        <Line :data="reviewSuggestionsChartData" :options="chartOptions" />
+    <!-- Charts -->
+    <template v-if="hasPrData">
+      <v-container class="px-4 elevation-2">
+        <div class="d-flex justify-end mb-2">
+          <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+            <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+            <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+          </v-btn-toggle>
+        </div>
+        <v-row>
+          <v-col cols="12">
+            <v-card variant="elevated" elevation="2">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Pull Request Activity Over Time</v-card-title>
+              <v-card-text>
+                <div style="height:280px">
+                  <Line :data="prActivityChartData" :options="lineOpts" :plugins="plugins" />
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+        <v-row class="mt-2">
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+            <v-card variant="elevated" elevation="2">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Copilot PR Contributions</v-card-title>
+              <v-card-text>
+                <div style="height:280px">
+                  <Bar :data="copilotPrChartData" :options="barOpts" :plugins="plugins" />
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+            <v-card variant="elevated" elevation="2">
+              <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Review Suggestions</v-card-title>
+              <v-card-text>
+                <div style="height:280px">
+                  <Line :data="reviewSuggestionsChartData" :options="lineOpts" :plugins="plugins" />
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-container>
-      <v-container v-else class="px-4">
-        <v-alert type="info" density="compact" text="No pull request data available. PR metrics require organization-level API access." />
-      </v-container>
-    </v-main>
+    </template>
+
+    <div v-else class="mx-4 mb-4">
+      <v-alert type="info" density="compact" text="No pull request data available. PR metrics require organization-level API access." />
+    </div>
   </div>
 </template>
 
@@ -105,10 +160,11 @@ import type { ReportDayTotals } from '../../server/services/github-copilot-usage
 import { Line, Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
-  PointElement, LineElement, BarElement, Title, Tooltip, Legend
+  PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler
 } from 'chart.js';
+import { PALETTE, weekendPlugin, gradientFillPlugin, makeLineOptions, makeBarOptions } from '@/utils/chartPlugins';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 export default defineComponent({
   name: 'PullRequestViewer',
@@ -127,20 +183,17 @@ export default defineComponent({
     const copilotPrChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const reviewSuggestionsChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
 
-    const chartOptions = {
-      responsive: true, maintainAspectRatio: true,
-      layout: { padding: { left: 150, right: 150, top: 20, bottom: 40 } },
-    };
+    const plugins = [weekendPlugin, gradientFillPlugin];
+    const lineOpts = makeLineOptions({ scales: { x: { ticks: { maxTicksLimit: 14 } }, y: { beginAtZero: true, min: 0 } } });
+    const barOpts  = makeBarOptions({ scales: { x: { ticks: { maxTicksLimit: 14 } }, y: { beginAtZero: true, min: 0 } } });
 
     watchEffect(() => {
       const data = toRef(props, 'reportData').value;
       if (!data || data.length === 0) return;
 
-      // Check if any day has PR data
       hasPrData.value = data.some(d => d.pull_requests != null);
       if (!hasPrData.value) return;
 
-      // Calculate totals
       totalCreated.value = 0; totalReviewed.value = 0; totalMerged.value = 0; totalCreatedByCopilot.value = 0;
       data.forEach(d => {
         const pr = d.pull_requests;
@@ -153,40 +206,41 @@ export default defineComponent({
 
       const labels = data.map(d => d.day);
 
-      // PR Activity chart
       prActivityChartData.value = {
         labels,
         datasets: [
-          { label: 'Created', data: data.map(d => d.pull_requests?.total_created || 0), backgroundColor: 'rgba(75, 192, 192, 0.2)', borderColor: 'rgb(75, 192, 192)' },
-          { label: 'Reviewed', data: data.map(d => d.pull_requests?.total_reviewed || 0), backgroundColor: 'rgba(153, 102, 255, 0.2)', borderColor: 'rgb(153, 102, 255)' },
-          { label: 'Merged', data: data.map(d => d.pull_requests?.total_merged || 0), backgroundColor: 'rgba(255, 159, 64, 0.2)', borderColor: 'rgb(255, 159, 64)' },
+          { label: 'Created',  data: data.map(d => d.pull_requests?.total_created  || 0), borderColor: PALETTE[0].border, backgroundColor: PALETTE[0].bg, fill: true, tension: 0.3 },
+          { label: 'Reviewed', data: data.map(d => d.pull_requests?.total_reviewed || 0), borderColor: PALETTE[1].border, backgroundColor: PALETTE[1].bg, fill: true, tension: 0.3 },
+          { label: 'Merged',   data: data.map(d => d.pull_requests?.total_merged   || 0), borderColor: PALETTE[2].border, backgroundColor: PALETTE[2].bg, fill: true, tension: 0.3 },
         ],
       };
 
-      // Copilot contribution chart
       copilotPrChartData.value = {
         labels,
         datasets: [
-          { label: 'Created by Copilot', data: data.map(d => d.pull_requests?.total_created_by_copilot || 0), backgroundColor: 'rgba(255, 99, 132, 0.5)', borderColor: 'rgb(255, 99, 132)' },
-          { label: 'Reviewed by Copilot', data: data.map(d => d.pull_requests?.total_reviewed_by_copilot || 0), backgroundColor: 'rgba(54, 162, 235, 0.5)', borderColor: 'rgb(54, 162, 235)' },
+          { label: 'Created by Copilot',  data: data.map(d => d.pull_requests?.total_created_by_copilot  || 0), borderColor: PALETTE[3].border, backgroundColor: PALETTE[3].bg },
+          { label: 'Reviewed by Copilot', data: data.map(d => d.pull_requests?.total_reviewed_by_copilot || 0), borderColor: PALETTE[4].border, backgroundColor: PALETTE[4].bg },
         ],
       };
 
-      // Review suggestions chart
       reviewSuggestionsChartData.value = {
         labels,
         datasets: [
-          { label: 'Review Suggestions', data: data.map(d => d.pull_requests?.total_suggestions || 0), backgroundColor: 'rgba(255, 205, 86, 0.2)', borderColor: 'rgb(255, 205, 86)' },
-          { label: 'Applied Suggestions', data: data.map(d => d.pull_requests?.total_applied_suggestions || 0), backgroundColor: 'rgba(75, 192, 192, 0.2)', borderColor: 'rgb(75, 192, 192)' },
-          { label: 'Copilot Suggestions', data: data.map(d => d.pull_requests?.total_copilot_suggestions || 0), backgroundColor: 'rgba(153, 102, 255, 0.2)', borderColor: 'rgb(153, 102, 255)' },
+          { label: 'Review Suggestions',  data: data.map(d => d.pull_requests?.total_suggestions         || 0), borderColor: PALETTE[5].border, backgroundColor: PALETTE[5].bg, fill: true, tension: 0.3 },
+          { label: 'Applied Suggestions', data: data.map(d => d.pull_requests?.total_applied_suggestions || 0), borderColor: PALETTE[6].border, backgroundColor: PALETTE[6].bg, fill: true, tension: 0.3 },
+          { label: 'Copilot Suggestions', data: data.map(d => d.pull_requests?.total_copilot_suggestions || 0), borderColor: PALETTE[2].border, backgroundColor: PALETTE[2].bg, fill: true, tension: 0.3 },
         ],
       };
     });
 
     return {
       totalCreated, totalReviewed, totalMerged, totalCreatedByCopilot, hasPrData,
-      prActivityChartData, copilotPrChartData, reviewSuggestionsChartData, chartOptions,
+      prActivityChartData, copilotPrChartData, reviewSuggestionsChartData,
+      lineOpts, barOpts, plugins,
     };
+  },
+  data() {
+    return { chartColumns: '2' };
   },
 });
 </script>

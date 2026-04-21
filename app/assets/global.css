@@ -34,10 +34,27 @@
     text-align: center;
   }
 
-/* Auto-scaling KPI value for long text (model names, feature names) */
+/* Unified KPI value — all tiles use the same base size; long text scales down gracefully */
+.kpi-value {
+  font-size: clamp(1.4rem, 3.2vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.15;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+/* Secondary / de-emphasised row (row 2 tiles) */
+.kpi-value-sm {
+  font-size: clamp(1.1rem, 2.2vw, 1.9rem);
+  font-weight: 600;
+  line-height: 1.2;
+}
+/* Legacy alias kept for any remaining usages */
 .kpi-text-value {
-  font-size: clamp(0.85rem, 2.2vw, 1.35rem);
-  line-height: 1.25;
+  font-size: clamp(1.4rem, 3.2vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.15;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
   .error-message {
@@ -219,12 +236,37 @@
 .text-error   { color: rgb(var(--v-theme-error))   !important; }
 .text-warning { color: rgb(var(--v-theme-warning)) !important; }
 
-/* ── Toolbar gradient ── */
+/* ── Toolbar ── */
 .app-toolbar {
-  background: linear-gradient(to right, rgba(25,118,210,0.07) 0%, transparent 45%) !important;
+  background: #2d3142 !important;
+  border-bottom: none !important;
 }
 .v-theme--dark .app-toolbar {
-  background: linear-gradient(to right, rgba(144,202,249,0.09) 0%, transparent 45%) !important;
+  background: #1a1b2e !important;
+  border-bottom: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+/* Force white text/icons inside the charcoal toolbar */
+.app-toolbar .v-toolbar-title,
+.app-toolbar .toolbar-title,
+.app-toolbar .v-btn,
+.app-toolbar .v-icon,
+.app-toolbar .error-message,
+.app-toolbar .user-info {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+.app-toolbar .v-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+/* Tabs inside toolbar: inactive = muted white, active = bright white + underline */
+.app-toolbar .v-tab {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+.app-toolbar .v-tab--selected {
+  color: #ffffff !important;
+}
+.app-toolbar .v-tabs .v-tabs-slider-wrapper .v-tabs-slider {
+  background: #ffffff !important;
 }
 
 /* ── Global tooltip card style ── */

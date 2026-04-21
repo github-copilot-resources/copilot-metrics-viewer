@@ -35,7 +35,7 @@
           <v-card-item>
             <div class="text-caption text-medium-emphasis">Lines of code changed with AI</div>
             <div class="text-caption text-medium-emphasis mb-2">{{ dateRangeDescription }}</div>
-            <div class="text-h4 font-weight-bold">{{ formatCompact(totalLocChanged) }}</div>
+            <div class="kpi-value">{{ formatCompact(totalLocChanged) }}</div>
           </v-card-item>
         </v-card>
       </v-col>
@@ -44,7 +44,7 @@
           <v-card-item>
             <div class="text-caption text-medium-emphasis">Agent contribution</div>
             <div class="text-caption text-medium-emphasis mb-2">% of all AI code changes</div>
-            <div class="text-h4 font-weight-bold">{{ agentContributionPct.toFixed(0) }}%</div>
+            <div class="kpi-value">{{ agentContributionPct.toFixed(0) }}%</div>
             <div class="text-caption text-medium-emphasis mt-1">
               {{ formatCompact(agentLocChanged) }} of {{ formatCompact(totalLocChanged) }} lines
             </div>
@@ -56,90 +56,100 @@
           <v-card-item>
             <div class="text-caption text-medium-emphasis">Avg lines deleted by agent per user</div>
             <div class="text-caption text-medium-emphasis mb-2">{{ dateRangeDescription }}</div>
-            <div class="text-h4 font-weight-bold">{{ avgAgentLinesDeleted.toLocaleString() }}</div>
+            <div class="kpi-value">{{ avgAgentLinesDeleted.toLocaleString() }}</div>
           </v-card-item>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Daily LOC chart (full width) -->
-    <v-row class="mx-1 mb-2">
-      <v-col cols="12">
-        <v-card variant="outlined" class="pa-4">
-          <div class="text-subtitle-1 font-weight-medium mb-1">Daily lines added &amp; deleted (all AI)</div>
-          <div class="text-caption text-medium-emphasis mb-3">Lines added and deleted by all Copilot features per day</div>
-          <div style="height:220px">
-            <Bar :data="dailyLocChartData" :options="dailyLocOptions" />
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Charts -->
+    <v-container class="px-4 elevation-2">
+      <div class="d-flex justify-end mb-2">
+        <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+          <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+          <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+        </v-btn-toggle>
+      </div>
 
-    <!-- User-initiated vs Agent-initiated side by side -->
-    <v-row class="mx-1 mb-2">
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="pa-4" height="300">
-          <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated code changes by mode</div>
-          <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted per feature (excluding agent_edit)</div>
-          <div style="height:210px">
-            <Bar :data="userInitiatedChartData" :options="sideBarOptions" />
-          </div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="pa-4" height="300">
-          <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated code changes</div>
-          <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted by agent_edit over time</div>
-          <div style="height:210px">
-            <Bar :data="agentInitiatedChartData" :options="sideBarOptions" />
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+      <!-- Daily LOC chart (full width) -->
+      <v-row class="mb-2">
+        <v-col cols="12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Daily lines added &amp; deleted (all AI)</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added and deleted by all Copilot features per day</div>
+            <div style="height:220px">
+              <Bar :data="dailyLocChartData" :options="dailyLocOptions" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
 
-    <!-- Per-model side by side -->
-    <v-row class="mx-1 mb-2">
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="pa-4" height="300">
-          <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated per model</div>
-          <div class="text-caption text-medium-emphasis mb-3">Lines added by model (user features)</div>
-          <div style="height:210px">
-            <Bar :data="userModelChartData" :options="horizontalBarOptions" />
-          </div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="pa-4" height="300">
-          <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated per model</div>
-          <div class="text-caption text-medium-emphasis mb-3">Lines added by model (agent_edit)</div>
-          <div style="height:210px">
-            <Bar :data="agentModelChartData" :options="horizontalBarOptions" />
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+      <!-- User-initiated vs Agent-initiated side by side -->
+      <v-row class="mb-2">
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated code changes by mode</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted per feature (excluding agent_edit)</div>
+            <div style="height:210px">
+              <Bar :data="userInitiatedChartData" :options="sideBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated code changes</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted by agent_edit over time</div>
+            <div style="height:210px">
+              <Bar :data="agentInitiatedChartData" :options="sideBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
 
-    <!-- Per-language side by side -->
-    <v-row class="mx-1 mb-4">
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="pa-4" height="300">
-          <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated per language</div>
-          <div class="text-caption text-medium-emphasis mb-3">Lines added by language (user features)</div>
-          <div style="height:210px">
-            <Bar :data="userLanguageChartData" :options="horizontalBarOptions" />
-          </div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="6">
-        <v-card variant="outlined" class="pa-4" height="300">
-          <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated per language</div>
-          <div class="text-caption text-medium-emphasis mb-3">Lines added by language (agent_edit)</div>
-          <div style="height:210px">
-            <Bar :data="agentLanguageChartData" :options="horizontalBarOptions" />
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+      <!-- Per-model side by side -->
+      <v-row class="mb-2">
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated per model</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added by model (user features)</div>
+            <div style="height:210px">
+              <Bar :data="userModelChartData" :options="horizontalBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated per model</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added by model (agent_edit)</div>
+            <div style="height:210px">
+              <Bar :data="agentModelChartData" :options="horizontalBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Per-language side by side -->
+      <v-row class="mb-4">
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated per language</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added by language (user features)</div>
+            <div style="height:210px">
+              <Bar :data="userLanguageChartData" :options="horizontalBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated per language</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added by language (agent_edit)</div>
+            <div style="height:210px">
+              <Bar :data="agentLanguageChartData" :options="horizontalBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 
@@ -343,6 +353,9 @@ export default defineComponent({
       dailyLocOptions, sideBarOptions, horizontalBarOptions,
       formatCompact,
     };
+  },
+  data() {
+    return { chartColumns: '2' };
   },
 });
 </script>

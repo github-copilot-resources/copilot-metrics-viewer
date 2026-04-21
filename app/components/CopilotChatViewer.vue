@@ -43,7 +43,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
-            <p class="text-h3 font-weight-bold text-primary mt-1">{{ formatCompact(cumulativeNumberTurns) }}</p>
+            <p class="kpi-value text-primary mt-1">{{ formatCompact(cumulativeNumberTurns) }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -61,7 +61,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
-            <p class="text-h3 font-weight-bold text-success mt-1">{{ formatCompact(cumulativeNumberAcceptances) }}</p>
+            <p class="kpi-value text-success mt-1">{{ formatCompact(cumulativeNumberAcceptances) }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -79,7 +79,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">{{ dateRangeDescription }}</div>
-            <p class="text-h3 font-weight-bold text-info mt-1">{{ actionRate }}%</p>
+            <p class="kpi-value text-info mt-1">{{ actionRate }}%</p>
             <v-progress-linear :model-value="Number(actionRate)" color="info" bg-color="surface-variant" rounded height="6" class="mt-2 mx-2" />
           </div>
         </v-card-item>
@@ -87,44 +87,52 @@
     </div>
 
     <!-- Charts -->
-    <v-row class="mx-1 mt-2">
-      <!-- Chat interactions & code actions over time — full width -->
-      <v-col cols="12">
-        <v-card variant="outlined" class="pa-4">
-          <div class="text-subtitle-1 font-weight-medium mb-1">Daily Chat Interactions &amp; Code Actions</div>
-          <div class="text-caption text-medium-emphasis mb-3">
-            Chat interactions = user prompts · Code actions = apply / insert / copy from chat
-          </div>
-          <div style="height:240px">
-            <Line :data="interactionsChartData" :options="lineOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+    <v-container class="px-4 elevation-2">
+      <div class="d-flex justify-end mb-2">
+        <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+          <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+          <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+        </v-btn-toggle>
+      </div>
+      <v-row>
+        <!-- Chat interactions & code actions over time — full width -->
+        <v-col cols="12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Daily Chat Interactions &amp; Code Actions</div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              Chat interactions = user prompts · Code actions = apply / insert / copy from chat
+            </div>
+            <div style="height:240px">
+              <Line :data="interactionsChartData" :options="lineOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
 
-    <v-row class="mx-1 mt-2 mb-4">
-      <!-- Daily active chat users -->
-      <v-col cols="12" md="7">
-        <v-card variant="outlined" class="pa-4">
-          <div class="text-subtitle-1 font-weight-medium mb-1">Daily Active Chat Users</div>
-          <div class="text-caption text-medium-emphasis mb-3">Users with at least one chat interaction per day</div>
-          <div style="height:220px">
-            <Bar :data="activeUsersChartData" :options="barOptions" :plugins="[weekendPlugin]" />
-          </div>
-        </v-card>
-      </v-col>
+      <v-row class="mt-2 mb-4">
+        <!-- Daily active chat users -->
+        <v-col cols="12" :md="chartColumns === '2' ? 7 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Daily Active Chat Users</div>
+            <div class="text-caption text-medium-emphasis mb-3">Users with at least one chat interaction per day</div>
+            <div style="height:220px">
+              <Bar :data="activeUsersChartData" :options="barOptions" :plugins="[weekendPlugin]" />
+            </div>
+          </v-card>
+        </v-col>
 
-      <!-- Actions per interaction ratio -->
-      <v-col cols="12" md="5">
-        <v-card variant="outlined" class="pa-4">
-          <div class="text-subtitle-1 font-weight-medium mb-1">Daily Action Rate</div>
-          <div class="text-caption text-medium-emphasis mb-3">Code actions ÷ chat interactions per day (%)</div>
-          <div style="height:220px">
-            <Line :data="actionRateChartData" :options="pctOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
-          </div>
-        </v-card>
-      </v-col>
-    </v-row>
+        <!-- Actions per interaction ratio -->
+        <v-col cols="12" :md="chartColumns === '2' ? 5 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Daily Action Rate</div>
+            <div class="text-caption text-medium-emphasis mb-3">Code actions ÷ chat interactions per day (%)</div>
+            <div style="height:220px">
+              <Line :data="actionRateChartData" :options="pctOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 
@@ -276,6 +284,9 @@ export default defineComponent({
       gradientFillPlugin,
       formatCompact,
     };
+  },
+  data() {
+    return { chartColumns: '2' };
   },
 });
 </script>

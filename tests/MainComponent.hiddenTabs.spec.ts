@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest'
 import { applyHiddenTabs, applyHistoricalModeFilter } from '../app/utils/tabUtils'
 
 describe('MainComponent hidden tabs filtering', () => {
-  const ALL_BASE_TABS = ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'user metrics', 'api response']
+  const ALL_BASE_TABS = ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'api response']
 
   test('should keep all tabs when hiddenTabs is empty', () => {
     const tabs = ['organization', 'teams', ...ALL_BASE_TABS]

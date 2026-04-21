@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-toolbar color="surface" elevation="0" class="app-toolbar" style="border-bottom: 1px solid rgba(128,128,128,0.2);">
+    <v-toolbar color="transparent" elevation="0" class="app-toolbar">
       <v-btn icon>
         <v-icon>mdi-github</v-icon>
       </v-btn>
@@ -119,16 +119,18 @@
             <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" />
             <BreakdownComponent
               v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
-              :date-range-description="dateRangeDescription" :report-data="reportData" />
+              :date-range-description="dateRangeDescription" :report-data="reportData"
+              :user-metrics="userMetrics" />
             <BreakdownComponent
               v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
-              :date-range-description="dateRangeDescription" :report-data="reportData" />
+              :date-range-description="dateRangeDescription" :report-data="reportData"
+              :user-metrics="userMetrics" />
             <CopilotChatViewer
 v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
             <AgentActivityViewer v-if="item === 'agent activity'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
-            <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
+            <AgentModeViewer v-if="item === 'models'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
             <SeatsAnalysisViewer
               v-if="item === 'seat analysis'"
               :seats="seats"
@@ -349,7 +351,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'user metrics', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
