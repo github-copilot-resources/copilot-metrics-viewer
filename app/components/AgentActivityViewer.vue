@@ -85,12 +85,12 @@
         </v-col>
       </v-row>
 
-      <!-- User-initiated vs Agent-initiated side by side -->
+      <!-- User-initiated vs Agent-initiated time series side by side -->
       <v-row class="mb-2">
         <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="outlined" class="pa-4" height="300">
             <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated code changes by mode</div>
-            <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted per feature (excluding agent_edit)</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted per feature over time (excluding agent_edit)</div>
             <div style="height:210px">
               <Bar :data="userInitiatedChartData" :options="sideBarOptions" />
             </div>
@@ -99,9 +99,31 @@
         <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="outlined" class="pa-4" height="300">
             <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated code changes</div>
-            <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted by agent_edit over time</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted by agent over time</div>
             <div style="height:210px">
               <Bar :data="agentInitiatedChartData" :options="sideBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- User-initiated vs Agent-initiated aggregate summary side by side -->
+      <v-row class="mb-2">
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated code changes</div>
+            <div class="text-caption text-medium-emphasis mb-3">Total suggested vs added lines, by mode</div>
+            <div style="height:210px">
+              <Bar :data="userModeSummaryChartData" :options="groupedBarOptions" />
+            </div>
+          </v-card>
+        </v-col>
+        <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+          <v-card variant="outlined" class="pa-4" height="300">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated code changes</div>
+            <div class="text-caption text-medium-emphasis mb-3">Total lines added and deleted by agents, by mode</div>
+            <div style="height:210px">
+              <Bar :data="agentModeSummaryChartData" :options="groupedBarOptions" />
             </div>
           </v-card>
         </v-col>
@@ -112,7 +134,7 @@
         <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="outlined" class="pa-4" height="300">
             <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated per model</div>
-            <div class="text-caption text-medium-emphasis mb-3">Lines added by model (user features)</div>
+            <div class="text-caption text-medium-emphasis mb-3">Suggested vs added lines of code, by model</div>
             <div style="height:210px">
               <Bar :data="userModelChartData" :options="horizontalBarOptions" />
             </div>
@@ -121,7 +143,7 @@
         <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="outlined" class="pa-4" height="300">
             <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated per model</div>
-            <div class="text-caption text-medium-emphasis mb-3">Lines added by model (agent_edit)</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added and deleted by agents, by model</div>
             <div style="height:210px">
               <Bar :data="agentModelChartData" :options="horizontalBarOptions" />
             </div>
@@ -134,7 +156,7 @@
         <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="outlined" class="pa-4" height="300">
             <div class="text-subtitle-1 font-weight-medium mb-1">User-initiated per language</div>
-            <div class="text-caption text-medium-emphasis mb-3">Lines added by language (user features)</div>
+            <div class="text-caption text-medium-emphasis mb-3">Suggested vs added lines of code, by language</div>
             <div style="height:210px">
               <Bar :data="userLanguageChartData" :options="horizontalBarOptions" />
             </div>
@@ -143,7 +165,7 @@
         <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="outlined" class="pa-4" height="300">
             <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated per language</div>
-            <div class="text-caption text-medium-emphasis mb-3">Lines added by language (agent_edit)</div>
+            <div class="text-caption text-medium-emphasis mb-3">Lines added and deleted by agents, by language</div>
             <div style="height:210px">
               <Bar :data="agentLanguageChartData" :options="horizontalBarOptions" />
             </div>
@@ -175,6 +197,8 @@ const FEATURE_DISPLAY: Record<string, string> = {
   chat_panel_ask_mode: 'Ask',
   chat_panel_agent_mode: 'Agent',
   chat_panel_custom_mode: 'Custom',
+  chat_panel_edit_mode: 'Edit',
+  chat_panel_plan_mode: 'Plan',
   chat_inline: 'Inline',
   plan_mode: 'Plan',
 };
@@ -204,6 +228,8 @@ export default defineComponent({
     const dailyLocChartData      = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const userInitiatedChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const agentInitiatedChartData= ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const userModeSummaryChartData  = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+    const agentModeSummaryChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const userModelChartData     = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const agentModelChartData    = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const userLanguageChartData  = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -222,6 +248,11 @@ export default defineComponent({
     const sideBarOptions = {
       ...baseOpts,
       scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+    };
+
+    const groupedBarOptions = {
+      ...baseOpts,
+      scales: { x: { stacked: false }, y: { stacked: false, beginAtZero: true } },
     };
 
     const horizontalBarOptions = {
@@ -297,61 +328,114 @@ export default defineComponent({
       };
 
       // ── Per-model aggregation ─────────────────────────────────
-      const userModelMap  = new Map<string, number>();
-      const agentModelMap = new Map<string, number>();
+      const userModelSuggestedMap = new Map<string, number>();
+      const userModelAddedMap     = new Map<string, number>();
+      const agentModelAddedMap    = new Map<string, number>();
+      const agentModelDeletedMap  = new Map<string, number>();
       data.forEach(day => {
         (day.totals_by_model_feature ?? []).forEach(mf => {
-          const loc = (mf.loc_added_sum ?? 0) + (mf.loc_deleted_sum ?? 0);
           if (mf.feature === 'agent_edit') {
-            agentModelMap.set(mf.model, (agentModelMap.get(mf.model) ?? 0) + loc);
+            agentModelAddedMap.set(mf.model, (agentModelAddedMap.get(mf.model) ?? 0) + (mf.loc_added_sum ?? 0));
+            agentModelDeletedMap.set(mf.model, (agentModelDeletedMap.get(mf.model) ?? 0) + (mf.loc_deleted_sum ?? 0));
           } else {
-            userModelMap.set(mf.model, (userModelMap.get(mf.model) ?? 0) + loc);
+            userModelSuggestedMap.set(mf.model, (userModelSuggestedMap.get(mf.model) ?? 0) + (mf.loc_suggested_to_add_sum ?? 0));
+            userModelAddedMap.set(mf.model, (userModelAddedMap.get(mf.model) ?? 0) + (mf.loc_added_sum ?? 0));
           }
         });
       });
-      const topUserModels  = [...userModelMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6);
-      const topAgentModels = [...agentModelMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6);
+      const topUserModels  = [...userModelAddedMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([m]) => m);
+      const topAgentModels = [...agentModelAddedMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,6).map(([m]) => m);
 
       userModelChartData.value = {
-        labels: topUserModels.map(([m]) => m),
-        datasets: [{ label: 'Lines Changed', data: topUserModels.map(([,v]) => v), backgroundColor: PALETTE, borderRadius: 3 }],
+        labels: topUserModels,
+        datasets: [
+          { label: 'Suggested', data: topUserModels.map(m => userModelSuggestedMap.get(m) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
+          { label: 'Added', data: topUserModels.map(m => userModelAddedMap.get(m) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+        ],
       };
       agentModelChartData.value = {
-        labels: topAgentModels.map(([m]) => m),
-        datasets: [{ label: 'Lines Changed', data: topAgentModels.map(([,v]) => v), backgroundColor: PALETTE, borderRadius: 3 }],
+        labels: topAgentModels,
+        datasets: [
+          { label: 'Added', data: topAgentModels.map(m => agentModelAddedMap.get(m) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
+          { label: 'Deleted', data: topAgentModels.map(m => agentModelDeletedMap.get(m) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+        ],
       };
 
       // ── Per-language aggregation ──────────────────────────────
-      const userLangMap  = new Map<string, number>();
-      const agentLangMap = new Map<string, number>();
+      const userLangSuggestedMap = new Map<string, number>();
+      const userLangAddedMap     = new Map<string, number>();
+      const agentLangAddedMap    = new Map<string, number>();
+      const agentLangDeletedMap  = new Map<string, number>();
       data.forEach(day => {
         (day.totals_by_language_feature ?? []).forEach(lf => {
-          const loc = (lf.loc_added_sum ?? 0) + (lf.loc_deleted_sum ?? 0);
           if (lf.feature === 'agent_edit') {
-            agentLangMap.set(lf.language, (agentLangMap.get(lf.language) ?? 0) + loc);
+            agentLangAddedMap.set(lf.language, (agentLangAddedMap.get(lf.language) ?? 0) + (lf.loc_added_sum ?? 0));
+            agentLangDeletedMap.set(lf.language, (agentLangDeletedMap.get(lf.language) ?? 0) + (lf.loc_deleted_sum ?? 0));
           } else {
-            userLangMap.set(lf.language, (userLangMap.get(lf.language) ?? 0) + loc);
+            userLangSuggestedMap.set(lf.language, (userLangSuggestedMap.get(lf.language) ?? 0) + (lf.loc_suggested_to_add_sum ?? 0));
+            userLangAddedMap.set(lf.language, (userLangAddedMap.get(lf.language) ?? 0) + (lf.loc_added_sum ?? 0));
           }
         });
       });
-      const topUserLangs  = [...userLangMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
-      const topAgentLangs = [...agentLangMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8);
+      const topUserLangs  = [...userLangAddedMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(([l]) => l);
+      const topAgentLangs = [...agentLangAddedMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,8).map(([l]) => l);
 
       userLanguageChartData.value = {
-        labels: topUserLangs.map(([l]) => l),
-        datasets: [{ label: 'Lines Changed', data: topUserLangs.map(([,v]) => v), backgroundColor: PALETTE, borderRadius: 3 }],
+        labels: topUserLangs,
+        datasets: [
+          { label: 'Suggested', data: topUserLangs.map(l => userLangSuggestedMap.get(l) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
+          { label: 'Added', data: topUserLangs.map(l => userLangAddedMap.get(l) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+        ],
       };
       agentLanguageChartData.value = {
-        labels: topAgentLangs.map(([l]) => l),
-        datasets: [{ label: 'Lines Changed', data: topAgentLangs.map(([,v]) => v), backgroundColor: PALETTE, borderRadius: 3 }],
+        labels: topAgentLangs,
+        datasets: [
+          { label: 'Added', data: topAgentLangs.map(l => agentLangAddedMap.get(l) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
+          { label: 'Deleted', data: topAgentLangs.map(l => agentLangDeletedMap.get(l) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+        ],
+      };
+
+      // ── Aggregate per-mode summary (Suggested/Added and Added/Deleted) ─
+      const userModeSuggestedMap = new Map<string, number>();
+      const userModeAddedMap     = new Map<string, number>();
+      const agentModeAddedMap    = new Map<string, number>();
+      const agentModeDeletedMap  = new Map<string, number>();
+      data.forEach(day => {
+        (day.totals_by_feature ?? []).forEach(f => {
+          if (f.feature === 'agent_edit') {
+            agentModeAddedMap.set(f.feature, (agentModeAddedMap.get(f.feature) ?? 0) + (f.loc_added_sum ?? 0));
+            agentModeDeletedMap.set(f.feature, (agentModeDeletedMap.get(f.feature) ?? 0) + (f.loc_deleted_sum ?? 0));
+          } else if (USER_FEATURES.includes(f.feature)) {
+            userModeSuggestedMap.set(f.feature, (userModeSuggestedMap.get(f.feature) ?? 0) + (f.loc_suggested_to_add_sum ?? 0));
+            userModeAddedMap.set(f.feature, (userModeAddedMap.get(f.feature) ?? 0) + (f.loc_added_sum ?? 0));
+          }
+        });
+      });
+      const userModeKeys  = [...userModeAddedMap.keys()].sort((a,b) => (userModeAddedMap.get(b)??0) - (userModeAddedMap.get(a)??0));
+      const agentModeKeys = [...agentModeAddedMap.keys()];
+
+      userModeSummaryChartData.value = {
+        labels: userModeKeys.map(f => FEATURE_DISPLAY[f] ?? f),
+        datasets: [
+          { label: 'Suggested', data: userModeKeys.map(f => userModeSuggestedMap.get(f) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
+          { label: 'Added', data: userModeKeys.map(f => userModeAddedMap.get(f) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+        ],
+      };
+      agentModeSummaryChartData.value = {
+        labels: agentModeKeys.map(f => FEATURE_DISPLAY[f] ?? f),
+        datasets: [
+          { label: 'Added', data: agentModeKeys.map(f => agentModeAddedMap.get(f) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
+          { label: 'Deleted', data: agentModeKeys.map(f => agentModeDeletedMap.get(f) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+        ],
       };
     });
 
     return {
       totalLocChanged, agentLocChanged, agentContributionPct, avgAgentLinesDeleted,
       dailyLocChartData, userInitiatedChartData, agentInitiatedChartData,
+      userModeSummaryChartData, agentModeSummaryChartData,
       userModelChartData, agentModelChartData, userLanguageChartData, agentLanguageChartData,
-      dailyLocOptions, sideBarOptions, horizontalBarOptions,
+      dailyLocOptions, sideBarOptions, groupedBarOptions, horizontalBarOptions,
       formatCompact,
     };
   },

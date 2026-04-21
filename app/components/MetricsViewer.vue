@@ -44,6 +44,9 @@
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Current calendar month</div>
             <p class="kpi-value text-primary">{{ ideActiveUsers }}</p>
+            <v-chip v-if="trendActiveUsers" size="x-small" :color="trendActiveUsers.color" variant="tonal" class="mt-1">
+              <v-icon start size="x-small">{{ trendActiveUsers.icon }}</v-icon>{{ trendActiveUsers.label }}
+            </v-chip>
           </div>
         </v-card-item>
       </v-card>
@@ -63,6 +66,9 @@
             <div class="text-caption text-medium-emphasis">{{ agentAdoptionNum }} out of {{ ideActiveUsers }} active users</div>
             <p class="kpi-value text-success">{{ agentAdoptionPct }}%</p>
             <v-progress-linear :model-value="agentAdoptionPct" color="success" bg-color="#C8E6C9" rounded height="6" class="mt-2 mx-2" />
+            <v-chip v-if="trendAdoptionPct" size="x-small" :color="trendAdoptionPct.color" variant="tonal" class="mt-1">
+              <v-icon start size="x-small">{{ trendAdoptionPct.icon }}</v-icon>{{ trendAdoptionPct.label }}
+            </v-chip>
           </div>
         </v-card-item>
       </v-card>
@@ -117,6 +123,9 @@
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">Last 28 days</div>
             <p class="kpi-value mt-2 text-primary">{{ formatCompact(totalChatRequests) }}</p>
+            <v-chip v-if="trendChatRequests" size="x-small" :color="trendChatRequests.color" variant="tonal" class="mt-1">
+              <v-icon start size="x-small">{{ trendChatRequests.icon }}</v-icon>{{ trendChatRequests.label }}
+            </v-chip>
           </div>
         </v-card-item>
       </v-card>
@@ -129,6 +138,9 @@
           <div class="tiles-text">
             <div class="text-caption text-medium-emphasis mt-1">IDE Completion Acceptance Rate (count)</div>
             <p class="kpi-value-sm mt-1">{{ acceptanceRateAverageByCount.toFixed(1) }}%</p>
+            <v-chip v-if="trendAcceptanceCount" size="x-small" :color="trendAcceptanceCount.color" variant="tonal" class="mt-1">
+              <v-icon start size="x-small">{{ trendAcceptanceCount.icon }}</v-icon>{{ trendAcceptanceCount.label }}
+            </v-chip>
           </div>
         </v-card-item>
       </v-card>
@@ -307,9 +319,10 @@ const FEATURE_DISPLAY: Record<string, string> = {
   chat_panel_ask_mode: 'Ask',
   chat_panel_agent_mode: 'Agent',
   chat_panel_custom_mode: 'Custom',
+  chat_panel_edit_mode: 'Edit',
+  chat_panel_plan_mode: 'Plan',
   chat_inline: 'Inline',
   plan_mode: 'Plan',
-  chat_panel_edit_mode: 'Edit (Panel)',
 };
 
 function featureLabel(key: string) {
@@ -354,6 +367,21 @@ export default defineComponent({
     // ── Legacy completion charts ──────────────────────────────────────────
     const acceptanceRateByCountChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
     const totalSuggestionsAndAcceptanceChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+    // ── Trend arrows for KPI tiles ────────────────────────────────────────
+    interface TrendInfo { icon: string; color: string; label: string }
+    const trendActiveUsers  = ref<TrendInfo | null>(null);
+    const trendAdoptionPct  = ref<TrendInfo | null>(null);
+    const trendChatRequests = ref<TrendInfo | null>(null);
+    const trendAcceptanceCount = ref<TrendInfo | null>(null);
+
+    function computeTrend(prev: number, curr: number): TrendInfo | null {
+      if (prev === 0) return null;
+      const pct = Math.round((curr - prev) / prev * 100);
+      if (Math.abs(pct) < 1) return { icon: 'mdi-trending-neutral', color: 'grey', label: '~0%' };
+      if (pct > 0) return { icon: 'mdi-trending-up', color: 'success', label: `+${pct}%` };
+      return { icon: 'mdi-trending-down', color: 'error', label: `${pct}%` };
+    }
 
     // ── New charts from reportData ────────────────────────────────────────
     const ideDauChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -474,6 +502,13 @@ export default defineComponent({
         : cumulativeNumberLOCAccepted.value / totalLinesSuggested.value * 100;
       acceptanceRateAverageByCount.value = cumulativeNumberSuggestions.value === 0 ? 0
         : cumulativeNumberAcceptances.value / cumulativeNumberSuggestions.value * 100;
+
+      // Acceptance rate trend: first half avg vs second half avg
+      if (acceptanceRatesByCount.length >= 2) {
+        const mid = Math.floor(acceptanceRatesByCount.length / 2);
+        const avg = (arr: number[]) => arr.reduce((s, v) => s + v, 0) / arr.length;
+        trendAcceptanceCount.value = computeTrend(avg(acceptanceRatesByCount.slice(0, mid)), avg(acceptanceRatesByCount.slice(mid)));
+      }
     });
 
     // ── Watch reportData (new charts) ─────────────────────────────────────
@@ -515,6 +550,40 @@ export default defineComponent({
       const topFeature = Object.entries(featureTotals).sort((a, b) => b[1] - a[1])[0];
       mostUsedChatMode.value = topFeature ? featureLabel(topFeature[0]) : '';
       totalChatRequests.value = chatTotal;
+
+      // ── Trend computation (first half vs second half) ──────────────────
+      if (data.length >= 2) {
+        const mid = Math.floor(data.length / 2);
+        const first = data.slice(0, mid);
+        const second = data.slice(mid);
+
+        // Active users: last value of each half
+        const prevActive = first[first.length - 1]?.monthly_active_users ?? 0;
+        const currActive = second[second.length - 1]?.monthly_active_users ?? 0;
+        trendActiveUsers.value = computeTrend(prevActive, currActive);
+
+        // Agent adoption %: last value of each half
+        const prevMau = first[first.length - 1]?.monthly_active_users ?? 0;
+        const prevAgentMau = first[first.length - 1]?.monthly_active_agent_users ?? 0;
+        const currMau = second[second.length - 1]?.monthly_active_users ?? 0;
+        const currAgentMau = second[second.length - 1]?.monthly_active_agent_users ?? 0;
+        const prevAdopt = prevMau > 0 ? prevAgentMau / prevMau * 100 : 0;
+        const currAdopt = currMau > 0 ? currAgentMau / currMau * 100 : 0;
+        trendAdoptionPct.value = computeTrend(prevAdopt, currAdopt);
+
+        // Total chat requests: sum over each half
+        const sumRequests = (half: typeof data) => half.reduce((s, d) =>
+          s + (d.totals_by_feature ?? []).filter(f => f.feature !== 'code_completion')
+            .reduce((fs, f) => fs + (f.user_initiated_interaction_count ?? 0), 0), 0);
+        trendChatRequests.value = computeTrend(sumRequests(first), sumRequests(second));
+
+        // Acceptance rate (count): average over each half (from legacy metrics if available)
+        trendAcceptanceCount.value = null; // computed separately in legacy watchEffect
+      } else {
+        trendActiveUsers.value = null;
+        trendAdoptionPct.value = null;
+        trendChatRequests.value = null;
+      }
 
       const labels = data.map(d => d.day ?? '');
 
@@ -670,6 +739,8 @@ export default defineComponent({
       acceptanceRateAverageByLines, acceptanceRateAverageByCount,
       cumulativeNumberSuggestions, cumulativeNumberAcceptances,
       cumulativeNumberLOCAccepted, totalLinesSuggested,
+      // Trend arrows
+      trendActiveUsers, trendAdoptionPct, trendChatRequests, trendAcceptanceCount,
       // Chart options
       compactChartOptions, integerYOptions, stackedBarOptions, groupedBarOptions,
       stackedAreaOptions, donutOptions,
