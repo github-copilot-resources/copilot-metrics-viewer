@@ -592,7 +592,7 @@ export default defineComponent({
       const topLang = Object.entries(langAgg).sort((a, b) => b[1].suggestions - a[1].suggestions)[0]?.[0] || '—'
 
       return [
-        { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: dateRangeDesc.value, tooltip: 'Daily active users on the latest available day' },
+        { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: props.dateRangeDescription, tooltip: 'Daily active users on the latest available day' },
         { label: 'Acceptance Rate', value: `${acceptanceRate}%`, color: 'success', subtitle: 'Completions accepted ÷ generated', tooltip: 'Weighted code acceptance rate (acceptances ÷ generations) over the date range' },
         { label: 'Interactions', value: totalInteractions ? totalInteractions.toLocaleString() : (totalAcc + totalGen).toLocaleString(), color: 'primary', subtitle: 'User-initiated requests', tooltip: 'Total user-initiated Copilot interactions over the date range' },
         { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' }
