@@ -50,7 +50,7 @@ export class ModelsTab {
         // Overview cards — new API mode (scoped to github.com container)
         this.codeCompletionsCard = page.locator('.models-container .v-card').filter({ hasText: 'Code Completions' }).first();
         this.chatCard = page.locator('.models-container .v-card').filter({ has: page.locator('.v-card-title', { hasText: 'Chat' }) }).first();
-        this.allModelsCard = page.locator('.models-container .v-card').filter({ hasText: 'All Models' }).first();
+        this.allModelsCard = page.locator('.models-container .v-card').filter({ hasText: 'Unique Models' }).first();
         
         // Legacy overview cards
         this.githubChatCard = page.locator('.v-card').filter({ hasText: 'GitHub.com Chat' }).first();
