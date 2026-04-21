@@ -1,93 +1,96 @@
 <template>
   <div>
-    <!-- Team Selection -->
-    <v-container>
-      <v-card class="mb-2">
-        <v-card-title class="text-h5">Teams</v-card-title>
-        <v-card-subtitle>Select one team for a deep-dive view, or multiple teams to compare</v-card-subtitle>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="8">
-              <v-autocomplete
-                v-model="selectedTeams"
-                :items="availableTeams"
-                item-value="slug"
-                item-title="name"
-                label="Search and select teams"
-                multiple
-                chips
-                clearable
-                variant="outlined"
-                :theme="isDark ? 'dark' : 'light'"
-                :menu-props="{
-                  contentClass: 'teams-select-menu',
-                  maxHeight: 360,
-                  scrim: false,
-                  closeOnContentClick: false,
-                  offset: 8
-                }"
-                :hint="`Type to filter · 1 team = deep dive · 2+ teams = comparison`"
-                persistent-hint
-              >
-                <template #item="{ props, item }">
-                  <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description" />
-                </template>
-                <template #chip="{ props, item }">
-                  <v-chip v-bind="props" class="select-chip" :text="item.raw.name" closable />
-                </template>
-              </v-autocomplete>
-            </v-col>
-            <v-col cols="12" md="4" class="d-flex align-center gap-2">
-              <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
-              <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
-              <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" @click="clearSelection">Clear All</v-btn>
-            </v-col>
-          </v-row>
-        </v-card-text>
-      </v-card>
-    </v-container>
+    <!-- Description card (matches org style) -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-1 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div style="flex: 1; min-width: 250px;">
+          <div class="font-weight-bold text-body-1 mb-1">🏢 Teams Dashboard</div>
+          <div class="text-medium-emphasis">
+            Compare Copilot usage across teams. Select <strong>one team</strong> for a full deep-dive view with charts and per-user metrics, or <strong>multiple teams</strong> to compare them side by side.
+          </div>
+        </div>
+      </div>
+    </v-card>
+
+    <!-- Team selector -->
+    <v-card flat class="mx-4 mb-2 pa-3">
+      <v-row align="center">
+        <v-col cols="12" md="8">
+          <v-autocomplete
+            v-model="selectedTeams"
+            :items="availableTeams"
+            item-value="slug"
+            item-title="name"
+            label="Search and select teams"
+            multiple
+            chips
+            clearable
+            variant="outlined"
+            :theme="isDark ? 'dark' : 'light'"
+            :menu-props="{
+              contentClass: 'teams-select-menu',
+              maxHeight: 360,
+              scrim: false,
+              closeOnContentClick: false,
+              offset: 8
+            }"
+            :hint="`Type to filter · 1 team = deep dive · 2+ teams = comparison`"
+            persistent-hint
+          >
+            <template #item="{ props, item }">
+              <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description" />
+            </template>
+            <template #chip="{ props, item }">
+              <v-chip v-bind="props" class="select-chip" :text="item.raw.name" closable />
+            </template>
+          </v-autocomplete>
+        </v-col>
+        <v-col cols="12" md="4" class="d-flex align-center gap-2">
+          <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
+          <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
+          <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" @click="clearSelection">Clear All</v-btn>
+        </v-col>
+      </v-row>
+    </v-card>
 
     <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE -->
     <div v-if="singleTeamMode">
       <!-- Team header -->
-      <v-container>
-        <v-card color="surface-variant" variant="tonal" class="mb-2 pa-1">
-          <v-card-title class="text-h6 d-flex align-center gap-2">
-            <v-icon>mdi-account-group</v-icon>
-            {{ singleTeamName }}
-            <v-spacer />
-            <v-btn
-              :href="getTeamDetailUrl(selectedTeams[0]!)"
-              target="_blank"
-              variant="tonal"
-              size="small"
-              append-icon="mdi-open-in-new"
-            >View Team</v-btn>
-          </v-card-title>
-          <v-card-subtitle class="pb-2">{{ dateRangeDesc }}</v-card-subtitle>
-        </v-card>
-      </v-container>
+      <v-card variant="outlined" class="mx-4 mb-1 pa-3" density="compact">
+        <div class="d-flex align-center gap-2 text-body-2">
+          <v-icon color="primary">mdi-account-group</v-icon>
+          <div style="flex: 1;">
+            <div class="font-weight-bold text-body-1">{{ singleTeamName }}</div>
+            <div class="text-medium-emphasis">{{ dateRangeDesc }}</div>
+          </div>
+          <v-btn
+            :href="getTeamDetailUrl(selectedTeams[0]!)"
+            target="_blank"
+            variant="outlined"
+            size="small"
+            append-icon="mdi-open-in-new"
+          >View Team</v-btn>
+        </div>
+      </v-card>
 
       <!-- KPI Tiles -->
-      <v-container>
-        <v-row justify="start">
-          <v-col v-for="tile in singleTeamKPIs" :key="tile.label" cols="6" sm="6" md="3">
-            <v-card elevation="3" color="surface" variant="elevated">
-              <v-card-item>
-                <div class="d-flex flex-column align-center py-2">
-                  <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
-                    <template #activator="{ props: tip }">
-                      <div v-bind="tip" class="text-subtitle-2 text-medium-emphasis mb-1 text-center">{{ tile.label }}</div>
-                    </template>
-                    <v-card class="pa-3 metric-tooltip"><span class="tooltip-text">{{ tile.tooltip }}</span></v-card>
-                  </v-tooltip>
-                  <div class="text-h4 font-weight-bold">{{ tile.value }}</div>
-                </div>
-              </v-card-item>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-container>
+      <div class="tiles-container">
+        <v-card v-for="tile in singleTeamKPIs" :key="tile.label" elevation="4" color="surface" variant="elevated" class="my-2">
+          <v-card-item>
+            <div class="tiles-text">
+              <div class="spacing-10" />
+              <v-tooltip location="bottom start" open-on-hover open-delay="200" close-delay="200">
+                <template #activator="{ props: tip }">
+                  <div v-bind="tip" class="text-h6 mb-1">{{ tile.label }}</div>
+                </template>
+                <v-card class="pa-3 metric-tooltip"><span class="tooltip-text">{{ tile.tooltip }}</span></v-card>
+              </v-tooltip>
+              <div class="text-caption text-medium-emphasis">{{ tile.subtitle }}</div>
+              <p :class="`kpi-value mt-1 text-${tile.color}`">{{ tile.value }}</p>
+            </div>
+          </v-card-item>
+        </v-card>
+      </div>
 
       <!-- Column toggle + Charts -->
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
@@ -589,10 +592,10 @@ export default defineComponent({
       const topLang = Object.entries(langAgg).sort((a, b) => b[1].suggestions - a[1].suggestions)[0]?.[0] || '—'
 
       return [
-        { label: 'Active Users', value: activeUsers, tooltip: 'Daily active users on the latest available day' },
-        { label: 'Acceptance Rate', value: `${acceptanceRate}%`, tooltip: 'Weighted code acceptance rate (acceptances ÷ generations) over the date range' },
-        { label: 'Interactions', value: totalInteractions ? totalInteractions.toLocaleString() : (totalAcc + totalGen).toLocaleString(), tooltip: 'Total user-initiated Copilot interactions over the date range' },
-        { label: 'Top Language', value: topLang, tooltip: 'Most active programming language by code generation count' }
+        { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: dateRangeDesc.value, tooltip: 'Daily active users on the latest available day' },
+        { label: 'Acceptance Rate', value: `${acceptanceRate}%`, color: 'success', subtitle: 'Completions accepted ÷ generated', tooltip: 'Weighted code acceptance rate (acceptances ÷ generations) over the date range' },
+        { label: 'Interactions', value: totalInteractions ? totalInteractions.toLocaleString() : (totalAcc + totalGen).toLocaleString(), color: 'primary', subtitle: 'User-initiated requests', tooltip: 'Total user-initiated Copilot interactions over the date range' },
+        { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' }
       ]
     })
 
