@@ -59,7 +59,8 @@ async function runSync() {
       scope as any,
       identifier,
       headers,
-      githubTeam || undefined
+      githubTeam || undefined,
+      daysBack
     );
 
     logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped`);
