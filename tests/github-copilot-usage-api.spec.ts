@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { parseNDJSON } from '../server/services/github-copilot-usage-api';
-import type { ReportDayTotals } from '../server/services/github-copilot-usage-api';
+import { parseNDJSON, normalizeReportResponse } from '../server/services/github-copilot-usage-api';
+import type { ReportDayTotals, OrgReport } from '../server/services/github-copilot-usage-api';
 import { generateMockReport, mockRequestDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
 import { transformReportToMetrics, transformDayToMetrics } from '../server/services/report-transformer';
 
@@ -272,6 +272,75 @@ describe('GitHub Copilot Usage API', () => {
       const expectedUrl = `https://api.github.com/orgs/test-org/copilot/metrics/reports/organization-28-day/latest`;
       
       expect(expectedUrl).toContain('organization-28-day/latest');
+    });
+  });
+
+  describe('downloadReport normalization', () => {
+    const flatDayTotals: ReportDayTotals = {
+      day: '2026-04-19',
+      organization_id: 'org-123',
+      enterprise_id: 'ent-456',
+      daily_active_users: 201,
+      weekly_active_users: 850,
+      monthly_active_users: 1200,
+      user_initiated_interaction_count: 500,
+      code_generation_activity_count: 300,
+      code_acceptance_activity_count: 150,
+      totals_by_ide: [],
+      totals_by_feature: [],
+      totals_by_language_feature: [],
+      totals_by_language_model: [],
+      totals_by_model_feature: [],
+      loc_suggested_to_add_sum: 1000,
+      loc_suggested_to_delete_sum: 0,
+      loc_added_sum: 500,
+      loc_deleted_sum: 0,
+    };
+
+    const orgReport: OrgReport = {
+      report_start_day: '2026-03-24',
+      report_end_day: '2026-04-20',
+      organization_id: 'org-123',
+      enterprise_id: 'ent-456',
+      created_at: '2026-04-21T00:00:00Z',
+      day_totals: [flatDayTotals],
+    };
+
+    it('should normalize flat 1-day ReportDayTotals into OrgReport', () => {
+      const result = normalizeReportResponse(flatDayTotals);
+
+      expect(result.day_totals).toHaveLength(1);
+      expect(result.day_totals[0]).toEqual(flatDayTotals);
+      expect(result.report_start_day).toBe('2026-04-19');
+      expect(result.report_end_day).toBe('2026-04-19');
+      expect(result.organization_id).toBe('org-123');
+      expect(result.enterprise_id).toBe('ent-456');
+    });
+
+    it('should return OrgReport as-is for 28-day format', () => {
+      const result = normalizeReportResponse(orgReport);
+
+      expect(result).toEqual(orgReport);
+      expect(result.day_totals).toHaveLength(1);
+      expect(result.report_start_day).toBe('2026-03-24');
+      expect(result.report_end_day).toBe('2026-04-20');
+    });
+
+    it('should handle 1-day response with missing organization_id and enterprise_id', () => {
+      const minimalDayTotals: ReportDayTotals = { ...flatDayTotals, organization_id: '', enterprise_id: '' };
+      const result = normalizeReportResponse(minimalDayTotals);
+
+      expect(result.day_totals).toHaveLength(1);
+      expect(result.organization_id).toBe('');
+      expect(result.enterprise_id).toBe('');
+    });
+
+    it('should preserve all fields from flat ReportDayTotals in the wrapped day_totals entry', () => {
+      const result = normalizeReportResponse(flatDayTotals);
+
+      expect(result.day_totals[0].daily_active_users).toBe(201);
+      expect(result.day_totals[0].weekly_active_users).toBe(850);
+      expect(result.day_totals[0].loc_suggested_to_add_sum).toBe(1000);
     });
   });
 });
