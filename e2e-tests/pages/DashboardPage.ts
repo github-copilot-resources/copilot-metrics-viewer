@@ -4,7 +4,7 @@ import { EditorsTab } from "./EditorsTab";
 import { SeatAnalysisTab } from "./SeatAnalysisTab";
 import { ApiResponseTab } from "./ApiResponseTab";
 import { CopilotChatTab } from "./CopilotChatTab";
-import { GitHubTab } from "./GitHubTab";
+import { ModelsTab } from "./ModelsTab";
 import { UserMetricsTab } from "./UserMetricsTab";
 
 export class DashboardPage {
@@ -28,7 +28,7 @@ export class DashboardPage {
     readonly seatAnalysisTabLink: Locator;
     readonly apiResponseTabLink: Locator;
     readonly copilotChatTabLink: Locator;
-    readonly githubTabLink: Locator;
+    readonly modelsTabLink: Locator;
     readonly userMetricsTabLink: Locator;
 
     constructor(page: Page) {
@@ -62,7 +62,7 @@ export class DashboardPage {
         this.seatAnalysisTabLink = page.getByRole("tab", { name: "seat analysis" });
         this.apiResponseTabLink = page.getByRole("tab", { name: "api response" });
         this.copilotChatTabLink = page.getByRole("tab", { name: "copilot chat" });
-        this.githubTabLink = page.getByRole("tab", { name: "github.com" });
+        this.modelsTabLink = page.getByRole("tab", { name: "models" });
         this.userMetricsTabLink = page.getByRole("tab", { name: "user metrics" });
 
         this.teamTabLink = page.getByRole("tab", { name: "team" });
@@ -147,9 +147,9 @@ export class DashboardPage {
         return new CopilotChatTab(this.page);
     }
 
-    async gotoGitHubTab() {
-        await this.githubTabLink.click();
-        const tab = new GitHubTab(this.page);
+    async gotoModelsTab() {
+        await this.modelsTabLink.click();
+        const tab = new ModelsTab(this.page);
         // Wait for the github-stats data to load — look for "Copilot Statistics" title
         // and at least one overview card to have content
         await tab.statisticsTitle.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});

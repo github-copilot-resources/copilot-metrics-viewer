@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-export class GitHubTab {
+export class ModelsTab {
     readonly page: Page;
     
     // Container and main elements
@@ -43,14 +43,14 @@ export class GitHubTab {
         this.page = page;
         
         // Container and main elements
-        this.githubContainer = page.locator('.github-com-container');
+        this.githubContainer = page.locator('.models-container');
         this.statisticsTitle = page.locator('h2').filter({ hasText: 'Copilot Statistics' });
         this.dateRangeCard = page.locator('.v-card').filter({ hasText: /calendar-range/ });
         
         // Overview cards — new API mode (scoped to github.com container)
-        this.codeCompletionsCard = page.locator('.github-com-container .v-card').filter({ hasText: 'Code Completions' }).first();
-        this.chatCard = page.locator('.github-com-container .v-card').filter({ has: page.locator('.v-card-title', { hasText: 'Chat' }) }).first();
-        this.allModelsCard = page.locator('.github-com-container .v-card').filter({ hasText: 'All Models' }).first();
+        this.codeCompletionsCard = page.locator('.models-container .v-card').filter({ hasText: 'Code Completions' }).first();
+        this.chatCard = page.locator('.models-container .v-card').filter({ has: page.locator('.v-card-title', { hasText: 'Chat' }) }).first();
+        this.allModelsCard = page.locator('.models-container .v-card').filter({ hasText: 'All Models' }).first();
         
         // Legacy overview cards
         this.githubChatCard = page.locator('.v-card').filter({ hasText: 'GitHub.com Chat' }).first();

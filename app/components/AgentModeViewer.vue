@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="models-container">
         <!-- Info panel -->
         <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
           <div class="d-flex flex-wrap align-start gap-2 text-body-2">
