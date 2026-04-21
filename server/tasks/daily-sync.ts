@@ -32,7 +32,6 @@ export default defineTask({
       : rawScope || 'organization') as 'organization' | 'enterprise';
     const githubOrg = config.public.githubOrg;
     const githubEnt = config.public.githubEnt;
-    const githubTeam = config.public.githubTeam;
     const githubToken = config.githubToken;
 
     if (!githubToken) {
@@ -58,8 +57,7 @@ export default defineTask({
       const result = await syncBulk(
         scope,
         identifier,
-        headers,
-        githubTeam || undefined
+        headers
       );
 
       logger.info(`Aggregated sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped, ${result.errors.length} errors`);

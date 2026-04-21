@@ -203,7 +203,6 @@ Public variables:
 - `NUXT_PUBLIC_SCOPE`
 - `NUXT_PUBLIC_GITHUB_ENT`
 - `NUXT_PUBLIC_GITHUB_ORG`
-- `NUXT_PUBLIC_GITHUB_TEAM`
 - `NUXT_PUBLIC_HIDDEN_TABS`
 - `NUXT_PUBLIC_ENABLE_HISTORICAL_MODE`
 
@@ -220,7 +219,7 @@ The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the d
 
 - If set to `'enterprise'`, the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
 - If set to `'organization'`, the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
-- To view team-level metrics, set `NUXT_PUBLIC_GITHUB_TEAM` with either scope — team filtering is applied as a post-processing step.
+- To view team-level metrics, use the Teams tab or navigate to `/orgs/<org>/teams/<team>` — team filtering is applied as a post-processing step.
 
 > **Note:** Legacy values `'team-organization'` and `'team-enterprise'` are still accepted and automatically normalized to `'organization'` and `'enterprise'` respectively for backward compatibility.
 
@@ -236,18 +235,6 @@ NUXT_PUBLIC_SCOPE=organization
 NUXT_PUBLIC_GITHUB_ORG=<YOUR-ORGANIZATION>
 
 NUXT_PUBLIC_GITHUB_ENT=
-````
-
-#### NUXT_PUBLIC_GITHUB_TEAM
-
-The `NUXT_PUBLIC_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Organization or Enterprise account.
-‼️ Important ‼️ When this variable is set, all displayed metrics will pertain exclusively to the specified team. To view metrics for the entire Organization or Enterprise, remove this environment variable.
-
-> [!NOTE]
-> Team metrics are **derived from per-user data**, not from a dedicated team API endpoint. The application resolves team membership via the GitHub Teams API and aggregates per-user metrics for team members. There is no minimum team size requirement.
-
-````
-NUXT_PUBLIC_GITHUB_TEAM=
 ````
 
 #### NUXT_PUBLIC_IS_DATA_MOCKED

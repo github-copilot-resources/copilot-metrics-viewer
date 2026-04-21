@@ -289,7 +289,6 @@ These endpoints respond in ~200ms without making external API calls and do not r
 | `NUXT_PUBLIC_SCOPE` | `organization` or `enterprise` (legacy `team-organization`/`team-enterprise` have been removed; existing values are auto-normalized) | Yes |
 | `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
 | `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise scope |
-| `NUXT_PUBLIC_GITHUB_TEAM` | GitHub team slug — enables team-filtered metrics views (requires historical mode) | Historical mode only |
 | `NUXT_SESSION_PASSWORD` | Session encryption key (min 32 chars) | Yes |
 | `DATABASE_URL` | PostgreSQL connection string | Historical mode only |
 | `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |

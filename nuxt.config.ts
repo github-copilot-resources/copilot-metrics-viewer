@@ -99,7 +99,6 @@ export default defineNuxtConfig({
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
       githubOrg: '',
       githubEnt: '',
-      githubTeam: '',
       usingGithubAuth: false,
       version,
       isPublicApp: false,

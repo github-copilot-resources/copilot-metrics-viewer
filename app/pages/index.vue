@@ -15,7 +15,6 @@ if(route.query.mock) {
 if (route.params.ent || route.params.org) {
   config.public.githubEnt = route.params.ent as string
   config.public.githubOrg = route.params.org as string
-  config.public.githubTeam = route.params.team as string
 
   
   // update scope

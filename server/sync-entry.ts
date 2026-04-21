@@ -28,7 +28,6 @@ async function runSync() {
     : rawScope) as 'organization' | 'enterprise';
   const githubOrg = process.env.NUXT_PUBLIC_GITHUB_ORG;
   const githubEnt = process.env.NUXT_PUBLIC_GITHUB_ENT;
-  const githubTeam = process.env.NUXT_PUBLIC_GITHUB_TEAM;
   const githubToken = process.env.NUXT_GITHUB_TOKEN;
   const daysBack = parseInt(process.env.SYNC_DAYS_BACK || '28', 10);
 
@@ -61,8 +60,7 @@ async function runSync() {
     const result = await syncBulk(
       scope,
       identifier,
-      headers,
-      githubTeam || undefined
+      headers
     );
 
     logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped`);

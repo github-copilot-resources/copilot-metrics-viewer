@@ -61,24 +61,6 @@
       </template>
     </v-banner>
 
-    <!-- Team + no Historical mode warning banner -->
-    <v-banner
-      v-if="showTeamHistoricalWarning"
-      color="warning"
-      icon="mdi-alert"
-      lines="two"
-      class="migration-banner"
-    >
-      <v-banner-text>
-        <strong>Historical mode is required for team metrics.</strong>
-        Team-level metrics are derived from per-user data stored in the database.
-        Enable Historical mode by setting <code>ENABLE_HISTORICAL_MODE=true</code> in your environment.
-      </v-banner-text>
-      <template #actions>
-        <v-btn text="Dismiss" @click="showTeamHistoricalWarning = false" />
-      </template>
-    </v-banner>
-
     <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
       v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
@@ -226,10 +208,6 @@ export default defineNuxtComponent({
       clear();
     },
     getDisplayTabName(itemName: string): string {
-      // Transform scope names to display names for tabs
-      // When a team is configured, display 'team' regardless of base scope
-      const cfg = useRuntimeConfig();
-      if (cfg.public.githubTeam) return 'team';
       return itemName;
     },
     async handleDateRangeChange(newDateRange: { 
@@ -281,8 +259,8 @@ export default defineNuxtComponent({
         this.reportData = response.reportData || [];
         this.metricsReady = true;
 
-        if (config.public.githubTeam && this.metrics.length === 0 && !this.apiError) {
-          this.apiError = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
+        if (this.metrics.length === 0 && !this.apiError) {
+          this.apiError = 'No data returned from API - check if the organization exists and has any activity';
         }
 
       } catch (error: any) {
@@ -371,7 +349,6 @@ export default defineNuxtComponent({
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
       showMigrationBanner: false,
-      showTeamHistoricalWarning: false,
       showDateRange: false,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
@@ -384,8 +361,8 @@ export default defineNuxtComponent({
     
     this.config = useRuntimeConfig();
 
-    // Add teams tab for organization/enterprise (no specific team) to allow team comparison
-    if (!this.config.public.githubTeam && (this.itemName === 'organization' || this.itemName === 'enterprise')) {
+    // Add teams tab for organization/enterprise to allow team comparison
+    if (this.itemName === 'organization' || this.itemName === 'enterprise') {
       this.tabItems.splice(1, 0, 'teams'); // Insert after the first tab
     }
     
@@ -394,11 +371,6 @@ export default defineNuxtComponent({
 
     // Filter out hidden tabs based on NUXT_PUBLIC_HIDDEN_TABS environment variable
     this.tabItems = applyHiddenTabs(this.tabItems, this.config.public.hiddenTabs as string);
-
-    // Warn when a team URL is accessed without Historical mode — team data requires DB
-    if (this.config.public.githubTeam && !this.config.public.enableHistoricalMode) {
-      this.showTeamHistoricalWarning = true;
-    }
   },
   async mounted() {
     // Load initial data
