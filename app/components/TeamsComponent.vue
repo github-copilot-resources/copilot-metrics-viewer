@@ -13,44 +13,44 @@
     </v-card>
 
     <!-- Team selector -->
-    <v-card flat class="mx-4 mb-2 pa-3">
-      <v-row align="center">
-        <v-col cols="12" md="8">
-          <v-autocomplete
-            v-model="selectedTeams"
-            :items="availableTeams"
-            item-value="slug"
-            item-title="name"
-            label="Search and select teams"
-            multiple
-            chips
-            clearable
-            variant="outlined"
-            :theme="isDark ? 'dark' : 'light'"
-            :menu-props="{
-              contentClass: 'teams-select-menu',
-              maxHeight: 360,
-              scrim: false,
-              closeOnContentClick: false,
-              offset: 8
-            }"
-            :hint="`Type to filter · 1 team = deep dive · 2+ teams = comparison`"
-            persistent-hint
-          >
-            <template #item="{ props, item }">
-              <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description" />
-            </template>
-            <template #chip="{ props, item }">
-              <v-chip v-bind="props" class="select-chip" :text="item.raw.name" closable />
-            </template>
-          </v-autocomplete>
-        </v-col>
-        <v-col cols="12" md="4" class="d-flex align-center gap-2">
+    <v-card variant="outlined" class="mx-4 mb-2 pa-3" density="compact">
+      <div class="d-flex align-center gap-2">
+        <v-autocomplete
+          v-model="selectedTeams"
+          :items="availableTeams"
+          item-value="slug"
+          item-title="name"
+          label="Search and select teams"
+          multiple
+          chips
+          clearable
+          variant="outlined"
+          density="compact"
+          :theme="isDark ? 'dark' : 'light'"
+          :menu-props="{
+            contentClass: 'teams-select-menu',
+            maxHeight: 360,
+            scrim: false,
+            closeOnContentClick: false,
+            offset: 8
+          }"
+          :hint="`Type to filter · 1 team = deep dive · 2+ teams = comparison`"
+          persistent-hint
+          class="flex-grow-1"
+        >
+          <template #item="{ props, item }">
+            <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.description" />
+          </template>
+          <template #chip="{ props, item }">
+            <v-chip v-bind="props" class="select-chip" :text="item.raw.name" closable />
+          </template>
+        </v-autocomplete>
+        <div class="d-flex align-center gap-2 flex-shrink-0">
           <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
           <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
           <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" @click="clearSelection">Clear All</v-btn>
-        </v-col>
-      </v-row>
+        </div>
+      </div>
     </v-card>
 
     <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE -->
