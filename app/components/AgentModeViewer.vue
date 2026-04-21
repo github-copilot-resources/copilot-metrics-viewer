@@ -292,7 +292,7 @@
                 <v-col cols="12">
                   <v-alert variant="tonal" color="info" icon="mdi-information-outline" density="compact">
                     <div class="text-body-2">
-                      <strong>Premium requests</strong> — some models consume multiple Copilot request units (e.g. Claude Opus 4 = 3×, GPT-4.5 = 50×).
+                      <strong>Premium requests</strong> — some models consume multiple Copilot request units (e.g. Claude Opus 4.7 = 7.5×, GPT-5.4 mini = 0.25×).
                       This dashboard shows request counts; to view quota usage and estimated costs, check your
                       <a :href="billingUrl" target="_blank" rel="noopener" class="text-primary">billing settings</a>
                       or the
