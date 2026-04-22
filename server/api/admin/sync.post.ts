@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
         }
 
         logger.info(`Syncing gaps from ${options.since} to ${options.until}`);
-        const results = await syncGaps(
+        const { results, gapsDetected, outsideWindow } = await syncGaps(
           options.scope!,
           options.githubOrg || options.githubEnt || 'unknown',
           options.since,
@@ -115,8 +115,9 @@ export default defineEventHandler(async (event) => {
 
         return {
           action: 'sync-gaps',
-          gapsFilled: results.length,
-          successCount,
+          gapsDetected,
+          gapsFilled: successCount,
+          outsideWindow,
           failureCount,
           results
         };

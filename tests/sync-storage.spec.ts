@@ -301,7 +301,7 @@ describe('Sync Service & Storage', () => {
       const key1 = buildKey('organization', 'test-org', '2026-02-01');
       storageMap.set(key1, { data: {} });
 
-      const results = await syncGaps(
+      const { results } = await syncGaps(
         'organization',
         'test-org',
         '2026-02-01',
@@ -321,7 +321,7 @@ describe('Sync Service & Storage', () => {
         storageMap.set(key, { data: {} });
       }
 
-      const results = await syncGaps(
+      const { results, gapsDetected } = await syncGaps(
         'organization',
         'test-org',
         '2026-02-01',
@@ -330,6 +330,7 @@ describe('Sync Service & Storage', () => {
       );
 
       expect(results).toHaveLength(0);
+      expect(gapsDetected).toBe(0);
     });
   });
 

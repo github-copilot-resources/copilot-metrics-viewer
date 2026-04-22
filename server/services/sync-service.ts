@@ -298,12 +298,12 @@ export async function syncGaps(
   endDate: string,
   headers: HeadersInit,
   teamSlug?: string
-): Promise<SyncResult[]> {
+): Promise<{ results: SyncResult[]; gapsDetected: number; outsideWindow: number }> {
   const missingDates = await detectGaps(scope, identifier, startDate, endDate, teamSlug);
   
   if (missingDates.length === 0) {
     console.log('No gaps detected, all dates already synced');
-    return [];
+    return { results: [], gapsDetected: 0, outsideWindow: 0 };
   }
 
   console.log(`Found ${missingDates.length} missing dates, syncing via bulk download...`);
@@ -312,6 +312,12 @@ export async function syncGaps(
   const request: MetricsReportRequest = { scope, identifier, teamSlug };
   const report = await fetchLatestReport(request, headers);
   const missingSet = new Set(missingDates);
+  const reportDates = new Set(report.day_totals.map(d => d.day));
+  const outsideWindow = missingDates.filter(d => !reportDates.has(d)).length;
+
+  if (outsideWindow > 0) {
+    console.log(`${outsideWindow} gap(s) are outside the available 28-day API window and cannot be backfilled`);
+  }
 
   const results: SyncResult[] = [];
   for (const dayData of report.day_totals) {
@@ -326,7 +332,7 @@ export async function syncGaps(
     }
   }
 
-  return results;
+  return { results, gapsDetected: missingDates.length, outsideWindow };
 }
 
 /**
