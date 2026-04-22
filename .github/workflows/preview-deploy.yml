@@ -261,7 +261,7 @@ jobs:
                 NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
                 NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-                ENABLE_HISTORICAL_MODE=true \
+                NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 SYNC_ENABLED=false \
                 NITRO_PORT=3000 \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
@@ -279,7 +279,7 @@ jobs:
                 NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
                 NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-                ENABLE_HISTORICAL_MODE=true \
+                NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 SYNC_ENABLED=false \
                 NITRO_PORT=3000 \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
@@ -336,7 +336,7 @@ jobs:
               --env-vars \
                 NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-                ENABLE_HISTORICAL_MODE=true \
+                NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
                 NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}

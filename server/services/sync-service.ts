@@ -26,7 +26,7 @@ import {
 } from '../storage/sync-storage';
 
 export interface SyncRequest {
-  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise';
+  scope: 'organization' | 'enterprise';
   identifier: string;
   date: string;
   teamSlug?: string;
@@ -75,7 +75,7 @@ async function saveDayData(
  *                   Defaults to all days in the report (up to 28).
  */
 export async function syncBulk(
-  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+  scope: 'organization' | 'enterprise',
   identifier: string,
   headers: HeadersInit,
   teamSlug?: string,
@@ -127,9 +127,7 @@ export async function syncBulk(
 
     // For org/enterprise scopes also persist per-day per-user records so that
     // team-level metrics can be derived from DB for any historical date range.
-    // Normalize team scopes to base scope since user_day_metrics stores at org/enterprise level.
-    const isBaseScope = scope === 'organization' || scope === 'enterprise' ||
-      scope === 'team-organization' || scope === 'team-enterprise';
+    const isBaseScope = scope === 'organization' || scope === 'enterprise';
     if (isBaseScope) {
       try {
         logger.info(`Fetching per-user day records for ${scope}:${identifier}`);
@@ -227,7 +225,7 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
  * Uses 28-day bulk download and filters to the requested range.
  */
 export async function syncMetricsForDateRange(
-  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+  scope: 'organization' | 'enterprise',
   identifier: string,
   startDate: string,
   endDate: string,
@@ -294,7 +292,7 @@ export async function detectGaps(
  * Sync only missing dates using bulk download.
  */
 export async function syncGaps(
-  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+  scope: 'organization' | 'enterprise',
   identifier: string,
   startDate: string,
   endDate: string,
@@ -381,7 +379,7 @@ export interface SeatsSyncResult {
  * snapshot.  Skips if today's snapshot is already stored.
  */
 export async function syncSeats(
-  scope: 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+  scope: 'organization' | 'enterprise',
   identifier: string,
   headers: HeadersInit
 ): Promise<SeatsSyncResult> {
@@ -397,7 +395,7 @@ export async function syncSeats(
     }
 
     const baseUrl = 'https://api.github.com';
-    const apiUrl = (scope === 'enterprise' || scope === 'team-enterprise')
+    const apiUrl = scope === 'enterprise'
       ? `${baseUrl}/enterprises/${identifier}/copilot/billing/seats`
       : `${baseUrl}/orgs/${identifier}/copilot/billing/seats`;
 

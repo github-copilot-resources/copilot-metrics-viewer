@@ -1,15 +1,76 @@
 <template>
   <div>
+    <!-- Info panel — same style as Organization tab -->
+    <v-card variant="outlined" class="mx-4 mt-3 mb-2 pa-3" density="compact">
+      <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+        <div class="mr-3" style="flex: 1; min-width: 250px;">
+          <div class="font-weight-bold text-body-1 mb-1">👤 User Metrics</div>
+          <div class="text-medium-emphasis">
+            Per-user Copilot activity breakdown for the reporting period. Shows interactions, code
+            completions, acceptance rates, and AI-generated lines of code per developer.
+          </div>
+        </div>
+        <v-divider vertical class="mx-2 hidden-sm-and-down" />
+        <div class="d-flex flex-column gap-1">
+          <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+          <a href="https://docs.github.com/en/copilot/reference/interpret-copilot-metrics" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Interpreting Copilot metrics</span>
+          </a>
+          <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale" target="_blank" rel="noopener"
+             class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+            <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+            <span class="text-primary">Rolling out at scale</span>
+          </a>
+        </div>
+      </div>
+    </v-card>
+
+    <!-- Understanding metrics — collapsible, at the top -->
+    <v-expansion-panels variant="accordion" class="mx-4 mb-3">
+      <v-expansion-panel>
+        <v-expansion-panel-title>
+          <v-icon size="small" class="mr-2">mdi-information-outline</v-icon>
+          Understanding your metrics
+        </v-expansion-panel-title>
+        <v-expansion-panel-text>
+          <div class="text-body-2">
+            <h4 class="mb-2">📊 What the numbers mean</h4>
+            <ul class="ml-4 mb-3">
+              <li><strong>Copilot LOC</strong> — total lines of code added via all Copilot features (completions, Chat apply/insert, Agent edits). Not limited to code completions.</li>
+              <li><strong>Acceptance Rate</strong> — measures <em>inline code completions only</em> (ghost-text). Does not include Chat, Agent, CLI, or GitHub.com interactions.</li>
+              <li><strong>Interactions</strong> — all user-initiated events across features (completions, chat messages, agent requests).</li>
+              <li><strong>Chat</strong> — activity across Copilot Chat modes (ask, agent, edit, inline).</li>
+              <li><strong>Agent</strong> — activity specifically in agent mode and agent edit. Low acceptance rates are expected for agent-heavy users.</li>
+              <li><strong>Agent LOC</strong> — lines added specifically by agent features. Compare with Copilot LOC to see agent share of a user's output.</li>
+            </ul>
+            <h4 class="mb-2">🔍 What's not captured per user</h4>
+            <ul class="ml-4 mb-3">
+              <li><strong>Copilot CLI</strong> — tracked only as an org-level aggregate; no per-user breakdown.</li>
+              <li><strong>GitHub.com Copilot</strong> (PR summaries, issue chat) — partially appears under Chat features but detailed stats are aggregate-only.</li>
+            </ul>
+            <h4 class="mb-2">💡 Tips</h4>
+            <ul class="ml-4 mb-2">
+              <li>A low acceptance rate doesn't mean low value — Chat/Agent users get significant value without inline completions.</li>
+              <li>Look at <strong>Active Days</strong> and <strong>Interactions</strong> for a fuller picture of engagement.</li>
+              <li>If Copilot LOC ≈ Agent LOC, the user is primarily agent-driven.</li>
+            </ul>
+          </div>
+        </v-expansion-panel-text>
+      </v-expansion-panel>
+    </v-expansion-panels>
+
     <!-- Summary tiles -->
     <div class="tiles-container">
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Total Users</div>
-                <div class="text-caption">Users with Copilot activity</div>
-                <p class="text-h4">{{ totalUsers }}</p>
+                <div class="text-caption text-medium-emphasis">Users with Copilot activity</div>
+                <p class="kpi-value text-primary mt-1">{{ totalUsers }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
@@ -19,117 +80,86 @@
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 250px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Active Users</div>
-                <div class="text-caption">Active in last 7 days of period</div>
-                <p class="text-h4">{{ activeUsers }}</p>
+                <div class="text-caption text-medium-emphasis">Active ≥ 7 days</div>
+                <p class="kpi-value text-success mt-1">{{ activeUsers }}</p>
+                <v-progress-linear :model-value="totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0" color="success" bg-color="#C8E6C9" rounded height="6" class="mt-2 mx-2" />
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Users who were active in the last 7 days of the reporting window. Helps identify current engagement vs dormant users.</span>
+              <span class="tooltip-text">Users who were active in the last 7 days of the reporting window.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
       </v-card>
 
-      <v-card elevation="4" color="white" variant="elevated" class="mx-auto my-4" style="width: 260px; height: 150px;">
-        <v-card-item class="d-flex justify-center align-center" style="height: 100%;">
+      <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+        <v-card-item>
           <v-tooltip location="bottom" open-on-hover open-delay="200" close-delay="200">
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Avg Acceptance Rate</div>
-                <div class="text-caption">Code completions accepted</div>
-                <p class="text-h4">{{ avgAcceptanceRate }}%</p>
+                <div class="text-caption text-medium-emphasis">Inline completions only</div>
+                <p class="kpi-value text-info mt-1">{{ avgAcceptanceRate }}%</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Average ratio of accepted inline code completions to total suggestions across all users. Only measures ghost-text suggestions — does not include Chat, Agent, CLI, or GitHub.com interactions.</span>
+              <span class="tooltip-text">Average ratio of accepted inline code completions across all users. Does not include Chat, Agent, or CLI interactions.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
       </v-card>
     </div>
 
+    <!-- Charts -->
+    <v-container v-if="userMetrics.length > 0" :fluid="chartColumns === 'full'" :class="['elevation-2 mt-2 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
+      <div class="d-flex justify-end mb-2">
+        <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+          <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+          <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+          <v-btn value="full" size="small" icon="mdi-fullscreen" title="Full width" />
+        </v-btn-toggle>
+      </div>
+      <v-row class="mt-0 mb-2">
+        <!-- Top users by interactions -->
+        <v-col cols="12" :md="chartColumns === '2' ? 7 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Top Users by Interactions</div>
+            <div class="text-caption text-medium-emphasis mb-3">Total Copilot interactions per developer (chat + completions + agent)</div>
+            <div style="height:280px">
+              <Bar :data="topUsersChartData" :options="topUsersOptions" />
+            </div>
+          </v-card>
+        </v-col>
+
+        <!-- User engagement distribution -->
+        <v-col cols="12" :md="chartColumns === '2' ? 5 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Engagement Distribution</div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              High ≥ 14 active days · Medium 7–13 · Low 1–6 · Inactive 0
+            </div>
+            <div style="height:280px">
+              <Doughnut :data="distributionChartData" :options="distributionOptions" />
+            </div>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+
     <!-- Search and filter controls -->
     <v-main class="p-1" style="min-height: 300px;">
-      <v-container class="px-4 elevation-2">
+      <v-container :fluid="chartColumns === 'full'" :class="['elevation-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <br>
         <h2>Per-User Copilot Usage Metrics</h2>
         <div class="text-caption mb-4">{{ dateRangeDescription }}</div>
 
-        <!-- Understanding your metrics -->
-        <v-expansion-panels variant="accordion" class="mb-4">
-          <v-expansion-panel>
-            <v-expansion-panel-title>
-              <v-icon size="small" class="mr-2">mdi-information-outline</v-icon>
-              Understanding your metrics
-            </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <div class="text-body-2">
-                <h4 class="mb-2">📊 What the numbers mean</h4>
-                <ul class="ml-4 mb-3">
-                  <li><strong>Copilot LOC</strong> (Lines of Code) is the <em>total</em> lines of code added via all Copilot features — inline completions, Chat apply/insert, and Agent edits combined. It is <strong>not</strong> limited to code completions.</li>
-                  <li><strong>Acceptance Rate</strong> measures <em>inline code completions only</em> — the ghost-text suggestions shown in the editor. It does <strong>not</strong> include Chat, Agent mode, Copilot CLI, or GitHub.com interactions.</li>
-                  <li><strong>Interactions</strong> counts all user-initiated events across features (completions, chat messages, agent requests).</li>
-                  <li><strong>Chat</strong> shows total activity across Copilot Chat modes (ask, agent, edit, inline). Hover for a per-mode breakdown.</li>
-                  <li><strong>Agent</strong> shows activity specifically in agent mode and agent edit. Users working primarily with agents will have high numbers here but may show low acceptance rates — that's expected.</li>
-                  <li><strong>Agent LOC</strong> shows lines of code added specifically by agent features (agent mode + agent edit). Compare with Copilot LOC to see how much of a user's Copilot-generated code comes from agents.</li>
-                </ul>
-
-                <h4 class="mb-2">🧑‍💻 How users are using Copilot</h4>
-                <ul class="ml-4 mb-3">
-                  <li><strong>Inline completions users</strong> — high Completions/Accepted counts, high Acceptance Rate, Copilot LOC mostly from completions (Agent LOC near zero).</li>
-                  <li><strong>Chat-first users</strong> — high Chat count, moderate Copilot LOC from copy/apply actions, low Acceptance Rate (they don't rely on ghost-text).</li>
-                  <li><strong>Agent-heavy users</strong> — high Agent count, Copilot LOC ≈ Agent LOC (almost all their code comes from agents). Often have near-zero acceptance rates — this is normal and expected.</li>
-                  <li><strong>CLI / GitHub.com users</strong> — may show surprisingly low numbers because CLI usage is only tracked at the org aggregate level (no per-user breakdown), and GitHub.com Copilot interactions may only partially appear in Chat metrics.</li>
-                </ul>
-
-                <h4 class="mb-2">🔍 What's not captured per user</h4>
-                <ul class="ml-4 mb-3">
-                  <li><strong>Copilot CLI</strong> usage is only tracked as an aggregate count at the organization level — there is no per-user CLI breakdown.</li>
-                  <li><strong>GitHub.com Copilot</strong> (PR summaries, issue chat) shows partially under Chat features but detailed stats are aggregate-only.</li>
-                  <li><strong>Pull request metrics</strong> (Copilot-authored PRs, reviews) are available in the Agent Activity tab but not broken down per user.</li>
-                  <li><strong>Merged PR lines</strong> — when you merge a Copilot agent PR, the merge itself is not counted in Copilot LOC; only the original agent code generation event is tracked.</li>
-                </ul>
-
-                <h4 class="mb-2">💡 Tips for adoption tracking</h4>
-                <ul class="ml-4 mb-3">
-                  <li>A <strong>low acceptance rate</strong> doesn't mean low Copilot value — users who rely on Chat and Agent mode get significant value without triggering inline completions.</li>
-                  <li>Look at <strong>Active Days</strong> and <strong>Interactions</strong> for a fuller picture of engagement rather than acceptance rate alone.</li>
-                  <li>Compare <strong>Copilot LOC</strong> vs <strong>Agent LOC</strong> — if they're nearly equal, the user is primarily agent-driven.</li>
-                  <li>Use the <strong>Chat</strong> and <strong>Agent</strong> columns to identify users who have adopted advanced Copilot features beyond code completion.</li>
-                  <li>Users with <strong>0 active days</strong> may need onboarding support or may not have Copilot configured in their IDE.</li>
-                </ul>
-
-                <div class="text-caption d-flex flex-column ga-1">
-                  <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics/interpret-copilot-metrics" target="_blank" rel="noopener">
-                    📖 Interpreting Copilot usage and adoption metrics
-                  </a>
-                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale" target="_blank" rel="noopener">
-                    🚀 Rolling out GitHub Copilot at scale
-                  </a>
-                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/enable-developers/drive-adoption" target="_blank" rel="noopener">
-                    📈 Driving Copilot adoption in your company
-                  </a>
-                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/measure-success" target="_blank" rel="noopener">
-                    🎯 Measuring the success of a Copilot trial
-                  </a>
-                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/assign-licenses/track-usage-and-adoption" target="_blank" rel="noopener">
-                    📋 Tracking license activation and usage
-                  </a>
-                  <a href="https://docs.github.com/en/copilot/tutorials/roll-out-at-scale/maintain-codebase-standards" target="_blank" rel="noopener">
-                    🔒 Maintaining codebase standards in a rollout
-                  </a>
-                </div>
-              </div>
-            </v-expansion-panel-text>
-          </v-expansion-panel>
-        </v-expansion-panels>
-
+        <!-- Understanding your metrics moved to top of page -->
         <v-row class="mb-4" align="center">
           <v-col cols="12" md="4">
             <v-text-field
@@ -265,7 +295,7 @@
     <!-- User metrics history chart (historical / DB mode only) -->
     <div v-if="userMetricsHistory.length > 0">
       <v-main class="p-1">
-        <v-container class="px-4 elevation-2">
+        <v-container :fluid="chartColumns === 'full'" :class="['elevation-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
           <br>
           <h2>User Metrics History</h2>
           <div class="text-caption mb-4">Trends across stored 28-day snapshots</div>
@@ -298,23 +328,25 @@ import { defineComponent, ref, computed, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
 import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
 import { CHAT_FEATURES, AGENT_FEATURES, COMPLETION_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
-import { Line } from 'vue-chartjs';
+import { Line, Bar, Doughnut } from 'vue-chartjs';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Title,
   Tooltip,
   Legend
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
 
 export default defineComponent({
   name: 'UserMetricsViewer',
-  components: { Line },
+  components: { Line, Bar, Doughnut },
   props: {
     userMetrics: {
       type: Array as PropType<UserTotals[]>,
@@ -407,7 +439,7 @@ export default defineComponent({
       layout: { padding: { top: 10, bottom: 20 } },
       scales: {
         yDays: { type: 'linear' as const, position: 'left'  as const, beginAtZero: true, title: { display: true, text: 'Days / Count' } },
-        yRate: { type: 'linear' as const, position: 'right' as const, beginAtZero: true, max: 100, title: { display: true, text: 'Rate %' }, grid: { drawOnChartArea: false } },
+        yRate: { type: 'linear' as const, position: 'right' as const, beginAtZero: true, max: 120, title: { display: true, text: 'Rate %' }, grid: { drawOnChartArea: false } },
         yCount: { display: false },
       },
     };
@@ -585,6 +617,78 @@ export default defineComponent({
       return cols;
     });
 
+    // ── Analytics charts ────────────────────────────────────────────────────
+    const DIST_COLORS = ['#4CAF50', '#2196F3', '#FF9800', '#F44336'];
+
+    const topUsersChartData = computed(() => {
+      const top10 = [...props.userMetrics]
+        .sort((a, b) => b.user_initiated_interaction_count - a.user_initiated_interaction_count)
+        .slice(0, 10);
+      return {
+        labels: top10.map(u => u.login),
+        datasets: [
+          {
+            label: 'Interactions',
+            data: top10.map(u => u.user_initiated_interaction_count),
+            backgroundColor: 'rgba(54, 162, 235, 0.75)',
+            borderColor: 'rgb(54, 162, 235)',
+            borderRadius: 4,
+          },
+          {
+            label: 'Copilot LOC',
+            data: top10.map(u => u.loc_added_sum || 0),
+            backgroundColor: 'rgba(75, 192, 192, 0.75)',
+            borderColor: 'rgb(75, 192, 192)',
+            borderRadius: 4,
+          },
+        ],
+      };
+    });
+
+    const topUsersOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      scales: {
+        x: { beginAtZero: true },
+        y: { ticks: { font: { size: 11 } } },
+      },
+      plugins: { legend: { position: 'bottom' as const } },
+    };
+
+    const distributionChartData = computed(() => {
+      const high     = props.userMetrics.filter(u => u.total_active_days >= 14).length;
+      const medium   = props.userMetrics.filter(u => u.total_active_days >= 7 && u.total_active_days < 14).length;
+      const low      = props.userMetrics.filter(u => u.total_active_days >= 1 && u.total_active_days < 7).length;
+      const inactive = props.userMetrics.filter(u => u.total_active_days === 0).length;
+      return {
+        labels: [
+          `High (≥14 days) — ${high}`,
+          `Medium (7–13) — ${medium}`,
+          `Low (1–6) — ${low}`,
+          `Inactive (0) — ${inactive}`,
+        ],
+        datasets: [{ data: [high, medium, low, inactive], backgroundColor: DIST_COLORS, borderWidth: 1 }],
+      };
+    });
+
+    const distributionOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' as const, labels: { padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: (ctx: any) => {
+              const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
+              const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(0) : '0';
+              return ` ${ctx.label} (${pct}%)`;
+            },
+          },
+        },
+      },
+    };
+
     // ── History chart ───────────────────────────────────────────────────────
     const historyChartData = computed(() => {
       const datasets = [
@@ -657,6 +761,10 @@ export default defineComponent({
       historyChartData,
       historyChartOptions,
       historyHeaders,
+      topUsersChartData,
+      topUsersOptions,
+      distributionChartData,
+      distributionOptions,
       // trend dialog
       showTrendButtons,
       trendDialog,
@@ -668,20 +776,10 @@ export default defineComponent({
       trendChartOptions,
       openUserTrend,
     };
-  }
+  },
+  data() {
+    return { chartColumns: '2' };
+  },
 });
 </script>
 
-<style scoped>
-.tiles-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  padding: 16px;
-}
-
-.tiles-text {
-  text-align: center;
-}
-</style>

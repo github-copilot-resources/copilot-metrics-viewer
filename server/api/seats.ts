@@ -39,8 +39,8 @@ export interface TeamMember {
  * @returns Array of team member objects returned by the GitHub API
  */
 export async function fetchAllTeamMembers(options: Options, headers: HeadersInit): Promise<TeamMember[]> {
-  // Only proceed for explicit team scopes with an organization + team slug
-  if (!(options.scope === 'team-organization' || options.scope === 'team-enterprise') || !options.githubTeam) {
+  // Only proceed when an organization + team slug are both present
+  if (!options.githubTeam) {
     return [];
   }
 

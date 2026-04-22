@@ -23,7 +23,6 @@ beforeEach(async () => {
     public: {
       githubEnt: undefined,
       githubOrg: undefined,
-      githubTeam: undefined,
       version: 'test'
     }
   })

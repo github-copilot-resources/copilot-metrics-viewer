@@ -58,7 +58,7 @@ describe('Options', () => {
         githubOrg: 'my-org',
         githubEnt: 'my-ent',
         githubTeam: 'my-team',
-        scope: 'team-organization'
+        scope: 'organization'
       }
       
       const options = new Options(data)
@@ -69,7 +69,7 @@ describe('Options', () => {
       expect(options.githubOrg).toBe('my-org')
       expect(options.githubEnt).toBe('my-ent')
       expect(options.githubTeam).toBe('my-team')
-      expect(options.scope).toBe('team-organization')
+      expect(options.scope).toBe('organization')
     })
 
     test('handles new excludeHolidays and locale properties', () => {
@@ -122,7 +122,7 @@ describe('Options', () => {
       
       expect(options.githubOrg).toBe('test-org')
       expect(options.githubTeam).toBe('test-team')
-      expect(options.scope).toBe('team-organization')
+      expect(options.scope).toBe('organization')
     })
 
     test('creates options from route with enterprise parameter', () => {
@@ -141,7 +141,7 @@ describe('Options', () => {
       
       expect(options.githubEnt).toBe('test-ent')
       expect(options.githubTeam).toBe('test-team')
-      expect(options.scope).toBe('team-enterprise')
+      expect(options.scope).toBe('enterprise')
     })
 
     test('handles mock query parameter', () => {
@@ -470,28 +470,30 @@ describe('Options', () => {
       expect(url).toBe('https://api.github.com/enterprises/test-ent/copilot/metrics?since=2023-01-01')
     })
 
-    test('generates correct URL for team-organization scope', () => {
+    test('generates correct URL for organization scope with team (team is separate parameter)', () => {
       const options = new Options({
-        scope: 'team-organization',
+        scope: 'organization',
         githubOrg: 'test-org',
         githubTeam: 'test-team'
       })
       
       const url = options.getApiUrl()
       
-      expect(url).toBe('https://api.github.com/orgs/test-org/team/test-team/copilot/metrics')
+      // Team filtering is done server-side; getApiUrl always returns org-level URL
+      expect(url).toBe('https://api.github.com/orgs/test-org/copilot/metrics')
     })
 
-    test('generates correct URL for team-enterprise scope', () => {
+    test('generates correct URL for enterprise scope with team (team is separate parameter)', () => {
       const options = new Options({
-        scope: 'team-enterprise',
+        scope: 'enterprise',
         githubEnt: 'test-ent',
         githubTeam: 'test-team'
       })
       
       const url = options.getApiUrl()
       
-      expect(url).toBe('https://api.github.com/enterprises/test-ent/team/test-team/copilot/metrics')
+      // Team filtering is done server-side; getApiUrl always returns enterprise-level URL
+      expect(url).toBe('https://api.github.com/enterprises/test-ent/copilot/metrics')
     })
 
     test('throws error for organization scope without githubOrg', () => {
@@ -510,19 +512,13 @@ describe('Options', () => {
       expect(() => options.getApiUrl()).toThrow('GitHub enterprise must be set for enterprise scope')
     })
 
-    test('throws error for team-organization scope without required fields', () => {
-      const options1 = new Options({
-        scope: 'team-organization',
-        githubOrg: 'test-org'
-      })
-      
-      const options2 = new Options({
-        scope: 'team-organization',
+    test('throws error for organization scope without githubOrg (with team)', () => {
+      const options = new Options({
+        scope: 'organization',
         githubTeam: 'test-team'
       })
       
-      expect(() => options1.getApiUrl()).toThrow('GitHub organization and team must be set for team-organization scope')
-      expect(() => options2.getApiUrl()).toThrow('GitHub organization and team must be set for team-organization scope')
+      expect(() => options.getApiUrl()).toThrow('GitHub organization must be set for organization scope')
     })
 
     test('throws error for invalid scope', () => {
@@ -549,14 +545,14 @@ describe('Options', () => {
   })
 
   describe('getSeatsApiUrl', () => {
-    test('generates correct URL for organization scopes', () => {
+    test('generates correct URL for organization scope', () => {
       const options1 = new Options({
         scope: 'organization',
         githubOrg: 'test-org'
       })
       
       const options2 = new Options({
-        scope: 'team-organization',
+        scope: 'organization',
         githubOrg: 'test-org',
         githubTeam: 'test-team'
       })
@@ -565,14 +561,14 @@ describe('Options', () => {
       expect(options2.getSeatsApiUrl()).toBe('https://api.github.com/orgs/test-org/copilot/billing/seats')
     })
 
-    test('generates correct URL for enterprise scopes', () => {
+    test('generates correct URL for enterprise scope', () => {
       const options1 = new Options({
         scope: 'enterprise',
         githubEnt: 'test-ent'
       })
       
       const options2 = new Options({
-        scope: 'team-enterprise',
+        scope: 'enterprise',
         githubEnt: 'test-ent',
         githubTeam: 'test-team'
       })
@@ -607,17 +603,17 @@ describe('Options', () => {
   })
 
   describe('getMockDataPath', () => {
-    test('returns correct path for organization scopes', () => {
+    test('returns correct path for organization scope', () => {
       const options1 = new Options({ scope: 'organization' })
-      const options2 = new Options({ scope: 'team-organization' })
+      const options2 = new Options({ scope: 'organization', githubTeam: 'my-team' })
       
       expect(options1.getMockDataPath()).toBe('public/mock-data/organization_metrics_response_sample.json')
       expect(options2.getMockDataPath()).toBe('public/mock-data/organization_metrics_response_sample.json')
     })
 
-    test('returns correct path for enterprise scopes', () => {
+    test('returns correct path for enterprise scope', () => {
       const options1 = new Options({ scope: 'enterprise' })
-      const options2 = new Options({ scope: 'team-enterprise' })
+      const options2 = new Options({ scope: 'enterprise', githubTeam: 'my-team' })
       
       expect(options1.getMockDataPath()).toBe('public/mock-data/enterprise_metrics_response_sample.json')
       expect(options2.getMockDataPath()).toBe('public/mock-data/enterprise_metrics_response_sample.json')
@@ -631,17 +627,17 @@ describe('Options', () => {
   })
 
   describe('getSeatsMockDataPath', () => {
-    test('returns correct path for organization scopes', () => {
+    test('returns correct path for organization scope', () => {
       const options1 = new Options({ scope: 'organization' })
-      const options2 = new Options({ scope: 'team-organization' })
+      const options2 = new Options({ scope: 'organization', githubTeam: 'my-team' })
       
       expect(options1.getSeatsMockDataPath()).toBe('public/mock-data/organization_seats_response_sample.json')
       expect(options2.getSeatsMockDataPath()).toBe('public/mock-data/organization_seats_response_sample.json')
     })
 
-    test('returns correct path for enterprise scopes', () => {
+    test('returns correct path for enterprise scope', () => {
       const options1 = new Options({ scope: 'enterprise' })
-      const options2 = new Options({ scope: 'team-enterprise' })
+      const options2 = new Options({ scope: 'enterprise', githubTeam: 'my-team' })
       
       expect(options1.getSeatsMockDataPath()).toBe('public/mock-data/enterprise_seats_response_sample.json')
       expect(options2.getSeatsMockDataPath()).toBe('public/mock-data/enterprise_seats_response_sample.json')
@@ -655,62 +651,39 @@ describe('Options', () => {
   })
 
   describe('validate', () => {
-    test('validates team scopes require github team', () => {
-      const options1 = new Options({
-        scope: 'team-organization',
-        githubOrg: 'test-org'
-      })
-      
-      const options2 = new Options({
-        scope: 'team-enterprise',
-        githubEnt: 'test-ent'
-      })
-      
-      const result1 = options1.validate()
-      const result2 = options2.validate()
-      
-      expect(result1.isValid).toBe(false)
-      expect(result1.errors).toContain('GitHub team must be set for team scopes')
-      expect(result2.isValid).toBe(false)
-      expect(result2.errors).toContain('GitHub team must be set for team scopes')
-    })
-
-    test('validates organization scopes require github org', () => {
+    test('validates organization scope requires github org', () => {
       const options1 = new Options({
         scope: 'organization'
       })
       
-      const options2 = new Options({
-        scope: 'team-organization',
-        githubTeam: 'test-team'
-      })
-      
       const result1 = options1.validate()
-      const result2 = options2.validate()
       
       expect(result1.isValid).toBe(false)
       expect(result1.errors).toContain('GitHub organization must be set for organization scopes')
-      expect(result2.isValid).toBe(false)
-      expect(result2.errors).toContain('GitHub organization must be set for organization scopes')
     })
 
-    test('validates enterprise scopes require github enterprise', () => {
+    test('validates enterprise scope requires github enterprise', () => {
       const options1 = new Options({
         scope: 'enterprise'
       })
       
-      const options2 = new Options({
-        scope: 'team-enterprise',
-        githubTeam: 'test-team'
-      })
-      
       const result1 = options1.validate()
-      const result2 = options2.validate()
       
       expect(result1.isValid).toBe(false)
       expect(result1.errors).toContain('GitHub enterprise must be set for enterprise scopes')
-      expect(result2.isValid).toBe(false)
-      expect(result2.errors).toContain('GitHub enterprise must be set for enterprise scopes')
+    })
+
+    test('validates organization scope with team (team is optional filter)', () => {
+      const options = new Options({
+        scope: 'organization',
+        githubOrg: 'test-org',
+        githubTeam: 'test-team'
+      })
+      
+      const result = options.validate()
+      
+      expect(result.isValid).toBe(true)
+      expect(result.errors).toHaveLength(0)
     })
 
     test('validates date range order', () => {
@@ -727,9 +700,9 @@ describe('Options', () => {
       expect(result.errors).toContain('Since date must be before until date')
     })
 
-    test('validates correctly configured options', () => {
+    test('validates correctly configured options with team', () => {
       const options = new Options({
-        scope: 'team-organization',
+        scope: 'organization',
         githubOrg: 'test-org',
         githubTeam: 'test-team',
         since: '2023-01-01',
@@ -744,7 +717,7 @@ describe('Options', () => {
 
     test('accumulates multiple validation errors', () => {
       const options = new Options({
-        scope: 'team-organization',
+        scope: 'organization',
         since: '2023-12-31',
         until: '2023-01-01'
       })
@@ -752,9 +725,8 @@ describe('Options', () => {
       const result = options.validate()
       
       expect(result.isValid).toBe(false)
-      expect(result.errors).toHaveLength(3)
+      expect(result.errors).toHaveLength(2)
       expect(result.errors).toContain('GitHub organization must be set for organization scopes')
-      expect(result.errors).toContain('GitHub team must be set for team scopes')
       expect(result.errors).toContain('Since date must be before until date')
     })
   })
@@ -783,7 +755,7 @@ describe('Options', () => {
         githubOrg: 'test-org',
         githubEnt: 'test-ent',
         githubTeam: 'test-team',
-        scope: 'team-organization'
+        scope: 'organization'
       }
       
       const original = new Options(originalData)
@@ -803,6 +775,28 @@ describe('Options', () => {
       const obj = original.toObject()
       const fromObj = new Options(obj)
       expect(fromObj.toObject()).toEqual(originalData)
+    })
+
+    test('normalizes legacy team-organization scope to organization', () => {
+      const params = new URLSearchParams()
+      params.set('scope', 'team-organization')
+      params.set('githubOrg', 'test-org')
+      params.set('githubTeam', 'test-team')
+      
+      const options = Options.fromURLSearchParams(params)
+      expect(options.scope).toBe('organization')
+      expect(options.githubTeam).toBe('test-team')
+    })
+
+    test('normalizes legacy team-enterprise scope to enterprise', () => {
+      const params = new URLSearchParams()
+      params.set('scope', 'team-enterprise')
+      params.set('githubEnt', 'test-ent')
+      params.set('githubTeam', 'test-team')
+      
+      const options = Options.fromURLSearchParams(params)
+      expect(options.scope).toBe('enterprise')
+      expect(options.githubTeam).toBe('test-team')
     })
   })
 })

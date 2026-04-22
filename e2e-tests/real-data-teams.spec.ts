@@ -162,7 +162,7 @@ for (const [teamSlug, expectedMembers] of Object.entries(TEAMS)) {
             const totalText = await userMetrics.page
                 .locator('.v-card-item')
                 .filter({ has: userMetrics.page.getByText('Total Users', { exact: true }) })
-                .locator('.text-h4')
+                .locator('.kpi-value')
                 .textContent();
 
             const total = parseInt(totalText || '0');
@@ -192,7 +192,7 @@ test.describe('Teams comparison (cody-test-org)', () => {
     test('teams tab shows team selection dropdown', tag, async () => {
         await dashboard.gotoTeamsTab();
 
-        const emptyState = dashboard.page.getByText('No Teams Selected');
+        const emptyState = dashboard.page.getByText('No Team Selected');
         await expect(emptyState).toBeVisible();
     });
 
@@ -225,37 +225,38 @@ test.describe('Teams comparison (cody-test-org)', () => {
         // Close dropdown
         await teamsDropdown.click();
 
-        // Verify selected teams section appears
-        const selectedTeams = dashboard.page.getByText('Selected Teams', { exact: true });
-        await expect(selectedTeams).toBeVisible();
+        // Verify comparison mode activated
+        const comparisonChip = dashboard.page.getByText('Comparison', { exact: true });
+        await expect(comparisonChip).toBeVisible();
 
-        // Verify metric cards appear
-        const teamsSelectedCard = dashboard.page.getByText('Teams Selected', { exact: true });
-        await expect(teamsSelectedCard).toBeVisible();
+        // Verify per-team summary cards appear
+        const aTeamCard = dashboard.page.getByText('The A Team', { exact: true }).first();
+        await expect(aTeamCard).toBeVisible();
 
-        const totalActiveUsers = dashboard.page.locator('div.text-h6.mb-1', { hasText: 'Total Active Users' });
-        await expect(totalActiveUsers).toBeVisible();
+        const bTeamCard = dashboard.page.getByText('The B Team', { exact: true }).first();
+        await expect(bTeamCard).toBeVisible();
     });
 
     test('comparison shows correct active user counts', tag, async () => {
         // the-a-team has 5 members (all active), the-b-team has 2
-        // Verify "Total Active Users" reflects the union or per-team counts
-        const totalActiveUsersCard = dashboard.page
-            .locator('.v-card-item')
-            .filter({ has: dashboard.page.getByText('Total Active Users') })
-            .locator('.text-h4');
+        // Verify per-team summary cards show active user stats
+        const aTeamCard = dashboard.page.getByText('The A Team', { exact: true }).first();
+        await expect(aTeamCard).toBeVisible();
 
-        const totalText = await totalActiveUsersCard.textContent();
-        const total = parseInt(totalText || '0');
-        // Total active should be >= 2 (at least the-b-team members are active)
-        expect(total).toBeGreaterThanOrEqual(2);
+        const bTeamCard = dashboard.page.getByText('The B Team', { exact: true }).first();
+        await expect(bTeamCard).toBeVisible();
+
+        // Each card shows 'Active Users' label
+        const activeUserLabels = dashboard.page.getByText('Active Users', { exact: true });
+        const count = await activeUserLabels.count();
+        expect(count).toBeGreaterThanOrEqual(2);
     });
 
     test('comparison charts are visible', tag, async () => {
-        const languageChart = dashboard.page.getByText('Language Usage by Team');
+        const languageChart = dashboard.page.getByText('Language Usage — by Team');
         await expect(languageChart).toBeVisible();
 
-        const editorChart = dashboard.page.getByText('Editor Usage by Team');
+        const editorChart = dashboard.page.getByText('Editor Usage — by Team');
         await expect(editorChart).toBeVisible();
     });
 });

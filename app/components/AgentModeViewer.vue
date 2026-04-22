@@ -1,200 +1,340 @@
 <template>
-    <div class="github-com-container">
-        <v-main class="p-1" style="min-height: 300px;">
-            <v-container style="min-height: 300px;" class="px-4 elevation-2">
-                <!-- Loading state -->
-                <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 300px;">
-                    <v-progress-circular indeterminate size="64" color="primary" />
-                </div>
+    <div class="models-container">
+        <!-- Info panel -->
+        <v-card variant="outlined" class="mx-4 mt-3 mb-4 pa-3" density="compact">
+          <div class="d-flex flex-wrap align-start gap-2 text-body-2">
+            <div class="mr-3" style="flex: 1; min-width: 250px;">
+              <div class="font-weight-bold text-body-1 mb-1">🤖 Models & Feature Usage</div>
+              <div class="text-medium-emphasis">
+                Deep dive into which AI models and features your organization uses. View interactions by model, feature, and their combination.
+                For per-user breakdowns see the User Metrics tab; for agent/edit code-change stats see Agent Activity.
+              </div>
+            </div>
+            <v-divider vertical class="mx-2 hidden-sm-and-down" />
+            <div class="d-flex flex-column gap-1 flex-shrink-0">
+              <div class="text-caption text-medium-emphasis font-weight-medium mb-1">LEARN MORE</div>
+              <a href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics" target="_blank" rel="noopener"
+                 class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+                <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+                <span class="text-primary">How metrics are calculated</span>
+              </a>
+              <a href="https://docs.github.com/en/copilot/reference/interpret-copilot-metrics" target="_blank" rel="noopener"
+                 class="text-decoration-none d-flex align-center gap-1 text-body-2" style="color: inherit;">
+                <v-icon size="x-small" color="primary">mdi-open-in-new</v-icon>
+                <span class="text-primary">Interpreting Copilot metrics</span>
+              </a>
+            </div>
+          </div>
+        </v-card>
 
-                <!-- Error state -->
-                <div v-else-if="error" class="d-flex justify-center align-center" style="min-height: 300px;">
-                    <v-alert type="error" class="mb-4">
-                        <v-alert-title>Error Loading Statistics</v-alert-title>
-                        {{ error }}
-                    </v-alert>
-                </div>
+        <!-- Loading state -->
+        <div v-if="loading" class="d-flex justify-center align-center" style="min-height: 200px;">
+            <v-progress-circular indeterminate size="64" color="primary" />
+        </div>
 
-                <!-- Main content -->
-                <div v-else>
-                    <h2 class="mb-4">Copilot Statistics</h2>
+        <!-- Error state -->
+        <div v-else-if="error" class="mx-4">
+            <v-alert type="error" class="mb-4">
+                <v-alert-title>Error Loading Statistics</v-alert-title>
+                {{ error }}
+            </v-alert>
+        </div>
 
-                    <!-- Date Range -->
-                    <v-card v-if="dateRangeDescription" flat class="pa-3 mb-4" color="blue-grey lighten-5">
-                        <div class="text-body-2 text-center">
-                            <v-icon left small>mdi-calendar-range</v-icon>
-                            {{ dateRangeDescription }}
+        <!-- Main content -->
+        <div v-else>
+            <!-- KPI Tiles -->
+            <div class="tiles-container">
+                <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">Code Completions</div>
+                            <div class="text-caption text-medium-emphasis">IDE users with activity</div>
+                            <p class="kpi-value mt-1 text-primary">{{ stats.totalIdeCodeCompletionUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalIdeCodeCompletionModels }} models used</div>
                         </div>
-                    </v-card>
+                    </v-card-item>
+                </v-card>
 
-                    <!-- Overview Cards -->
-                    <v-row class="mb-4">
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="blue lighten-4">
-                                <v-card-title class="text-h6">Code Completions</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalIdeCodeCompletionUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalIdeCodeCompletionModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="green lighten-4">
-                                <v-card-title class="text-h6">Chat</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalIdeChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalIdeChatModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col v-if="stats.hasReportData" cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="purple lighten-4">
-                                <v-card-title class="text-h6">All Models</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.allModels?.length || 0 }}</div>
-                                    <div class="text-caption">Unique AI Models Used</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.allFeatures?.length || 0 }} Features Active</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col v-if="!stats.hasReportData" cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="purple lighten-4">
-                                <v-card-title class="text-h6">GitHub.com Chat</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalDotcomChatUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalDotcomChatModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                        <v-col v-if="!stats.hasReportData" cols="12" md="6" lg="3">
-                            <v-card elevation="4" color="orange lighten-4">
-                                <v-card-title class="text-h6">GitHub.com PR</v-card-title>
-                                <v-card-text>
-                                    <div class="text-h4 mb-2">{{ stats.totalDotcomPRUsers }}</div>
-                                    <div class="text-caption">Total Users with Activity</div>
-                                    <div class="text-subtitle2 mt-2">{{ stats.totalDotcomPRModels }} Models Used</div>
-                                </v-card-text>
-                            </v-card>
-                        </v-col>
-                    </v-row>
-
-                    <!-- New API: Active Users Over Time -->
-                    <div v-if="stats.hasReportData && activeUsersChartData.labels.length > 0" class="mb-6">
-                        <h2 class="mb-1">Active Users Over Time</h2>
-                        <div class="chart-container">
-                            <LineChart :data="activeUsersChartData" :options="chartOptions" />
+                <v-card elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">IDE Chat</div>
+                            <div class="text-caption text-medium-emphasis">Users with chat activity</div>
+                            <p class="kpi-value mt-1 text-success">{{ stats.totalIdeChatUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalIdeChatModels }} models used</div>
                         </div>
-                    </div>
+                    </v-card-item>
+                </v-card>
 
-                    <!-- New API: Model Usage by Feature (table) -->
-                    <div v-if="stats.hasReportData && stats.modelFeatureTable?.length > 0" class="mb-6">
-                        <h2 class="mb-4">Model Usage by Feature</h2>
-                        <v-data-table
-                            :headers="modelFeatureHeaders"
-                            :items="stats.modelFeatureTable"
-                            class="elevation-2"
-                            :sort-by="[{ key: 'locAdded', order: 'desc' }]"
-                        />
-                    </div>
-
-                    <!-- New API: Feature Summary -->
-                    <div v-if="stats.hasReportData && stats.featureSummary?.length > 0" class="mb-6">
-                        <h2 class="mb-4">Feature Summary</h2>
-                        <v-data-table
-                            :headers="featureSummaryHeaders"
-                            :items="stats.featureSummary"
-                            class="elevation-2"
-                            :sort-by="[{ key: 'codeGenerations', order: 'desc' }]"
-                        />
-                    </div>
-
-                    <!-- New API: Model Summary -->
-                    <div v-if="stats.hasReportData && stats.modelSummary?.length > 0" class="mb-6">
-                        <h2 class="mb-4">Model Summary</h2>
-                        <v-data-table
-                            :headers="modelSummaryHeaders"
-                            :items="stats.modelSummary"
-                            class="elevation-2"
-                            :sort-by="[{ key: 'locAdded', order: 'desc' }]"
-                        />
-                    </div>
-
-                    <!-- Legacy: Expansion panels for old API model details -->
-                    <div v-if="!stats.hasReportData">
-                        <h2 class="mb-4">Models by Feature</h2>
-                        <v-expansion-panels class="mb-4">
-                            <v-expansion-panel v-if="stats.ideCodeCompletionModels.length > 0">
-                                <v-expansion-panel-title>
-                                    <v-icon start>mdi-code-braces</v-icon>
-                                    IDE Code Completions Models ({{ stats.ideCodeCompletionModels.length }})
-                                </v-expansion-panel-title>
-                                <v-expansion-panel-text>
-                                    <v-data-table :headers="codeCompletionHeaders" :items="stats.ideCodeCompletionModels" class="elevation-1" />
-                                </v-expansion-panel-text>
-                            </v-expansion-panel>
-
-                            <v-expansion-panel v-if="stats.ideChatModels.length > 0">
-                                <v-expansion-panel-title>
-                                    <v-icon start>mdi-chat</v-icon>
-                                    IDE Chat Models ({{ stats.ideChatModels.length }})
-                                </v-expansion-panel-title>
-                                <v-expansion-panel-text>
-                                    <v-data-table :headers="ideChatHeaders" :items="stats.ideChatModels" class="elevation-1" />
-                                </v-expansion-panel-text>
-                            </v-expansion-panel>
-
-                            <v-expansion-panel v-if="stats.dotcomChatModels.length > 0">
-                                <v-expansion-panel-title>
-                                    <v-icon start>mdi-web</v-icon>
-                                    GitHub.com Chat Models ({{ stats.dotcomChatModels.length }})
-                                </v-expansion-panel-title>
-                                <v-expansion-panel-text>
-                                    <v-data-table :headers="dotcomChatHeaders" :items="stats.dotcomChatModels" class="elevation-1" />
-                                </v-expansion-panel-text>
-                            </v-expansion-panel>
-
-                            <v-expansion-panel v-if="stats.dotcomPRModels.length > 0">
-                                <v-expansion-panel-title>
-                                    <v-icon start>mdi-source-pull</v-icon>
-                                    GitHub.com PR Summary Models ({{ stats.dotcomPRModels.length }})
-                                </v-expansion-panel-title>
-                                <v-expansion-panel-text>
-                                    <v-data-table :headers="dotcomPRHeaders" :items="stats.dotcomPRModels" class="elevation-1" />
-                                </v-expansion-panel-text>
-                            </v-expansion-panel>
-                        </v-expansion-panels>
-
-                        <h2 class="mb-1">Model Usage Distribution</h2>
-                        <div class="chart-container">
-                            <BarChart v-if="stats.modelUsageChartData.labels.length" :data="stats.modelUsageChartData" :options="barChartOptions" />
+                <v-card v-if="stats.hasReportData" elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">Unique Models</div>
+                            <div class="text-caption text-medium-emphasis">All AI models in use</div>
+                            <p class="kpi-value mt-1 text-info">{{ stats.allModels?.length || 0 }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.allFeatures?.length || 0 }} features active</div>
                         </div>
-                    </div>
+                    </v-card-item>
+                </v-card>
 
-                    <!-- Feature usage over time chart -->
-                    <h2 class="mb-1">Feature Usage Over Time</h2>
-                    <div class="chart-container">
-                        <LineChart v-if="stats.agentModeChartData.labels.length" :data="stats.agentModeChartData" :options="chartOptions" />
+                <v-card v-if="!stats.hasReportData" elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">GitHub.com Chat</div>
+                            <div class="text-caption text-medium-emphasis">Users with activity</div>
+                            <p class="kpi-value mt-1 text-info">{{ stats.totalDotcomChatUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalDotcomChatModels }} models used</div>
+                        </div>
+                    </v-card-item>
+                </v-card>
+
+                <v-card v-if="!stats.hasReportData" elevation="4" color="surface" variant="elevated" class="my-2">
+                    <v-card-item>
+                        <div class="tiles-text">
+                            <div class="spacing-10"/>
+                            <div class="text-h6 mb-1">GitHub.com PR</div>
+                            <div class="text-caption text-medium-emphasis">Users with PR summaries</div>
+                            <p class="kpi-value mt-1 text-warning">{{ stats.totalDotcomPRUsers }}</p>
+                            <div class="text-caption text-medium-emphasis mt-1">{{ stats.totalDotcomPRModels }} models used</div>
+                        </div>
+                    </v-card-item>
+                </v-card>
+            </div>
+
+            <!-- Charts section -->
+            <v-container :fluid="chartColumns === 'full'" :class="['elevation-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
+              <div class="d-flex justify-end mb-2">
+                <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+                  <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+                  <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+                  <v-btn value="full" size="small" icon="mdi-fullscreen" title="Full width" />
+                </v-btn-toggle>
+              </div>
+
+              <!-- New API: Model + Feature bar charts -->
+              <v-row v-if="stats.hasReportData" class="mb-2">
+                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top Models by Interactions</v-card-title>
+                    <v-card-text>
+                      <div style="height:220px">
+                        <BarChart v-if="modelBarChartData.labels.length" :data="modelBarChartData" :options="horizBarOpts" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Top Features by Interactions</v-card-title>
+                    <v-card-text>
+                      <div style="height:220px">
+                        <BarChart v-if="featureBarChartData.labels.length" :data="featureBarChartData" :options="horizBarOpts" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- New API: Model Usage by Feature (table) -->
+              <v-row v-if="stats.hasReportData && stats.modelFeatureTable?.length > 0" class="mb-4">
+                <v-col cols="12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage by Feature</v-card-title>
+                    <v-card-text class="pa-0">
+                      <v-data-table :headers="modelFeatureHeaders" :items="stats.modelFeatureTable" :sort-by="[{ key: 'locAdded', order: 'desc' }]" />
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- New API: Charts side by side -->
+              <v-row v-if="stats.hasReportData && (stats.featureSummary?.length > 0 || stats.modelSummary?.length > 0)" class="mb-4">
+                <v-col v-if="stats.featureSummary?.length > 0" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+                  <v-card variant="elevated" elevation="2" class="flex-grow-1">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Lines Added by Feature</v-card-title>
+                    <v-card-text>
+                      <div style="height:240px">
+                        <BarChart v-if="locByFeatureBarData.labels.length" :data="locByFeatureBarData" :options="horizBarOpts" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+                <v-col v-if="stats.modelSummary?.length > 0" cols="12" :md="chartColumns === '2' ? 6 : 12" class="d-flex">
+                  <v-card variant="elevated" elevation="2" class="flex-grow-1">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Lines Added by Model</v-card-title>
+                    <v-card-text>
+                      <div style="height:240px">
+                        <BarChart v-if="locByModelBarData.labels.length" :data="locByModelBarData" :options="horizBarOpts" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- New API: Feature Summary table (full width) -->
+              <v-row v-if="stats.hasReportData && stats.featureSummary?.length > 0" class="mb-4">
+                <v-col cols="12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Feature Summary</v-card-title>
+                    <v-card-text class="pa-0">
+                      <v-data-table :headers="featureSummaryHeaders" :items="stats.featureSummary" :sort-by="[{ key: 'codeGenerations', order: 'desc' }]" density="compact" />
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- New API: Model Summary table (full width) -->
+              <v-row v-if="stats.hasReportData && stats.modelSummary?.length > 0" class="mb-4">
+                <v-col cols="12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Summary</v-card-title>
+                    <v-card-text class="pa-0">
+                      <v-data-table :headers="modelSummaryHeaders" :items="stats.modelSummary" :sort-by="[{ key: 'locAdded', order: 'desc' }]" density="compact" />
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- Legacy: Expansion panels for old API model details -->
+              <v-row v-if="!stats.hasReportData" class="mb-4">
+                <v-col cols="12">
+                  <v-card variant="elevated" elevation="2" class="mb-4">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Models by Feature</v-card-title>
+                    <v-card-text class="pa-0">
+                      <v-expansion-panels>
+                        <v-expansion-panel v-if="stats.ideCodeCompletionModels.length > 0">
+                          <v-expansion-panel-title>
+                            <v-icon start>mdi-code-braces</v-icon>
+                            IDE Code Completions Models ({{ stats.ideCodeCompletionModels.length }})
+                          </v-expansion-panel-title>
+                          <v-expansion-panel-text>
+                            <v-data-table :headers="codeCompletionHeaders" :items="stats.ideCodeCompletionModels" />
+                          </v-expansion-panel-text>
+                        </v-expansion-panel>
+                        <v-expansion-panel v-if="stats.ideChatModels.length > 0">
+                          <v-expansion-panel-title>
+                            <v-icon start>mdi-chat</v-icon>
+                            IDE Chat Models ({{ stats.ideChatModels.length }})
+                          </v-expansion-panel-title>
+                          <v-expansion-panel-text>
+                            <v-data-table :headers="ideChatHeaders" :items="stats.ideChatModels" />
+                          </v-expansion-panel-text>
+                        </v-expansion-panel>
+                        <v-expansion-panel v-if="stats.dotcomChatModels.length > 0">
+                          <v-expansion-panel-title>
+                            <v-icon start>mdi-web</v-icon>
+                            GitHub.com Chat Models ({{ stats.dotcomChatModels.length }})
+                          </v-expansion-panel-title>
+                          <v-expansion-panel-text>
+                            <v-data-table :headers="dotcomChatHeaders" :items="stats.dotcomChatModels" />
+                          </v-expansion-panel-text>
+                        </v-expansion-panel>
+                        <v-expansion-panel v-if="stats.dotcomPRModels.length > 0">
+                          <v-expansion-panel-title>
+                            <v-icon start>mdi-source-pull</v-icon>
+                            GitHub.com PR Summary Models ({{ stats.dotcomPRModels.length }})
+                          </v-expansion-panel-title>
+                          <v-expansion-panel-text>
+                            <v-data-table :headers="dotcomPRHeaders" :items="stats.dotcomPRModels" />
+                          </v-expansion-panel-text>
+                        </v-expansion-panel>
+                      </v-expansion-panels>
+                    </v-card-text>
+                  </v-card>
+
+                  <!-- Model Usage Distribution -->
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage Distribution</v-card-title>
+                    <v-card-text>
+                      <div class="chart-container">
+                        <BarChart v-if="stats.modelUsageChartData.labels.length" :data="stats.modelUsageChartData" :options="barChartOptions" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- Feature usage over time chart — moved to Organization tab -->
+
+              <!-- Model Usage from reportData -->
+              <v-row v-if="modelUsagePerDayChartData.labels.length" class="mb-2">
+                <v-col cols="12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage Per Day</v-card-title>
+                    <v-card-subtitle class="px-4 pb-1">Daily breakdown of models used in chat requests (% share) · <span class="font-italic">Shaded columns = weekends</span></v-card-subtitle>
+                    <v-card-text>
+                      <div class="chart-container">
+                        <LineChart :data="modelUsagePerDayChartData" :options="stackedAreaOptions" :plugins="[gradientFillPlugin, weekendPlugin]" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <v-row v-if="chatModelDonutData.labels.length" class="mb-2">
+                <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+                  <v-card variant="elevated" elevation="2" class="d-flex flex-column align-center">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Chat Model Usage</v-card-title>
+                    <v-card-subtitle class="px-4 pb-1">Distribution of models across all chat modes</v-card-subtitle>
+                    <v-card-text style="width:100%">
+                      <div style="height:260px; display:flex; justify-content:center;">
+                        <Doughnut :data="chatModelDonutData" :options="donutOptions" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+                <v-col v-if="modelPerChatModeData.labels.length" cols="12" :md="chartColumns === '2' ? 6 : 12">
+                  <v-card variant="elevated" elevation="2">
+                    <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Model Usage Per Chat Mode</v-card-title>
+                    <v-card-subtitle class="px-4 pb-1">Most frequently used models for each chat mode</v-card-subtitle>
+                    <v-card-text>
+                      <div style="height:260px">
+                        <BarChart :data="modelPerChatModeData" :options="groupedModelBarOptions" />
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+
+              <!-- Premium requests info card -->
+              <v-row class="mb-2">
+                <v-col cols="12">
+                  <v-alert variant="tonal" color="info" icon="mdi-information-outline" density="compact">
+                    <div class="text-body-2">
+                      <strong>Premium requests</strong> — some models consume multiple Copilot request units (e.g. Claude Opus 4.7 = 7.5×, GPT-5.4 mini = 0.25×).
+                      This dashboard shows request counts; to view quota usage and estimated costs, check your
+                      <a :href="billingUrl" target="_blank" rel="noopener" class="text-primary">billing settings</a>
+                      or the
+                      <a href="https://docs.github.com/en/copilot/concepts/billing/copilot-requests#model-multipliers" target="_blank" rel="noopener" class="text-primary">model multipliers docs</a>.
                     </div>
-                </div>
+                  </v-alert>
+                </v-col>
+              </v-row>
             </v-container>
-        </v-main>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, watch, computed, type PropType, shallowRef } from 'vue';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
+import type { ReportDayTotals } from '@/server/services/github-copilot-usage-api';
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
-import { Line as LineChart, Bar as BarChart } from 'vue-chartjs';
+import { Line as LineChart, Bar as BarChart, Doughnut } from 'vue-chartjs';
 import {
-    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend
+    Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement,
+    ArcElement, Title, Tooltip, Legend
 } from 'chart.js';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
+import { PALETTE, weekendPlugin, gradientFillPlugin, makeLineOptions } from '@/utils/chartPlugins';
+
+import { Filler } from 'chart.js';
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend, Filler);
 
 interface ModelData {
     name: string;
@@ -279,11 +419,12 @@ interface DateRange {
 
 export default defineComponent({
     name: 'AgentModeViewer',
-    components: { LineChart, BarChart },
+    components: { LineChart, BarChart, Doughnut },
     props: {
         dateRange: { type: Object as PropType<DateRange>, required: true },
         originalMetrics: { type: Array as PropType<CopilotMetrics[]>, required: true },
-        dateRangeDescription: { type: String, default: '' }
+        dateRangeDescription: { type: String, default: '' },
+        reportData: { type: Array as PropType<ReportDayTotals[]>, default: () => [] },
     },
     setup(props) {
         const stats = shallowRef<GitHubStats>({ ...defaultStats });
@@ -388,13 +529,10 @@ export default defineComponent({
             { title: 'PR Summaries', key: 'total_pr_summaries_created' }
         ];
 
-        const chartOptions = {
-            responsive: true, maintainAspectRatio: false,
+        const chartOptions = makeLineOptions({
             animation: { duration: 0 },
             scales: { y: { beginAtZero: true, title: { display: true, text: 'Users' } } },
-            plugins: { legend: { display: true, position: 'top' as const } },
-            interaction: { intersect: false }
-        };
+        });
         const barChartOptions = {
             responsive: true, maintainAspectRatio: false,
             animation: { duration: 0 },
@@ -403,20 +541,171 @@ export default defineComponent({
             interaction: { intersect: false }
         };
 
+        // Bar charts for model and feature summaries
+        const modelBarChartData = computed(() => {
+            const rows = (stats.value.modelSummary || []).slice(0, 10).sort((a: any, b: any) => b.interactions - a.interactions);
+            return {
+                labels: rows.map((r: any) => r.model),
+                datasets: [{ label: 'Interactions', data: rows.map((r: any) => r.interactions), backgroundColor: PALETTE.slice(0, rows.length).map(p => p.bg), borderColor: PALETTE.slice(0, rows.length).map(p => p.border), borderWidth: 1 }]
+            };
+        });
+        const featureBarChartData = computed(() => {
+            const rows = (stats.value.featureSummary || []).slice(0, 10).sort((a: any, b: any) => b.interactions - a.interactions);
+            return {
+                labels: rows.map((r: any) => r.feature),
+                datasets: [{ label: 'Interactions', data: rows.map((r: any) => r.interactions), backgroundColor: PALETTE.slice(0, rows.length).map(p => p.bg), borderColor: PALETTE.slice(0, rows.length).map(p => p.border), borderWidth: 1 }]
+            };
+        });
+        const horizBarOpts = { responsive: true, maintainAspectRatio: false, indexAxis: 'y' as const, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } };
+
+        const locByFeatureBarData = computed(() => {
+            const rows = (stats.value.featureSummary || []).filter((r: any) => r.locAdded > 0).sort((a: any, b: any) => b.locAdded - a.locAdded).slice(0, 10);
+            return {
+                labels: rows.map((r: any) => r.feature),
+                datasets: [{ label: 'Lines Added', data: rows.map((r: any) => r.locAdded), backgroundColor: PALETTE.slice(0, rows.length).map(p => p.bg), borderColor: PALETTE.slice(0, rows.length).map(p => p.border), borderWidth: 1 }]
+            };
+        });
+        const locByModelBarData = computed(() => {
+            const rows = (stats.value.modelSummary || []).filter((r: any) => r.locAdded > 0).sort((a: any, b: any) => b.locAdded - a.locAdded).slice(0, 10);
+            return {
+                labels: rows.map((r: any) => r.model),
+                datasets: [{ label: 'Lines Added', data: rows.map((r: any) => r.locAdded), backgroundColor: PALETTE.slice(0, rows.length).map(p => p.bg), borderColor: PALETTE.slice(0, rows.length).map(p => p.border), borderWidth: 1 }]
+            };
+        });
+
+        const billingUrl = computed(() => {
+            const org = route.params.org as string;
+            const ent = route.params.ent as string;
+            if (ent) return `https://github.com/enterprises/${ent}/settings/billing/copilot`;
+            if (org) return `https://github.com/organizations/${org}/settings/billing/copilot`;
+            return 'https://github.com/settings/billing/copilot';
+        });
+
+        // ── Model charts from reportData ─────────────────────────────────
+        const FEATURE_LABEL: Record<string, string> = {
+            code_completion: 'Code Completion', agent_edit: 'Agent Edit',
+            chat_panel_ask_mode: 'Ask', chat_panel_agent_mode: 'Agent', chat_panel_custom_mode: 'Custom',
+            chat_panel_edit_mode: 'Edit', chat_panel_plan_mode: 'Plan', chat_inline: 'Inline',
+            pull_request: 'PR Summary', copilot_cli: 'CLI', plan_mode: 'Plan',
+        };
+        const modelUsagePerDayChartData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+        const chatModelDonutData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+        const modelPerChatModeData = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
+
+        const stackedAreaOptions = {
+            responsive: true, maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true, ticks: { maxTicksLimit: 14 } },
+                y: { stacked: true, min: 0, max: 120, ticks: { callback: (v: any) => v + '%' } },
+            },
+            plugins: {
+                legend: { position: 'bottom' as const },
+                tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: ${ctx.raw?.toFixed(1)}%` } },
+            },
+        };
+        const donutOptions = {
+            responsive: true, maintainAspectRatio: false, cutout: '55%',
+            plugins: { legend: { position: 'right' as const } },
+        };
+        const groupedModelBarOptions = {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { ticks: { maxTicksLimit: 14 } }, y: { beginAtZero: true } },
+            plugins: { legend: { position: 'bottom' as const } },
+        };
+
+        watch(() => props.reportData, (data) => {
+            if (!data || data.length === 0) return;
+            const labels = data.map(d => d.day ?? '');
+
+            // model interactions by day
+            const modelInterByDay: Record<string, number[]> = {};
+            const dayTotals: number[] = data.map(() => 0);
+            data.forEach((d, idx) => {
+                for (const mf of (d.totals_by_model_feature ?? [])) {
+                    if (mf.feature === 'code_completion') continue;
+                    const model = mf.model ?? 'Unknown';
+                    if (!modelInterByDay[model]) modelInterByDay[model] = data.map(() => 0);
+                    const cnt = mf.user_initiated_interaction_count ?? 0;
+                    modelInterByDay[model][idx] += cnt;
+                    dayTotals[idx] += cnt;
+                }
+            });
+            const allModels = Object.entries(modelInterByDay).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
+            const top5 = allModels.slice(0, 5);
+            const otherData = allModels.slice(5).reduce((acc, [, vals]) => acc.map((v, i) => v + vals[i]), data.map(() => 0));
+
+            modelUsagePerDayChartData.value = {
+                labels,
+                datasets: [
+                    ...top5.map(([model, vals], i) => ({
+                        label: model,
+                        data: vals.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
+                        backgroundColor: PALETTE[i % PALETTE.length].bg, borderColor: PALETTE[i % PALETTE.length].border,
+                        fill: 'stack', tension: 0.3,
+                    })),
+                    ...(allModels.length > 5 ? [{
+                        label: 'Other',
+                        data: otherData.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
+                        backgroundColor: PALETTE[5].bg, borderColor: PALETTE[5].border,
+                        fill: 'stack', tension: 0.3,
+                    }] : [])
+                ],
+            };
+
+            const modelAggregates = allModels.map(([model, vals]) => ({ model, total: vals.reduce((s, v) => s + v, 0) }))
+                .sort((a, b) => b.total - a.total);
+            chatModelDonutData.value = {
+                labels: modelAggregates.map(m => m.model),
+                datasets: [{ data: modelAggregates.map(m => m.total), backgroundColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].bg), borderColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].border) }],
+            };
+
+            const modeModelMatrix: Record<string, Record<string, number>> = {};
+            for (const d of data) {
+                for (const mf of (d.totals_by_model_feature ?? [])) {
+                    if (mf.feature === 'code_completion') continue;
+                    const mode = FEATURE_LABEL[mf.feature ?? ''] ?? mf.feature ?? 'Unknown';
+                    const model = mf.model ?? 'Unknown';
+                    if (!modeModelMatrix[mode]) modeModelMatrix[mode] = {};
+                    modeModelMatrix[mode][model] = (modeModelMatrix[mode][model] ?? 0) + (mf.user_initiated_interaction_count ?? 0);
+                }
+            }
+            const topModelLabels = allModels.slice(0, 5).map(([m]) => m);
+            if (allModels.length > 5) topModelLabels.push('Other');
+            const modeKeys = Object.keys(modeModelMatrix);
+            modelPerChatModeData.value = {
+                labels: topModelLabels,
+                datasets: modeKeys.map((mode, i) => {
+                    const totals = modeModelMatrix[mode];
+                    return {
+                        label: mode,
+                        data: topModelLabels.map(m => m === 'Other'
+                            ? allModels.slice(5).reduce((s, [model]) => s + (totals[model] ?? 0), 0)
+                            : totals[m] ?? 0),
+                        backgroundColor: PALETTE[i % PALETTE.length].bg,
+                        borderColor: PALETTE[i % PALETTE.length].border,
+                    };
+                }),
+            };
+        }, { immediate: true, deep: false });
+
         return {
             stats, loading, error, activeUsersChartData,
+            modelBarChartData, featureBarChartData, locByFeatureBarData, locByModelBarData, horizBarOpts,
             modelFeatureHeaders, featureSummaryHeaders, modelSummaryHeaders,
             codeCompletionHeaders, ideChatHeaders, dotcomChatHeaders, dotcomPRHeaders,
-            chartOptions, barChartOptions
+            chartOptions, barChartOptions,
+            weekendPlugin, gradientFillPlugin,
+            billingUrl,
+            modelUsagePerDayChartData, chatModelDonutData, modelPerChatModeData,
+            stackedAreaOptions, donutOptions, groupedModelBarOptions,
         };
-    }
+    },
+    data() {
+        return { chartColumns: '2' };
+    },
 });
 </script>
 
 <style scoped>
-.github-com-container { padding: 16px; }
-.v-card { margin-bottom: 16px; }
-.v-expansion-panel { margin-bottom: 8px; }
-.v-data-table { margin-top: 16px; }
 .chart-container { height: 400px; width: 100%; position: relative; }
 </style>

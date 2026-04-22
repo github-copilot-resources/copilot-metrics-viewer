@@ -19,17 +19,17 @@ export class UserMetricsTab {
         this.totalUsersValue = page
             .locator('.v-card-item')
             .filter({ has: page.getByText('Total Users', { exact: true }) })
-            .locator('.text-h4');
+            .locator('.kpi-value');
         this.activeUsersLabel = page.getByText('Active Users', { exact: true });
         this.activeUsersValue = page
             .locator('.v-card-item')
             .filter({ has: page.getByText('Active Users', { exact: true }) })
-            .locator('.text-h4');
+            .locator('.kpi-value');
         this.avgAcceptanceRateLabel = page.getByText('Avg Acceptance Rate', { exact: true });
         this.avgAcceptanceRateValue = page
             .locator('.v-card-item')
             .filter({ has: page.getByText('Avg Acceptance Rate', { exact: true }) })
-            .locator('.text-h4');
+            .locator('.kpi-value');
         // Use getByPlaceholder() to target the search input directly by its placeholder
         // attribute. In Vuetify 3, single-line v-text-field suppresses the <label> element
         // entirely (hasLabel = !singleLine && ...), so label-based locators don't work.

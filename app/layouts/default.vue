@@ -1,9 +1,9 @@
 <template>
-  <v-app>
+  <v-app :theme="themeState">
     <v-main>
       <slot />
     </v-main>
-    <v-footer class="bg-indigo-lighten-1 text-center d-flex flex-column fixed-footer">
+    <v-footer class="bg-primary text-center d-flex flex-column fixed-footer">
       <div class="px-4 py-2 text-center w-100">
         {{ new Date().getFullYear() }} — <strong><a href="https://github.com/github-copilot-resources/copilot-metrics-viewer" target="_blank" rel="noopener noreferrer" style="color: inherit;">Copilot Metrics Viewer</a></strong> — {{ version }}<span v-if="deployInfo"> — {{ deployInfo }}</span>
       </div>
@@ -21,6 +21,12 @@ useHead({
   meta: [
     { name: 'description', content: 'Copilot Metrics Dashboard' }
   ]
+});
+
+const themeState = useState('app-theme', () => 'light');
+onMounted(() => {
+  const saved = localStorage.getItem('copilot-metrics-theme');
+  if (saved === 'light' || saved === 'dark') themeState.value = saved;
 });
 </script>
 

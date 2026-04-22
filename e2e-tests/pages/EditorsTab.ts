@@ -8,7 +8,7 @@ export class EditorsTab {
     constructor(page: Page) {
         this.page = page;
         this.numberOfEditorsLabel = page.getByText('Number of Editors')
-        this.numberOfEditorsValue = page.locator('.v-card-item').filter({ has: this.numberOfEditorsLabel }).locator('.text-h4')
+        this.numberOfEditorsValue = page.locator('.v-card-item').filter({ has: this.numberOfEditorsLabel }).locator('.kpi-value')
 
     }
 
