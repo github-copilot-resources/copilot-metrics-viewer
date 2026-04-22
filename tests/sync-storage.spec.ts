@@ -157,6 +157,35 @@ describe('Sync Service & Storage', () => {
       const call = (saveMetrics as any).mock.calls[0];
       expect(call[4]).toBe('my-team'); // teamSlug
     });
+
+    it('should limit saved days when daysBack is specified', async () => {
+      const daysBack = 5;
+      const result = await syncBulk('organization', 'test-org', TEST_HEADERS, undefined, daysBack);
+
+      expect(result.success).toBe(true);
+      expect(result.savedDays).toBe(daysBack);
+      expect(saveMetrics).toHaveBeenCalledTimes(daysBack);
+    });
+
+    it('should save the most recent days when daysBack is specified', async () => {
+      const daysBack = 3;
+      // First do an unrestricted sync to know what all dates look like
+      await syncBulk('organization', 'test-org-full', TEST_HEADERS);
+      const allDates = (saveMetrics as any).mock.calls
+        .filter((call: any[]) => call[1] === 'test-org-full')
+        .map((call: any[]) => call[2] as string)
+        .sort();
+      const expectedMostRecent = allDates.slice(-daysBack);
+
+      vi.clearAllMocks();
+      storageMap.clear();
+
+      await syncBulk('organization', 'test-org', TEST_HEADERS, undefined, daysBack);
+
+      const savedDates = (saveMetrics as any).mock.calls.map((call: any[]) => call[2] as string).sort();
+      expect(savedDates).toHaveLength(daysBack);
+      expect(savedDates).toEqual(expectedMostRecent);
+    });
   });
 
   describe('syncMetricsForDate', () => {
@@ -272,7 +301,7 @@ describe('Sync Service & Storage', () => {
       const key1 = buildKey('organization', 'test-org', '2026-02-01');
       storageMap.set(key1, { data: {} });
 
-      const results = await syncGaps(
+      const { results } = await syncGaps(
         'organization',
         'test-org',
         '2026-02-01',
@@ -292,7 +321,7 @@ describe('Sync Service & Storage', () => {
         storageMap.set(key, { data: {} });
       }
 
-      const results = await syncGaps(
+      const { results, gapsDetected } = await syncGaps(
         'organization',
         'test-org',
         '2026-02-01',
@@ -301,6 +330,7 @@ describe('Sync Service & Storage', () => {
       );
 
       expect(results).toHaveLength(0);
+      expect(gapsDetected).toBe(0);
     });
   });
 

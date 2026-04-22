@@ -60,7 +60,9 @@ async function runSync() {
     const result = await syncBulk(
       scope,
       identifier,
-      headers
+      headers,
+      undefined,
+      daysBack
     );
 
     logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped`);

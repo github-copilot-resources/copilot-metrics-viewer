@@ -468,17 +468,46 @@ export async function requestDownloadLinks(
 }
 
 /**
+ * Normalize a raw API response (either OrgReport or flat 1-day ReportDayTotals)
+ * into an OrgReport with a day_totals array.
+ *
+ * The 28-day endpoint returns an OrgReport; the 1-day endpoint returns a flat
+ * ReportDayTotals object that must be wrapped before further processing.
+ *
+ * Exported for unit testing.
+ */
+export function normalizeReportResponse(response: OrgReport | ReportDayTotals): OrgReport {
+  // 1-day endpoint returns a flat ReportDayTotals (has `day` but no `day_totals` array)
+  if (response && 'day' in response && !Array.isArray((response as OrgReport).day_totals)) {
+    const dayTotals = response as ReportDayTotals;
+    return {
+      report_start_day: dayTotals.day,
+      report_end_day: dayTotals.day,
+      organization_id: dayTotals.organization_id || '',
+      enterprise_id: dayTotals.enterprise_id || '',
+      created_at: new Date().toISOString(),
+      day_totals: [dayTotals],
+    };
+  }
+
+  return response as OrgReport;
+}
+
+/**
  * Download and parse a report file from a signed URL.
- * The files are plain JSON (not NDJSON), containing an OrgReport object.
+ * The 28-day endpoint returns plain JSON containing an OrgReport object.
+ * The 1-day endpoint returns a flat ReportDayTotals object (not wrapped in OrgReport).
+ * This function normalizes both formats into an OrgReport.
  */
 export async function downloadReport(
   downloadUrl: string,
   orgIdentifier?: string
 ): Promise<OrgReport> {
-  const response = await _fetch<OrgReport>(downloadUrl, {
+  const response = await _fetch<OrgReport | ReportDayTotals>(downloadUrl, {
     responseType: 'json',
   });
-  return response;
+
+  return normalizeReportResponse(response);
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

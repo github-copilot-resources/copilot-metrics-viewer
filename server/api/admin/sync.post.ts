@@ -10,7 +10,12 @@ import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 export default defineEventHandler(async (event) => {
   const logger = console;
   const query = getQuery(event);
-  const body = await readBody(event).catch(() => ({}));
+  let rawBody = await readBody(event).catch(() => ({}));
+  // If body wasn't parsed as an object (e.g. missing Content-Type header), try JSON.parse
+  if (typeof rawBody === 'string') {
+    try { rawBody = JSON.parse(rawBody); } catch { rawBody = {}; }
+  }
+  const body = rawBody || {};
 
   // Merge query and body parameters
   const params = { ...query, ...body };
@@ -96,7 +101,7 @@ export default defineEventHandler(async (event) => {
         }
 
         logger.info(`Syncing gaps from ${options.since} to ${options.until}`);
-        const results = await syncGaps(
+        const { results, gapsDetected, outsideWindow } = await syncGaps(
           options.scope!,
           options.githubOrg || options.githubEnt || 'unknown',
           options.since,
@@ -110,14 +115,16 @@ export default defineEventHandler(async (event) => {
 
         return {
           action: 'sync-gaps',
-          gapsFilled: results.length,
-          successCount,
+          gapsDetected,
+          gapsFilled: successCount,
+          outsideWindow,
           failureCount,
           results
         };
       }
 
-      case 'sync-bulk': {
+      case 'sync-last-28':
+      case 'sync-bulk': {  // backward-compatible alias
         // Bulk download latest 28-day report and store all new days
         logger.info(`Running bulk sync for ${options.scope}:${options.githubOrg || options.githubEnt}`);
         const bulkResult = await syncBulk(
@@ -128,7 +135,7 @@ export default defineEventHandler(async (event) => {
         );
 
         return {
-          action: 'sync-bulk',
+          action: 'sync-last-28',
           ...bulkResult
         };
       }

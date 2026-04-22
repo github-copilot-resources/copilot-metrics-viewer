@@ -70,12 +70,16 @@ async function saveDayData(
  * For org/enterprise scopes, also fetches the raw per-user report and saves
  * individual daily records to user_day_metrics. This accumulates a time-series
  * history enabling accurate team-level queries for any historical date range.
+ *
+ * @param daysBack - If specified, only saves the most recent N days from the report.
+ *                   Defaults to all days in the report (up to 28).
  */
 export async function syncBulk(
   scope: 'organization' | 'enterprise',
   identifier: string,
   headers: HeadersInit,
-  teamSlug?: string
+  teamSlug?: string,
+  daysBack?: number
 ): Promise<BulkSyncResult> {
   const logger = console;
   const result: BulkSyncResult = {
@@ -94,7 +98,16 @@ export async function syncBulk(
     result.totalDays = report.day_totals.length;
     logger.info(`Downloaded report with ${result.totalDays} days (${report.report_start_day} to ${report.report_end_day})`);
 
-    for (const dayData of report.day_totals) {
+    // Filter to the most recent N days if daysBack is specified
+    const limitDays = daysBack && daysBack > 0;
+    const daysToProcess = limitDays
+      ? report.day_totals.slice().sort((a, b) => b.day.localeCompare(a.day)).slice(0, daysBack)
+      : report.day_totals;
+    if (limitDays) {
+      logger.info(`Limiting sync to last ${daysBack} day(s) (${daysToProcess.length} days to process)`);
+    }
+
+    for (const dayData of daysToProcess) {
       try {
         const exists = await hasMetrics(scope, identifier, dayData.day, teamSlug);
         if (exists) {
@@ -285,25 +298,28 @@ export async function syncGaps(
   endDate: string,
   headers: HeadersInit,
   teamSlug?: string
-): Promise<SyncResult[]> {
+): Promise<{ results: SyncResult[]; gapsDetected: number; outsideWindow: number }> {
   const missingDates = await detectGaps(scope, identifier, startDate, endDate, teamSlug);
   
   if (missingDates.length === 0) {
     console.log('No gaps detected, all dates already synced');
-    return [];
+    return { results: [], gapsDetected: 0, outsideWindow: 0 };
   }
 
-  console.log(`Found ${missingDates.length} missing dates, syncing via bulk download...`);
+  console.log(`Found ${missingDates.length} missing dates, attempting to fill...`);
 
-  // Use bulk download and filter to missing dates
-  const request: MetricsReportRequest = { scope, identifier, teamSlug };
-  const report = await fetchLatestReport(request, headers);
-  const missingSet = new Set(missingDates);
+  // First try bulk 28-day download (efficient for recent gaps)
+  const bulkRequest: MetricsReportRequest = { scope, identifier, teamSlug };
+  const report = await fetchLatestReport(bulkRequest, headers);
+  const reportDates = new Set(report.day_totals.map(d => d.day));
+  const inWindowDates = missingDates.filter(d => reportDates.has(d));
+  const outOfWindowDates = missingDates.filter(d => !reportDates.has(d));
 
   const results: SyncResult[] = [];
-  for (const dayData of report.day_totals) {
-    if (!missingSet.has(dayData.day)) continue;
 
+  // Fill in-window gaps from bulk report
+  for (const dayData of report.day_totals) {
+    if (!inWindowDates.includes(dayData.day)) continue;
     try {
       await saveDayData(scope, identifier, dayData, teamSlug);
       results.push({ success: true, date: dayData.day, metricsCount: 1 });
@@ -313,7 +329,16 @@ export async function syncGaps(
     }
   }
 
-  return results;
+  // Fill out-of-window gaps using the 1-day endpoint (one call per date)
+  if (outOfWindowDates.length > 0) {
+    console.log(`${outOfWindowDates.length} gap(s) outside 28-day window — fetching via 1-day endpoint...`);
+    for (const date of outOfWindowDates) {
+      const dayResult = await syncMetricsForDate({ scope, identifier, date, teamSlug, headers });
+      results.push(dayResult);
+    }
+  }
+
+  return { results, gapsDetected: missingDates.length, outsideWindow: outOfWindowDates.length };
 }
 
 /**
