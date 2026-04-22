@@ -318,4 +318,17 @@ describe('aggregateTeamMetrics', () => {
     expect(result.day_totals[0].daily_active_users).toBe(1);
     expect(result.day_totals[1].daily_active_users).toBe(1);
   });
+
+  it('matches team members case-insensitively', () => {
+    const records = [
+      makeUser('Alice', 1, '2026-02-10'),
+      makeUser('BOB', 2, '2026-02-10'),
+      makeUser('charlie', 3, '2026-02-10'),
+    ];
+    // Team logins in different casing than user records
+    const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
+
+    expect(result.day_totals).toHaveLength(1);
+    expect(result.day_totals[0].daily_active_users).toBe(2);
+  });
 });

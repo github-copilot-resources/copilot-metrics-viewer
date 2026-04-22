@@ -370,7 +370,7 @@ export class Options {
                 if (!this.githubEnt || !this.githubTeam) {
                     throw new Error('GitHub enterprise and team must be set for enterprise scope');
                 }
-                return `${baseUrl}/enterprises/${this.githubEnt}/teams/${this.githubTeam}/members`;
+                return `${baseUrl}/enterprises/${this.githubEnt}/teams/${this.githubTeam}/memberships`;
 
             default:
                 throw new Error(`Invalid scope: ${this.scope}`);

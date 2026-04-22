@@ -10,14 +10,15 @@ export function applyHiddenTabs(tabItems: string[], hiddenTabsConfig: string): s
 }
 
 /**
- * Auto-hides the "teams" tab when historical mode is disabled.
- * Team metrics require the user_day_metrics DB table; without it the teams
- * tab falls back to org-wide data and shows identical (incorrect) data for every team.
+ * Historical mode filter — previously hid the "teams" tab when historical
+ * mode was disabled (team metrics required the user_day_metrics DB table).
+ *
+ * Team metrics now work in direct API mode (by fetching enterprise/org
+ * user-level records and filtering by team membership), so the teams tab
+ * is always visible regardless of historical mode.
+ *
+ * Kept for backward compatibility; callers don't need to change.
  */
-export function applyHistoricalModeFilter(tabItems: string[], enableHistoricalMode: boolean | string): string[] {
-    const historicalMode = enableHistoricalMode === true || enableHistoricalMode === 'true'
-    if (!historicalMode && tabItems.includes('teams')) {
-        return tabItems.filter((t: string) => t !== 'teams')
-    }
-    return tabItems
+export function applyHistoricalModeFilter(tabItems: string[], _enableHistoricalMode: boolean | string): string[] {
+    return tabItems;
 }
