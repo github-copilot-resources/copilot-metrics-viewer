@@ -281,6 +281,61 @@ These endpoints respond in ~200ms without making external API calls and do not r
 >[!NOTE]
 > Using these dedicated health endpoints instead of the root `/` path avoids triggering GitHub API calls during health checks.
 
+### Admin Sync API
+
+When running in Historical mode, the web app exposes a manual sync endpoint for backfilling or repairing data. All requests require a `Authorization: Bearer <NUXT_GITHUB_TOKEN>` header.
+
+**`POST /api/admin/sync`**
+
+Common parameters (body JSON or query string):
+
+| Parameter | Description |
+|-----------|-------------|
+| `scope` | `organization` or `enterprise` |
+| `githubOrg` | Organization slug (org scope) |
+| `githubEnt` | Enterprise slug (enterprise scope) |
+| `action` | One of the actions below (default: `sync-date`) |
+
+#### Actions
+
+**`sync-date`** — Download and store metrics for a single day.
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync \
+  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync-date","scope":"organization","githubOrg":"your-org","date":"2026-04-19"}'
+# → {"action":"sync-date","result":{"success":true,"date":"2026-04-19","metricsCount":1}}
+```
+
+**`sync-bulk`** — Download the latest 28-day report and store any new days.
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync \
+  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync-bulk","scope":"organization","githubOrg":"your-org"}'
+# → {"action":"sync-bulk","success":true,"totalDays":28,"savedDays":27,"skippedDays":1,"errors":[]}
+```
+
+**`sync-range`** — Download and store all days in a date range (one API call per day).
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync \
+  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync-range","scope":"organization","githubOrg":"your-org","since":"2026-04-01","until":"2026-04-07"}'
+```
+
+**`sync-gaps`** — Like `sync-range` but skips dates already present in the database (useful for filling holes).
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync \
+  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync-gaps","scope":"organization","githubOrg":"your-org","since":"2026-03-01","until":"2026-04-20"}'
+```
+
 ## Environment Variables Reference
 
 | Variable | Description | Required |
