@@ -400,7 +400,9 @@
           <br>
           <h2>User Metrics History</h2>
           <div class="text-caption mb-4">Trends across stored 28-day snapshots</div>
-          <Line :data="historyChartData" :options="historyChartOptions" />
+          <div style="height: 320px; position: relative;">
+            <Line :data="historyChartData" :options="historyChartOptions" />
+          </div>
           <br>
           <v-data-table
             :headers="historyHeaders"
@@ -952,33 +954,67 @@ export default defineComponent({
           label: 'Total Users',
           data: props.userMetricsHistory.map(e => e.total_users),
           borderColor: 'rgba(63, 81, 181, 1)',
-          backgroundColor: 'rgba(63, 81, 181, 0.15)',
+          backgroundColor: 'rgba(63, 81, 181, 0.08)',
           fill: true,
           tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
           yAxisID: 'yUsers',
         },
         {
           label: 'Active Users (≥7 days)',
           data: props.userMetricsHistory.map(e => e.active_users),
           borderColor: 'rgba(76, 175, 80, 1)',
-          backgroundColor: 'rgba(76, 175, 80, 0.1)',
+          backgroundColor: 'rgba(76, 175, 80, 0)',
           fill: false,
           tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          borderDash: [5, 3],
           yAxisID: 'yUsers',
+        },
+        {
+          label: 'Avg Acceptance Rate %',
+          data: props.userMetricsHistory.map(e => e.avg_acceptance_rate),
+          borderColor: 'rgba(255, 167, 38, 1)',
+          backgroundColor: 'rgba(255, 167, 38, 0)',
+          fill: false,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          yAxisID: 'yRate',
         },
       ];
       return { labels: props.userMetricsHistory.map(e => e.report_end_day), datasets };
     });
 
     const historyChartOptions = computed(() => {
-      const scales: Record<string, object> = {
-        yUsers: { type: 'linear' as const, position: 'left' as const, beginAtZero: true, title: { display: true, text: 'Users' } },
-      };
+      const allUsers = props.userMetricsHistory.flatMap(e => [e.total_users, e.active_users]).filter(v => v > 0);
+      const minUsers = allUsers.length ? Math.max(0, Math.floor(Math.min(...allUsers) * 0.85)) : 0;
       return {
         responsive: true,
-        maintainAspectRatio: true,
-        layout: { padding: { left: 60, right: 60, top: 20, bottom: 40 } },
-        scales,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' as const },
+          tooltip: { mode: 'index' as const, intersect: false },
+        },
+        scales: {
+          yUsers: {
+            type: 'linear' as const,
+            position: 'left' as const,
+            min: minUsers,
+            title: { display: true, text: 'Users' },
+            grid: { color: 'rgba(128,128,128,0.15)' },
+          },
+          yRate: {
+            type: 'linear' as const,
+            position: 'right' as const,
+            min: 0,
+            max: 110,
+            title: { display: true, text: 'Acceptance %' },
+            grid: { drawOnChartArea: false },
+          },
+        },
       };
     });
 
