@@ -283,11 +283,13 @@ These endpoints respond in ~200ms without making external API calls and do not r
 
 ### Admin Sync API
 
-When running in Historical mode, the web app exposes a manual sync endpoint for backfilling or repairing data. All requests require a `Authorization: Bearer <NUXT_GITHUB_TOKEN>` header.
+When running in Historical mode, the web app exposes a manual sync endpoint for backfilling or repairing data. If the app is configured with `NUXT_GITHUB_TOKEN`, the Authorization header is optional (the server uses its own token).
+
+> **Note:** The GitHub Copilot Metrics API provides historical data well beyond the 28-day rolling window. The 1-day endpoint supports dates going back many months, so `sync-date`, `sync-range`, and `sync-gaps` can all backfill historical data. The 28-day limit only applies to `sync-bulk` (which uses the bulk download endpoint).
 
 **`POST /api/admin/sync`**
 
-Common parameters (body JSON or query string):
+Common parameters (body JSON or query string — `Content-Type: application/json` is optional):
 
 | Parameter | Description |
 |-----------|-------------|
@@ -298,42 +300,39 @@ Common parameters (body JSON or query string):
 
 #### Actions
 
-**`sync-date`** — Download and store metrics for a single day.
+**`sync-date`** — Download and store metrics for a single day (supports any historical date).
 
 ```bash
 curl -X POST http://localhost:3000/api/admin/sync \
-  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"action":"sync-date","scope":"organization","githubOrg":"your-org","date":"2026-04-19"}'
-# → {"action":"sync-date","result":{"success":true,"date":"2026-04-19","metricsCount":1}}
+  -d '{"action":"sync-date","scope":"organization","githubOrg":"your-org","date":"2026-01-15"}'
+# → {"action":"sync-date","result":{"success":true,"date":"2026-01-15","metricsCount":1}}
 ```
 
-**`sync-bulk`** — Download the latest 28-day report and store any new days.
+**`sync-bulk`** — Download the latest 28-day report and store any new days. Most efficient for keeping the database current.
 
 ```bash
 curl -X POST http://localhost:3000/api/admin/sync \
-  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"action":"sync-bulk","scope":"organization","githubOrg":"your-org"}'
 # → {"action":"sync-bulk","success":true,"totalDays":28,"savedDays":27,"skippedDays":1,"errors":[]}
 ```
 
-**`sync-range`** — Download and store all days in a date range (one API call per day).
+**`sync-range`** — Download and store all days in a date range (one API call per day). Use for initial historical backfill.
 
 ```bash
 curl -X POST http://localhost:3000/api/admin/sync \
-  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"action":"sync-range","scope":"organization","githubOrg":"your-org","since":"2026-04-01","until":"2026-04-07"}'
+  -d '{"action":"sync-range","scope":"organization","githubOrg":"your-org","since":"2026-01-01","until":"2026-03-31"}'
 ```
 
-**`sync-gaps`** — Like `sync-range` but skips dates already present in the database (useful for filling holes).
+**`sync-gaps`** — Like `sync-range` but skips dates already present in the database. Uses bulk download for recent gaps and the 1-day endpoint for older gaps.
 
 ```bash
 curl -X POST http://localhost:3000/api/admin/sync \
-  -H "Authorization: Bearer $NUXT_GITHUB_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"action":"sync-gaps","scope":"organization","githubOrg":"your-org","since":"2026-03-01","until":"2026-04-20"}'
+  -d '{"action":"sync-gaps","scope":"organization","githubOrg":"your-org","since":"2026-01-01","until":"2026-04-20"}'
+# → {"action":"sync-gaps","gapsDetected":82,"gapsFilled":80,"outsideWindow":0,"failureCount":2,"results":[...]}
 ```
 
 ## Environment Variables Reference

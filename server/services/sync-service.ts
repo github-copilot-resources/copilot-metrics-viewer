@@ -306,23 +306,20 @@ export async function syncGaps(
     return { results: [], gapsDetected: 0, outsideWindow: 0 };
   }
 
-  console.log(`Found ${missingDates.length} missing dates, syncing via bulk download...`);
+  console.log(`Found ${missingDates.length} missing dates, attempting to fill...`);
 
-  // Use bulk download and filter to missing dates
-  const request: MetricsReportRequest = { scope, identifier, teamSlug };
-  const report = await fetchLatestReport(request, headers);
-  const missingSet = new Set(missingDates);
+  // First try bulk 28-day download (efficient for recent gaps)
+  const bulkRequest: MetricsReportRequest = { scope, identifier, teamSlug };
+  const report = await fetchLatestReport(bulkRequest, headers);
   const reportDates = new Set(report.day_totals.map(d => d.day));
-  const outsideWindow = missingDates.filter(d => !reportDates.has(d)).length;
-
-  if (outsideWindow > 0) {
-    console.log(`${outsideWindow} gap(s) are outside the available 28-day API window and cannot be backfilled`);
-  }
+  const inWindowDates = missingDates.filter(d => reportDates.has(d));
+  const outOfWindowDates = missingDates.filter(d => !reportDates.has(d));
 
   const results: SyncResult[] = [];
-  for (const dayData of report.day_totals) {
-    if (!missingSet.has(dayData.day)) continue;
 
+  // Fill in-window gaps from bulk report
+  for (const dayData of report.day_totals) {
+    if (!inWindowDates.includes(dayData.day)) continue;
     try {
       await saveDayData(scope, identifier, dayData, teamSlug);
       results.push({ success: true, date: dayData.day, metricsCount: 1 });
@@ -332,7 +329,16 @@ export async function syncGaps(
     }
   }
 
-  return { results, gapsDetected: missingDates.length, outsideWindow };
+  // Fill out-of-window gaps using the 1-day endpoint (one call per date)
+  if (outOfWindowDates.length > 0) {
+    console.log(`${outOfWindowDates.length} gap(s) outside 28-day window — fetching via 1-day endpoint...`);
+    for (const date of outOfWindowDates) {
+      const dayResult = await syncMetricsForDate({ scope, identifier, date, teamSlug, headers });
+      results.push(dayResult);
+    }
+  }
+
+  return { results, gapsDetected: missingDates.length, outsideWindow: outOfWindowDates.length };
 }
 
 /**
