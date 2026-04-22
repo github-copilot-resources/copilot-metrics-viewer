@@ -200,9 +200,12 @@
             <tr>
               <td>
                 <v-chip
-                  :color="getActivityColor(item.total_active_days)"
+                  :color="selectedUserLogin === item.login ? 'indigo' : getActivityColor(item.total_active_days)"
+                  :variant="selectedUserLogin === item.login ? 'elevated' : 'flat'"
                   size="small"
-                  variant="flat"
+                  style="cursor: pointer;"
+                  :title="selectedUserLogin === item.login ? 'Click to clear filter' : 'Click to filter charts'"
+                  @click="toggleUserSelection(item.login)"
                 >
                   {{ item.login }}
                 </v-chip>
@@ -269,6 +272,104 @@
       </v-container>
     </v-main>
 
+    <!-- User Drill-Down Charts -->
+    <v-main class="p-1">
+      <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-2 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
+        <!-- Header row -->
+        <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-3 pt-2">
+          <div>
+            <div class="text-subtitle-1 font-weight-medium">
+              <v-icon size="small" class="mr-1">mdi-chart-bar</v-icon>
+              {{ selectedUser ? selectedUser.login + ' — User Insights' : 'User Insights' }}
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              {{ selectedUser
+                ? 'Filtered to selected user. Click the badge again to clear.'
+                : 'Click a user badge in the table to drill down into their usage.' }}
+            </div>
+          </div>
+          <div class="d-flex align-center gap-2">
+            <v-chip
+              v-if="isUserHiddenByFilter"
+              color="warning"
+              size="small"
+              closable
+              @click:close="selectedUserLogin = null"
+            >
+              {{ selectedUserLogin }} (hidden by filter)
+            </v-chip>
+            <v-chip
+              v-if="selectedUser"
+              color="indigo"
+              size="small"
+              closable
+              @click:close="selectedUserLogin = null"
+            >
+              {{ selectedUser.login }}
+            </v-chip>
+          </div>
+        </div>
+
+        <v-row>
+          <!-- 1. Language Distribution -->
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+            <v-card variant="outlined" class="pa-4">
+              <div class="text-subtitle-2 font-weight-medium mb-1">Language Distribution</div>
+              <div class="text-caption text-medium-emphasis mb-3">Code completions by language (top 10)</div>
+              <div style="height: 240px;">
+                <Doughnut v-if="langDistChartData.labels.length" :data="langDistChartData" :options="langDistOptions" />
+                <div v-else class="d-flex align-center justify-center fill-height text-disabled text-caption">No language data available</div>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- 2. Feature Usage by Category -->
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+            <v-card variant="outlined" class="pa-4">
+              <div class="text-subtitle-2 font-weight-medium mb-1">Feature Usage</div>
+              <div class="text-caption text-medium-emphasis mb-3">Interactions by feature category</div>
+              <div style="height: 240px;">
+                <Bar :data="featureUsageChartData" :options="featureUsageOptions" />
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- 3. Top Models by Interactions -->
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+            <v-card variant="outlined" class="pa-4">
+              <div class="text-subtitle-2 font-weight-medium mb-1">Top Models by Interactions</div>
+              <div class="text-caption text-medium-emphasis mb-3">Most used AI models</div>
+              <div style="height: 240px;">
+                <Bar v-if="topModelsChartData.labels.length" :data="topModelsChartData" :options="topModelsOptions" />
+                <div v-else class="d-flex align-center justify-center fill-height text-disabled text-caption">No model data available</div>
+              </div>
+            </v-card>
+          </v-col>
+
+          <!-- 4. Activity Over Time -->
+          <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
+            <v-card variant="outlined" class="pa-4">
+              <div class="text-subtitle-2 font-weight-medium mb-1">Activity Over Time</div>
+              <div class="text-caption text-medium-emphasis mb-3">
+                {{ selectedUser ? selectedUser.login + '\'s stored snapshots' : 'Select a user to see their history' }}
+              </div>
+              <div style="height: 240px;" class="d-flex align-center justify-center">
+                <v-progress-circular v-if="chartTrendLoading" indeterminate color="indigo" size="36" />
+                <div v-else-if="!selectedUser" class="text-center text-disabled text-caption">
+                  <v-icon size="40" class="mb-2 d-block" style="opacity:0.3;">mdi-cursor-pointer</v-icon>
+                  Click a user badge to view their activity history
+                </div>
+                <div v-else-if="chartTrendData.length === 0" class="text-disabled text-caption">
+                  No historical snapshots for {{ selectedUser.login }}
+                </div>
+                <Line v-else style="width:100%;height:100%;" :data="chartTrendChartData" :options="chartTrendOptions" />
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </v-main>
+
     <!-- Per-user trend dialog -->
     <v-dialog v-model="trendDialog" max-width="760">
       <v-card>
@@ -324,7 +425,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, type PropType } from 'vue';
+import { defineComponent, ref, computed, watch, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
 import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
 import { CHAT_FEATURES, AGENT_FEATURES, COMPLETION_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
@@ -371,6 +472,17 @@ export default defineComponent({
   setup(props) {
     const search = ref('');
     const activityFilter = ref('all');
+
+    // ── User selection for drill-down charts ───────────────────────────────
+    const selectedUserLogin = ref<string | null>(null);
+
+    const selectedUser = computed(() =>
+      props.userMetrics.find(u => u.login === selectedUserLogin.value) ?? null
+    );
+
+    function toggleUserSelection(login: string) {
+      selectedUserLogin.value = selectedUserLogin.value === login ? null : login;
+    }
 
     // ── Per-user trend dialog ──────────────────────────────────────────────
     const trendDialog  = ref(false);
@@ -477,6 +589,150 @@ export default defineComponent({
 
       return result;
     });
+
+    // Source for drill-down charts: selected user or all filtered users
+    const chartSource = computed(() =>
+      selectedUser.value ? [selectedUser.value] : filteredUsers.value
+    );
+
+    const isUserHiddenByFilter = computed(() =>
+      selectedUserLogin.value !== null &&
+      !filteredUsers.value.some(u => u.login === selectedUserLogin.value)
+    );
+
+    // ── Drill-down Chart: Language Distribution ────────────────────────────
+    const CHART_PALETTE = [
+      '#4C8BF5', '#34A853', '#FBBC04', '#EA4335', '#AB47BC',
+      '#00ACC1', '#FF7043', '#43A047', '#7E57C2', '#EC407A',
+    ];
+
+    const langDistChartData = computed(() => {
+      const langMap = new Map<string, number>();
+      for (const user of chartSource.value) {
+        for (const entry of user.totals_by_language_feature || []) {
+          langMap.set(entry.language, (langMap.get(entry.language) ?? 0) + entry.code_generation_activity_count);
+        }
+      }
+      const sorted = [...langMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+      return {
+        labels: sorted.map(([lang]) => lang),
+        datasets: [{ data: sorted.map(([, v]) => v), backgroundColor: CHART_PALETTE, borderWidth: 1 }],
+      };
+    });
+
+    const langDistOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'right' as const, labels: { boxWidth: 12, padding: 8, font: { size: 11 } } } },
+    };
+
+    // ── Drill-down Chart: Feature Usage ────────────────────────────────────
+    const featureUsageChartData = computed(() => {
+      const featureMap = new Map<string, number>();
+      for (const user of chartSource.value) {
+        for (const entry of user.totals_by_feature || []) {
+          featureMap.set(entry.feature, (featureMap.get(entry.feature) ?? 0) +
+            entry.user_initiated_interaction_count + entry.code_generation_activity_count);
+        }
+      }
+      const chatOnly = CHAT_FEATURES.filter(f => !AGENT_FEATURES.includes(f));
+      const categories = [
+        { label: 'Completions', features: COMPLETION_FEATURES, color: 'rgba(54, 162, 235, 0.8)' },
+        { label: 'Chat',        features: chatOnly,            color: 'rgba(63,  81, 181, 0.8)' },
+        { label: 'Agent',       features: AGENT_FEATURES,      color: 'rgba(156, 39, 176, 0.8)' },
+      ];
+      const values = categories.map(cat => cat.features.reduce((sum, f) => sum + (featureMap.get(f) ?? 0), 0));
+      return {
+        labels: categories.map(c => c.label),
+        datasets: [{ label: 'Interactions', data: values, backgroundColor: categories.map(c => c.color), borderRadius: 4 }],
+      };
+    });
+
+    const featureUsageOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 12 } } } },
+      plugins: { legend: { display: false } },
+    };
+
+    // ── Drill-down Chart: Top Models ───────────────────────────────────────
+    const topModelsChartData = computed(() => {
+      const modelMap = new Map<string, number>();
+      for (const user of chartSource.value) {
+        for (const entry of user.totals_by_model_feature || []) {
+          modelMap.set(entry.model, (modelMap.get(entry.model) ?? 0) + entry.user_initiated_interaction_count);
+        }
+      }
+      const sorted = [...modelMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+      // Shorten long model names for readability
+      const shortName = (m: string) => m.length > 30 ? m.slice(0, 28) + '…' : m;
+      return {
+        labels: sorted.map(([m]) => shortName(m)),
+        datasets: [{ label: 'Interactions', data: sorted.map(([, v]) => v), backgroundColor: 'rgba(255, 152, 0, 0.8)', borderRadius: 4 }],
+      };
+    });
+
+    const topModelsOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      scales: { x: { beginAtZero: true }, y: { ticks: { font: { size: 11 } } } },
+      plugins: { legend: { display: false } },
+    };
+
+    // ── Drill-down Chart: Activity Over Time (selected user, historical) ───
+    const chartTrendData = ref<UserTimeSeriesEntry[]>([]);
+    const chartTrendLoading = ref(false);
+    let chartTrendVersion = 0;
+
+    watch(selectedUser, async (user) => {
+      if (!user || !showTrendButtons.value) {
+        chartTrendData.value = [];
+        return;
+      }
+      const version = ++chartTrendVersion;
+      chartTrendLoading.value = true;
+      try {
+        const params = new URLSearchParams({ ...props.queryParams, login: user.login });
+        const data = await $fetch<UserTimeSeriesEntry[]>(`/api/user-metrics-history?${params}`);
+        if (version === chartTrendVersion) chartTrendData.value = data;
+      } catch {
+        if (version === chartTrendVersion) chartTrendData.value = [];
+      } finally {
+        if (version === chartTrendVersion) chartTrendLoading.value = false;
+      }
+    });
+
+    const chartTrendChartData = computed(() => ({
+      labels: chartTrendData.value.map(e => e.report_end_day),
+      datasets: [
+        {
+          label: 'Interactions',
+          data: chartTrendData.value.map(e => e.user_initiated_interaction_count),
+          borderColor: 'rgba(63, 81, 181, 1)',
+          backgroundColor: 'rgba(63, 81, 181, 0.1)',
+          fill: true, tension: 0.3, yAxisID: 'yCount',
+        },
+        {
+          label: 'Acceptance Rate %',
+          data: chartTrendData.value.map(e => e.acceptance_rate),
+          borderColor: 'rgba(76, 175, 80, 1)',
+          backgroundColor: 'rgba(76, 175, 80, 0.05)',
+          fill: false, tension: 0.3, yAxisID: 'yRate',
+        },
+      ],
+    }));
+
+    const chartTrendOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        yCount: { type: 'linear' as const, position: 'left'  as const, beginAtZero: true, title: { display: true, text: 'Interactions' } },
+        yRate:  { type: 'linear' as const, position: 'right' as const, beginAtZero: true, max: 120, title: { display: true, text: 'Rate %' }, grid: { drawOnChartArea: false } },
+      },
+      plugins: { legend: { position: 'bottom' as const } },
+    };
 
     function getAcceptanceRate(user: UserTotals): string {
       if (user.code_generation_activity_count === 0) return '0.0';
@@ -775,6 +1031,22 @@ export default defineComponent({
       trendChartData,
       trendChartOptions,
       openUserTrend,
+      // user drill-down selection
+      selectedUserLogin,
+      selectedUser,
+      toggleUserSelection,
+      isUserHiddenByFilter,
+      // drill-down charts
+      langDistChartData,
+      langDistOptions,
+      featureUsageChartData,
+      featureUsageOptions,
+      topModelsChartData,
+      topModelsOptions,
+      chartTrendData,
+      chartTrendLoading,
+      chartTrendChartData,
+      chartTrendOptions,
     };
   },
   data() {
