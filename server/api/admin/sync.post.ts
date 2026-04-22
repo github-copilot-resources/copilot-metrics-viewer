@@ -10,7 +10,12 @@ import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 export default defineEventHandler(async (event) => {
   const logger = console;
   const query = getQuery(event);
-  const body = await readBody(event).catch(() => ({}));
+  let rawBody = await readBody(event).catch(() => ({}));
+  // If body wasn't parsed as an object (e.g. missing Content-Type header), try JSON.parse
+  if (typeof rawBody === 'string') {
+    try { rawBody = JSON.parse(rawBody); } catch { rawBody = {}; }
+  }
+  const body = rawBody || {};
 
   // Merge query and body parameters
   const params = { ...query, ...body };
