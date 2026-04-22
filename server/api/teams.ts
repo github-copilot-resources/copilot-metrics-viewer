@@ -74,6 +74,18 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     // Build base URL based on scope
     const baseUrl = options.getTeamsApiUrl()
 
+    // Build headers: start from auth middleware headers, add API version for enterprise teams
+    const fetchHeaders: Record<string, string> = {}
+    if (event.context.headers instanceof Headers) {
+        for (const [key, value] of event.context.headers.entries()) {
+            fetchHeaders[key] = value
+        }
+    }
+    if (options.scope === 'enterprise') {
+        delete fetchHeaders['x-github-api-version']
+        fetchHeaders['X-GitHub-Api-Version'] = '2026-03-10'
+    }
+
     const allTeams: Team[] = []
     let nextUrl: string | null = `${baseUrl}?per_page=100`
     let page = 1
@@ -81,7 +93,7 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     while (nextUrl) {
         logger.info(`Fetching teams page ${page} from ${nextUrl}`)
         const res = await $fetch.raw(nextUrl, {
-            headers: event.context.headers
+            headers: fetchHeaders
         })
 
         const data = res._data as GitHubTeam[]

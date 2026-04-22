@@ -37,8 +37,13 @@ export function aggregateTeamMetrics(
   userRecords: UserDayRecord[],
   teamLogins: Set<string>
 ): OrgReport {
-  // Filter to only records for team members
-  const teamRecords = userRecords.filter(r => teamLogins.has(r.user_login));
+  // Build case-insensitive login set for robust matching
+  const normalizedLogins = new Set(Array.from(teamLogins).map(l => l.toLowerCase()));
+
+  // Filter to only records for team members (case-insensitive login match)
+  const teamRecords = userRecords.filter(r =>
+    r.user_login && normalizedLogins.has(r.user_login.toLowerCase())
+  );
 
   // Group by day
   const byDay = new Map<string, UserDayRecord[]>();

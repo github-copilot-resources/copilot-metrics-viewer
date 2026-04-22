@@ -602,6 +602,55 @@ describe('Options', () => {
     })
   })
 
+  describe('getTeamMembersApiUrl', () => {
+    test('generates correct URL for organization scope', () => {
+      const options = new Options({
+        scope: 'organization',
+        githubOrg: 'test-org',
+        githubTeam: 'test-team'
+      })
+      
+      expect(options.getTeamMembersApiUrl()).toBe('https://api.github.com/orgs/test-org/teams/test-team/members')
+    })
+
+    test('generates correct URL for enterprise scope (uses /memberships)', () => {
+      const options = new Options({
+        scope: 'enterprise',
+        githubEnt: 'test-ent',
+        githubTeam: 'test-team'
+      })
+      
+      expect(options.getTeamMembersApiUrl()).toBe('https://api.github.com/enterprises/test-ent/teams/test-team/memberships')
+    })
+
+    test('throws error for organization scope without org or team', () => {
+      const options = new Options({
+        scope: 'organization',
+        githubOrg: 'test-org'
+      })
+      
+      expect(() => options.getTeamMembersApiUrl()).toThrow('GitHub organization and team must be set for organization scope')
+    })
+
+    test('throws error for enterprise scope without ent or team', () => {
+      const options = new Options({
+        scope: 'enterprise',
+        githubEnt: 'test-ent'
+      })
+      
+      expect(() => options.getTeamMembersApiUrl()).toThrow('GitHub enterprise and team must be set for enterprise scope')
+    })
+
+    test('throws error for invalid scope', () => {
+      const options = new Options({
+        scope: 'invalid-scope' as Scope,
+        githubTeam: 'test-team'
+      })
+      
+      expect(() => options.getTeamMembersApiUrl()).toThrow('Invalid scope: invalid-scope')
+    })
+  })
+
   describe('getMockDataPath', () => {
     test('returns correct path for organization scope', () => {
       const options1 = new Options({ scope: 'organization' })
