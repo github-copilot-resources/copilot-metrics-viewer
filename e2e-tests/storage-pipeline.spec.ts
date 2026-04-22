@@ -23,7 +23,7 @@ test.describe('Seed storage @seed', () => {
   test('bulk sync writes mock data to DB', async ({ request }) => {
     const syncResponse = await request.post('/api/admin/sync', {
       data: {
-        action: 'sync-bulk',
+        action: 'sync-last-28',
         scope: 'organization',
         githubOrg: ORG,
         isDataMocked: true,
@@ -32,7 +32,7 @@ test.describe('Seed storage @seed', () => {
 
     expect(syncResponse.ok()).toBeTruthy();
     const syncResult = await syncResponse.json();
-    expect(syncResult.action).toBe('sync-bulk');
+    expect(syncResult.action).toBe('sync-last-28');
     expect(syncResult.success).toBe(true);
     expect(syncResult.totalDays).toBeGreaterThan(0);
 

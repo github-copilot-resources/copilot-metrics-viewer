@@ -123,7 +123,8 @@ export default defineEventHandler(async (event) => {
         };
       }
 
-      case 'sync-bulk': {
+      case 'sync-last-28':
+      case 'sync-bulk': {  // backward-compatible alias
         // Bulk download latest 28-day report and store all new days
         logger.info(`Running bulk sync for ${options.scope}:${options.githubOrg || options.githubEnt}`);
         const bulkResult = await syncBulk(
@@ -134,7 +135,7 @@ export default defineEventHandler(async (event) => {
         );
 
         return {
-          action: 'sync-bulk',
+          action: 'sync-last-28',
           ...bulkResult
         };
       }

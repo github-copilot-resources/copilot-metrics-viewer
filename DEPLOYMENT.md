@@ -285,7 +285,7 @@ These endpoints respond in ~200ms without making external API calls and do not r
 
 When running in Historical mode, the web app exposes a manual sync endpoint for backfilling or repairing data. If the app is configured with `NUXT_GITHUB_TOKEN`, the Authorization header is optional (the server uses its own token).
 
-> **Note:** The GitHub Copilot Metrics API provides historical data well beyond the 28-day rolling window. The 1-day endpoint supports dates going back many months, so `sync-date`, `sync-range`, and `sync-gaps` can all backfill historical data. The 28-day limit only applies to `sync-bulk` (which uses the bulk download endpoint).
+> **Note:** The GitHub Copilot Metrics API provides historical data well beyond the 28-day rolling window. The 1-day endpoint supports dates going back many months, so `sync-date`, `sync-range`, and `sync-gaps` can all backfill historical data. The 28-day limit only applies to `sync-last-28` (which uses the bulk download endpoint).
 
 **`POST /api/admin/sync`**
 
@@ -309,13 +309,13 @@ curl -X POST http://localhost:3000/api/admin/sync \
 # → {"action":"sync-date","result":{"success":true,"date":"2026-01-15","metricsCount":1}}
 ```
 
-**`sync-bulk`** — Download the latest 28-day report and store any new days. Most efficient for keeping the database current.
+**`sync-last-28`** — Download the latest 28-day report and store any new days. Most efficient for keeping the database current (1 API call for 28 days).
 
 ```bash
 curl -X POST http://localhost:3000/api/admin/sync \
   -H "Content-Type: application/json" \
-  -d '{"action":"sync-bulk","scope":"organization","githubOrg":"your-org"}'
-# → {"action":"sync-bulk","success":true,"totalDays":28,"savedDays":27,"skippedDays":1,"errors":[]}
+  -d '{"action":"sync-last-28","scope":"organization","githubOrg":"your-org"}'
+# → {"action":"sync-last-28","success":true,"totalDays":28,"savedDays":27,"skippedDays":1,"errors":[]}
 ```
 
 **`sync-range`** — Download and store all days in a date range (one API call per day). Use for initial historical backfill.
