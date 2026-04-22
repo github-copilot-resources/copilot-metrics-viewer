@@ -12,7 +12,35 @@
  *   - NUXT_GITHUB_TOKEN: GitHub personal access token
  *   - SYNC_DAYS_BACK: Number of days to sync (default: 28, uses bulk download)
  *   - DATABASE_URL: PostgreSQL connection string (or use PG* env vars)
+ *   - HTTP_PROXY: Optional HTTP/HTTPS proxy URL (e.g. http://proxy:8080)
+ *   - CUSTOM_CA_PATH: Optional path to a custom CA certificate file
  */
+
+// Initialize proxy agent before any fetch calls (mirrors server/plugins/http-agent.ts)
+import { ProxyAgent, setGlobalDispatcher } from 'undici';
+import { readFileSync, existsSync } from 'fs';
+
+if (process.env.HTTP_PROXY) {
+  try {
+    const tlsOptions = process.env.CUSTOM_CA_PATH ? (() => {
+      if (!existsSync(process.env.CUSTOM_CA_PATH!)) {
+        throw new Error(`CUSTOM_CA_PATH file not found: ${process.env.CUSTOM_CA_PATH}`);
+      }
+      return { tls: { ca: [readFileSync(process.env.CUSTOM_CA_PATH!)] } };
+    })() : {};
+
+    const proxyAgent = new ProxyAgent({
+      uri: process.env.HTTP_PROXY,
+      ...tlsOptions
+    });
+
+    setGlobalDispatcher(proxyAgent);
+    console.info(`Proxy agent initialized: ${process.env.HTTP_PROXY}`);
+  } catch (error) {
+    console.error('Failed to initialize proxy agent:', error);
+    process.exit(1);
+  }
+}
 
 import { syncBulk } from './services/sync-service';
 import { initSchema } from './storage/db';
