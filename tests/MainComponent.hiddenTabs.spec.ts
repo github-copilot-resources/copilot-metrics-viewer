@@ -72,18 +72,18 @@ describe('MainComponent hidden tabs filtering', () => {
 
   // Historical mode tests
   describe('auto-hide teams tab based on historical mode', () => {
-    test('should hide teams tab when historical mode is false', () => {
+    test('should always keep teams tab regardless of historical mode (teams now work in direct API mode)', () => {
       const tabs = ['organization', 'teams', ...ALL_BASE_TABS]
       const result = applyHistoricalModeFilter(tabs, false)
-      expect(result).not.toContain('teams')
+      expect(result).toContain('teams')
       expect(result).toContain('organization')
       expect(result).toContain('languages')
     })
 
-    test('should hide teams tab when historical mode is string "false"', () => {
+    test('should keep teams tab when historical mode is string "false"', () => {
       const tabs = ['organization', 'teams', ...ALL_BASE_TABS]
       const result = applyHistoricalModeFilter(tabs, 'false')
-      expect(result).not.toContain('teams')
+      expect(result).toContain('teams')
     })
 
     test('should keep teams tab when historical mode is true', () => {
@@ -98,10 +98,10 @@ describe('MainComponent hidden tabs filtering', () => {
       expect(result).toContain('teams')
     })
 
-    test('should not affect other tabs when hiding teams', () => {
+    test('should not affect other tabs', () => {
       const tabs = ['organization', 'teams', ...ALL_BASE_TABS]
       const result = applyHistoricalModeFilter(tabs, false)
-      expect(result).toHaveLength(tabs.length - 1)
+      expect(result).toHaveLength(tabs.length)
       ALL_BASE_TABS.forEach(tab => expect(result).toContain(tab))
     })
 

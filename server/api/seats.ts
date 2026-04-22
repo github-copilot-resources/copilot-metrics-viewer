@@ -29,17 +29,15 @@ export interface TeamMember {
 }
 
 /**
- * Fetch all members of a team (org team scope) handling GitHub API pagination.
- * For now this is limited to organization team scopes. Enterprise team member
- * listing requires resolving the parent organization; that enhancement can be
- * added later if needed.
+ * Fetch all members of a team handling GitHub API pagination.
+ * Supports both organization teams (via /members) and enterprise teams
+ * (via /memberships with X-GitHub-Api-Version: 2026-03-10).
  *
  * @param options Options containing scope/org/team information
  * @param headers Headers (with Authorization) forwarded from the incoming request
  * @returns Array of team member objects returned by the GitHub API
  */
 export async function fetchAllTeamMembers(options: Options, headers: HeadersInit): Promise<TeamMember[]> {
-  // Only proceed when an organization + team slug are both present
   if (!options.githubTeam) {
     return [];
   }
@@ -49,25 +47,56 @@ export async function fetchAllTeamMembers(options: Options, headers: HeadersInit
   let page = 1;
   const members: TeamMember[] = [];
 
-  /*
-   * Loop until an empty page (or a short page) is returned. We purposely do
-   * not rely on the Link header to keep the implementation simple & robust
-   * under mocking. If rate limiting becomes a concern this can be replaced
-   * with Link header parsing.
-   */
+  // Build headers: add API version for enterprise team memberships
+  const fetchHeaders: Record<string, string> = {};
+  if (headers instanceof Headers) {
+    for (const [key, value] of headers.entries()) {
+      fetchHeaders[key] = value;
+    }
+  } else if (typeof headers === 'object') {
+    Object.assign(fetchHeaders, headers);
+  }
+  if (options.scope === 'enterprise') {
+    delete fetchHeaders['x-github-api-version'];
+    fetchHeaders['X-GitHub-Api-Version'] = '2026-03-10';
+  }
+
   while (true) {
     const pageData = await $fetch<TeamMember[]>(membersUrl, {
-      headers,
+      headers: fetchHeaders,
       params: { per_page: perPage, page }
     });
 
     if (!Array.isArray(pageData) || pageData.length === 0) break;
-    members.push(...pageData);
+    // Normalize: enterprise /memberships may nest user data under a `user` property
+    for (const item of pageData) {
+      const member = normalizeTeamMember(item);
+      if (member) members.push(member);
+    }
     if (pageData.length < perPage) break; // last page
     page += 1;
   }
 
   return members;
+}
+
+/**
+ * Normalize a team member response item into {login, id}.
+ * Handles both flat user objects and potentially nested membership objects.
+ */
+function normalizeTeamMember(item: Record<string, unknown>): TeamMember | null {
+  // Flat user object (standard shape from both /members and /memberships)
+  if (typeof item.login === 'string' && typeof item.id === 'number') {
+    return item as TeamMember;
+  }
+  // Nested membership object (defensive: { user: { login, id } })
+  if (item.user && typeof item.user === 'object') {
+    const user = item.user as Record<string, unknown>;
+    if (typeof user.login === 'string' && typeof user.id === 'number') {
+      return user as TeamMember;
+    }
+  }
+  return null;
 }
 
 /**
