@@ -61,6 +61,7 @@ async function runSync() {
       scope,
       identifier,
       headers,
+      undefined,
       daysBack
     );
 
