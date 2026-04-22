@@ -9,7 +9,7 @@
  * anonymized real API responses. Nuxt serves them as static assets.
  */
 
-import type { DownloadLinksResponse, MetricsReportRequest, OrgReport } from './github-copilot-usage-api';
+import type { DownloadLinksResponse, MetricsReportRequest, OrgReport, ReportDayTotals } from './github-copilot-usage-api';
 
 /** Base URL for local mock files served by Nuxt's public/ directory */
 function getMockBaseUrl(): string {
@@ -27,7 +27,7 @@ export function mockRequestDownloadLinks(
   reportType: '1-day' | '28-day',
   day?: string
 ): DownloadLinksResponse {
-  const isOrg = request.scope === 'organization' || request.scope === 'team-organization';
+  const isOrg = request.scope === 'organization';
   const scopePrefix = isOrg ? 'organization' : 'enterprise';
 
   if (reportType === '1-day') {
@@ -53,7 +53,7 @@ export function mockRequestUserDownloadLinks(
   reportType: '1-day' | '28-day',
   day?: string
 ): DownloadLinksResponse {
-  const isOrg = request.scope === 'organization' || request.scope === 'team-organization';
+  const isOrg = request.scope === 'organization';
   const scopePrefix = isOrg ? 'organization' : 'enterprise';
 
   if (reportType === '1-day') {
@@ -118,19 +118,32 @@ export function generateMockReport(startDay: string, endDay: string): OrgReport 
 
 /** Minimal fallback when static file isn't available */
 function _generateFallbackReport(startDay: string, endDay: string): OrgReport {
+  // Try to use the 1-day report mock file as a per-day template
+  let dayTemplate: ReportDayTotals | null = null;
+  try {
+    const { readFileSync } = require('fs');
+    const { resolve } = require('path');
+    const filePath = resolve('public/mock-data/new-api/organization-1-day-report.json');
+    const data = JSON.parse(readFileSync(filePath, 'utf8')) as OrgReport;
+    dayTemplate = data.day_totals[0] ?? null;
+  } catch {
+    // Template file unavailable — will use hardcoded fallback below
+  }
+
   const start = new Date(startDay);
   const end = new Date(endDay);
-  const dayTotals = [];
+  const dayTotals: ReportDayTotals[] = [];
   const current = new Date(start);
   while (current <= end) {
-    dayTotals.push(_generateMinimalDay(current.toISOString().split('T')[0]));
+    const day = current.toISOString().split('T')[0];
+    dayTotals.push(dayTemplate ? { ...dayTemplate, day } : _generateMinimalDay(day));
     current.setDate(current.getDate() + 1);
   }
   return {
     report_start_day: startDay,
     report_end_day: endDay,
-    organization_id: '100000001',
-    enterprise_id: '200001',
+    organization_id: dayTemplate?.organization_id ?? '100000001',
+    enterprise_id: dayTemplate?.enterprise_id ?? '200001',
     created_at: new Date().toISOString(),
     day_totals: dayTotals,
   };
@@ -144,25 +157,31 @@ function _generateMinimalDay(day: string) {
     daily_active_users: 4,
     weekly_active_users: 5,
     monthly_active_users: 6,
+    monthly_active_agent_users: 5,
     user_initiated_interaction_count: 50,
     code_generation_activity_count: 150,
     code_acceptance_activity_count: 45,
     totals_by_ide: [{ ide: 'vscode', user_initiated_interaction_count: 50, code_generation_activity_count: 150, code_acceptance_activity_count: 45, loc_suggested_to_add_sum: 300, loc_suggested_to_delete_sum: 0, loc_added_sum: 600, loc_deleted_sum: 50 }],
     totals_by_feature: [
       { feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 60, code_acceptance_activity_count: 45, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 50, loc_deleted_sum: 0 },
-      { feature: 'agent_edit', user_initiated_interaction_count: 0, code_generation_activity_count: 90, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 500, loc_deleted_sum: 50 },
-      { feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 25, code_generation_activity_count: 0, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
+      { feature: 'agent_edit', user_initiated_interaction_count: 15, code_generation_activity_count: 90, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 500, loc_deleted_sum: 50 },
+      { feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 20, code_generation_activity_count: 0, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
+      { feature: 'chat_panel_agent_mode', user_initiated_interaction_count: 10, code_generation_activity_count: 0, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
     ],
     totals_by_language_feature: [
       { language: 'typescript', feature: 'code_completion', code_generation_activity_count: 40, code_acceptance_activity_count: 30, loc_suggested_to_add_sum: 60, loc_suggested_to_delete_sum: 0, loc_added_sum: 30, loc_deleted_sum: 0 },
+      { language: 'python',     feature: 'agent_edit',      code_generation_activity_count: 35, code_acceptance_activity_count: 0,  loc_suggested_to_add_sum: 0,  loc_suggested_to_delete_sum: 0, loc_added_sum: 250, loc_deleted_sum: 30 },
+      { language: 'typescript', feature: 'agent_edit',      code_generation_activity_count: 30, code_acceptance_activity_count: 0,  loc_suggested_to_add_sum: 0,  loc_suggested_to_delete_sum: 0, loc_added_sum: 200, loc_deleted_sum: 20 },
+      { language: 'markdown',   feature: 'agent_edit',      code_generation_activity_count: 15, code_acceptance_activity_count: 0,  loc_suggested_to_add_sum: 0,  loc_suggested_to_delete_sum: 0, loc_added_sum: 50,  loc_deleted_sum: 0  },
     ],
     totals_by_language_model: [
       { language: 'typescript', model: 'gpt-5.3-codex', code_generation_activity_count: 40, code_acceptance_activity_count: 30, loc_suggested_to_add_sum: 60, loc_suggested_to_delete_sum: 0, loc_added_sum: 30, loc_deleted_sum: 0 },
     ],
     totals_by_model_feature: [
       { model: 'gpt-5.3-codex', feature: 'code_completion', user_initiated_interaction_count: 0, code_generation_activity_count: 60, code_acceptance_activity_count: 45, loc_suggested_to_add_sum: 100, loc_suggested_to_delete_sum: 0, loc_added_sum: 50, loc_deleted_sum: 0 },
-      { model: 'claude-opus-4.6', feature: 'agent_edit', user_initiated_interaction_count: 0, code_generation_activity_count: 90, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 500, loc_deleted_sum: 50 },
-      { model: 'gpt-5.3-codex', feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 25, code_generation_activity_count: 0, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
+      { model: 'claude-opus-4.6', feature: 'agent_edit', user_initiated_interaction_count: 15, code_generation_activity_count: 90, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 500, loc_deleted_sum: 50 },
+      { model: 'gpt-5.3-codex', feature: 'chat_panel_ask_mode', user_initiated_interaction_count: 20, code_generation_activity_count: 0, code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
+      { model: 'claude-opus-4.6', feature: 'chat_panel_agent_mode', user_initiated_interaction_count: 10, code_generation_activity_count: 0, code_acceptance_activity_count: 0, loc_suggested_to_add_sum: 0, loc_suggested_to_delete_sum: 0, loc_added_sum: 0, loc_deleted_sum: 0 },
     ],
     loc_suggested_to_add_sum: 300,
     loc_suggested_to_delete_sum: 0,

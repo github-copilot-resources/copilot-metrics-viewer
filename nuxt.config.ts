@@ -75,11 +75,8 @@ export default defineNuxtConfig({
       'plugins/http-agent',
       'plugins/db-init',
     ],
-    scheduledTasks: {
-      // Daily sync task - runs at 2 AM by default
-      // Customize schedule via SYNC_SCHEDULE env var (cron format)
-      [process.env.SYNC_SCHEDULE ?? '0 2 * * *']: ['daily-metrics-sync']
-    }
+    // Scheduled sync is handled by the dedicated sync Docker container (Dockerfile.sync).
+    // Do not register scheduledTasks here to avoid Nitro "task not defined" warnings.
   },
   runtimeConfig: {
     githubToken: '',
@@ -102,7 +99,6 @@ export default defineNuxtConfig({
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
       githubOrg: '',
       githubEnt: '',
-      githubTeam: '',
       usingGithubAuth: false,
       version,
       isPublicApp: false,

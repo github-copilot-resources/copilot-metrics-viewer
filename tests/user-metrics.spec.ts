@@ -229,8 +229,8 @@ describe('mockRequestUserDownloadLinks', () => {
     expect(resp.download_links[0]).toContain('enterprise-users-28-day-report.json');
   });
 
-  it('returns org 28-day URL for team-organization scope', () => {
-    const resp = mockRequestUserDownloadLinks({ scope: 'team-organization', identifier: 'test-org', teamSlug: 'eng' }, '28-day');
+  it('returns org 28-day URL for organization scope with team slug', () => {
+    const resp = mockRequestUserDownloadLinks({ scope: 'organization', identifier: 'test-org', teamSlug: 'eng' }, '28-day');
 
     expect(resp.download_links[0]).toContain('organization-users-28-day-report.json');
   });
@@ -595,7 +595,7 @@ describe('/api/user-metrics handler – team filtering', () => {
   it('filters user totals by team members in historical mode', async () => {
     // Override getQuery to return team scope
     ;(globalThis as any).getQuery = () => ({
-      scope: 'team-organization',
+      scope: 'organization',
       githubOrg: 'test-org',
       githubTeam: 'the-a-team',
     })
@@ -643,7 +643,7 @@ describe('/api/user-metrics handler – team filtering', () => {
 
   it('throws 503 for team scope without auth in historical mode', async () => {
     ;(globalThis as any).getQuery = () => ({
-      scope: 'team-organization',
+      scope: 'organization',
       githubOrg: 'test-org',
       githubTeam: 'the-a-team',
     })
@@ -654,7 +654,7 @@ describe('/api/user-metrics handler – team filtering', () => {
 
   it('returns empty array when team has no members', async () => {
     ;(globalThis as any).getQuery = () => ({
-      scope: 'team-organization',
+      scope: 'organization',
       githubOrg: 'test-org',
       githubTeam: 'empty-team',
     })
@@ -676,7 +676,7 @@ describe('/api/user-metrics handler – team filtering', () => {
 
   it('filters by user_id when login case differs', async () => {
     ;(globalThis as any).getQuery = () => ({
-      scope: 'team-organization',
+      scope: 'organization',
       githubOrg: 'test-org',
       githubTeam: 'case-team',
     })

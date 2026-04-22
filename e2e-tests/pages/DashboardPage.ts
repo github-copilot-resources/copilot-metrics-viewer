@@ -4,7 +4,7 @@ import { EditorsTab } from "./EditorsTab";
 import { SeatAnalysisTab } from "./SeatAnalysisTab";
 import { ApiResponseTab } from "./ApiResponseTab";
 import { CopilotChatTab } from "./CopilotChatTab";
-import { GitHubTab } from "./GitHubTab";
+import { ModelsTab } from "./ModelsTab";
 import { UserMetricsTab } from "./UserMetricsTab";
 
 export class DashboardPage {
@@ -28,33 +28,33 @@ export class DashboardPage {
     readonly seatAnalysisTabLink: Locator;
     readonly apiResponseTabLink: Locator;
     readonly copilotChatTabLink: Locator;
-    readonly githubTabLink: Locator;
+    readonly modelsTabLink: Locator;
     readonly userMetricsTabLink: Locator;
 
     constructor(page: Page) {
         this.page = page;
 
         this.acceptanceRateByCountLabel = page.getByText(
-            "Acceptance Rate (by count)"
+            "IDE Completion Acceptance Rate (count)"
         );
         this.acceptanceRateByCountValue = page
             .locator(".v-card-item")
-            .filter({ has: page.getByText("Acceptance Rate (by count)") })
-            .locator(".text-h4");
+            .filter({ has: page.getByText("IDE Completion Acceptance Rate (count)") })
+            .locator(".kpi-value-sm");
         this.totalCountOfSuggestionsLabel = page.getByText(
-            "Total Code Completions", { exact: true }
+            "Total IDE Code Completions", { exact: true }
         );
         this.totalCountOfSuggestionsValue = page
             .locator(".v-card-item")
-            .filter({ has: page.getByText("Total Code Completions", { exact: true }) })
-            .locator(".text-h4");
-        this.totalLinesSuggestedLabel = page.getByRole("heading", {
-            name: "Total Lines Suggested | Total",
-        });
+            .filter({ has: page.getByText("Total IDE Code Completions", { exact: true }) })
+            .locator(".kpi-value-sm");
+        this.totalLinesSuggestedLabel = page.getByText(
+            "Total Lines Suggested (IDE completions)", { exact: true }
+        );
         this.totalLinesSuggestedValue = page
             .locator(".v-card-item")
-            .filter({ has: page.getByText("Total Lines of code Suggested") })
-            .locator(".text-h4");
+            .filter({ has: page.getByText("Total Lines Suggested (IDE completions)", { exact: true }) })
+            .locator(".kpi-value-sm");
         this.toolbarTitle = page.locator(".toolbar-title");
 
         this.languagesTabLink = page.getByRole("tab", { name: "languages" });
@@ -62,7 +62,7 @@ export class DashboardPage {
         this.seatAnalysisTabLink = page.getByRole("tab", { name: "seat analysis" });
         this.apiResponseTabLink = page.getByRole("tab", { name: "api response" });
         this.copilotChatTabLink = page.getByRole("tab", { name: "copilot chat" });
-        this.githubTabLink = page.getByRole("tab", { name: "github.com" });
+        this.modelsTabLink = page.getByRole("tab", { name: "models" });
         this.userMetricsTabLink = page.getByRole("tab", { name: "user metrics" });
 
         this.teamTabLink = page.getByRole("tab", { name: "team" });
@@ -147,14 +147,13 @@ export class DashboardPage {
         return new CopilotChatTab(this.page);
     }
 
-    async gotoGitHubTab() {
-        await this.githubTabLink.click();
-        const tab = new GitHubTab(this.page);
-        // Wait for the github-stats data to load — look for "Copilot Statistics" title
-        // and at least one overview card to have content
+    async gotoModelsTab() {
+        await this.modelsTabLink.click();
+        const tab = new ModelsTab(this.page);
+        // Wait for the models-container info panel heading (always present)
         await tab.statisticsTitle.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
-        // Wait for at least one card with non-zero content or "All Models"
-        await this.page.locator('.v-card-title').first().waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        // Then wait for async chart data to load (best-effort — non-fatal)
+        await this.page.locator('.models-container .v-card-title').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
         return tab;
     }
 

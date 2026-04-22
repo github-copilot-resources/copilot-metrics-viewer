@@ -55,12 +55,18 @@ Users can now filter metrics for custom date ranges up to 100 days, with an intu
   <img width="800" alt="Date Range Filter" src="./images/date-range-filter.png">
 </p>
 
-### Teams Comparison
-Compare Copilot metrics across multiple teams within your organization to understand adoption patterns and identify high-performing teams.
+### Teams Tab
+Select **one team** for a full deep-dive view with KPI tiles, time-series charts (acceptance rate, active users, feature usage, model usage), language and editor breakdowns, and a per-user activity table. Select **two or more teams** to compare them side by side.
 
 > [!NOTE]
 > GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Team metrics are **derived** by fetching per-user daily metrics from the organization/enterprise endpoint, resolving team membership via the GitHub Teams API, and aggregating per-user data in-memory. This works in both Direct API mode (28-day window) and Historical mode (full history).
 
+**Single team deep dive:**
+<p align="center">
+  <img width="800" alt="Teams Single Team Deep Dive" src="./images/teams-single-team.png">
+</p>
+
+**Multi-team comparison:**
 <p align="center">
   <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">
 </p>
@@ -73,15 +79,11 @@ In **Historical mode** (with PostgreSQL), the User Metrics tab also displays per
 <p align="center">
   <img width="800" alt="Per-User Metrics" src="./images/user-metrics.png">
 </p>
-### GitHub.com Integration & Model Analytics
-View comprehensive statistics for GitHub.com features including Chat, PR Summaries, and detailed model usage analytics. Each section provides expandable details showing model types, editors, and usage patterns.
+### Models Tab
+View model usage analytics including model adoption over time, chat model distribution, and usage per chat mode (Ask, Agent, Edit, Inline).
 
 <p align="center">
-  <img width="800" alt="GitHub.com Tab" src="./images/github-com-tab.png">
-</p>
-
-<p align="center">
-  <img width="800" alt="Model Usage Details" src="./images/github-com-models-expanded.png">
+  <img width="800" alt="Models Tab" src="./images/models-tab.png">
 </p>
 
 ### CSV Export Functionality
@@ -102,17 +104,17 @@ Here are the key metrics visualized in these charts:
   <img width="800" alt="Key Metrics Overview" src="./images/main-metrics-dashboard.png">
 </p>
 
-1. **Acceptance Rate:** This metric represents the ratio of accepted lines and suggestions to the total suggested by GitHub Copilot. This rate is an indicator of the relevance and usefulness of Copilot's suggestions. However, as with any metric, it should be used with caution as developers use Copilot in many different ways (research, confirm, verify, etc., not always "inject").
+1. **Active Users Over Time:** Tracks daily, weekly, and monthly active users across all Copilot features — IDE completions, chat, agent mode, CLI, and PR summaries.
 <p align="center">
-  <img width="800" alt="image" src="./images/Acceptance_rate_bycount.png">
+  <img width="800" alt="Active Users Over Time" src="./images/Acceptance_rate_bycount.png">
 </p>
 
-2. **Total Suggestions:** This chart illustrates the total number of code suggestions made by GitHub Copilot. It offers a view of the tool's activity and its engagement with users over time.
-
-3. **Total Acceptances:** This visualization focuses on the total number of suggestions accepted by users.
+2. **Feature Usage Over Time:** Shows user-initiated interactions per feature per day, covering IDE chat, agent mode, edit mode, inline chat, CLI, PR summaries, and more.
 <p align="center">
-  <img width="800" alt="image" src="./images/Total_suggestions_count.png">
+  <img width="800" alt="Feature Usage Over Time" src="./images/Total_suggestions_count.png">
 </p>
+
+3. **Code Completions:** Tracks total inline code suggestions shown and accepted over time.
 
 4. **Total Lines Suggested:** Showcases the total number of lines of code suggested by GitHub Copilot. This gives an idea of the volume of code generation and assistance provided.
 
@@ -201,7 +203,6 @@ Public variables:
 - `NUXT_PUBLIC_SCOPE`
 - `NUXT_PUBLIC_GITHUB_ENT`
 - `NUXT_PUBLIC_GITHUB_ORG`
-- `NUXT_PUBLIC_GITHUB_TEAM`
 - `NUXT_PUBLIC_HIDDEN_TABS`
 - `NUXT_PUBLIC_ENABLE_HISTORICAL_MODE`
 
@@ -214,11 +215,13 @@ can be overridden by route parameters, e.g.
 
 #### NUXT_PUBLIC_SCOPE (Required!)
 
-The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to 'enterprise', 'organization', 'team-organization' or 'team-enterprise'.
+The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the default scope of the API calls made by the application. It can be set to `'enterprise'` or `'organization'`.
 
-- If set to 'enterprise', the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
-- If set to 'organization', the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
-- If set to 'team-organization' or 'team-enterprise', the application will display team-level metrics derived from per-user data for the team defined in `NUXT_PUBLIC_GITHUB_TEAM` within the specified organization or enterprise.
+- If set to `'enterprise'`, the application will target API calls to the GitHub Enterprise account defined in the `NUXT_PUBLIC_GITHUB_ENT` variable.
+- If set to `'organization'`, the application will target API calls to the GitHub Organization account defined in the `NUXT_PUBLIC_GITHUB_ORG` variable.
+- To view team-level metrics, use the Teams tab or navigate to `/orgs/<org>/teams/<team>` — team filtering is applied as a post-processing step.
+
+> **Note:** Legacy values `'team-organization'` and `'team-enterprise'` are still accepted and automatically normalized to `'organization'` and `'enterprise'` respectively for backward compatibility.
 
 For example, if you want to target the API calls to an organization, you would set `NUXT_PUBLIC_SCOPE=organization` in the `.env` file.
 
@@ -232,18 +235,6 @@ NUXT_PUBLIC_SCOPE=organization
 NUXT_PUBLIC_GITHUB_ORG=<YOUR-ORGANIZATION>
 
 NUXT_PUBLIC_GITHUB_ENT=
-````
-
-#### NUXT_PUBLIC_GITHUB_TEAM
-
-The `NUXT_PUBLIC_GITHUB_TEAM` environment variable filters metrics for a specific GitHub team within an Organization or Enterprise account.
-‼️ Important ‼️ When this variable is set, all displayed metrics will pertain exclusively to the specified team. To view metrics for the entire Organization or Enterprise, remove this environment variable.
-
-> [!NOTE]
-> Team metrics are **derived from per-user data**, not from a dedicated team API endpoint. The application resolves team membership via the GitHub Teams API and aggregates per-user metrics for team members. There is no minimum team size requirement.
-
-````
-NUXT_PUBLIC_GITHUB_TEAM=
 ````
 
 #### NUXT_PUBLIC_IS_DATA_MOCKED

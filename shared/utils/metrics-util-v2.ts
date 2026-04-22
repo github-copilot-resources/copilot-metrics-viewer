@@ -140,7 +140,7 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     const startDate = options.since || new Date(Date.now() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     logger.info(`Historical mode: checking DB for ${identifier} (${startDate} to ${endDate})`);
 
-    const isTeamScope = options.scope === 'team-organization' || options.scope === 'team-enterprise';
+    const isTeamScope = !!options.githubTeam;
 
     try {
       if (isTeamScope && options.githubTeam) {

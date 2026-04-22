@@ -15,16 +15,11 @@ if(route.query.mock) {
 if (route.params.ent || route.params.org) {
   config.public.githubEnt = route.params.ent as string
   config.public.githubOrg = route.params.org as string
-  config.public.githubTeam = route.params.team as string
 
   
   // update scope
-  if (route.params.org && route.params.team) {
-    config.public.scope = 'team-organization'
-  } else if (route.params.org) {
+  if (route.params.org) {
     config.public.scope = 'organization'
-  } else if (route.params.ent && route.params.team) {
-    config.public.scope = 'team-enterprise'
   } else if (route.params.ent) {
     config.public.scope = 'enterprise'
   } 

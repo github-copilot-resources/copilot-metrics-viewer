@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-toolbar color="indigo" elevation="4">
+    <v-toolbar color="transparent" elevation="0" class="app-toolbar">
       <v-btn icon>
         <v-icon>mdi-github</v-icon>
       </v-btn>
@@ -8,6 +8,14 @@
       <v-toolbar-title class="toolbar-title">{{ displayName }}</v-toolbar-title>
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer />
+
+      <v-btn icon :title="showDateRange ? 'Hide date range' : 'Show date range'" @click="showDateRange = !showDateRange">
+        <v-icon>{{ showDateRange ? 'mdi-calendar-check' : 'mdi-calendar' }}</v-icon>
+      </v-btn>
+
+      <v-btn icon :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
+        <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+      </v-btn>
 
       <!-- Conditionally render the logout button -->
       <AuthState>
@@ -34,7 +42,7 @@
 
     </v-toolbar>
 
-    <!-- v3.0 Migration Banner -->
+      <!-- v3.0 Migration Banner -->
     <v-banner
       v-if="showMigrationBanner"
       color="info"
@@ -53,9 +61,9 @@
       </template>
     </v-banner>
 
-    <!-- Date Range Selector - Hidden for seats tab -->
+    <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
-      v-show="tab !== 'seat analysis' && !signInRequired" 
+      v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
       :loading="isLoading"
       @date-range-changed="handleDateRangeChange" />
 
@@ -86,23 +94,25 @@
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady" indeterminate color="indigo" />
-      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics')" v-model="tab">
+      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
-            <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :date-range-description="dateRangeDescription" />
+            <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" />
             <BreakdownComponent
-v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
-              :date-range-description="dateRangeDescription" />
+              v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
+              :date-range-description="dateRangeDescription" :report-data="reportData"
+              :user-metrics="userMetrics" />
             <BreakdownComponent
-v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
-              :date-range-description="dateRangeDescription" />
+              v-if="item === 'editors'" :metrics="metrics" :breakdown-key="'editor'"
+              :date-range-description="dateRangeDescription" :report-data="reportData"
+              :user-metrics="userMetrics" />
             <CopilotChatViewer
 v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription" />
             <AgentActivityViewer v-if="item === 'agent activity'" :report-data="reportData" :date-range-description="dateRangeDescription" />
             <PullRequestViewer v-if="item === 'pull requests'" :report-data="reportData" :date-range-description="dateRangeDescription" />
-            <AgentModeViewer v-if="item === 'github.com'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" />
+            <AgentModeViewer v-if="item === 'models'" :original-metrics="originalMetrics" :date-range="dateRange" :date-range-description="dateRangeDescription" :report-data="reportData" />
             <SeatsAnalysisViewer
               v-if="item === 'seat analysis'"
               :seats="seats"
@@ -198,17 +208,7 @@ export default defineNuxtComponent({
       clear();
     },
     getDisplayTabName(itemName: string): string {
-      // Transform scope names to display names for tabs
-      switch (itemName) {
-        case 'team-organization':
-        case 'team-enterprise':
-          return 'team';
-        case 'organization':
-        case 'enterprise':
-          return itemName;
-        default:
-          return itemName;
-      }
+      return itemName;
     },
     async handleDateRangeChange(newDateRange: { 
       since?: string; 
@@ -259,8 +259,8 @@ export default defineNuxtComponent({
         this.reportData = response.reportData || [];
         this.metricsReady = true;
 
-        if (config.public.scope && config.public.scope.includes('team') && this.metrics.length === 0 && !this.apiError) {
-          this.apiError = 'No data returned from API - check if the team exists and has any activity and at least 5 active members';
+        if (this.metrics.length === 0 && !this.apiError) {
+          this.apiError = 'No data returned from API - check if the organization exists and has any activity';
         }
 
       } catch (error: any) {
@@ -329,7 +329,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'github.com', 'seat analysis', 'user metrics', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'api response'],
       tab: null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
@@ -348,7 +348,8 @@ export default defineNuxtComponent({
       userMetrics: [] as UserTotals[],
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
-      showMigrationBanner: true,
+      showMigrationBanner: false,
+      showDateRange: false,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
@@ -358,13 +359,13 @@ export default defineNuxtComponent({
   created() {
     this.tabItems.unshift(this.getDisplayTabName(this.itemName));
     
-    // Add teams tab for organization and enterprise scopes to allow team comparison
+    this.config = useRuntimeConfig();
+
+    // Add teams tab for organization/enterprise to allow team comparison
     if (this.itemName === 'organization' || this.itemName === 'enterprise') {
       this.tabItems.splice(1, 0, 'teams'); // Insert after the first tab
     }
     
-    this.config = useRuntimeConfig();
-
     // Auto-hide teams tab when historical mode is disabled (team metrics require DB)
     this.tabItems = applyHistoricalModeFilter(this.tabItems, this.config.public.enableHistoricalMode as boolean | string);
 
@@ -418,6 +419,14 @@ export default defineNuxtComponent({
     }
   },
   async setup() {
+    const themeState = useState('app-theme', () => 'light');
+    const isDark = computed(() => themeState.value === 'dark');
+    function toggleTheme() {
+      const next = isDark.value ? 'light' : 'dark';
+      themeState.value = next;
+      if (process.client) localStorage.setItem('copilot-metrics-theme', next);
+    }
+
     const { loggedIn, user } = useUserSession()
     const config = useRuntimeConfig();
     const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
@@ -467,6 +476,8 @@ export default defineNuxtComponent({
     });
 
     return {
+      isDark,
+      toggleTheme,
       showLogoutButton,
       mockedDataMessage,
       itemName,

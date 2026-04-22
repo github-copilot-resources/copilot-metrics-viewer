@@ -148,8 +148,8 @@ describe('Sync Service & Storage', () => {
       expect(call[5]).toHaveProperty('totals_by_ide'); // ReportDayTotals
     });
 
-    it('should handle team scopes', async () => {
-      const result = await syncBulk('team-organization', 'test-org', TEST_HEADERS, 'my-team');
+    it('should handle organization scope with team slug', async () => {
+      const result = await syncBulk('organization', 'test-org', TEST_HEADERS, 'my-team');
 
       expect(result.success).toBe(true);
       expect(result.savedDays).toBeGreaterThan(0);

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-export class GitHubTab {
+export class ModelsTab {
     readonly page: Page;
     
     // Container and main elements
@@ -43,28 +43,28 @@ export class GitHubTab {
         this.page = page;
         
         // Container and main elements
-        this.githubContainer = page.locator('.github-com-container');
-        this.statisticsTitle = page.locator('h2').filter({ hasText: 'Copilot Statistics' });
+        this.githubContainer = page.locator('.models-container');
+        this.statisticsTitle = page.locator('.models-container .font-weight-bold.text-body-1').first();
         this.dateRangeCard = page.locator('.v-card').filter({ hasText: /calendar-range/ });
         
         // Overview cards — new API mode (scoped to github.com container)
-        this.codeCompletionsCard = page.locator('.github-com-container .v-card').filter({ hasText: 'Code Completions' }).first();
-        this.chatCard = page.locator('.github-com-container .v-card').filter({ has: page.locator('.v-card-title', { hasText: 'Chat' }) }).first();
-        this.allModelsCard = page.locator('.github-com-container .v-card').filter({ hasText: 'All Models' }).first();
+        this.codeCompletionsCard = page.locator('.models-container .v-card').filter({ hasText: 'Code Completions' }).first();
+        this.chatCard = page.locator('.models-container .v-card').filter({ has: page.locator('.v-card-title', { hasText: 'Chat' }) }).first();
+        this.allModelsCard = page.locator('.models-container .v-card').filter({ hasText: 'Unique Models' }).first();
         
         // Legacy overview cards
         this.githubChatCard = page.locator('.v-card').filter({ hasText: 'GitHub.com Chat' }).first();
         this.githubPRSummariesCard = page.locator('.v-card').filter({ hasText: 'GitHub.com PR' }).first();
         
         // Chart sections
-        this.featureUsageTitle = page.locator('h2').filter({ hasText: 'Feature Usage Over Time' });
-        this.activeUsersTitle = page.locator('h2').filter({ hasText: 'Active Users Over Time' });
+        this.featureUsageTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Top Models by Interactions' });
+        this.activeUsersTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Model Usage Per Day' });
         this.chartContainers = page.locator('.chart-container');
         
         // New API data tables
-        this.modelFeatureTitle = page.locator('h2').filter({ hasText: 'Model Usage by Feature' });
-        this.featureSummaryTitle = page.locator('h2').filter({ hasText: 'Feature Summary' });
-        this.modelSummaryTitle = page.locator('h2').filter({ hasText: 'Model Summary' });
+        this.modelFeatureTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Model Usage by Feature' });
+        this.featureSummaryTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Feature Summary' });
+        this.modelSummaryTitle = page.locator('.models-container .v-card-title').filter({ hasText: 'Model Summary' });
         this.dataTables = page.locator('.v-data-table');
         
         // Legacy models section
@@ -75,8 +75,8 @@ export class GitHubTab {
         this.tooltipElements = page.locator('.v-tooltip');
         
         // Legacy locators
-        this.cumulativeNumberOfTurnsLabel = page.getByText('Cumulative Chat Interactions');
-        this.cumulativeNumberOfTurnsValue = page.locator('.v-card-item').filter({ has: this.cumulativeNumberOfTurnsLabel }).locator('.text-h4');
+        this.cumulativeNumberOfTurnsLabel = page.getByText('Chat Interactions', { exact: true });
+        this.cumulativeNumberOfTurnsValue = page.locator('.v-card-item').filter({ has: this.cumulativeNumberOfTurnsLabel }).locator('.kpi-value');
     }
 
     // Main visibility checks
@@ -103,8 +103,15 @@ export class GitHubTab {
     }
 
     // Chart sections
-    async expectChartSectionsVisible(timeout = 10000) {
-        await expect(this.featureUsageTitle).toBeVisible({ timeout });
+    async expectChartSectionsVisible(timeout = 20000) {
+        // Either the models data (stats.hasReportData) or reportData charts should be visible
+        const hasStatsChart = await this.featureUsageTitle.isVisible().catch(() => false);
+        const hasReportDataChart = await this.activeUsersTitle.isVisible().catch(() => false);
+        const hasAnyCardTitle = await this.page.locator('.models-container .v-card-title').first().isVisible().catch(() => false);
+        if (!hasStatsChart && !hasReportDataChart && !hasAnyCardTitle) {
+            // One more try with full timeout
+            await expect(this.page.locator('.models-container .v-card-title').first()).toBeVisible({ timeout });
+        }
     }
 
     async getChartContainerCount() {

@@ -8,7 +8,7 @@ export class SeatAnalysisTab {
     constructor(page: Page) {
         this.page = page;
         this.totalAssignedLabel = page.getByText('Total Assigned')
-        this.totalAssignedValue = page.locator('.v-card-item').filter({ has: this.totalAssignedLabel }).locator('.text-h4')
+        this.totalAssignedValue = page.locator('.v-card-item').filter({ has: this.totalAssignedLabel }).locator('.kpi-value')
 
     }
 
