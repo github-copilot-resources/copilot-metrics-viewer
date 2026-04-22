@@ -170,7 +170,7 @@ describe('Sync Service & Storage', () => {
     it('should save the most recent days when daysBack is specified', async () => {
       const daysBack = 3;
       // First do an unrestricted sync to know what all dates look like
-      const fullResult = await syncBulk('organization', 'test-org-full', TEST_HEADERS);
+      await syncBulk('organization', 'test-org-full', TEST_HEADERS);
       const allDates = (saveMetrics as any).mock.calls
         .filter((call: any[]) => call[1] === 'test-org-full')
         .map((call: any[]) => call[2] as string)
