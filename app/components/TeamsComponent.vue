@@ -12,6 +12,20 @@
       </div>
     </v-card>
 
+    <!-- Rate limit warning when not using historical/DB mode -->
+    <v-alert
+      v-if="!isHistoricalMode"
+      type="warning"
+      variant="tonal"
+      density="compact"
+      class="mx-4 mb-1"
+      closable
+    >
+      <strong>Performance notice:</strong> Team metrics are computed by fetching enterprise-wide user data and filtering by team membership.
+      Each team selection triggers a full user-metrics download, which may hit GitHub API rate limits with frequent use.
+      For production use, enable <strong>historical mode</strong> (<code>ENABLE_HISTORICAL_MODE=true</code>) to cache data in the database and avoid repeated API calls.
+    </v-alert>
+
     <!-- Team selector -->
     <v-card variant="outlined" class="mx-4 mb-2 pa-3" density="compact">
       <div class="d-flex align-center gap-2">
@@ -475,6 +489,10 @@ export default defineComponent({
   setup(props) {
     const theme = useTheme()
     const isDark = computed(() => theme.global.current.value.dark)
+    const config = useRuntimeConfig()
+    const isHistoricalMode = computed(() =>
+      config.public?.enableHistoricalMode === true || config.public?.enableHistoricalMode === 'true'
+    )
 
     const availableTeams = ref<Team[]>([])
     const selectedTeams = ref<string[]>([])
@@ -1071,6 +1089,7 @@ export default defineComponent({
       clearSelection,
       getTeamDetailUrl,
       isDark,
+      isHistoricalMode,
       dateRangeDesc: props.dateRangeDescription
     }
   }
