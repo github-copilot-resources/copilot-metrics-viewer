@@ -51,8 +51,12 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
 
     // Fill missing scope/context from runtime config
     if (!options.scope && config.public.scope) options.scope = config.public.scope as Scope
-    if (!options.githubOrg && config.public.githubOrg) options.githubOrg = config.public.githubOrg
     if (!options.githubEnt && config.public.githubEnt) options.githubEnt = config.public.githubEnt
+    // Only fall back to config githubOrg for organization scope — for enterprise scope,
+    // githubOrg is an explicit org override (Full GHEC) and should not be auto-filled from config.
+    if (!options.githubOrg && config.public.githubOrg && options.scope !== 'enterprise') {
+        options.githubOrg = config.public.githubOrg
+    }
 
     if (options.isDataMocked) {
         logger.info('Using mocked data for teams')
