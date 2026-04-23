@@ -92,14 +92,43 @@ export default defineNuxtConfig({
       github: {
         clientId: '',
         clientSecret: ''
+      },
+      google: {
+        clientId: '',
+        clientSecret: ''
+      },
+      microsoft: {
+        clientId: '',
+        clientSecret: '',
+        tenant: ''
+      },
+      auth0: {
+        clientId: '',
+        clientSecret: '',
+        domain: ''
+      },
+      keycloak: {
+        clientId: '',
+        clientSecret: '',
+        serverUrl: '',
+        realm: ''
       }
     },
+    // Server-only authorization config (NUXT_AUTHORIZED_USERS, NUXT_AUTHORIZED_EMAIL_DOMAINS)
+    authorizedUsers: '',
+    authorizedEmailDomains: '',
     public: {
       isDataMocked: false,  // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
       githubOrg: '',
       githubEnt: '',
+      // Deprecated: use requireAuth + authProviders instead. Kept for backwards compatibility.
       usingGithubAuth: false,
+      // Set to true when any OAuth provider is configured (NUXT_PUBLIC_REQUIRE_AUTH)
+      requireAuth: false,
+      // Comma-separated list of active OAuth providers shown in the UI, e.g. "github,google,microsoft"
+      // (NUXT_PUBLIC_AUTH_PROVIDERS)
+      authProviders: '',
       version,
       isPublicApp: false,
       // Deployment metadata (set via NUXT_PUBLIC_DEPLOY_INFO for preview environments)

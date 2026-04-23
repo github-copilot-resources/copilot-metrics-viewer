@@ -8,8 +8,14 @@ export default defineOAuthGitHubEventHandler({
     const config = useRuntimeConfig(event);
     const logger = console;
 
+    // Authorize before creating a session
+    if (!isUserAuthorized(event, { login: user.login, email: user.email })) {
+      throw createError({ statusCode: 403, statusMessage: 'Access denied' })
+    }
+
     await setUserSession(event, {
       user: {
+        login: user.login,
         githubId: user.id,
         name: user.name,
         avatarUrl: user.avatar_url

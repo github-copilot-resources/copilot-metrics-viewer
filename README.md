@@ -266,17 +266,59 @@ For more information see [Nuxt Sessions and Authentication](https://nuxt.com/doc
 >[!WARNING]
 > This variable is required starting from version 2.0.0.
 
-#### NUXT_PUBLIC_USING_GITHUB_AUTH
+#### NUXT_PUBLIC_REQUIRE_AUTH
 
-Default is `false`. When set to `true`, GitHub OAuth App Authentication will be performed to verify users' access to the dashboard. For this, a GitHub App must be registered and installed in the enterprise/org. See [GitHub App Registration](DEPLOYMENT.md#github-app-registration) for the steps to follow.
+Default is `false`. When set to `true`, users must sign in via an OAuth provider before accessing the dashboard. The active providers are configured by `NUXT_PUBLIC_AUTH_PROVIDERS`.
 
-Variables required for GitHub Auth are:
-1. `NUXT_OAUTH_GITHUB_CLIENT_ID` - client ID of the GitHub App.
-2. `NUXT_OAUTH_GITHUB_CLIENT_SECRET` - client secret of the GitHub App.
-3. [Optional] `NUXT_OAUTH_GITHUB_CLIENT_SCOPE` for scope requests when using OAuth App instead of GitHub App. See [GitHub docs](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps) for details.
+#### NUXT_PUBLIC_AUTH_PROVIDERS
 
->[!WARNING]
-> Only users with permissions (scopes listed in [NUXT_GITHUB_TOKEN](#NUXT_GITHUB_TOKEN)) can view copilot metrics, GitHub uses the authenticated users permissions to make API calls for data.
+Comma-separated list of active OAuth providers: `github`, `google`, `microsoft`, `auth0`, `keycloak`.
+
+```
+NUXT_PUBLIC_AUTH_PROVIDERS=github,google
+```
+
+The corresponding `NUXT_OAUTH_<PROVIDER>_CLIENT_ID` and `NUXT_OAUTH_<PROVIDER>_CLIENT_SECRET` must also be set. See [Authentication](DEPLOYMENT.md#authentication-1) in DEPLOYMENT.md for full setup instructions per provider.
+
+#### NUXT_AUTHORIZED_USERS
+
+Comma-separated list of logins or email addresses that are allowed to sign in (any provider). When empty (default), all authenticated users are allowed.
+
+```
+NUXT_AUTHORIZED_USERS=alice,bob@company.com
+```
+
+#### NUXT_AUTHORIZED_EMAIL_DOMAINS
+
+Comma-separated list of email domains allowed to sign in. When empty (default), no domain restriction is applied.
+
+```
+NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
+```
+
+#### NUXT_PUBLIC_USING_GITHUB_AUTH *(deprecated)*
+
+> [!WARNING]
+> Deprecated — use `NUXT_PUBLIC_REQUIRE_AUTH=true` + `NUXT_PUBLIC_AUTH_PROVIDERS=github` instead. The old variable is still recognized for backwards compatibility.
+
+#### OAuth provider variables
+
+| Variable | Provider | Description |
+|---|---|---|
+| `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub | App client ID |
+| `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub | App client secret |
+| `NUXT_OAUTH_GOOGLE_CLIENT_ID` | Google | OAuth client ID |
+| `NUXT_OAUTH_GOOGLE_CLIENT_SECRET` | Google | OAuth client secret |
+| `NUXT_OAUTH_MICROSOFT_CLIENT_ID` | Microsoft | App client ID |
+| `NUXT_OAUTH_MICROSOFT_CLIENT_SECRET` | Microsoft | App client secret |
+| `NUXT_OAUTH_MICROSOFT_TENANT` | Microsoft | Azure AD tenant ID (restricts to org) |
+| `NUXT_OAUTH_AUTH0_CLIENT_ID` | Auth0 | App client ID |
+| `NUXT_OAUTH_AUTH0_CLIENT_SECRET` | Auth0 | App client secret |
+| `NUXT_OAUTH_AUTH0_DOMAIN` | Auth0 | Tenant domain, e.g. `company.auth0.com` |
+| `NUXT_OAUTH_KEYCLOAK_CLIENT_ID` | Keycloak | Client ID |
+| `NUXT_OAUTH_KEYCLOAK_CLIENT_SECRET` | Keycloak | Client secret |
+| `NUXT_OAUTH_KEYCLOAK_SERVER_URL` | Keycloak | Server URL |
+| `NUXT_OAUTH_KEYCLOAK_REALM` | Keycloak | Realm name |
 
 #### NUXT_PUBLIC_HIDDEN_TABS
 
