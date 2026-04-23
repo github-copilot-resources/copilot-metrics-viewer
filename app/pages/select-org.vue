@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import './assets/global.css'
 
+const router = useRouter()
 const { clear: clearSession } = useUserSession()
 
 interface Installation {
