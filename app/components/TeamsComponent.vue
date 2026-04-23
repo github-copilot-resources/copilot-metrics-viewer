@@ -181,8 +181,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small"><v-icon size="18">mdi-view-stream</v-icon></v-btn>
-            <v-btn value="2" size="small"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+            <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+            <v-btn value="full" size="small" icon="mdi-fullscreen" title="Full width" />
           </v-btn-toggle>
         </div>
 
@@ -381,8 +382,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small"><v-icon size="18">mdi-view-stream</v-icon></v-btn>
-            <v-btn value="2" size="small"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
+            <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
+            <v-btn value="full" size="small" icon="mdi-fullscreen" title="Full width" />
           </v-btn-toggle>
         </div>
 
@@ -578,7 +580,7 @@ export default defineComponent({
 
     const availableTeams = ref<Team[]>([])
     const selectedTeams = ref<string[]>([])
-    const chartColumns = ref<'1' | '2'>('2')
+    const chartColumns = ref<'1' | '2' | 'full'>('2')
 
     // ── Full GHEC org support ─────────────────────────────────────────────────
     const isFullGhec = ref(false)
