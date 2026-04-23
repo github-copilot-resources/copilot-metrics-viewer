@@ -114,7 +114,7 @@
         <div class="d-flex align-center gap-4 flex-shrink-0 mt-1 ml-2">
           <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
           <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
-          <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" @click="clearSelection">Clear All</v-btn>
+          <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" class="ml-2" @click="clearSelection">Clear All</v-btn>
         </div>
       </div>
     </v-card>
