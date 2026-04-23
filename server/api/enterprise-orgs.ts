@@ -26,6 +26,10 @@ interface GraphQLResponse {
         enterprise?: {
             organizations?: {
                 totalCount: number
+                pageInfo?: {
+                    hasNextPage: boolean
+                    endCursor: string | null
+                }
                 nodes: Array<{ login: string; name: string }>
             }
         }
@@ -73,10 +77,14 @@ export default defineEventHandler(async (event): Promise<EnterpriseOrgsResponse>
     }
 
     const graphqlQuery = `
-        query($ent: String!) {
+        query($ent: String!, $after: String) {
             enterprise(slug: $ent) {
-                organizations(first: 100) {
+                organizations(first: 100, after: $after) {
                     totalCount
+                    pageInfo {
+                        hasNextPage
+                        endCursor
+                    }
                     nodes {
                         login
                         name
@@ -87,32 +95,48 @@ export default defineEventHandler(async (event): Promise<EnterpriseOrgsResponse>
     `
 
     try {
-        const result = await $fetch<GraphQLResponse>('https://api.github.com/graphql', {
-            method: 'POST',
-            headers: fetchHeaders,
-            body: JSON.stringify({
-                query: graphqlQuery,
-                variables: { ent: options.githubEnt }
+        const allOrgs: EnterpriseOrg[] = []
+        let hasNextPage = true
+        let afterCursor: string | null = null
+        let isFullGhec = false
+
+        while (hasNextPage) {
+            const result = await $fetch<GraphQLResponse>('https://api.github.com/graphql', {
+                method: 'POST',
+                headers: fetchHeaders,
+                body: JSON.stringify({
+                    query: graphqlQuery,
+                    variables: { ent: options.githubEnt, after: afterCursor }
+                })
             })
-        })
 
-        if (result?.errors?.length) {
-            logger.warn('GraphQL errors when fetching enterprise orgs:', result.errors)
-            return { isFullGhec: false, orgs: [] }
+            if (result?.errors?.length) {
+                logger.warn('GraphQL errors when fetching enterprise orgs:', result.errors)
+                return { isFullGhec: false, orgs: [] }
+            }
+
+            const orgsData = result?.data?.enterprise?.organizations
+            if (!orgsData) {
+                return { isFullGhec: false, orgs: [] }
+            }
+
+            // totalCount is only reliable on first page — set isFullGhec on first iteration
+            if (afterCursor === null) {
+                isFullGhec = orgsData.totalCount > 0
+                if (!isFullGhec) {
+                    return { isFullGhec: false, orgs: [] }
+                }
+            }
+
+            for (const n of (orgsData.nodes || [])) {
+                allOrgs.push({ login: n.login, name: n.name || n.login })
+            }
+
+            hasNextPage = orgsData.pageInfo?.hasNextPage ?? false
+            afterCursor = orgsData.pageInfo?.endCursor ?? null
         }
 
-        const orgsData = result?.data?.enterprise?.organizations
-        if (!orgsData) {
-            return { isFullGhec: false, orgs: [] }
-        }
-
-        const isFullGhec = orgsData.totalCount > 0
-        const orgs: EnterpriseOrg[] = (orgsData.nodes || []).map((n) => ({
-            login: n.login,
-            name: n.name || n.login
-        }))
-
-        return { isFullGhec, orgs }
+        return { isFullGhec, orgs: allOrgs }
     } catch (error) {
         // If GraphQL call fails (e.g. insufficient permissions), assume not Full GHEC
         logger.warn('Failed to fetch enterprise orgs via GraphQL, assuming Copilot Business Only:', error)

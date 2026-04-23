@@ -1130,7 +1130,11 @@ export default defineComponent({
     watch(selectedOrg, async (org) => {
       // When org selection changes, clear team selection and reload teams for that org
       selectedTeams.value = []
-      await loadTeams(org || undefined)
+      try {
+        await loadTeams(org || undefined)
+      } catch {
+        availableTeams.value = []
+      }
     })
 
     watch(() => props.dateRange, async () => { await updateChartData() }, { deep: true })
