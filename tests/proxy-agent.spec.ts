@@ -109,13 +109,12 @@ describe('initializeProxyAgent', () => {
     process.env.CUSTOM_CA_PATH = '/certs/missing-ca.crt';
     mockExistsSync.mockReturnValue(false);
 
-    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as () => never);
-
-    // process.exit is mocked as a no-op so the throw still propagates in tests;
-    // what matters is that exit was called before the rethrow.
-    expect(() => initializeProxyAgent(true)).toThrowError(
-      'CUSTOM_CA_PATH file not found: /certs/missing-ca.crt'
+    // Throw a sentinel so execution stops after process.exit — matching real process termination.
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(
+      (() => { throw new Error('process.exit called'); }) as () => never
     );
+
+    expect(() => initializeProxyAgent(true)).toThrowError('process.exit called');
     expect(exitSpy).toHaveBeenCalledWith(1);
 
     exitSpy.mockRestore();
