@@ -107,9 +107,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-2">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small" icon="mdi-view-agenda" title="Single column" />
-            <v-btn value="2" size="small" icon="mdi-view-grid" title="Two columns" />
-            <v-btn value="full" size="small" icon="mdi-fullscreen" title="Full width" />
+            <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
         <v-row>
