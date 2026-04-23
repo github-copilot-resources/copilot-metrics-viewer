@@ -38,8 +38,8 @@
 
     <!-- Team selector -->
     <v-card variant="outlined" class="mx-4 mb-2 pa-3" density="compact">
-      <!-- Organization dropdown (Full GHEC enterprises only) -->
-      <div v-if="isFullGhec" class="d-flex align-center gap-2 mb-2">
+      <!-- Organization dropdown (enterprise scope) -->
+      <div v-if="scopeType === 'enterprise'" class="mb-2">
         <v-autocomplete
           v-model="selectedOrg"
           :items="availableOrgs"
@@ -56,23 +56,29 @@
             scrim: false,
             offset: 8
           }"
-          hint="Select an org to browse its teams, or leave blank for enterprise-level teams"
+          :hint="isFullGhec ? 'Select an org to browse its teams, or leave blank for enterprise-level teams' : 'No organizations found for this enterprise'"
           persistent-hint
-          class="flex-grow-1"
+          :disabled="!isFullGhec"
           prepend-inner-icon="mdi-domain"
         >
           <template #item="{ props, item }">
             <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.login" />
           </template>
+          <template v-if="selectedOrg" #append-inner>
+            <v-tooltip text="Open organization" location="top">
+              <template #activator="{ props: tooltipProps }">
+                <v-btn
+                  v-bind="tooltipProps"
+                  :to="`/orgs/${selectedOrg}`"
+                  icon="mdi-open-in-new"
+                  variant="text"
+                  size="small"
+                  density="compact"
+                />
+              </template>
+            </v-tooltip>
+          </template>
         </v-autocomplete>
-        <v-btn
-          v-if="selectedOrg"
-          :to="`/orgs/${selectedOrg}`"
-          variant="outlined"
-          size="small"
-          append-icon="mdi-open-in-new"
-          class="flex-shrink-0"
-        >View Org</v-btn>
       </div>
       <div class="d-flex align-center gap-2">
         <v-autocomplete
