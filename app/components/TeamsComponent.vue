@@ -64,6 +64,20 @@
           <template #item="{ props, item }">
             <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.login" />
           </template>
+          <template v-if="selectedOrg" #append-inner>
+            <v-tooltip text="Switch to org view" location="top">
+              <template #activator="{ props: tooltipProps }">
+                <v-btn
+                  v-bind="tooltipProps"
+                  :to="`/orgs/${selectedOrg}`"
+                  icon="mdi-open-in-new"
+                  variant="text"
+                  size="small"
+                  density="compact"
+                />
+              </template>
+            </v-tooltip>
+          </template>
         </v-autocomplete>
       </div>
       <div class="d-flex align-center gap-2">
