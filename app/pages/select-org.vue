@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import './assets/global.css'
 
-const { loggedIn, user } = useUserSession()
 const router = useRouter()
 
 interface Installation {
@@ -11,22 +10,25 @@ interface Installation {
 
 const installations = ref<Installation[]>([])
 const selected = ref<string | null>(null)
+const manualOrg = ref('')
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+// When installations is empty (public app + non-GitHub login), show a text input instead.
+const showManualInput = computed(() => !loading.value && !error.value && installations.value.length === 0)
 
 onMounted(async () => {
   try {
     const data = await $fetch<{ installations: Installation[] }>('/api/installations')
     installations.value = data.installations
 
-    if (installations.value.length === 0) {
-      error.value = 'No accessible organizations found. Make sure the GitHub App is installed on your org.'
-    } else if (installations.value.length === 1) {
+    if (installations.value.length === 1) {
       // Single org — navigate immediately without showing picker
       await router.replace(`/orgs/${installations.value[0].login}`)
-    } else {
+    } else if (installations.value.length > 1) {
       selected.value = installations.value[0].login
     }
+    // length === 0 → showManualInput will be true
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to load organizations'
   } finally {
@@ -37,6 +39,8 @@ onMounted(async () => {
 function navigate() {
   if (selected.value) {
     router.push(`/orgs/${selected.value}`)
+  } else if (manualOrg.value.trim()) {
+    router.push(`/orgs/${manualOrg.value.trim()}`)
   }
 }
 </script>
@@ -64,9 +68,24 @@ function navigate() {
               </p>
             </template>
 
+            <template v-else-if="showManualInput">
+              <p class="text-body-2 text-medium-emphasis mb-4">
+                Enter the GitHub organization or enterprise slug to view its Copilot metrics.
+              </p>
+              <v-text-field
+                v-model="manualOrg"
+                label="Organization"
+                placeholder="my-org"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-domain"
+                @keyup.enter="navigate"
+              />
+            </template>
+
             <template v-else-if="installations.length > 1">
               <p class="text-body-2 text-medium-emphasis mb-4">
-                The app is installed on multiple organizations. Select which one to view.
+                Select which organization to view.
               </p>
               <v-select
                 v-model="selected"
@@ -81,12 +100,12 @@ function navigate() {
             </template>
           </v-card-text>
 
-          <v-card-actions v-if="!loading && !error && installations.length > 1" class="px-4 pb-4">
+          <v-card-actions v-if="!loading && !error && (installations.length > 1 || showManualInput)" class="px-4 pb-4">
             <v-spacer />
             <v-btn
               color="primary"
               variant="flat"
-              :disabled="!selected"
+              :disabled="!selected && !manualOrg.trim()"
               @click="navigate"
             >
               Continue

@@ -5,15 +5,15 @@ interface GitHubInstallationsResponse {
 }
 
 /**
- * Returns the list of orgs/accounts the app can access, filtered to what the
- * current user is allowed to see.
+ * Returns the list of orgs/accounts the app can access.
  *
- * For public/marketplace apps (NUXT_PUBLIC_IS_PUBLIC_APP=true):
- *   1. GitHub OAuth session token → call /user/installations (user-filtered)
- *   2. session.organizations (pre-populated at GitHub login)
+ * Private/internal app (NUXT_PUBLIC_IS_PUBLIC_APP not set):
+ *   - App JWT lists all installations (small, known set) → dropdown in UI
  *
- * For private/internal apps:
- *   - App JWT → list ALL installations (typically just 1–2 orgs)
+ * Public/marketplace app (NUXT_PUBLIC_IS_PUBLIC_APP=true):
+ *   - App JWT would list ALL marketplace installs — not useful for individual users
+ *   - Returns empty so the UI shows a text input instead
+ *   - Exception: GitHub OAuth session token → /user/installations (user-filtered)
  *
  * Protected: requires an active session when requireAuth / usingGithubAuth / isPublicApp is set.
  */
@@ -29,10 +29,11 @@ export default defineEventHandler(async (event) => {
 
   setResponseHeaders(event, { 'Cache-Control': 'private, no-store' })
 
-  // Public/marketplace apps: filter to the authenticated user's accessible installations.
-  // Without this, listing via App JWT would return every org that installed the app.
   if (config.public.isPublicApp) {
-    // Priority 1: GitHub OAuth token in session — call /user/installations for a live, user-scoped list.
+    // For marketplace apps, only return installations if the user logged in via GitHub OAuth,
+    // because /user/installations scopes results to what they personally have access to.
+    // Without a GitHub identity (e.g. Google login), we can't know their orgs — return empty
+    // so the UI shows a manual text input.
     const githubToken = (session?.secure as { tokens?: { access_token?: string } } | undefined)
       ?.tokens?.access_token
     if (githubToken) {
@@ -54,18 +55,15 @@ export default defineEventHandler(async (event) => {
           }))
         }
       } catch {
-        // Fall through to session cache
+        // Fall through — return empty, UI will show text input
       }
     }
 
-    // Priority 2: Organizations pre-populated in session at GitHub login.
-    const sessionOrgs: string[] = (session as { organizations?: string[] }).organizations ?? []
-    return {
-      installations: sessionOrgs.map(login => ({ login, type: 'Organization' as const }))
-    }
+    // No GitHub token → can't determine user's orgs; UI will show a text input
+    return { installations: [] }
   }
 
-  // Private/internal app: list all installations via App JWT (small, known set).
+  // Private/internal app: list all installations via App JWT.
   const appId = config.githubAppId || config.oauth?.github?.clientId || ''
   if (appId && config.githubAppPrivateKey) {
     const installations = await listAppInstallations(appId, config.githubAppPrivateKey)
