@@ -30,6 +30,12 @@ onMounted(async () => {
     }
     // length === 0 → showManualInput will be true
   } catch (e: unknown) {
+    // 401 means the session expired or the user navigated here directly without logging in.
+    // Redirect to the root so MainComponent can show the login overlay.
+    if ((e as { statusCode?: number })?.statusCode === 401) {
+      await router.replace('/')
+      return
+    }
     error.value = e instanceof Error ? e.message : 'Failed to load organizations'
   } finally {
     loading.value = false

@@ -25,9 +25,14 @@ if (route.params.ent || route.params.org) {
   } 
 }
 
-// No org in URL or config — redirect to org picker before any API calls are made
+// No org in URL or config — redirect to org picker, but only if the user is already
+// authenticated (or auth is not required). When auth IS required and the user is not
+// yet logged in, let MainComponent display the login overlay first; after OAuth the
+// callback handler will redirect to /select-org or directly to the org.
+const { loggedIn } = useUserSession()
+const authRequired = config.public.usingGithubAuth || config.public.requireAuth || config.public.isPublicApp
 const hasOrg = route.params.org || route.params.ent || config.public.githubOrg || config.public.githubEnt
-if (!hasOrg && !config.public.isDataMocked) {
+if (!hasOrg && !config.public.isDataMocked && (!authRequired || loggedIn.value)) {
   await navigateTo('/select-org')
 }
 
