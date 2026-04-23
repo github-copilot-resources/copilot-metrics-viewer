@@ -121,23 +121,42 @@
 
     <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE -->
     <div v-if="singleTeamMode">
-      <!-- Team header -->
-      <v-card variant="outlined" class="mx-4 mb-1 pa-3" density="compact">
-        <div class="d-flex align-center gap-2 text-body-2">
-          <v-icon color="primary">mdi-account-group</v-icon>
-          <div style="flex: 1;">
-            <div class="font-weight-bold text-body-1">{{ singleTeamName }}</div>
-            <div class="text-medium-emphasis">{{ dateRangeDesc }}</div>
-          </div>
-          <v-btn
-            variant="outlined"
-            size="small"
-            color="error"
-            prepend-icon="mdi-close"
-            @click="selectedTeams = []"
-          >Deselect</v-btn>
-        </div>
-      </v-card>
+      <!-- Team header — same compact card as comparison mode -->
+      <v-container>
+        <v-row>
+          <v-col v-for="card in comparisonSummaryCards" :key="card.teamName" cols="12" sm="6" md="4" lg="3">
+            <v-card elevation="3" class="pa-3" :style="`border-left: 4px solid ${card.color.border}`">
+              <div class="d-flex align-center gap-2 mb-1">
+                <v-icon size="18" :color="card.color.border">mdi-account-group</v-icon>
+                <span class="text-subtitle-2 font-weight-medium">{{ card.teamName }}</span>
+                <v-spacer />
+                <v-btn
+                  variant="text"
+                  size="x-small"
+                  icon
+                  title="Deselect team"
+                  @click="selectedTeams = []"
+                >
+                  <v-icon size="14">mdi-close</v-icon>
+                </v-btn>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Active Users</span>
+                <span class="font-weight-medium">{{ card.activeUsers }}</span>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Acceptance Rate</span>
+                <span class="font-weight-medium">{{ card.acceptanceRate }}%</span>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Interactions</span>
+                <span class="font-weight-medium">{{ card.totalInteractions.toLocaleString() }}</span>
+              </div>
+              <div class="text-caption text-medium-emphasis mt-1">{{ dateRangeDesc }}</div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
 
       <!-- KPI Tiles -->
       <div class="tiles-container">
