@@ -122,8 +122,8 @@
     <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE -->
     <div v-if="singleTeamMode">
       <!-- Team header — same compact card as comparison mode -->
-      <v-container>
-        <v-row>
+      <v-container fluid class="px-4 pb-0">
+        <v-row dense>
           <v-col v-for="card in comparisonSummaryCards" :key="card.teamName" cols="12" sm="6" md="4" lg="3">
             <v-card elevation="3" class="pa-3" :style="`border-left: 4px solid ${card.color.border}`">
               <div class="d-flex align-center gap-2 mb-1">
@@ -342,8 +342,8 @@
     <!-- ═══════════════════════════════════════════════ COMPARISON MODE (2+ teams) -->
     <div v-else-if="comparisonMode">
       <!-- Per-team summary cards -->
-      <v-container>
-        <v-row>
+      <v-container fluid class="px-4 pb-0">
+        <v-row dense>
           <v-col v-for="card in comparisonSummaryCards" :key="card.teamName" cols="12" sm="6" md="4" lg="3">
             <v-card elevation="3" class="pa-3" :style="`border-left: 4px solid ${card.color.border}`">
               <div class="d-flex align-center gap-2 mb-1">
