@@ -35,7 +35,7 @@
           <v-card-item>
             <div class="text-caption text-medium-emphasis">Lines of code changed with AI</div>
             <div class="text-caption text-medium-emphasis mb-2">{{ dateRangeDescription }}</div>
-            <div class="kpi-value">{{ formatCompact(totalLocChanged) }}</div>
+            <div class="kpi-value text-primary">{{ formatCompact(totalLocChanged) }}</div>
           </v-card-item>
         </v-card>
       </v-col>
@@ -44,7 +44,7 @@
           <v-card-item>
             <div class="text-caption text-medium-emphasis">Agent contribution</div>
             <div class="text-caption text-medium-emphasis mb-2">% of all AI code changes</div>
-            <div class="kpi-value">{{ agentContributionPct.toFixed(0) }}%</div>
+            <div class="kpi-value text-success">{{ agentContributionPct.toFixed(0) }}%</div>
             <div class="text-caption text-medium-emphasis mt-1">
               {{ formatCompact(agentLocChanged) }} of {{ formatCompact(totalLocChanged) }} lines
             </div>
@@ -56,7 +56,7 @@
           <v-card-item>
             <div class="text-caption text-medium-emphasis">Avg lines deleted by agent per user</div>
             <div class="text-caption text-medium-emphasis mb-2">{{ dateRangeDescription }}</div>
-            <div class="kpi-value">{{ avgAgentLinesDeleted.toLocaleString() }}</div>
+            <div class="kpi-value text-warning">{{ avgAgentLinesDeleted.toLocaleString() }}</div>
           </v-card-item>
         </v-card>
       </v-col>

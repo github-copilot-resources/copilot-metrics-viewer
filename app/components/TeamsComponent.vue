@@ -1,5 +1,15 @@
 <template>
-  <div>
+  <div style="position: relative;">
+    <!-- Loading overlay while fetching team metrics -->
+    <v-overlay
+      :model-value="isLoading"
+      contained
+      persistent
+      class="align-center justify-center"
+    >
+      <v-progress-circular indeterminate color="primary" size="48" />
+    </v-overlay>
+
     <!-- Description card (matches org style) -->
     <v-card variant="outlined" class="mx-4 mt-3 mb-1 pa-3" density="compact">
       <div class="d-flex flex-wrap align-start gap-2 text-body-2">
@@ -114,12 +124,12 @@
             <div class="text-medium-emphasis">{{ dateRangeDesc }}</div>
           </div>
           <v-btn
-            :href="getTeamDetailUrl(selectedTeams[0]!)"
-            target="_blank"
             variant="outlined"
             size="small"
-            append-icon="mdi-open-in-new"
-          >View Team</v-btn>
+            color="error"
+            prepend-icon="mdi-close"
+            @click="selectedTeams = []"
+          >Deselect</v-btn>
         </div>
       </v-card>
 
@@ -315,8 +325,14 @@
                 <v-icon size="18" :color="card.color.border">mdi-account-group</v-icon>
                 <span class="text-subtitle-2 font-weight-medium">{{ card.teamName }}</span>
                 <v-spacer />
-                <v-btn :href="getTeamDetailUrl(card.slug)" target="_blank" variant="text" size="x-small" icon>
-                  <v-icon size="14">mdi-open-in-new</v-icon>
+                <v-btn
+                  variant="text"
+                  size="x-small"
+                  icon
+                  :title="`Remove ${card.teamName}`"
+                  @click="selectedTeams = selectedTeams.filter(s => s !== card.slug)"
+                >
+                  <v-icon size="14">mdi-close</v-icon>
                 </v-btn>
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
@@ -872,6 +888,9 @@ export default defineComponent({
       }
     })
 
+    // ── Loading state ─────────────────────────────────────────────────────────
+    const isLoading = ref(false)
+
     // ── User Metrics ──────────────────────────────────────────────────────────
     const singleTeamUserMetrics = ref<UserTotals[]>([])
     const userMetricsError = ref<string | null>(null)
@@ -1031,9 +1050,12 @@ export default defineComponent({
         editorBarChartData.value = { labels: [], datasets: [] }
         singleTeamUserMetrics.value = []
         userMetricsError.value = null
+        isLoading.value = false
         return
       }
 
+      isLoading.value = true
+      try {
       const loaded = await Promise.all(selectedTeams.value.map(slug => loadMetricsForTeam(slug)))
       perTeamData.value = loaded
 
@@ -1117,6 +1139,9 @@ export default defineComponent({
         singleTeamUserMetrics.value = []
         userMetricsError.value = null
       }
+      } finally {
+        isLoading.value = false
+      }
     }
 
     onMounted(async () => {
@@ -1143,6 +1168,7 @@ export default defineComponent({
       // state
       availableTeams,
       selectedTeams,
+      isLoading,
       chartColumns,
       perTeamData,
       // Full GHEC org support

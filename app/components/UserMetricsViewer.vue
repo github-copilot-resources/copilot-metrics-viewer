@@ -311,6 +311,19 @@
         </div>
 
         <v-row>
+          <!-- Empty state when no user selected -->
+          <v-col v-if="!selectedUser" cols="12">
+            <v-alert
+              type="info"
+              variant="tonal"
+              density="compact"
+              icon="mdi-cursor-pointer"
+              class="mb-2"
+            >
+              <strong>Select a user</strong> from the table above to see their individual usage details, language breakdown, model preferences, and activity history.
+            </v-alert>
+          </v-col>
+
           <!-- 1. Language Distribution -->
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card variant="outlined" class="pa-4">
