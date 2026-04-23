@@ -25,6 +25,12 @@ if (route.params.ent || route.params.org) {
   } 
 }
 
+// No org in URL or config — redirect to org picker before any API calls are made
+const hasOrg = route.params.org || route.params.ent || config.public.githubOrg || config.public.githubEnt
+if (!hasOrg && !config.public.isDataMocked) {
+  await navigateTo('/select-org')
+}
+
 computed(() => config.public.version);
 </script>
 

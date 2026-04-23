@@ -24,11 +24,13 @@ export default defineOAuthGitHubEventHandler({
         tokens,
         expires_at: new Date(Date.now() + tokens.expires_in * 1000)
       }
-    }
-    )
+    })
 
-    // need to check if this is public app (no default org/team/ent)
-    if (config.public.isPublicApp) {
+    // Pre-populate user's accessible orgs in session for the org picker.
+    // /user/installations returns only installations the authenticated user can access,
+    // which correctly filters marketplace apps to the user's own orgs.
+    const defaultOrg = config.public.githubOrg || config.public.githubEnt
+    if (!defaultOrg) {
       try {
         const installationsResponse = await $fetch('https://api.github.com/user/installations', {
           headers: {
@@ -36,30 +38,20 @@ export default defineOAuthGitHubEventHandler({
             Accept: 'application/vnd.github+json',
             'X-GitHub-Api-Version': '2022-11-28'
           }
-        }) as { installations: Array<{ account: { login: string } }> };
+        }) as { installations: Array<{ account: { login: string } }> }
 
-        const installations = installationsResponse.installations;
-        const organizations = installations.map(installation => installation.account.login);
-
-        await setUserSession(event, {
-          organizations
-        });
-        logger.info('User organizations:', organizations);
+        const organizations = installationsResponse.installations.map(i => i.account.login)
+        await setUserSession(event, { organizations })
 
         if (organizations.length === 0) {
-          console.error('No organizations found for the user.');
-          return sendRedirect(event, '/?error=No organizations found for the user.');
+          return sendRedirect(event, '/?error=No+organizations+found.+Install+the+GitHub+App+on+your+org+first.')
         }
-
         if (organizations.length === 1) {
-          return sendRedirect(event, `/orgs/${organizations[0]}`);
+          return sendRedirect(event, `/orgs/${organizations[0]}`)
         }
-
-        // Multiple installations — let the frontend picker handle selection
-        return sendRedirect(event, '/select-org');
-      }
-      catch (error: FetchError) {
-        logger.error('Error fetching installations:', error);
+        return sendRedirect(event, '/select-org')
+      } catch (error: FetchError) {
+        logger.error('Error fetching installations:', error)
       }
     }
 

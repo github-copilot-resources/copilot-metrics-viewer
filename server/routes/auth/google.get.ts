@@ -12,6 +12,13 @@ export default defineOAuthGoogleEventHandler({
       }
     })
 
+    // If no default org is configured, let the user pick via the org picker
+    const config = useRuntimeConfig(event)
+    const defaultOrg = config.public.githubOrg || config.public.githubEnt
+    if (!defaultOrg) {
+      return sendRedirect(event, '/select-org')
+    }
+
     return sendRedirect(event, '/')
   },
   onError(event, error) {

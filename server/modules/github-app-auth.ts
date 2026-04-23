@@ -1,4 +1,4 @@
-import { webcrypto } from 'node:crypto'
+import { createPrivateKey, createSign } from 'node:crypto'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
 const TOKEN_EXPIRY_BUFFER_SECONDS = 300 // refresh 5 min before expiry
@@ -21,53 +21,35 @@ let installationsInflight: Promise<AppInstallation[]> | null = null
 
 // ── Crypto helpers ─────────────────────────────────────────────────────────────
 
-/** Convert a PEM private key string to a DER ArrayBuffer for Web Crypto. */
-function pemToDer(pem: string): ArrayBuffer {
-  const base64 = pem
-    .replace(/-----BEGIN [^-]+-----/, '')
-    .replace(/-----END [^-]+-----/, '')
-    .replace(/\s/g, '')
-  const binary = Buffer.from(base64, 'base64')
-  return binary.buffer.slice(binary.byteOffset, binary.byteOffset + binary.byteLength)
+/** Base64url-encode a buffer. */
+function b64url(buf: Buffer): string {
+  return buf.toString('base64url')
 }
 
-/** Base64url-encode a buffer. */
-function b64url(buf: ArrayBuffer | Buffer): string {
-  return Buffer.from(buf).toString('base64url')
+/** Normalise a PEM key that may use literal \n instead of real newlines. */
+function normalisePem(pem: string): string {
+  return pem.replace(/\\n/g, '\n')
 }
 
 /**
- * Sign a compact JWT (RS256) using Node's built-in Web Crypto.
- * No external dependencies required.
+ * Sign a compact JWT (RS256) using Node's built-in crypto.
+ * Handles PKCS#1 ("BEGIN RSA PRIVATE KEY") and PKCS#8 ("BEGIN PRIVATE KEY"),
+ * and both real-newline and \n-escaped PEM strings.
  */
-async function signJWT(payload: Record<string, unknown>, privateKeyPem: string): Promise<string> {
+function signJWT(payload: Record<string, unknown>, privateKeyPem: string): string {
   const header = b64url(Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })))
   const body = b64url(Buffer.from(JSON.stringify(payload)))
   const signingInput = `${header}.${body}`
 
-  // Normalise PKCS#1 RSA key to PKCS#8 if needed (GitHub App keys are PKCS#1)
-  const isPkcs1 = privateKeyPem.includes('BEGIN RSA PRIVATE KEY')
-  const pkcs8Pem = isPkcs1
-    ? privateKeyPem
-        .replace('BEGIN RSA PRIVATE KEY', 'BEGIN PRIVATE KEY')
-        .replace('END RSA PRIVATE KEY', 'END PRIVATE KEY')
-    : privateKeyPem
-
-  const keyData = pemToDer(pkcs8Pem.replace(/\\n/g, '\n'))
-  const key = await webcrypto.subtle.importKey(
-    'pkcs8',
-    keyData,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-
-  const sig = await webcrypto.subtle.sign('RSASSA-PKCS1-v1_5', key, Buffer.from(signingInput))
+  const key = createPrivateKey({ key: normalisePem(privateKeyPem), format: 'pem' })
+  const sign = createSign('RSA-SHA256')
+  sign.update(signingInput)
+  const sig = sign.sign(key)
   return `${signingInput}.${b64url(sig)}`
 }
 
 /** Build a short-lived JWT for GitHub App API calls. */
-async function buildAppJwt(appId: string, privateKey: string): Promise<string> {
+function buildAppJwt(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000)
   return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
 }
@@ -152,7 +134,7 @@ async function getTokenForInstallation(appId: string, privateKey: string, instal
   let inflight = tokenInflight.get(installationId)
   if (!inflight) {
     inflight = (async () => {
-      const jwt = await buildAppJwt(appId, privateKey)
+      const jwt = buildAppJwt(appId, privateKey)
       const result = await fetchInstallationToken(jwt, installationId)
       tokenCache.set(installationId, result)
       tokenInflight.delete(installationId)
@@ -176,10 +158,12 @@ async function getTokenForInstallation(appId: string, privateKey: string, instal
  */
 export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Promise<string> {
   const config = useRuntimeConfig(event)
-  const { githubAppId, githubAppPrivateKey } = config
+  const { githubAppPrivateKey } = config
+  // GitHub now allows Client ID as the JWT issuer instead of the numeric App ID
+  const githubAppId = config.githubAppId || config.oauth?.github?.clientId || ''
 
   if (!githubAppId || !githubAppPrivateKey) {
-    throw new Error('GitHub App configuration incomplete. Set NUXT_GITHUB_APP_ID and NUXT_GITHUB_APP_PRIVATE_KEY.')
+    throw new Error('GitHub App configuration incomplete. Set NUXT_GITHUB_APP_PRIVATE_KEY and either NUXT_GITHUB_APP_ID or NUXT_OAUTH_GITHUB_CLIENT_ID.')
   }
 
   const query = getQuery(event)

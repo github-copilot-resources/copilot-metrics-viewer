@@ -13,7 +13,9 @@ export default defineOAuthKeycloakEventHandler({
       }
     })
 
-    return sendRedirect(event, '/')
+    const config = useRuntimeConfig(event)
+    const defaultOrg = config.public.githubOrg || config.public.githubEnt
+    return sendRedirect(event, defaultOrg ? '/' : '/select-org')
   },
   onError(event, error) {
     console.error('Keycloak OAuth error:', error)
