@@ -390,6 +390,63 @@ In PAT mode the toolbar shows a shield icon (🛡) that explains available OAuth
 
 ---
 
+### GitHub App Installation Token (no PAT required)
+
+A GitHub App installation token lets the backend fetch Copilot data **without any user-owned PAT**. This is the recommended credential for deployments where users authenticate via Google, Microsoft, Auth0, or Keycloak (i.e. non-GitHub identity providers).
+
+**Why use this instead of a PAT?**
+
+| | PAT | GitHub App installation token |
+|---|---|---|
+| Tied to a specific user account | ✅ yes | ❌ no — machine credential |
+| Revoked when user leaves org | ✅ yes | ❌ no |
+| Scoped to exactly the permissions you grant | limited | ✅ yes |
+| Works with Google/Microsoft/Auth0/Keycloak auth | ✅ yes (workaround) | ✅ yes (native) |
+
+**Create a GitHub App:**
+
+1. Go to your org → Settings → Developer Settings → GitHub Apps → **New GitHub App**
+2. Give it a name (e.g. `copilot-metrics-viewer`)
+3. Disable Webhook (uncheck "Active")
+4. Under **Repository permissions**: none required
+5. Under **Organization permissions**:
+   - `Copilot` → Read-only
+   - `Members` → Read-only (for seat analysis)
+6. Set "Where can this GitHub App be installed?" → **Only on this account**
+7. Click **Create GitHub App**, then note the **App ID** on the next page
+
+**Generate a private key:**
+
+1. On the App settings page, scroll to **Private keys** → **Generate a private key**
+2. A `.pem` file downloads automatically
+3. Flatten the key to a single-line env var:
+   ```bash
+   # macOS/Linux — prints the key with literal \n between lines
+   awk 'NF {printf "%s\\n", $0}' ~/Downloads/my-app.private-key.pem
+   ```
+4. Copy the output (starts with `-----BEGIN RSA PRIVATE KEY-----\n...`)
+
+**Install the App on your org:**
+
+1. On the App page, click **Install App** → choose your org → **Install**
+2. After installation, the URL will be `https://github.com/settings/installations/<INSTALLATION_ID>` — note that number
+
+**Configure env vars:**
+
+```bash
+NUXT_GITHUB_APP_ID=123456
+NUXT_GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nMIIEo...\n-----END RSA PRIVATE KEY-----
+NUXT_GITHUB_APP_INSTALLATION_ID=12345678
+```
+
+> [!NOTE]
+> When `NUXT_GITHUB_APP_ID` + `NUXT_GITHUB_APP_PRIVATE_KEY` + `NUXT_GITHUB_APP_INSTALLATION_ID` are all set, the app uses an installation token for every data request. The `NUXT_GITHUB_TOKEN` PAT is ignored.
+
+> [!TIP]
+> Installation tokens are cached in memory for up to 55 minutes and automatically refreshed. You don't need to restart the server.
+
+---
+
 ### GitHub OAuth
 
 Requires a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps) or [OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app).

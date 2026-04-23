@@ -1,20 +1,19 @@
 import type { H3Event, EventHandlerRequest } from 'h3'
+import { buildGitHubAppHeaders } from './github-app-auth'
 
 // https://www.telerik.com/blogs/implementing-sso-vue-nuxt-auth-github-comprehensive-guide
 
 /**
  * Authenticates the user and retrieves GitHub headers.
- * 
- * This function checks if the data is mocked or if a GitHub token is available in the configuration.
- * If neither is available, it requires a user session to obtain a token.
- * 
+ *
+ * Priority order:
+ * 1. Mock data — returns a placeholder token
+ * 2. GitHub App (NUXT_GITHUB_APP_ID + private key + installation ID) — generates an installation token; works with any OAuth provider
+ * 3. Personal Access Token (NUXT_GITHUB_TOKEN) — legacy / simplest setup
+ * 4. User's GitHub OAuth token — stored in session after GitHub OAuth login
+ *
  * @param {H3Event<EventHandlerRequest>} event - The event object containing the request details.
  * @returns {Promise<Headers>} A promise that resolves to the GitHub headers.
- * 
- * @example
- * const headers = await authenticateAndGetGitHubHeaders(event);
- * 
- * @see https://nuxt.com/docs/guide/recipes/sessions-and-authentication
  */
 export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandlerRequest>): Promise<Headers> {
     const config = useRuntimeConfig(event);
@@ -24,20 +23,23 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
     const dataMocked = query.mock || query.isDataMocked || false;
 
     if (config.public.isDataMocked || dataMocked) {
-        // when data is mocked, we still need to have a token, but it's not used for real API calls
         return buildHeaders('mock-token');
     }
+
+    // GitHub App installation token (preferred for decoupled auth — no PAT needed)
+    if (config.githubAppId && config.githubAppPrivateKey && config.githubAppInstallationId) {
+        return await buildGitHubAppHeaders(event);
+    }
+
+    // Personal Access Token
     if (config.githubToken) {
         return buildHeaders(config.githubToken);
     }
 
-    // https://nuxt.com/docs/guide/recipes/sessions-and-authentication
+    // User's own GitHub OAuth token (GitHub OAuth login only)
     const { secure } = await getUserSession(event);
 
-    // check if token is expired and get new one
     if (secure?.expires_at && secure.expires_at < new Date(Date.now() - 30 * 1000)) {
-        // Token is expired or about to expire within 30 seconds
-        // we could refresh but unlikely dashboard is used for long periods
         return buildHeaders('');
     }
 
@@ -47,12 +49,10 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
 function buildHeaders(token: string): Headers {
     if (!token) {
         throw new Error(
-            `Authentication required but not provided.
-            This can happen when:
-            1. First call to the API when client checks if user is authenticated - /api/_auth/session.
-            2. When App is not configured correctly:
-             - For PAT, set NUXT_GITHUB_TOKEN environment variable.
-             - For GitHub Auth - ensure NUXT_PUBLIC_USING_GITHUB_AUTH is set to true, NUXT_OAUTH_GITHUB_CLIENT_ID and NUXT_OAUTH_GITHUB_CLIENT_SECRET are provided and user is authenticated.`);
+            `Authentication required but not provided. Configure one of:
+             1. GitHub App: set NUXT_GITHUB_APP_ID, NUXT_GITHUB_APP_PRIVATE_KEY, NUXT_GITHUB_APP_INSTALLATION_ID
+             2. PAT: set NUXT_GITHUB_TOKEN
+             3. GitHub OAuth: set NUXT_PUBLIC_USING_GITHUB_AUTH=true with client ID/secret`);
     }
 
     return new Headers({
@@ -61,3 +61,4 @@ function buildHeaders(token: string): Headers {
         Authorization: `token ${token}`
     });
 }
+

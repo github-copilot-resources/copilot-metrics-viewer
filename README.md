@@ -258,6 +258,18 @@ Token is not used in the frontend.
 NUXT_GITHUB_TOKEN=
 ````
 
+#### NUXT_GITHUB_APP_ID / NUXT_GITHUB_APP_PRIVATE_KEY / NUXT_GITHUB_APP_INSTALLATION_ID
+
+**Alternative to PAT** — use a GitHub App installation token for backend data access. When all three are set, they take priority over `NUXT_GITHUB_TOKEN`. This is the recommended credential when users authenticate via Google, Microsoft, Auth0, or Keycloak (i.e., non-GitHub identity providers), since the token is machine-issued and not tied to any individual user account.
+
+See [GitHub App Installation Token](DEPLOYMENT.md#github-app-installation-token-no-pat-required) in the deployment guide for full setup instructions.
+
+```bash
+NUXT_GITHUB_APP_ID=123456
+NUXT_GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----
+NUXT_GITHUB_APP_INSTALLATION_ID=12345678
+```
+
 #### NUXT_SESSION_PASSWORD (Required!)
 
 This variable is required to encrypt user sessions, it needs to be at least 32 characters long.

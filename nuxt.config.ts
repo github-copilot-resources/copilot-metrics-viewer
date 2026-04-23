@@ -83,6 +83,10 @@ export default defineNuxtConfig({
     aiToken: '',  // Dedicated token for GitHub Models API (NUXT_AI_TOKEN). Falls back to githubToken.
     aiModel: 'gpt-4o',  // Model for AI chat (NUXT_AI_MODEL)
     aiMaxToolRounds: '5',  // Max tool-calling iterations (NUXT_AI_MAX_TOOL_ROUNDS)
+    // GitHub App credentials (alternative to PAT — works with any OAuth provider)
+    githubAppId: '',            // NUXT_GITHUB_APP_ID
+    githubAppPrivateKey: '',    // NUXT_GITHUB_APP_PRIVATE_KEY (PEM, \n-escaped)
+    githubAppInstallationId: '', // NUXT_GITHUB_APP_INSTALLATION_ID
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,
