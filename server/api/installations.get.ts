@@ -73,13 +73,15 @@ export default defineEventHandler(async (event) => {
   // Private/internal app: list all installations via App JWT.
   const appId = config.githubAppId || config.oauth?.github?.clientId || ''
   if (appId && config.githubAppPrivateKey) {
-    const installations = await listAppInstallations(appId, config.githubAppPrivateKey)
-    return { installations: installations.map(i => ({ login: i.login, type: i.type })) }
+    try {
+      const installations = await listAppInstallations(appId, config.githubAppPrivateKey)
+      return { installations: installations.map(i => ({ login: i.login, type: i.type })) }
+    } catch {
+      // JWT auth failed or network error — fall through to empty list so the UI
+      // shows a text input instead of a broken dropdown.
+    }
   }
 
-  // GitHub OAuth without App key — session has orgs from login redirect.
-  const sessionOrgs: string[] = (session as { organizations?: string[] }).organizations ?? []
-  return {
-    installations: sessionOrgs.map(login => ({ login, type: 'Organization' as const }))
-  }
+  // No installations available — UI will show a text input.
+  return { installations: [] }
 })

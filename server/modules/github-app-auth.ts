@@ -51,7 +51,18 @@ function signJWT(payload: Record<string, unknown>, privateKeyPem: string): strin
 /** Build a short-lived JWT for GitHub App API calls. */
 function buildAppJwt(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000)
-  return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
+  const isNumericId = /^\d+$/.test(appId)
+  if (!isNumericId) {
+    console.warn(`[github-app-auth] Using Client ID "${appId}" as JWT issuer. Set NUXT_GITHUB_APP_ID to the numeric App ID if you get 401 errors.`)
+  } else {
+    console.log(`[github-app-auth] Building JWT with numeric App ID ${appId}`)
+  }
+  try {
+    return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    throw new Error(`Failed to sign GitHub App JWT: ${msg}. Check NUXT_GITHUB_APP_PRIVATE_KEY is a valid PEM-encoded RSA private key.`)
+  }
 }
 
 // ── Installation listing ───────────────────────────────────────────────────────
@@ -70,32 +81,35 @@ export async function listAppInstallations(appId: string, privateKey: string): P
   if (installationsInflight) return installationsInflight
 
   installationsInflight = (async () => {
-    const jwt = await buildAppJwt(appId, privateKey)
-    const all: AppInstallation[] = []
-    let page = 1
+    try {
+      const jwt = await buildAppJwt(appId, privateKey)
+      const all: AppInstallation[] = []
+      let page = 1
 
-    while (true) {
-      const page_items = await $fetch<Array<{ id: number; account: { login: string; type: string } }>>(
-        `https://api.github.com/app/installations?per_page=100&page=${page}`,
-        {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            Authorization: `Bearer ${jwt}`,
-            'X-GitHub-Api-Version': '2022-11-28',
-            'User-Agent': 'copilot-metrics-viewer'
+      while (true) {
+        const page_items = await $fetch<Array<{ id: number; account: { login: string; type: string } }>>(
+          `https://api.github.com/app/installations?per_page=100&page=${page}`,
+          {
+            headers: {
+              Accept: 'application/vnd.github+json',
+              Authorization: `Bearer ${jwt}`,
+              'X-GitHub-Api-Version': '2022-11-28',
+              'User-Agent': 'copilot-metrics-viewer'
+            }
           }
+        )
+        for (const item of page_items) {
+          all.push({ id: item.id, login: item.account.login, type: item.account.type as AppInstallation['type'] })
         }
-      )
-      for (const item of page_items) {
-        all.push({ id: item.id, login: item.account.login, type: item.account.type as AppInstallation['type'] })
+        if (page_items.length < 100) break
+        page++
       }
-      if (page_items.length < 100) break
-      page++
-    }
 
-    installationsCache = { list: all, cachedAt: Math.floor(Date.now() / 1000) }
-    installationsInflight = null
-    return all
+      installationsCache = { list: all, cachedAt: Math.floor(Date.now() / 1000) }
+      return all
+    } finally {
+      installationsInflight = null
+    }
   })()
 
   return installationsInflight
