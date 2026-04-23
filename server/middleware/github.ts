@@ -36,6 +36,25 @@ export default defineEventHandler(async (event) => {
         }
     }
 
+    // Public/marketplace app authorization: when no default org is configured, every API
+    // request must be for an org the authenticated user is actually a member of.
+    // session.organizations is populated at GitHub OAuth login via /user/installations and
+    // contains only orgs the user has access to. Non-GitHub OAuth users (Google, etc.) get
+    // an empty list, so they cannot access any org data without a GitHub identity.
+    if (config.public.isPublicApp && !config.public.githubOrg && !config.public.githubEnt) {
+        const session = await getUserSession(event).catch(() => null);
+        const allowedOrgs: string[] = (session as { organizations?: string[] } | null)?.organizations ?? [];
+        const query = getQuery(event);
+        const requestedOrg = (query.githubOrg || query.githubEnt) as string | undefined;
+
+        if (requestedOrg && !allowedOrgs.includes(requestedOrg)) {
+            throw createError({
+                statusCode: 403,
+                statusMessage: `Access denied: you are not authorized to access organization '${requestedOrg}'. Sign in with GitHub to verify your membership.`
+            });
+        }
+    }
+
     // When historical mode is enabled, metrics come from DB — auth is optional
     // (the handler will request auth only if it needs to sync from the API)
     const historicalMode = process.env.ENABLE_HISTORICAL_MODE === 'true';
