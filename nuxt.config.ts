@@ -86,7 +86,6 @@ export default defineNuxtConfig({
     // GitHub App credentials (alternative to PAT — works with any OAuth provider)
     githubAppId: '',            // NUXT_GITHUB_APP_ID
     githubAppPrivateKey: '',    // NUXT_GITHUB_APP_PRIVATE_KEY (PEM, \n-escaped)
-    githubAppInstallationId: '', // NUXT_GITHUB_APP_INSTALLATION_ID
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,

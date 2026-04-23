@@ -51,7 +51,12 @@ export default defineOAuthGitHubEventHandler({
           return sendRedirect(event, '/?error=No organizations found for the user.');
         }
 
-        return sendRedirect(event, `/orgs/${organizations[0]}`);
+        if (organizations.length === 1) {
+          return sendRedirect(event, `/orgs/${organizations[0]}`);
+        }
+
+        // Multiple installations — let the frontend picker handle selection
+        return sendRedirect(event, '/select-org');
       }
       catch (error: FetchError) {
         logger.error('Error fetching installations:', error);

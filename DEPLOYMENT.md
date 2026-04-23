@@ -429,18 +429,20 @@ A GitHub App installation token lets the backend fetch Copilot data **without an
 **Install the App on your org:**
 
 1. On the App page, click **Install App** → choose your org → **Install**
-2. After installation, the URL will be `https://github.com/settings/installations/<INSTALLATION_ID>` — note that number
+2. The installation ID is **auto-discovered** at runtime — no manual configuration needed.
+   If you have multiple installs, the app matches against `NUXT_PUBLIC_GITHUB_ORG`, or shows an org picker.
 
 **Configure env vars:**
 
 ```bash
 NUXT_GITHUB_APP_ID=123456
 NUXT_GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nMIIEo...\n-----END RSA PRIVATE KEY-----
-NUXT_GITHUB_APP_INSTALLATION_ID=12345678
 ```
 
 > [!NOTE]
-> When `NUXT_GITHUB_APP_ID` + `NUXT_GITHUB_APP_PRIVATE_KEY` + `NUXT_GITHUB_APP_INSTALLATION_ID` are all set, the app uses an installation token for every data request. The `NUXT_GITHUB_TOKEN` PAT is ignored.
+> When `NUXT_GITHUB_APP_ID` + `NUXT_GITHUB_APP_PRIVATE_KEY` are set, the app auto-discovers the installation for the configured org and uses an installation token for every data request. The `NUXT_GITHUB_TOKEN` PAT is ignored.
+>
+> If the App is installed on multiple orgs and no `NUXT_PUBLIC_GITHUB_ORG` is set, users are shown an org picker after login.
 
 > [!TIP]
 > Installation tokens are cached in memory for up to 55 minutes and automatically refreshed. You don't need to restart the server.

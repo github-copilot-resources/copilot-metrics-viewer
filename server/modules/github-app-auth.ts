@@ -2,8 +2,24 @@ import { webcrypto } from 'node:crypto'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
 const TOKEN_EXPIRY_BUFFER_SECONDS = 300 // refresh 5 min before expiry
+const INSTALLATIONS_CACHE_TTL_SECONDS = 300 // re-list installations every 5 min
 
-let cachedToken: { token: string; expiresAt: number } | null = null
+export interface AppInstallation {
+  id: number
+  login: string
+  type: 'Organization' | 'User'
+}
+
+// Per-installation token cache keyed by installation ID
+const tokenCache = new Map<number, { token: string; expiresAt: number }>()
+// In-flight token requests to prevent thundering herd per installation
+const tokenInflight = new Map<number, Promise<{ token: string; expiresAt: number }>>()
+
+// Cached installation list
+let installationsCache: { list: AppInstallation[]; cachedAt: number } | null = null
+let installationsInflight: Promise<AppInstallation[]> | null = null
+
+// ── Crypto helpers ─────────────────────────────────────────────────────────────
 
 /** Convert a PEM private key string to a DER ArrayBuffer for Web Crypto. */
 function pemToDer(pem: string): ArrayBuffer {
@@ -46,26 +62,66 @@ async function signJWT(payload: Record<string, unknown>, privateKeyPem: string):
     ['sign']
   )
 
-  const sig = await webcrypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5',
-    key,
-    Buffer.from(signingInput)
-  )
-
+  const sig = await webcrypto.subtle.sign('RSASSA-PKCS1-v1_5', key, Buffer.from(signingInput))
   return `${signingInput}.${b64url(sig)}`
 }
 
-/**
- * Exchange a GitHub App JWT for an installation access token.
- * The result is cached for up to 1 hour (with a 5-minute refresh buffer).
- */
-async function generateInstallationToken(appId: string, privateKey: string, installationId: string): Promise<{ token: string; expiresAt: number }> {
+/** Build a short-lived JWT for GitHub App API calls. */
+async function buildAppJwt(appId: string, privateKey: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
-  const jwt = await signJWT(
-    { iss: appId, iat: now - 10, exp: now + 600 },
-    privateKey
-  )
+  return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
+}
 
+// ── Installation listing ───────────────────────────────────────────────────────
+
+/**
+ * List all orgs/users the GitHub App is installed on.
+ * Paginates through all results and caches for INSTALLATIONS_CACHE_TTL_SECONDS.
+ */
+export async function listAppInstallations(appId: string, privateKey: string): Promise<AppInstallation[]> {
+  const now = Math.floor(Date.now() / 1000)
+  if (installationsCache && now - installationsCache.cachedAt < INSTALLATIONS_CACHE_TTL_SECONDS) {
+    return installationsCache.list
+  }
+
+  // Dedupe concurrent calls
+  if (installationsInflight) return installationsInflight
+
+  installationsInflight = (async () => {
+    const jwt = await buildAppJwt(appId, privateKey)
+    const all: AppInstallation[] = []
+    let page = 1
+
+    while (true) {
+      const page_items = await $fetch<Array<{ id: number; account: { login: string; type: string } }>>(
+        `https://api.github.com/app/installations?per_page=100&page=${page}`,
+        {
+          headers: {
+            Accept: 'application/vnd.github+json',
+            Authorization: `Bearer ${jwt}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+            'User-Agent': 'copilot-metrics-viewer'
+          }
+        }
+      )
+      for (const item of page_items) {
+        all.push({ id: item.id, login: item.account.login, type: item.account.type as AppInstallation['type'] })
+      }
+      if (page_items.length < 100) break
+      page++
+    }
+
+    installationsCache = { list: all, cachedAt: Math.floor(Date.now() / 1000) }
+    installationsInflight = null
+    return all
+  })()
+
+  return installationsInflight
+}
+
+// ── Installation token ─────────────────────────────────────────────────────────
+
+async function fetchInstallationToken(jwt: string, installationId: number): Promise<{ token: string; expiresAt: number }> {
   const response = await $fetch<{ token: string; expires_at: string }>(
     `https://api.github.com/app/installations/${installationId}/access_tokens`,
     {
@@ -78,32 +134,74 @@ async function generateInstallationToken(appId: string, privateKey: string, inst
       }
     }
   )
-
-  const expiresAt = Math.floor(new Date(response.expires_at).getTime() / 1000)
-  return { token: response.token, expiresAt }
+  return { token: response.token, expiresAt: Math.floor(new Date(response.expires_at).getTime() / 1000) }
 }
 
 /**
- * Return a valid GitHub App installation token, using the in-memory cache
- * to avoid generating a new JWT on every request.
+ * Return a valid installation token for the given org.
+ * Caches per installation ID and dedupes concurrent refreshes.
+ */
+async function getTokenForInstallation(appId: string, privateKey: string, installationId: number): Promise<string> {
+  const now = Math.floor(Date.now() / 1000)
+  const cached = tokenCache.get(installationId)
+  if (cached && cached.expiresAt > now + TOKEN_EXPIRY_BUFFER_SECONDS) {
+    return cached.token
+  }
+
+  // Dedupe concurrent refresh for the same installation
+  let inflight = tokenInflight.get(installationId)
+  if (!inflight) {
+    inflight = (async () => {
+      const jwt = await buildAppJwt(appId, privateKey)
+      const result = await fetchInstallationToken(jwt, installationId)
+      tokenCache.set(installationId, result)
+      tokenInflight.delete(installationId)
+      return result
+    })()
+    tokenInflight.set(installationId, inflight)
+  }
+
+  return (await inflight).token
+}
+
+// ── Public API ─────────────────────────────────────────────────────────────────
+
+/**
+ * Return a valid GitHub App installation token for the org/enterprise in the request.
+ *
+ * Org resolution order:
+ *   1. githubOrg query param  2. githubEnt query param
+ *   3. NUXT_PUBLIC_GITHUB_ORG config  4. NUXT_PUBLIC_GITHUB_ENT config
+ *   5. Single installation auto-select
  */
 export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Promise<string> {
   const config = useRuntimeConfig(event)
-  const { githubAppId, githubAppPrivateKey, githubAppInstallationId } = config
+  const { githubAppId, githubAppPrivateKey } = config
 
-  if (!githubAppId || !githubAppPrivateKey || !githubAppInstallationId) {
-    throw new Error(
-      'GitHub App configuration incomplete. Set NUXT_GITHUB_APP_ID, NUXT_GITHUB_APP_PRIVATE_KEY, and NUXT_GITHUB_APP_INSTALLATION_ID.'
-    )
+  if (!githubAppId || !githubAppPrivateKey) {
+    throw new Error('GitHub App configuration incomplete. Set NUXT_GITHUB_APP_ID and NUXT_GITHUB_APP_PRIVATE_KEY.')
   }
 
-  const now = Math.floor(Date.now() / 1000)
-  if (cachedToken && cachedToken.expiresAt > now + TOKEN_EXPIRY_BUFFER_SECONDS) {
-    return cachedToken.token
+  const query = getQuery(event)
+  const targetOrg = (query.githubOrg || query.githubEnt || config.public.githubOrg || config.public.githubEnt) as string | undefined
+
+  const installations = await listAppInstallations(githubAppId, githubAppPrivateKey)
+
+  let installation: AppInstallation | undefined
+  if (targetOrg) {
+    installation = installations.find(i => i.login.toLowerCase() === targetOrg.toLowerCase())
+    if (!installation) {
+      throw new Error(`GitHub App is not installed on org/enterprise "${targetOrg}". Available: ${installations.map(i => i.login).join(', ')}`)
+    }
+  } else if (installations.length === 1) {
+    installation = installations[0]
+  } else if (installations.length === 0) {
+    throw new Error('GitHub App has no installations. Install the App on your org first.')
+  } else {
+    throw new Error('Multiple GitHub App installations found. Set NUXT_PUBLIC_GITHUB_ORG or navigate to a specific org URL.')
   }
 
-  cachedToken = await generateInstallationToken(githubAppId, githubAppPrivateKey, githubAppInstallationId)
-  return cachedToken.token
+  return getTokenForInstallation(githubAppId, githubAppPrivateKey, installation.id)
 }
 
 export async function buildGitHubAppHeaders(event: H3Event<EventHandlerRequest>): Promise<Headers> {

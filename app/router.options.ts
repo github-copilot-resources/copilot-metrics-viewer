@@ -27,6 +27,11 @@ export default {
             name: 'ent-team',
             path: '/enterprises/:ent/teams/:team',
             component: () => import('~/pages/index.vue')
+        },
+        {
+            name: 'select-org',
+            path: '/select-org',
+            component: () => import('~/pages/select-org.vue')
         }
     ],
 } satisfies RouterConfig
