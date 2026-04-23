@@ -8,10 +8,12 @@ interface GitHubInstallationsResponse {
  * Returns the list of orgs/accounts the app can access, filtered to what the
  * current user is allowed to see.
  *
- * Priority order:
+ * For public/marketplace apps (NUXT_PUBLIC_IS_PUBLIC_APP=true):
  *   1. GitHub OAuth session token → call /user/installations (user-filtered)
  *   2. session.organizations (pre-populated at GitHub login)
- *   3. App JWT → list ALL installations (fallback for non-GitHub OAuth users)
+ *
+ * For private/internal apps:
+ *   - App JWT → list ALL installations (typically just 1–2 orgs)
  *
  * Protected: requires an active session when requireAuth / usingGithubAuth / isPublicApp is set.
  */
@@ -27,49 +29,52 @@ export default defineEventHandler(async (event) => {
 
   setResponseHeaders(event, { 'Cache-Control': 'private, no-store' })
 
-  // Priority 1: User has a GitHub OAuth token — fetch only their accessible installations.
-  // This is the correct path for marketplace/public apps so users only see their own orgs.
-  const githubToken = (session?.secure as { tokens?: { access_token?: string } } | undefined)
-    ?.tokens?.access_token
-  if (githubToken) {
-    try {
-      const response = await $fetch<GitHubInstallationsResponse>(
-        'https://api.github.com/user/installations',
-        {
-          headers: {
-            Authorization: `token ${githubToken}`,
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
+  // Public/marketplace apps: filter to the authenticated user's accessible installations.
+  // Without this, listing via App JWT would return every org that installed the app.
+  if (config.public.isPublicApp) {
+    // Priority 1: GitHub OAuth token in session — call /user/installations for a live, user-scoped list.
+    const githubToken = (session?.secure as { tokens?: { access_token?: string } } | undefined)
+      ?.tokens?.access_token
+    if (githubToken) {
+      try {
+        const response = await $fetch<GitHubInstallationsResponse>(
+          'https://api.github.com/user/installations',
+          {
+            headers: {
+              Authorization: `token ${githubToken}`,
+              Accept: 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
           }
+        )
+        return {
+          installations: response.installations.map(i => ({
+            login: i.account.login,
+            type: i.account.type as 'Organization' | 'User'
+          }))
         }
-      )
-      const installations: Array<Pick<AppInstallation, 'login' | 'type'>> =
-        response.installations.map(i => ({
-          login: i.account.login,
-          type: i.account.type as 'Organization' | 'User'
-        }))
-      return { installations }
-    } catch {
-      // Fall through to next strategy
+      } catch {
+        // Fall through to session cache
+      }
     }
-  }
 
-  // Priority 2: Organizations pre-populated in session at login (GitHub OAuth path).
-  const sessionOrgs: string[] = (session as { organizations?: string[] }).organizations ?? []
-  if (sessionOrgs.length > 0) {
+    // Priority 2: Organizations pre-populated in session at GitHub login.
+    const sessionOrgs: string[] = (session as { organizations?: string[] }).organizations ?? []
     return {
       installations: sessionOrgs.map(login => ({ login, type: 'Organization' as const }))
     }
   }
 
-  // Priority 3: App JWT — lists ALL installations.
-  // Used for non-GitHub OAuth users (Google, Microsoft, etc.) or unauthenticated mode.
-  // Admins should set NUXT_PUBLIC_GITHUB_ORG to restrict to a single org in this case.
+  // Private/internal app: list all installations via App JWT (small, known set).
   const appId = config.githubAppId || config.oauth?.github?.clientId || ''
   if (appId && config.githubAppPrivateKey) {
     const installations = await listAppInstallations(appId, config.githubAppPrivateKey)
     return { installations: installations.map(i => ({ login: i.login, type: i.type })) }
   }
 
-  return { installations: [] }
+  // GitHub OAuth without App key — use orgs stored in session at login.
+  const sessionOrgs: string[] = (session as { organizations?: string[] }).organizations ?? []
+  return {
+    installations: sessionOrgs.map(login => ({ login, type: 'Organization' as const }))
+  }
 })
