@@ -26,9 +26,8 @@ export default defineOAuthGitHubEventHandler({
       }
     })
 
-    // Pre-populate user's accessible orgs in session for the org picker.
-    // /user/installations returns only installations the authenticated user can access,
-    // which correctly filters marketplace apps to the user's own orgs.
+    // Decide where to redirect. When no default org is configured, call /user/installations
+    // to find which orgs the user can access and redirect accordingly.
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
     if (!defaultOrg) {
       try {
@@ -41,7 +40,6 @@ export default defineOAuthGitHubEventHandler({
         }) as { installations: Array<{ account: { login: string } }> }
 
         const organizations = installationsResponse.installations.map(i => i.account.login)
-        await setUserSession(event, { organizations })
 
         if (organizations.length === 0) {
           return sendRedirect(event, '/?error=No+organizations+found.+Install+the+GitHub+App+on+your+org+first.')
