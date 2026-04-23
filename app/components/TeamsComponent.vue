@@ -28,6 +28,42 @@
 
     <!-- Team selector -->
     <v-card variant="outlined" class="mx-4 mb-2 pa-3" density="compact">
+      <!-- Organization dropdown (Full GHEC enterprises only) -->
+      <div v-if="isFullGhec" class="d-flex align-center gap-2 mb-2">
+        <v-autocomplete
+          v-model="selectedOrg"
+          :items="availableOrgs"
+          item-value="login"
+          item-title="name"
+          label="Filter by organization (optional)"
+          clearable
+          variant="outlined"
+          density="compact"
+          :theme="isDark ? 'dark' : 'light'"
+          :menu-props="{
+            contentClass: 'orgs-select-menu',
+            maxHeight: 360,
+            scrim: false,
+            offset: 8
+          }"
+          hint="Select an org to browse its teams, or leave blank for enterprise-level teams"
+          persistent-hint
+          class="flex-grow-1"
+          prepend-inner-icon="mdi-domain"
+        >
+          <template #item="{ props, item }">
+            <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.login" />
+          </template>
+        </v-autocomplete>
+        <v-btn
+          v-if="selectedOrg"
+          :to="`/orgs/${selectedOrg}`"
+          variant="outlined"
+          size="small"
+          append-icon="mdi-open-in-new"
+          class="flex-shrink-0"
+        >View Org</v-btn>
+      </div>
       <div class="d-flex align-center gap-2">
         <v-autocomplete
           v-model="selectedTeams"
@@ -459,6 +495,11 @@ interface Team {
   description?: string
 }
 
+interface EnterpriseOrg {
+  login: string
+  name: string
+}
+
 interface PerTeamData {
   slug: string
   metrics: Metrics[]
@@ -497,6 +538,11 @@ export default defineComponent({
     const availableTeams = ref<Team[]>([])
     const selectedTeams = ref<string[]>([])
     const chartColumns = ref<'1' | '2'>('2')
+
+    // ── Full GHEC org support ─────────────────────────────────────────────────
+    const isFullGhec = ref(false)
+    const availableOrgs = ref<EnterpriseOrg[]>([])
+    const selectedOrg = ref<string | null>(null)
 
     // Core per-team data (reactive so computed values update)
     const perTeamData = ref<PerTeamData[]>([])
@@ -558,9 +604,14 @@ export default defineComponent({
 
     const getTeamDetailUrl = (teamSlug: string) => {
       const config = useRuntimeConfig()
-      return config.public.scope === 'enterprise'
-        ? `/enterprises/${config.public.githubEnt}/teams/${teamSlug}`
-        : `/orgs/${config.public.githubOrg}/teams/${teamSlug}`
+      // For enterprise scope with a selected org, navigate to the org-level team page
+      if (scopeType.value === 'enterprise') {
+        if (selectedOrg.value) {
+          return `/orgs/${selectedOrg.value}/teams/${teamSlug}`
+        }
+        return `/enterprises/${config.public.githubEnt}/teams/${teamSlug}`
+      }
+      return `/orgs/${config.public.githubOrg}/teams/${teamSlug}`
     }
 
     // ── Language/editor aggregation helpers ───────────────────────────────────
@@ -840,6 +891,10 @@ export default defineComponent({
         const route = useRoute()
         const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
         options.githubTeam = slug
+        // Pass org override for Full GHEC org-level team membership lookup
+        if (selectedOrg.value && scopeType.value === 'enterprise') {
+          options.githubOrg = selectedOrg.value
+        }
         const params = options.toParams()
         const result = await $fetch<UserTotals[]>('/api/user-metrics', { params })
         singleTeamUserMetrics.value = Array.isArray(result) ? result : []
@@ -922,9 +977,28 @@ export default defineComponent({
     })
 
     // ── Data loading ──────────────────────────────────────────────────────────
-    const loadTeams = async () => {
+    const loadEnterpriseOrgs = async () => {
       const route = useRoute()
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+      if (scopeType.value !== 'enterprise') return
+      const params = options.toParams()
+      try {
+        const result = await $fetch<{ isFullGhec: boolean; orgs: EnterpriseOrg[] }>('/api/enterprise-orgs', { params })
+        isFullGhec.value = result.isFullGhec
+        availableOrgs.value = result.orgs
+      } catch {
+        isFullGhec.value = false
+        availableOrgs.value = []
+      }
+    }
+
+    const loadTeams = async (orgOverride?: string) => {
+      const route = useRoute()
+      const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+      // When an org is selected in enterprise context, list that org's teams
+      if (orgOverride) {
+        options.githubOrg = orgOverride
+      }
       const params = options.toParams()
       const teams = await $fetch<Team[]>('/api/teams', { params })
       availableTeams.value = teams
@@ -934,6 +1008,10 @@ export default defineComponent({
       const route = useRoute()
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
       options.githubTeam = teamSlug
+      // Pass org override for Full GHEC org-level team membership lookup
+      if (selectedOrg.value && scopeType.value === 'enterprise') {
+        options.githubOrg = selectedOrg.value
+      }
       const params = options.toParams()
       const response = await $fetch<MetricsApiResponse>('/api/metrics', { params })
       return {
@@ -1041,9 +1119,19 @@ export default defineComponent({
       }
     }
 
-    onMounted(async () => { await loadTeams() })
+    onMounted(async () => {
+      // For enterprise scope, detect Full GHEC and load orgs before teams
+      await loadEnterpriseOrgs()
+      await loadTeams()
+    })
 
     watch(selectedTeams, async () => { await updateChartData() })
+
+    watch(selectedOrg, async (org) => {
+      // When org selection changes, clear team selection and reload teams for that org
+      selectedTeams.value = []
+      await loadTeams(org || undefined)
+    })
 
     watch(() => props.dateRange, async () => { await updateChartData() }, { deep: true })
 
@@ -1053,6 +1141,10 @@ export default defineComponent({
       selectedTeams,
       chartColumns,
       perTeamData,
+      // Full GHEC org support
+      isFullGhec,
+      availableOrgs,
+      selectedOrg,
       // modes
       singleTeamMode,
       comparisonMode,

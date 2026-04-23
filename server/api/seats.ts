@@ -48,6 +48,7 @@ export async function fetchAllTeamMembers(options: Options, headers: HeadersInit
   const members: TeamMember[] = [];
 
   // Build headers: add API version for enterprise team memberships
+  // (not needed when using org-based teams API, e.g. Full GHEC org teams)
   const fetchHeaders: Record<string, string> = {};
   if (headers instanceof Headers) {
     for (const [key, value] of headers.entries()) {
@@ -56,7 +57,7 @@ export async function fetchAllTeamMembers(options: Options, headers: HeadersInit
   } else if (typeof headers === 'object') {
     Object.assign(fetchHeaders, headers);
   }
-  if (options.scope === 'enterprise') {
+  if (options.scope === 'enterprise' && !options.githubOrg) {
     delete fetchHeaders['x-github-api-version'];
     fetchHeaders['X-GitHub-Api-Version'] = '2026-03-10';
   }

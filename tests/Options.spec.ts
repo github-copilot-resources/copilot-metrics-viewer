@@ -649,6 +649,38 @@ describe('Options', () => {
       
       expect(() => options.getTeamMembersApiUrl()).toThrow('Invalid scope: invalid-scope')
     })
+
+    test('enterprise scope with githubOrg uses org-based /members URL (Full GHEC org teams)', () => {
+      const options = new Options({
+        scope: 'enterprise',
+        githubEnt: 'test-ent',
+        githubOrg: 'test-org',
+        githubTeam: 'test-team'
+      })
+      
+      expect(options.getTeamMembersApiUrl()).toBe('https://api.github.com/orgs/test-org/teams/test-team/members')
+    })
+  })
+
+  describe('getTeamsApiUrl (Full GHEC org override)', () => {
+    test('enterprise scope with githubOrg uses org-based teams URL', () => {
+      const options = new Options({
+        scope: 'enterprise',
+        githubEnt: 'test-ent',
+        githubOrg: 'test-org'
+      })
+      
+      expect(options.getTeamsApiUrl()).toBe('https://api.github.com/orgs/test-org/teams')
+    })
+
+    test('enterprise scope without githubOrg uses enterprise teams URL', () => {
+      const options = new Options({
+        scope: 'enterprise',
+        githubEnt: 'test-ent'
+      })
+      
+      expect(options.getTeamsApiUrl()).toBe('https://api.github.com/enterprises/test-ent/teams')
+    })
   })
 
   describe('getMockDataPath', () => {
