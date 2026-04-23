@@ -65,7 +65,11 @@ async function fetchFromNewApi(
   options: Options,
   headers: Headers
 ): Promise<MetricsDataResult> {
-  const identifier = options.githubOrg || options.githubEnt || '';
+  // For enterprise scope the metrics source is always the enterprise (githubEnt),
+  // even when githubOrg is set (org is only used for team membership lookups).
+  const identifier = options.scope === 'enterprise'
+    ? (options.githubEnt || '')
+    : (options.githubOrg || options.githubEnt || '');
 
   const request: MetricsReportRequest = {
     scope: options.scope!,
@@ -131,9 +135,11 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     return sortMetricsDataResult({ metrics, reportData: report.day_totals });
   }
 
-  const identifier = options.githubOrg || options.githubEnt || '';
-
-  // 2. Historical mode — DB is the source of truth, sync on miss
+  // For enterprise scope the metrics source is always the enterprise (githubEnt),
+  // even when githubOrg is set (org is only used for team membership lookups).
+  const identifier = options.scope === 'enterprise'
+    ? (options.githubEnt || '')
+    : (options.githubOrg || options.githubEnt || '');
   if (isStorageModeEnabled()) {
     // Default to last 28 days if no date range specified
     const endDate = options.until || new Date().toISOString().split('T')[0];

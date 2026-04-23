@@ -330,7 +330,9 @@ export class Options {
     }
     
     /**
-     * Get the Teams API URL based on scope and configuration
+     * Get the Teams API URL based on scope and configuration.
+     * For enterprise scope with a githubOrg override, returns the org teams URL
+     * to support browsing org-level teams in Full GHEC enterprises.
      */
     getTeamsApiUrl(): string {
         const baseUrl = 'https://api.github.com';
@@ -346,6 +348,10 @@ export class Options {
                 if (!this.githubEnt) {
                     throw new Error('GitHub enterprise must be set for enterprise scope');
                 }
+                // When an org is selected (Full GHEC), list that org's teams
+                if (this.githubOrg) {
+                    return `${baseUrl}/orgs/${this.githubOrg}/teams`;
+                }
                 return `${baseUrl}/enterprises/${this.githubEnt}/teams`;
 
             default:
@@ -354,7 +360,9 @@ export class Options {
     }
 
     /**
-     * Get the Teams API URL based on scope and configuration
+     * Get the team members API URL based on scope and configuration.
+     * For enterprise scope with a githubOrg override, uses the org-level members
+     * endpoint to support org-level teams in Full GHEC enterprises.
      */
     getTeamMembersApiUrl(): string {
         const baseUrl = 'https://api.github.com';
@@ -369,6 +377,10 @@ export class Options {
             case 'enterprise':
                 if (!this.githubEnt || !this.githubTeam) {
                     throw new Error('GitHub enterprise and team must be set for enterprise scope');
+                }
+                // When an org is selected (Full GHEC), use org-based team members endpoint
+                if (this.githubOrg) {
+                    return `${baseUrl}/orgs/${this.githubOrg}/teams/${this.githubTeam}/members`;
                 }
                 return `${baseUrl}/enterprises/${this.githubEnt}/teams/${this.githubTeam}/memberships`;
 

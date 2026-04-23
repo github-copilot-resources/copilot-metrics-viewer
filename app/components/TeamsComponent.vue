@@ -38,7 +38,49 @@
 
     <!-- Team selector -->
     <v-card variant="outlined" class="mx-4 mb-2 pa-3" density="compact">
-      <div class="d-flex align-center gap-2">
+      <!-- Organization dropdown (enterprise scope) -->
+      <div v-if="scopeType === 'enterprise'" class="mb-2">
+        <v-autocomplete
+          v-model="selectedOrg"
+          :items="availableOrgs"
+          item-value="login"
+          item-title="name"
+          label="Filter by organization (optional)"
+          clearable
+          variant="outlined"
+          density="compact"
+          :theme="isDark ? 'dark' : 'light'"
+          :menu-props="{
+            contentClass: 'orgs-select-menu',
+            maxHeight: 360,
+            scrim: false,
+            offset: 8
+          }"
+          :hint="isFullGhec ? 'Select an org to browse its teams, or leave blank for enterprise-level teams' : 'No organizations found for this enterprise'"
+          persistent-hint
+          :disabled="!isFullGhec"
+          prepend-inner-icon="mdi-domain"
+        >
+          <template #item="{ props, item }">
+            <v-list-item v-bind="props" :title="item.raw.name" :subtitle="item.raw.login" />
+          </template>
+          <template v-if="selectedOrg" #append-inner>
+            <v-tooltip text="Switch to org view" location="top">
+              <template #activator="{ props: tooltipProps }">
+                <v-btn
+                  v-bind="tooltipProps"
+                  :to="`/orgs/${selectedOrg}`"
+                  icon="mdi-open-in-new"
+                  variant="text"
+                  size="small"
+                  density="compact"
+                />
+              </template>
+            </v-tooltip>
+          </template>
+        </v-autocomplete>
+      </div>
+      <div class="d-flex align-start gap-2">
         <v-autocomplete
           v-model="selectedTeams"
           :items="availableTeams"
@@ -69,33 +111,52 @@
             <v-chip v-bind="props" class="select-chip" :text="item.raw.name" closable />
           </template>
         </v-autocomplete>
-        <div class="d-flex align-center gap-2 flex-shrink-0">
+        <div class="d-flex align-center gap-4 flex-shrink-0 mt-1 ml-2">
           <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
           <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
-          <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" @click="clearSelection">Clear All</v-btn>
+          <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" class="ml-2" @click="clearSelection">Clear All</v-btn>
         </div>
       </div>
     </v-card>
 
     <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE -->
     <div v-if="singleTeamMode">
-      <!-- Team header -->
-      <v-card variant="outlined" class="mx-4 mb-1 pa-3" density="compact">
-        <div class="d-flex align-center gap-2 text-body-2">
-          <v-icon color="primary">mdi-account-group</v-icon>
-          <div style="flex: 1;">
-            <div class="font-weight-bold text-body-1">{{ singleTeamName }}</div>
-            <div class="text-medium-emphasis">{{ dateRangeDesc }}</div>
-          </div>
-          <v-btn
-            variant="outlined"
-            size="small"
-            color="error"
-            prepend-icon="mdi-close"
-            @click="selectedTeams = []"
-          >Deselect</v-btn>
-        </div>
-      </v-card>
+      <!-- Team header — same compact card as comparison mode -->
+      <v-container fluid class="px-4 pb-0">
+        <v-row dense>
+          <v-col v-for="card in comparisonSummaryCards" :key="card.teamName" cols="12" sm="6" md="4" lg="3">
+            <v-card elevation="3" class="pa-3" :style="`border-left: 4px solid ${card.color.border}`">
+              <div class="d-flex align-center gap-2 mb-1">
+                <v-icon size="18" :color="card.color.border">mdi-account-group</v-icon>
+                <span class="text-subtitle-2 font-weight-medium">{{ card.teamName }}</span>
+                <v-spacer />
+                <v-btn
+                  variant="text"
+                  size="x-small"
+                  icon
+                  title="Deselect team"
+                  @click="selectedTeams = []"
+                >
+                  <v-icon size="14">mdi-close</v-icon>
+                </v-btn>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Active Users</span>
+                <span class="font-weight-medium">{{ card.activeUsers }}</span>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Acceptance Rate</span>
+                <span class="font-weight-medium">{{ card.acceptanceRate }}%</span>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Interactions</span>
+                <span class="font-weight-medium">{{ card.totalInteractions.toLocaleString() }}</span>
+              </div>
+              <div class="text-caption text-medium-emphasis mt-1">{{ dateRangeDesc }}</div>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
 
       <!-- KPI Tiles -->
       <div class="tiles-container">
@@ -120,8 +181,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small"><v-icon size="18">mdi-view-stream</v-icon></v-btn>
-            <v-btn value="2" size="small"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
 
@@ -281,8 +343,8 @@
     <!-- ═══════════════════════════════════════════════ COMPARISON MODE (2+ teams) -->
     <div v-else-if="comparisonMode">
       <!-- Per-team summary cards -->
-      <v-container>
-        <v-row>
+      <v-container fluid class="px-4 pb-0">
+        <v-row dense>
           <v-col v-for="card in comparisonSummaryCards" :key="card.teamName" cols="12" sm="6" md="4" lg="3">
             <v-card elevation="3" class="pa-3" :style="`border-left: 4px solid ${card.color.border}`">
               <div class="d-flex align-center gap-2 mb-1">
@@ -320,8 +382,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small"><v-icon size="18">mdi-view-stream</v-icon></v-btn>
-            <v-btn value="2" size="small"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
 
@@ -475,6 +538,11 @@ interface Team {
   description?: string
 }
 
+interface EnterpriseOrg {
+  login: string
+  name: string
+}
+
 interface PerTeamData {
   slug: string
   metrics: Metrics[]
@@ -512,7 +580,12 @@ export default defineComponent({
 
     const availableTeams = ref<Team[]>([])
     const selectedTeams = ref<string[]>([])
-    const chartColumns = ref<'1' | '2'>('2')
+    const chartColumns = ref<'1' | '2' | 'full'>('2')
+
+    // ── Full GHEC org support ─────────────────────────────────────────────────
+    const isFullGhec = ref(false)
+    const availableOrgs = ref<EnterpriseOrg[]>([])
+    const selectedOrg = ref<string | null>(null)
 
     // Core per-team data (reactive so computed values update)
     const perTeamData = ref<PerTeamData[]>([])
@@ -574,9 +647,14 @@ export default defineComponent({
 
     const getTeamDetailUrl = (teamSlug: string) => {
       const config = useRuntimeConfig()
-      return config.public.scope === 'enterprise'
-        ? `/enterprises/${config.public.githubEnt}/teams/${teamSlug}`
-        : `/orgs/${config.public.githubOrg}/teams/${teamSlug}`
+      // For enterprise scope with a selected org, navigate to the org-level team page
+      if (scopeType.value === 'enterprise') {
+        if (selectedOrg.value) {
+          return `/orgs/${selectedOrg.value}/teams/${teamSlug}`
+        }
+        return `/enterprises/${config.public.githubEnt}/teams/${teamSlug}`
+      }
+      return `/orgs/${config.public.githubOrg}/teams/${teamSlug}`
     }
 
     // ── Language/editor aggregation helpers ───────────────────────────────────
@@ -859,6 +937,10 @@ export default defineComponent({
         const route = useRoute()
         const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
         options.githubTeam = slug
+        // Pass org override for Full GHEC org-level team membership lookup
+        if (selectedOrg.value && scopeType.value === 'enterprise') {
+          options.githubOrg = selectedOrg.value
+        }
         const params = options.toParams()
         const result = await $fetch<UserTotals[]>('/api/user-metrics', { params })
         singleTeamUserMetrics.value = Array.isArray(result) ? result : []
@@ -941,9 +1023,28 @@ export default defineComponent({
     })
 
     // ── Data loading ──────────────────────────────────────────────────────────
-    const loadTeams = async () => {
+    const loadEnterpriseOrgs = async () => {
       const route = useRoute()
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+      if (scopeType.value !== 'enterprise') return
+      const params = options.toParams()
+      try {
+        const result = await $fetch<{ isFullGhec: boolean; orgs: EnterpriseOrg[] }>('/api/enterprise-orgs', { params })
+        isFullGhec.value = result.isFullGhec
+        availableOrgs.value = result.orgs
+      } catch {
+        isFullGhec.value = false
+        availableOrgs.value = []
+      }
+    }
+
+    const loadTeams = async (orgOverride?: string) => {
+      const route = useRoute()
+      const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+      // When an org is selected in enterprise context, list that org's teams
+      if (orgOverride) {
+        options.githubOrg = orgOverride
+      }
       const params = options.toParams()
       const teams = await $fetch<Team[]>('/api/teams', { params })
       availableTeams.value = teams
@@ -953,6 +1054,10 @@ export default defineComponent({
       const route = useRoute()
       const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
       options.githubTeam = teamSlug
+      // Pass org override for Full GHEC org-level team membership lookup
+      if (selectedOrg.value && scopeType.value === 'enterprise') {
+        options.githubOrg = selectedOrg.value
+      }
       const params = options.toParams()
       const response = await $fetch<MetricsApiResponse>('/api/metrics', { params })
       return {
@@ -1066,9 +1171,23 @@ export default defineComponent({
       }
     }
 
-    onMounted(async () => { await loadTeams() })
+    onMounted(async () => {
+      // For enterprise scope, detect Full GHEC and load orgs before teams
+      await loadEnterpriseOrgs()
+      await loadTeams()
+    })
 
     watch(selectedTeams, async () => { await updateChartData() })
+
+    watch(selectedOrg, async (org) => {
+      // When org selection changes, clear team selection and reload teams for that org
+      selectedTeams.value = []
+      try {
+        await loadTeams(org || undefined)
+      } catch {
+        availableTeams.value = []
+      }
+    })
 
     watch(() => props.dateRange, async () => { await updateChartData() }, { deep: true })
 
@@ -1079,6 +1198,10 @@ export default defineComponent({
       isLoading,
       chartColumns,
       perTeamData,
+      // Full GHEC org support
+      isFullGhec,
+      availableOrgs,
+      selectedOrg,
       // modes
       singleTeamMode,
       comparisonMode,
