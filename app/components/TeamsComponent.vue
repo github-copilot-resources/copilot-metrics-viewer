@@ -80,7 +80,7 @@
           </template>
         </v-autocomplete>
       </div>
-      <div class="d-flex align-center gap-2">
+      <div class="d-flex align-start gap-2">
         <v-autocomplete
           v-model="selectedTeams"
           :items="availableTeams"
@@ -111,7 +111,7 @@
             <v-chip v-bind="props" class="select-chip" :text="item.raw.name" closable />
           </template>
         </v-autocomplete>
-        <div class="d-flex align-center gap-2 flex-shrink-0">
+        <div class="d-flex align-center gap-2 flex-shrink-0 mt-1">
           <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
           <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
           <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" @click="clearSelection">Clear All</v-btn>
