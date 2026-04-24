@@ -40,6 +40,25 @@ const setupAction = computed(() => route.query.setup_action as string | undefine
             </p>
 
             <v-alert
+              type="warning"
+              variant="tonal"
+              density="compact"
+              class="mb-3"
+              icon="mdi-shield-account-outline"
+            >
+              Metrics are only visible to users with the
+              <strong>
+                <a
+                  href="https://docs.github.com/en/rest/copilot/copilot-metrics?apiVersion=2022-11-28#about-copilot-metrics"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-warning"
+                >Copilot metrics access</a>
+              </strong>
+              permission — typically organization owners and billing managers.
+            </v-alert>
+
+            <v-alert
               type="info"
               variant="tonal"
               density="compact"
