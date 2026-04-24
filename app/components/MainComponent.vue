@@ -482,7 +482,7 @@ export default defineNuxtComponent({
     const config = useRuntimeConfig();
 
     // requireAuth: new NUXT_PUBLIC_REQUIRE_AUTH flag; falls back to usingGithubAuth for backwards compat
-    const isAuthRequired = computed(() => config.public.requireAuth || config.public.usingGithubAuth);
+    const isAuthRequired = computed(() => config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp);
     const showLogoutButton = computed(() => isAuthRequired.value && loggedIn.value);
     const showAuthInfoDialog = ref(false);
 
@@ -497,7 +497,7 @@ export default defineNuxtComponent({
     // Active providers derived from NUXT_PUBLIC_AUTH_PROVIDERS; falls back to "github" when usingGithubAuth
     const activeProviders = computed(() => {
       const raw = config.public.authProviders
-        || (config.public.usingGithubAuth ? 'github' : '');
+        || ((config.public.usingGithubAuth || config.public.isPublicApp) ? 'github' : '');
       return raw
         .split(',')
         .map(s => s.trim().toLowerCase())

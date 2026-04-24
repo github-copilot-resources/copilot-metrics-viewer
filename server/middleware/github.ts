@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // When OAuth mode is enabled, require a valid user session for all API calls
-    const requireAuth = config.public.requireAuth || config.public.usingGithubAuth;
+    const requireAuth = config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp;
     if (requireAuth) {
         const session = await getUserSession(event).catch(() => null);
         if (!session?.user) {
