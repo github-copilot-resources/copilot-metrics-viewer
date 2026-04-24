@@ -3,7 +3,6 @@ import './assets/global.css'
 
 const route = useRoute()
 const setupAction = computed(() => route.query.setup_action as string | undefined)
-const origin = useRequestURL().origin
 </script>
 
 <template>
@@ -25,7 +24,7 @@ const origin = useRequestURL().origin
               <span v-else>
                 GitHub Copilot Metrics Viewer is now installed on your organization.
               </span>
-              Head to your <a :href="origin">dashboard</a> to start exploring Copilot usage data.
+              Head to your <a href="/">dashboard</a> to start exploring Copilot usage data.
             </p>
 
             <v-divider class="mb-4" />
