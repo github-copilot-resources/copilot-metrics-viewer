@@ -1,0 +1,78 @@
+name: "Copilot Setup Steps"
+
+# Automatically run the setup steps when they are changed to allow for easy validation, and
+# allow manual testing through the repository's "Actions" tab
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # The job MUST be called `copilot-setup-steps` or it will not be picked up by Copilot.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    # Set the permissions to the lowest permissions possible needed for your steps.
+    # Copilot will be given its own token for its operations.
+    permissions:
+      contents: read
+
+    # PostgreSQL for historical mode and storage pipeline tests.
+    # Copilot agents working on DB-related features need a live DB to run
+    # the @seed / @storage Playwright tests and unit tests that use pg-storage.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: copilot_metrics
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the app
+        run: npm run build
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      # Run unit tests so the agent can verify logic changes quickly.
+      # Uses mocked data — no GitHub token required.
+      - name: Run unit tests
+        run: npm test
+        env:
+          NUXT_SESSION_PASSWORD: copilot-agent-setup-session-password-32chars
+          NUXT_PUBLIC_IS_DATA_MOCKED: "true"
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/copilot_metrics
+          ENABLE_HISTORICAL_MODE: "true"
+
+      # Run Playwright tests (mocked, no DB) for UI / component validation.
+      - name: Run Playwright tests (mock mode)
+        run: >-
+          CI=true
+          NUXT_SESSION_PASSWORD=copilot-agent-setup-session-password-32chars
+          NUXT_PUBLIC_GITHUB_ORG=octodemo
+          NUXT_PUBLIC_IS_DATA_MOCKED=true
+          ENABLE_HISTORICAL_MODE=false
+          RUN_COMMAND='npm run preview'
+          npx playwright test --grep-invert "@seed|@storage"

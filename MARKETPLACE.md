@@ -40,6 +40,8 @@ Copilot Metrics Viewer connects to the GitHub Copilot Usage Metrics API and pres
 - Copilot Metrics: Read-only
 - Copilot Seat Management: Read-only
 
+> **Note for the hosted app (copilot-metrics.net):** All API calls are made using the logged-in user's own GitHub credentials — the app does not store, process, or transmit your Copilot data. However, because the app uses GitHub App OAuth, GitHub enforces the intersection of the App's permissions and the user's own access. The Copilot Metrics and Copilot Seat Management permissions above are required so that user tokens can reach those endpoints. Members: Read is used for organization auto-detection at login. Users must also have Copilot metrics access in their org to view data.
+
 **Authentication options:**
 - GitHub App OAuth (recommended) — verifies user permissions
 - Fine-grained PAT — server-side token

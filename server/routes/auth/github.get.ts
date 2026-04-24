@@ -1,15 +1,22 @@
-import type FetchError from 'ofetch';
-
 export default defineOAuthGitHubEventHandler({
   config: {
-    scope: process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE ? process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE.split(',') : undefined,
+    // Default scopes: read:user for profile, read:org for org membership (used by org picker).
+    // Override via NUXT_OAUTH_GITHUB_CLIENT_SCOPE (comma-separated) when needed.
+    scope: process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE
+      ? process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE.split(',')
+      : ['read:user'],
   },
   async onSuccess(event, { user, tokens }) {
     const config = useRuntimeConfig(event);
-    const logger = console;
+
+    // Authorize before creating a session
+    if (!isUserAuthorized(event, { login: user.login, email: user.email })) {
+      throw createError({ statusCode: 403, statusMessage: 'Access denied' })
+    }
 
     await setUserSession(event, {
       user: {
+        login: user.login,
         githubId: user.id,
         name: user.name,
         avatarUrl: user.avatar_url
@@ -18,41 +25,48 @@ export default defineOAuthGitHubEventHandler({
         tokens,
         expires_at: new Date(Date.now() + tokens.expires_in * 1000)
       }
-    }
-    )
+    })
 
-    // need to check if this is public app (no default org/team/ent)
+    // If a default org/ent is pinned via env var, go straight to the home page.
+    const defaultOrg = config.public.githubOrg || config.public.githubEnt
+    if (defaultOrg) {
+      return sendRedirect(event, '/')
+    }
+
+    // Public app: enumerate this user's accessible installations using the fresh token.
+    // /user/installations is scoped to the specific GitHub App (matched by client ID),
+    // so it only returns orgs where THIS app is installed AND the user has access.
     if (config.public.isPublicApp) {
       try {
-        const installationsResponse = await $fetch('https://api.github.com/user/installations', {
-          headers: {
-            Authorization: `token ${tokens.access_token}`,
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
+        const data = await $fetch<{ installations: Array<{ account: { login: string; type: string } }> }>(
+          'https://api.github.com/user/installations?per_page=100',
+          {
+            headers: {
+              Authorization: `token ${tokens.access_token}`,
+              Accept: 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
           }
-        }) as { installations: Array<{ account: { login: string } }> };
+        )
+        const organizations = (data.installations || []).map(i => ({
+          login: i.account.login,
+          type: i.account.type
+        }))
 
-        const installations = installationsResponse.installations;
-        const organizations = installations.map(installation => installation.account.login);
+        // Store in session so select-org page can read it without another API call.
+        await setUserSession(event, { organizations })
 
-        await setUserSession(event, {
-          organizations
-        });
-        logger.info('User organizations:', organizations);
-
-        if (organizations.length === 0) {
-          console.error('No organizations found for the user.');
-          return sendRedirect(event, '/?error=No organizations found for the user.');
+        // Single org: skip the picker, go straight to the dashboard.
+        if (organizations.length === 1) {
+          return sendRedirect(event, `/orgs/${organizations[0].login}`)
         }
-
-        return sendRedirect(event, `/orgs/${organizations[0]}`);
-      }
-      catch (error: FetchError) {
-        logger.error('Error fetching installations:', error);
+      } catch (err) {
+        console.error('Error fetching installations:', err)
+        // Fall through to /select-org which shows a text input fallback.
       }
     }
 
-    return sendRedirect(event, '/')
+    return sendRedirect(event, '/select-org')
   },
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {

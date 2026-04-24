@@ -44,19 +44,20 @@ Review available [Nuxt Deployment Options](https://nuxt.com/deploy).
 >[!WARNING]
 > Copilot Metrics Viewer requires a backend, hence it cannot be deployed as a purely static web app.
 
-## Authentication with GitHub
+## Authentication
 
-The Metrics Viewer can be integrated with GitHub application authentication, which authenticates the user and verifies their permissions to view the metrics. This option is recommended since it doesn't use Personal Access Tokens. The downside of using a GitHub application is that it can only authorize users to view metrics at the organization level (no support for Enterprise).
+The Metrics Viewer supports two modes:
 
-For Enterprise level authentication review [Github OAuth Apps](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps).
+- **PAT mode (default)**: A GitHub Personal Access Token is stored in the backend. Users access the app without signing in. The app renders metrics fetched using the PAT. No user authentication happens.
+- **OAuth mode**: Users must sign in through an identity provider before accessing the dashboard. The app supports GitHub, Google, Microsoft Entra ID, Auth0, and Keycloak — configured entirely by environment variables.
 
-With a Personal Access Token, user credentials are not verified, and the application simply renders Copilot metrics fetched using the PAT stored in the backend.
+See the [Authentication](#authentication-1) reference section for setup details.
 
-## Authentication for Copilot Metrics Viewer
+## Platform security for Azure
 
-By default Azure Deployments deploy a web app available on the public Internet without authentication (unless GitHub app is used).
+By default Azure Deployments deploy a web app available on the public Internet without authentication (unless OAuth is configured).
 
-Application can be easily secured in azure using built-in features like Authentication settings on ACA/AppService (EasyAuth on Azure). Azure Container Apps and App Services allow for adding IP restrictions on ingress. Both can also be deployed using private networking architectures. 
+Application can be easily secured in Azure using built-in features like Authentication settings on ACA/AppService (EasyAuth on Azure). Azure Container Apps and App Services allow for adding IP restrictions on ingress. Both can also be deployed using private networking architectures.
 
 Options below provide most basic and cost effective ways of hosting copilot-metrics-viewer.
 
@@ -339,7 +340,7 @@ curl -X POST http://localhost:3000/api/admin/sync \
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `NUXT_GITHUB_TOKEN` | GitHub PAT with Copilot metrics permission | Yes (unless OAuth) |
+| `NUXT_GITHUB_TOKEN` | GitHub PAT with Copilot metrics permission | Yes (PAT mode) |
 | `NUXT_PUBLIC_SCOPE` | `organization` or `enterprise` (legacy `team-organization`/`team-enterprise` have been removed; existing values are auto-normalized) | Yes |
 | `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
 | `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise scope |
@@ -348,37 +349,245 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |
 | `SYNC_ENABLED` | `true` for sync service, `false` for web app | Historical mode only |
 | `SYNC_DAYS_BACK` | Days to sync (default: 1 for daily, 28 for bulk) | Sync only |
-| `NUXT_PUBLIC_USING_GITHUB_AUTH` | `true` to enable GitHub OAuth | Optional |
-| `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub App client ID | For OAuth |
-| `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub App client secret | For OAuth |
+| `NUXT_PUBLIC_AUTH_PROVIDERS` | Comma-separated active providers: `github`, `google`, `microsoft`, `auth0`, `keycloak` — setting this enables authentication | OAuth mode |
+| `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub App client ID | GitHub OAuth |
+| `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub App client secret | GitHub OAuth |
+| `NUXT_OAUTH_GOOGLE_CLIENT_ID` | Google OAuth client ID | Google OAuth |
+| `NUXT_OAUTH_GOOGLE_CLIENT_SECRET` | Google OAuth client secret | Google OAuth |
+| `NUXT_OAUTH_MICROSOFT_CLIENT_ID` | Microsoft app client ID | Microsoft OAuth |
+| `NUXT_OAUTH_MICROSOFT_CLIENT_SECRET` | Microsoft app client secret | Microsoft OAuth |
+| `NUXT_OAUTH_MICROSOFT_TENANT` | Azure AD tenant ID (restricts to your org) | Microsoft OAuth |
+| `NUXT_OAUTH_AUTH0_CLIENT_ID` | Auth0 app client ID | Auth0 OAuth |
+| `NUXT_OAUTH_AUTH0_CLIENT_SECRET` | Auth0 app client secret | Auth0 OAuth |
+| `NUXT_OAUTH_AUTH0_DOMAIN` | Auth0 tenant domain, e.g. `company.auth0.com` | Auth0 OAuth |
+| `NUXT_OAUTH_KEYCLOAK_CLIENT_ID` | Keycloak client ID | Keycloak OAuth |
+| `NUXT_OAUTH_KEYCLOAK_CLIENT_SECRET` | Keycloak client secret | Keycloak OAuth |
+| `NUXT_OAUTH_KEYCLOAK_SERVER_URL` | Keycloak server URL | Keycloak OAuth |
+| `NUXT_OAUTH_KEYCLOAK_REALM` | Keycloak realm name | Keycloak OAuth |
+| `NUXT_AUTHORIZED_USERS` | Comma-separated logins/emails allowed to log in (any provider) | Optional |
+| `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated email domains allowed, e.g. `company.com` | Optional |
 
-## Github App Registration
+## Authentication
 
-While it is possible to run the API Proxy without GitHub app registration and with a hardcoded token, it is not the recommended way.
+The app supports the following authentication modes, selected entirely by environment variables. No code changes are needed to switch providers.
 
-To register a new GitHub App, follow these steps:
+### PAT Mode (default — no user login)
+
+Set a GitHub Personal Access Token. All visitors see the dashboard without signing in.
+
+```bash
+NUXT_GITHUB_TOKEN=ghp_...
+```
+
+The PAT must have the following scopes:
+- `read:org` — read organization membership
+- `copilot` — read Copilot usage
+- `manage_billing:copilot` — read seat management (optional)
+
+In PAT mode the toolbar shows a shield icon (🛡) that explains available OAuth options when clicked.
+
+---
+
+### GitHub App Installation Token (no PAT required)
+
+A GitHub App installation token lets the backend fetch Copilot data **without any user-owned PAT**. This is the recommended credential for deployments where users authenticate via Google, Microsoft, Auth0, or Keycloak (i.e. non-GitHub identity providers).
+
+**Why use this instead of a PAT?**
+
+| | PAT | GitHub App installation token |
+|---|---|---|
+| Tied to a specific user account | ✅ yes | ❌ no — machine credential |
+| Revoked when user leaves org | ✅ yes | ❌ no |
+| Scoped to exactly the permissions you grant | limited | ✅ yes |
+| Works with Google/Microsoft/Auth0/Keycloak auth | ✅ yes (workaround) | ✅ yes (native) |
+
+**Create a GitHub App:**
+
+1. Go to your org → Settings → Developer Settings → GitHub Apps → **New GitHub App**
+2. Give it a name (e.g. `copilot-metrics-viewer`)
+3. Disable Webhook (uncheck "Active")
+4. Under **Repository permissions**: none required
+5. Under **Organization permissions**:
+   - `Copilot` → Read-only
+   - `Members` → Read-only (for seat analysis)
+6. Set "Where can this GitHub App be installed?" → **Only on this account**
+7. Click **Create GitHub App**, then note the **App ID** on the next page
+
+**Generate a private key:**
+
+1. On the App settings page, scroll to **Private keys** → **Generate a private key**
+2. A `.pem` file downloads automatically
+3. Flatten the key to a single-line env var:
+   ```bash
+   # macOS/Linux — prints the key with literal \n between lines
+   awk 'NF {printf "%s\\n", $0}' ~/Downloads/my-app.private-key.pem
+   ```
+4. Copy the output (starts with `-----BEGIN RSA PRIVATE KEY-----\n...`)
+
+**Install the App on your org:**
+
+1. On the App page, click **Install App** → choose your org → **Install**
+2. The installation ID is **auto-discovered** at runtime — no manual configuration needed.
+   If you have multiple installs, the app matches against `NUXT_PUBLIC_GITHUB_ORG`, or shows an org picker.
+
+**Configure env vars:**
+
+```bash
+NUXT_GITHUB_APP_ID=123456
+NUXT_GITHUB_APP_PRIVATE_KEY=-----BEGIN RSA PRIVATE KEY-----\nMIIEo...\n-----END RSA PRIVATE KEY-----
+```
+
+> [!NOTE]
+> When `NUXT_GITHUB_APP_ID` + `NUXT_GITHUB_APP_PRIVATE_KEY` are set, the app auto-discovers the installation for the configured org and uses an installation token for every data request. The `NUXT_GITHUB_TOKEN` PAT is ignored.
+>
+> If the App is installed on multiple orgs and no `NUXT_PUBLIC_GITHUB_ORG` is set, users are shown an org picker after login.
 
 > [!TIP]
-> Navigate using link: replace `<your_org>` with your organization name and open this link:
-[https://github.com/organizations/<your_org>/settings/apps](https://github.com/organizations/<your_org>/settings/apps)
+> Installation tokens are cached in memory for up to 55 minutes and automatically refreshed. You don't need to restart the server.
 
-or navigate using UI:
-1. Go to your organization's settings.
-2. Navigate to "Developer settings".
-3. Select "GitHub Apps".
-4. Click "New GitHub App".
+---
 
-1. Set a unique name.
-2. Provide a home page URL: your company URL or just `http://localhost`.
-3. Add a callback URL for `http://localhost:3000/auth/github`. (We'll add the real redirect URL after the application is deployed.)
-4. Uncheck the "Webhook -> Active" checkbox.
-5. Set the permissions:
-   - Select **Organization permissions**.
-   - Under **Members**, select **Access: Read-only**.
-   - Under **Copilot Metrics**, select **Access: Read-only**.
-   - Under **Copilot Seat Management**, select **Access: Read-only**.
-6. Click on 'Create GitHub App' and, in the following page, click on 'Generate a new client secret'.
-7. Note the `Client ID` and `Client Secret` (copy it to a secure location). This is required for the application to authenticate with GitHub.
-8. Install the app in the organization:
-   - Go to "Install App".
-   - Select your organization.
+### GitHub OAuth
+
+Requires a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps) or [OAuth App](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app).
+
+**Create a GitHub App:**
+
+1. Go to your org → Settings → Developer Settings → GitHub Apps → New GitHub App
+2. Set **Callback URL**: `https://<your-app>/auth/github`
+3. Uncheck **Active** under Webhooks
+4. Set permissions: Organization → Members (Read), Copilot Metrics (Read), Copilot Seat Management (Read)
+5. Generate a Client Secret
+
+**Environment variables:**
+
+```bash
+NUXT_PUBLIC_AUTH_PROVIDERS=github
+NUXT_OAUTH_GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxx
+NUXT_OAUTH_GITHUB_CLIENT_SECRET=xxxxxxxxxxxx
+```
+
+---
+
+### Google OAuth
+
+1. Open [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+2. Create an **OAuth 2.0 Client ID** (Web application)
+3. Add **Authorized redirect URI**: `https://<your-app>/auth/google`
+
+**Environment variables:**
+
+```bash
+NUXT_PUBLIC_AUTH_PROVIDERS=google
+NUXT_OAUTH_GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
+NUXT_OAUTH_GOOGLE_CLIENT_SECRET=xxxxxxxxxxxx
+
+# Optional: restrict to a specific email domain
+NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
+```
+
+---
+
+### Microsoft / Entra ID (Azure AD)
+
+1. Open [Azure Portal → App Registrations → New Registration](https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps)
+2. Set **Redirect URI**: `https://<your-app>/auth/microsoft`
+3. Under **Certificates & Secrets**, create a new client secret
+4. Note the **Application (client) ID**, **Directory (tenant) ID**, and secret value
+
+**Environment variables:**
+
+```bash
+NUXT_PUBLIC_AUTH_PROVIDERS=microsoft
+NUXT_OAUTH_MICROSOFT_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+NUXT_OAUTH_MICROSOFT_CLIENT_SECRET=xxxxxxxxxxxx
+# Restricts sign-in to your Azure AD tenant (strongly recommended):
+NUXT_OAUTH_MICROSOFT_TENANT=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+> [!TIP]
+> Setting `NUXT_OAUTH_MICROSOFT_TENANT` to your tenant ID automatically restricts access to users in your organization's Azure Active Directory — no need for `NUXT_AUTHORIZED_EMAIL_DOMAINS` in most cases.
+
+---
+
+### Auth0
+
+Auth0 acts as an identity aggregator. Configure it once and it can front GitHub, Google, Microsoft, LDAP, SAML, and many more identity sources. Useful for organizations that already use Auth0 or need fine-grained access control (MFA, connection restrictions, roles).
+
+1. Log in to the [Auth0 Dashboard](https://manage.auth0.com/)
+2. Create a new **Regular Web Application**
+3. Under **Settings → Allowed Callback URLs**, add: `https://<your-app>/auth/auth0`
+4. Note the **Domain**, **Client ID**, and **Client Secret**
+5. Configure allowed connections (GitHub, Google, etc.) under **Authentication → Social**
+
+**Environment variables:**
+
+```bash
+NUXT_PUBLIC_AUTH_PROVIDERS=auth0
+NUXT_OAUTH_AUTH0_CLIENT_ID=xxxxxxxxxxxx
+NUXT_OAUTH_AUTH0_CLIENT_SECRET=xxxxxxxxxxxx
+NUXT_OAUTH_AUTH0_DOMAIN=your-tenant.auth0.com
+
+# Optional: restrict by email domain (Auth0 often handles this natively via connection/org settings)
+NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
+```
+
+> [!TIP]
+> Auth0 organizations and connection-level policies can enforce access without requiring `NUXT_AUTHORIZED_*` env vars. Prefer Auth0's native controls for the cleanest setup.
+
+---
+
+### Keycloak
+
+Keycloak is a self-hosted, open-source identity and access management server. Ideal for air-gapped, regulated, or on-premises environments.
+
+1. Create a new **Realm** (or use an existing one)
+2. Create a **Client**: set **Client Protocol** to `openid-connect`, **Access Type** to `confidential`
+3. Set **Valid Redirect URIs**: `https://<your-app>/auth/keycloak`
+4. Under **Credentials**, note the **Secret**
+5. Optionally configure realm roles or groups to restrict access
+
+**Environment variables:**
+
+```bash
+NUXT_PUBLIC_AUTH_PROVIDERS=keycloak
+NUXT_OAUTH_KEYCLOAK_CLIENT_ID=copilot-metrics-viewer
+NUXT_OAUTH_KEYCLOAK_CLIENT_SECRET=xxxxxxxxxxxx
+NUXT_OAUTH_KEYCLOAK_SERVER_URL=https://keycloak.company.com
+NUXT_OAUTH_KEYCLOAK_REALM=your-realm
+
+# Optional: restrict to specific users or email domain
+NUXT_AUTHORIZED_USERS=alice,bob
+NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
+```
+
+---
+
+### Multiple Providers
+
+You can enable multiple OAuth providers simultaneously. Users will see a sign-in button for each:
+
+```bash
+NUXT_PUBLIC_AUTH_PROVIDERS=github,google
+NUXT_OAUTH_GITHUB_CLIENT_ID=...
+NUXT_OAUTH_GITHUB_CLIENT_SECRET=...
+NUXT_OAUTH_GOOGLE_CLIENT_ID=...
+NUXT_OAUTH_GOOGLE_CLIENT_SECRET=...
+```
+
+---
+
+### Authorization (user allowlists)
+
+After a user authenticates with any provider, you can optionally restrict which accounts are allowed:
+
+| Variable | Effect |
+|---|---|
+| `NUXT_AUTHORIZED_USERS` | Comma-separated logins or emails: `alice,bob@company.com` |
+| `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated domains: `company.com,corp.org` |
+
+When **both are empty** (default), all authenticated users are allowed. When either is set, a user must match at least one rule to gain access.
+
+> [!NOTE]
+> Provider-level restrictions (Microsoft tenant, Auth0 connections, Keycloak realm) are preferred over application-level allowlists — they deny access before reaching the app entirely.
+

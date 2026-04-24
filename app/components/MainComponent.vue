@@ -17,18 +17,60 @@
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
 
-      <!-- Conditionally render the logout button -->
+      <!-- Logged-in user avatar + logout (OAuth mode) -->
       <AuthState>
         <template #default="{ loggedIn, user }">
           <div v-show="loggedIn" class="user-info">
             Welcome,
             <v-avatar class="user-avatar">
-              <v-img :alt="user?.name" :src="user?.avatarUrl" />
+              <v-img v-if="user?.avatarUrl" :alt="user?.name" :src="user?.avatarUrl" />
+              <v-icon v-else>mdi-account-circle</v-icon>
             </v-avatar> {{ user?.name }}
           </div>
           <v-btn v-if="showLogoutButton && loggedIn" class="logout-button" @click="logout">Logout</v-btn>
         </template>
       </AuthState>
+
+      <!-- PAT-mode info button: visible when auth is not required -->
+      <v-btn v-if="!isAuthRequired" icon title="Authentication info" @click="showAuthInfoDialog = true">
+        <v-icon>mdi-shield-account</v-icon>
+      </v-btn>
+
+      <!-- Auth info dialog -->
+      <v-dialog v-model="showAuthInfoDialog" max-width="520">
+        <v-card>
+          <v-card-title class="d-flex align-center ga-2">
+            <v-icon color="primary">mdi-shield-account</v-icon>
+            Authentication Options
+          </v-card-title>
+          <v-card-text>
+            <p class="mb-3">
+              This app is currently running in <strong>PAT / anonymous mode</strong> — user authentication is
+              not required. You can enable OAuth login by configuring one of the supported providers:
+            </p>
+            <v-list density="compact">
+              <v-list-item prepend-icon="mdi-github" title="GitHub OAuth" subtitle="NUXT_OAUTH_GITHUB_CLIENT_ID / SECRET" />
+              <v-list-item prepend-icon="mdi-google" title="Google OAuth" subtitle="NUXT_OAUTH_GOOGLE_CLIENT_ID / SECRET" />
+              <v-list-item prepend-icon="mdi-microsoft" title="Microsoft / Entra ID" subtitle="NUXT_OAUTH_MICROSOFT_CLIENT_ID / SECRET / TENANT" />
+              <v-list-item prepend-icon="mdi-lock-check" title="Auth0" subtitle="NUXT_OAUTH_AUTH0_CLIENT_ID / SECRET / DOMAIN" />
+              <v-list-item prepend-icon="mdi-key-chain" title="Keycloak" subtitle="NUXT_OAUTH_KEYCLOAK_CLIENT_ID / SECRET / SERVER_URL / REALM" />
+            </v-list>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn
+              color="primary"
+              variant="text"
+              href="https://github.com/github-copilot-resources/copilot-metrics-viewer/blob/main/DEPLOYMENT.md#authentication"
+              target="_blank"
+              prepend-icon="mdi-open-in-new"
+            >
+              Docs
+            </v-btn>
+            <v-btn variant="text" @click="showAuthInfoDialog = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <template #extension>
 
@@ -77,13 +119,31 @@
     </div>
 
     <!-- API Error Message -->
-    <div v-show="apiError && !signInRequired" class="error-message" v-text="apiError" />
+    <v-alert
+      v-if="apiError && !signInRequired"
+      type="error"
+      variant="tonal"
+      closable
+      class="mb-4"
+      @click:close="apiError = undefined"
+    >
+      <div class="font-weight-medium">{{ apiError }}</div>
+    </v-alert>
     <AuthState>
       <template #default="{ loggedIn }">
         <div v-show="signInRequired" class="github-login-container">
-          <NuxtLink v-if="!loggedIn && signInRequired" to="/auth/github" external class="github-login-button"> <v-icon
-              left>mdi-github</v-icon>
-            Sign in with GitHub</NuxtLink>
+          <template v-if="!loggedIn && signInRequired">
+            <NuxtLink
+              v-for="provider in activeProviders"
+              :key="provider.id"
+              :to="`/auth/${provider.id}`"
+              external
+              class="github-login-button"
+            >
+              <v-icon left>{{ provider.icon }}</v-icon>
+              Sign in with {{ provider.label }}
+            </NuxtLink>
+          </template>
         </div>
       </template>
       <template #placeholder>
@@ -286,6 +346,9 @@ export default defineNuxtComponent({
           case 500:
             this.apiError = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
             break;
+          case 403:
+            this.apiError = `403 Forbidden — your account does not have permission to access Copilot metrics for this organization. You need the "Copilot metrics access" role (typically org owner or billing manager).`;
+            break;
           default:
             this.apiError = `${error.statusCode} Error: ${error.message}`;
             break;
@@ -429,7 +492,31 @@ export default defineNuxtComponent({
 
     const { loggedIn, user } = useUserSession()
     const config = useRuntimeConfig();
-    const showLogoutButton = computed(() => config.public.usingGithubAuth && loggedIn.value);
+
+    // requireAuth: new NUXT_PUBLIC_REQUIRE_AUTH flag; falls back to usingGithubAuth for backwards compat
+    const isAuthRequired = computed(() => config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp || !!config.public.authProviders);
+    const showLogoutButton = computed(() => isAuthRequired.value && loggedIn.value);
+    const showAuthInfoDialog = ref(false);
+
+    const PROVIDER_META: Record<string, { label: string; icon: string }> = {
+      github: { label: 'GitHub', icon: 'mdi-github' },
+      google: { label: 'Google', icon: 'mdi-google' },
+      microsoft: { label: 'Microsoft', icon: 'mdi-microsoft' },
+      auth0: { label: 'Auth0', icon: 'mdi-lock-check' },
+      keycloak: { label: 'Keycloak', icon: 'mdi-key-chain' },
+    };
+
+    // Active providers derived from NUXT_PUBLIC_AUTH_PROVIDERS; falls back to "github" when usingGithubAuth
+    const activeProviders = computed(() => {
+      const raw = config.public.authProviders
+        || ((config.public.usingGithubAuth || config.public.isPublicApp) ? 'github' : '');
+      return raw
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean)
+        .map(id => ({ id, ...(PROVIDER_META[id] ?? { label: id, icon: 'mdi-login' }) }));
+    });
+
     const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
     const itemName = computed(() => config.public.scope);
     const githubInfo = getDisplayName(config.public)
@@ -440,7 +527,7 @@ export default defineNuxtComponent({
     const seatsCurrentPage = ref(1);
 
     const signInRequired = computed(() => {
-      return config.public.usingGithubAuth && !loggedIn.value;
+      return isAuthRequired.value && !loggedIn.value;
     });
 
     const seatsFetch = useFetch('/api/seats', {
@@ -479,6 +566,9 @@ export default defineNuxtComponent({
       isDark,
       toggleTheme,
       showLogoutButton,
+      isAuthRequired,
+      showAuthInfoDialog,
+      activeProviders,
       mockedDataMessage,
       itemName,
       displayName,

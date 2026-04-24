@@ -22,9 +22,18 @@ export default defineEventHandler(async (event) => {
     const url = event.node.req.url || '';
 
     const healthCheckPaths = ['/api/health', '/api/live', '/api/ready'];
-    // Skip authentication for non-API routes, health checks, auth session, and AI chat (uses its own token)
-    if (!url.startsWith('/api/') || healthCheckPaths.includes(url) || url.startsWith('/api/_auth/') || url.startsWith('/api/ai/')) {
+    // Skip authentication for non-API routes, health checks, auth session, AI chat, and org picker
+    if (!url.startsWith('/api/') || healthCheckPaths.includes(url) || url.startsWith('/api/_auth/') || url.startsWith('/api/ai/') || url.startsWith('/api/installations')) {
         return;
+    }
+
+    // When OAuth mode is enabled, require a valid user session for all API calls
+    const requireAuth = config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp || !!config.public.authProviders;
+    if (requireAuth) {
+        const session = await getUserSession(event).catch(() => null);
+        if (!session?.user) {
+            throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+        }
     }
 
     // When historical mode is enabled, metrics come from DB — auth is optional
