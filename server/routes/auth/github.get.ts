@@ -1,12 +1,13 @@
-import type FetchError from 'ofetch';
-
 export default defineOAuthGitHubEventHandler({
   config: {
-    scope: process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE ? process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE.split(',') : undefined,
+    // Default to read:user so the authorize URL is never built with an empty scope= param (GitHub returns 404).
+    // Override via NUXT_OAUTH_GITHUB_CLIENT_SCOPE (comma-separated) when additional scopes are needed.
+    scope: process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE
+      ? process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE.split(',')
+      : ['read:user'],
   },
   async onSuccess(event, { user, tokens }) {
     const config = useRuntimeConfig(event);
-    const logger = console;
 
     // Authorize before creating a session
     if (!isUserAuthorized(event, { login: user.login, email: user.email })) {
@@ -26,34 +27,12 @@ export default defineOAuthGitHubEventHandler({
       }
     })
 
-    // Decide where to redirect. When no default org is configured, call /user/installations
-    // to find which orgs the user can access and redirect accordingly.
+    // If a default org/ent is pinned via env var, go straight to the home page.
+    // Otherwise go to the org picker — /api/installations will use the App JWT (private app)
+    // or the user's token (public app) to build the correct list, regardless of whether the
+    // logged-in GitHub user is personally a member of the org.
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
-    if (!defaultOrg) {
-      try {
-        const installationsResponse = await $fetch('https://api.github.com/user/installations', {
-          headers: {
-            Authorization: `token ${tokens.access_token}`,
-            Accept: 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-          }
-        }) as { installations: Array<{ account: { login: string } }> }
-
-        const organizations = installationsResponse.installations.map(i => i.account.login)
-
-        if (organizations.length === 0) {
-          return sendRedirect(event, '/?error=No+organizations+found.+Install+the+GitHub+App+on+your+org+first.')
-        }
-        if (organizations.length === 1) {
-          return sendRedirect(event, `/orgs/${organizations[0]}`)
-        }
-        return sendRedirect(event, '/select-org')
-      } catch (error: FetchError) {
-        logger.error('Error fetching installations:', error)
-      }
-    }
-
-    return sendRedirect(event, '/')
+    return sendRedirect(event, defaultOrg ? '/' : '/select-org')
   },
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {

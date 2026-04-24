@@ -51,12 +51,7 @@ function signJWT(payload: Record<string, unknown>, privateKeyPem: string): strin
 /** Build a short-lived JWT for GitHub App API calls. */
 function buildAppJwt(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000)
-  const isNumericId = /^\d+$/.test(appId)
-  if (!isNumericId) {
-    console.warn(`[github-app-auth] Using Client ID "${appId}" as JWT issuer. Set NUXT_GITHUB_APP_ID to the numeric App ID if you get 401 errors.`)
-  } else {
-    console.log(`[github-app-auth] Building JWT with numeric App ID ${appId}`)
-  }
+  console.log(`[github-app-auth] Building JWT with App ID ${appId}`)
   try {
     return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
   } catch (err: unknown) {
@@ -173,11 +168,11 @@ async function getTokenForInstallation(appId: string, privateKey: string, instal
 export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Promise<string> {
   const config = useRuntimeConfig(event)
   const { githubAppPrivateKey } = config
-  // GitHub now allows Client ID as the JWT issuer instead of the numeric App ID
-  const githubAppId = config.githubAppId || config.oauth?.github?.clientId || ''
+  // Accept numeric App ID (NUXT_GITHUB_APP_ID) or OAuth Client ID (NUXT_OAUTH_GITHUB_CLIENT_ID) as the JWT issuer
+  const githubAppId = config.githubAppId || config.oauth?.github?.clientId
 
   if (!githubAppId || !githubAppPrivateKey) {
-    throw new Error('GitHub App configuration incomplete. Set NUXT_GITHUB_APP_PRIVATE_KEY and either NUXT_GITHUB_APP_ID or NUXT_OAUTH_GITHUB_CLIENT_ID.')
+    throw new Error('GitHub App configuration incomplete. Set NUXT_GITHUB_APP_PRIVATE_KEY and NUXT_GITHUB_APP_ID (or NUXT_OAUTH_GITHUB_CLIENT_ID).')
   }
 
   const query = getQuery(event)

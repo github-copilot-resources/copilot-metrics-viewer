@@ -84,7 +84,7 @@ export default defineNuxtConfig({
     aiModel: 'gpt-4o',  // Model for AI chat (NUXT_AI_MODEL)
     aiMaxToolRounds: '5',  // Max tool-calling iterations (NUXT_AI_MAX_TOOL_ROUNDS)
     // GitHub App credentials (alternative to PAT — works with any OAuth provider)
-    githubAppId: '',            // NUXT_GITHUB_APP_ID (optional — Client ID works too per GitHub docs)
+    githubAppId: '',            // NUXT_GITHUB_APP_ID — numeric App ID (preferred); GitHub also accepts the Client ID (NUXT_OAUTH_GITHUB_CLIENT_ID)
     githubAppPrivateKey: '',    // NUXT_GITHUB_APP_PRIVATE_KEY (PEM, \n-escaped)
     session: {
       // set to 6h - same as the GitHub token
