@@ -8,18 +8,16 @@ Self-hosted, read-only dashboard for GitHub Copilot usage metrics. Reads from th
 
 ## Permissions (Read-Only)
 
-**Self-hosted deployments** (with server-side token — PAT or GitHub App private key):
+All modes require the following organization permissions:
 - Organization → Members: Read
 - Organization → Copilot Metrics: Read
 - Organization → Copilot Seat Management: Read
 
-**Hosted app (copilot-metrics.net / marketplace):**
-- No org-level permissions requested by the app itself
-- All API calls use the logged-in user's own GitHub credentials
-- Users must hold Copilot metrics access in their org to view any data
-- The GitHub App installation is used only for organization auto-detection at login
+**Hosted app (copilot-metrics.net / marketplace):** All API calls use the logged-in user's own GitHub credentials — no server-side org token is stored. However, because the app uses GitHub App OAuth, GitHub enforces the intersection of the App's permissions and the user's own access, so the above permissions are still required on the App. Users must also hold Copilot metrics access in their org to view data.
 
-No write permissions requested in either mode. Optional AI chat needs Models → Read.
+**Self-hosted deployments** (with server-side PAT or GitHub App private key): The same permissions are required on the token or App used for server-side calls.
+
+No write permissions requested in any mode. Optional AI chat needs Models → Read.
 
 ## Data Handling
 
