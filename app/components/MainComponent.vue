@@ -119,7 +119,16 @@
     </div>
 
     <!-- API Error Message -->
-    <div v-show="apiError && !signInRequired" class="error-message" v-text="apiError" />
+    <v-alert
+      v-if="apiError && !signInRequired"
+      type="error"
+      variant="tonal"
+      closable
+      class="mb-4"
+      @click:close="apiError = undefined"
+    >
+      <div class="font-weight-medium">{{ apiError }}</div>
+    </v-alert>
     <AuthState>
       <template #default="{ loggedIn }">
         <div v-show="signInRequired" class="github-login-container">
@@ -336,6 +345,9 @@ export default defineNuxtComponent({
             break;
           case 500:
             this.apiError = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
+            break;
+          case 403:
+            this.apiError = `403 Forbidden — your account does not have permission to access Copilot metrics for this organization. You need the "Copilot metrics access" role (typically org owner or billing manager).`;
             break;
           default:
             this.apiError = `${error.statusCode} Error: ${error.message}`;
