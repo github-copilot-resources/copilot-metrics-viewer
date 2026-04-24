@@ -27,8 +27,8 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
     }
 
     // GitHub App installation token (preferred for decoupled auth — no PAT needed)
-    // Accept numeric App ID (NUXT_GITHUB_APP_ID) or OAuth Client ID (NUXT_OAUTH_GITHUB_CLIENT_ID) as the JWT issuer
-    const githubAppId = config.githubAppId || config.oauth?.github?.clientId;
+    // Requires NUXT_GITHUB_APP_ID (numeric App ID) and NUXT_GITHUB_APP_PRIVATE_KEY
+    const githubAppId = config.githubAppId;
     if (githubAppId && config.githubAppPrivateKey) {
         return await buildGitHubAppHeaders(event);
     }
@@ -52,7 +52,7 @@ function buildHeaders(token: string): Headers {
     if (!token) {
         throw new Error(
             `Authentication required but not provided. Configure one of:
-             1. GitHub App: set NUXT_GITHUB_APP_PRIVATE_KEY + NUXT_OAUTH_GITHUB_CLIENT_ID (or NUXT_GITHUB_APP_ID)
+             1. GitHub App: set NUXT_GITHUB_APP_ID + NUXT_GITHUB_APP_PRIVATE_KEY
              2. PAT: set NUXT_GITHUB_TOKEN
              3. GitHub OAuth: set NUXT_PUBLIC_USING_GITHUB_AUTH=true with client ID/secret`);
     }

@@ -43,7 +43,7 @@ function signJWT(payload: Record<string, unknown>, privateKeyPem: string): strin
 
   const key = createPrivateKey({ key: normalisePem(privateKeyPem), format: 'pem' })
   const sign = createSign('RSA-SHA256')
-  sign.update(signingInput) // codeql[js/insufficient-password-hash] -- RS256 JWT signing, not password storage
+  sign.update(signingInput)
   const sig = sign.sign(key)
   return `${signingInput}.${b64url(sig)}`
 }
@@ -167,12 +167,10 @@ async function getTokenForInstallation(appId: string, privateKey: string, instal
  */
 export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Promise<string> {
   const config = useRuntimeConfig(event)
-  const { githubAppPrivateKey } = config
-  // Accept numeric App ID (NUXT_GITHUB_APP_ID) or OAuth Client ID (NUXT_OAUTH_GITHUB_CLIENT_ID) as the JWT issuer
-  const githubAppId = config.githubAppId || config.oauth?.github?.clientId
+  const { githubAppId, githubAppPrivateKey } = config
 
   if (!githubAppId || !githubAppPrivateKey) {
-    throw new Error('GitHub App configuration incomplete. Set NUXT_GITHUB_APP_PRIVATE_KEY and NUXT_GITHUB_APP_ID (or NUXT_OAUTH_GITHUB_CLIENT_ID).')
+    throw new Error('GitHub App configuration incomplete. Set NUXT_GITHUB_APP_PRIVATE_KEY and NUXT_GITHUB_APP_ID.')
   }
 
   const query = getQuery(event)
