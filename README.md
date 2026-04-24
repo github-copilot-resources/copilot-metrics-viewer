@@ -279,13 +279,9 @@ For more information see [Nuxt Sessions and Authentication](https://nuxt.com/doc
 >[!WARNING]
 > This variable is required starting from version 2.0.0.
 
-#### NUXT_PUBLIC_REQUIRE_AUTH
-
-Default is `false`. When set to `true`, users must sign in via an OAuth provider before accessing the dashboard. The active providers are configured by `NUXT_PUBLIC_AUTH_PROVIDERS`.
-
 #### NUXT_PUBLIC_AUTH_PROVIDERS
 
-Comma-separated list of active OAuth providers: `github`, `google`, `microsoft`, `auth0`, `keycloak`.
+Comma-separated list of active OAuth providers: `github`, `google`, `microsoft`, `auth0`, `keycloak`. Setting this variable enables authentication — users must sign in before accessing the dashboard.
 
 ```
 NUXT_PUBLIC_AUTH_PROVIDERS=github,google
@@ -308,11 +304,6 @@ Comma-separated list of email domains allowed to sign in. When empty (default), 
 ```
 NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 ```
-
-#### NUXT_PUBLIC_USING_GITHUB_AUTH *(deprecated)*
-
-> [!WARNING]
-> Deprecated — use `NUXT_PUBLIC_REQUIRE_AUTH=true` + `NUXT_PUBLIC_AUTH_PROVIDERS=github` instead. The old variable is still recognized for backwards compatibility.
 
 #### OAuth provider variables
 

@@ -349,8 +349,7 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |
 | `SYNC_ENABLED` | `true` for sync service, `false` for web app | Historical mode only |
 | `SYNC_DAYS_BACK` | Days to sync (default: 1 for daily, 28 for bulk) | Sync only |
-| `NUXT_PUBLIC_REQUIRE_AUTH` | `true` to require OAuth sign-in | OAuth mode |
-| `NUXT_PUBLIC_AUTH_PROVIDERS` | Comma-separated active providers: `github`, `google`, `microsoft`, `auth0`, `keycloak` | OAuth mode |
+| `NUXT_PUBLIC_AUTH_PROVIDERS` | Comma-separated active providers: `github`, `google`, `microsoft`, `auth0`, `keycloak` — setting this enables authentication | OAuth mode |
 | `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub App client ID | GitHub OAuth |
 | `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub App client secret | GitHub OAuth |
 | `NUXT_OAUTH_GOOGLE_CLIENT_ID` | Google OAuth client ID | Google OAuth |
@@ -367,7 +366,6 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `NUXT_OAUTH_KEYCLOAK_REALM` | Keycloak realm name | Keycloak OAuth |
 | `NUXT_AUTHORIZED_USERS` | Comma-separated logins/emails allowed to log in (any provider) | Optional |
 | `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated email domains allowed, e.g. `company.com` | Optional |
-| `NUXT_PUBLIC_USING_GITHUB_AUTH` | *(Deprecated)* Use `NUXT_PUBLIC_REQUIRE_AUTH=true` + `NUXT_PUBLIC_AUTH_PROVIDERS=github` instead | — |
 
 ## Authentication
 
@@ -464,7 +462,6 @@ Requires a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/abo
 **Environment variables:**
 
 ```bash
-NUXT_PUBLIC_REQUIRE_AUTH=true
 NUXT_PUBLIC_AUTH_PROVIDERS=github
 NUXT_OAUTH_GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxx
 NUXT_OAUTH_GITHUB_CLIENT_SECRET=xxxxxxxxxxxx
@@ -481,7 +478,6 @@ NUXT_OAUTH_GITHUB_CLIENT_SECRET=xxxxxxxxxxxx
 **Environment variables:**
 
 ```bash
-NUXT_PUBLIC_REQUIRE_AUTH=true
 NUXT_PUBLIC_AUTH_PROVIDERS=google
 NUXT_OAUTH_GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
 NUXT_OAUTH_GOOGLE_CLIENT_SECRET=xxxxxxxxxxxx
@@ -502,7 +498,6 @@ NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 **Environment variables:**
 
 ```bash
-NUXT_PUBLIC_REQUIRE_AUTH=true
 NUXT_PUBLIC_AUTH_PROVIDERS=microsoft
 NUXT_OAUTH_MICROSOFT_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 NUXT_OAUTH_MICROSOFT_CLIENT_SECRET=xxxxxxxxxxxx
@@ -528,7 +523,6 @@ Auth0 acts as an identity aggregator. Configure it once and it can front GitHub,
 **Environment variables:**
 
 ```bash
-NUXT_PUBLIC_REQUIRE_AUTH=true
 NUXT_PUBLIC_AUTH_PROVIDERS=auth0
 NUXT_OAUTH_AUTH0_CLIENT_ID=xxxxxxxxxxxx
 NUXT_OAUTH_AUTH0_CLIENT_SECRET=xxxxxxxxxxxx
@@ -556,7 +550,6 @@ Keycloak is a self-hosted, open-source identity and access management server. Id
 **Environment variables:**
 
 ```bash
-NUXT_PUBLIC_REQUIRE_AUTH=true
 NUXT_PUBLIC_AUTH_PROVIDERS=keycloak
 NUXT_OAUTH_KEYCLOAK_CLIENT_ID=copilot-metrics-viewer
 NUXT_OAUTH_KEYCLOAK_CLIENT_SECRET=xxxxxxxxxxxx
@@ -575,7 +568,6 @@ NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 You can enable multiple OAuth providers simultaneously. Users will see a sign-in button for each:
 
 ```bash
-NUXT_PUBLIC_REQUIRE_AUTH=true
 NUXT_PUBLIC_AUTH_PROVIDERS=github,google
 NUXT_OAUTH_GITHUB_CLIENT_ID=...
 NUXT_OAUTH_GITHUB_CLIENT_SECRET=...
