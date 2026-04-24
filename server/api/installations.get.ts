@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Private/internal app: list all installations via App JWT.
-  const appId = config.githubAppId || config.oauth?.github?.clientId || ''
+  const appId = config.githubAppId || ''
   if (appId && config.githubAppPrivateKey) {
     try {
       const installations = await listAppInstallations(appId, config.githubAppPrivateKey)
