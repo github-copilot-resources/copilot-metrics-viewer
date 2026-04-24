@@ -2,46 +2,28 @@
 import './assets/global.css'
 
 const router = useRouter()
-const { clear: clearSession } = useUserSession()
+const { session } = useUserSession()
 
-interface Installation {
+interface OrgEntry {
   login: string
   type: string
 }
 
-const installations = ref<Installation[]>([])
+// Organizations populated by onSuccess during login — no extra API call needed.
+const organizations = computed<OrgEntry[]>(() => (session.value as { organizations?: OrgEntry[] })?.organizations ?? [])
+
 const selected = ref<string | null>(null)
 const manualOrg = ref('')
-const loading = ref(true)
-const error = ref<string | null>(null)
 
-// When installations is empty (public app + non-GitHub login), show a text input instead.
-const showManualInput = computed(() => !loading.value && !error.value && installations.value.length === 0)
+const showManualInput = computed(() => organizations.value.length === 0)
 
-onMounted(async () => {
-  try {
-    const data = await $fetch<{ installations: Installation[] }>('/api/installations')
-    installations.value = data.installations
-
-    if (installations.value.length === 1) {
-      // Single org — navigate immediately without showing picker
-      await router.replace(`/orgs/${installations.value[0].login}`)
-    } else if (installations.value.length > 1) {
-      selected.value = installations.value[0].login
-    }
-    // length === 0 → showManualInput will be true
-  } catch (e: unknown) {
-    // 401 means the session expired or the user navigated here directly without logging in.
-    // Redirect to the root so MainComponent can show the login overlay.
-    if ((e as { statusCode?: number })?.statusCode === 401) {
-      await router.replace('/')
-      return
-    }
-    error.value = e instanceof Error ? e.message : 'Failed to load organizations'
-  } finally {
-    loading.value = false
+watch(organizations, (orgs) => {
+  if (orgs.length === 1) {
+    router.replace(`/orgs/${orgs[0].login}`)
+  } else if (orgs.length > 1) {
+    selected.value = orgs[0].login
   }
-})
+}, { immediate: true })
 
 function navigate() {
   if (selected.value) {
@@ -63,19 +45,18 @@ function navigate() {
           </v-card-title>
 
           <v-card-text>
-            <template v-if="loading">
-              <v-progress-linear indeterminate color="primary" class="mb-4" />
-              <p class="text-body-2 text-medium-emphasis">Loading accessible organizations…</p>
-            </template>
+            <v-alert
+              type="success"
+              variant="tonal"
+              density="compact"
+              class="mb-4"
+              icon="mdi-shield-check-outline"
+            >
+              <strong>Privacy:</strong> This app does not store, collect, or transmit your Copilot data.
+              All API calls go directly to GitHub using your own credentials — no data passes through our servers.
+            </v-alert>
 
-            <template v-else-if="error">
-              <v-alert type="error" variant="tonal" class="mb-4">{{ error }}</v-alert>
-              <p class="text-body-2 text-medium-emphasis">
-                Make sure the GitHub App is installed on your organization.
-              </p>
-            </template>
-
-            <template v-else-if="showManualInput">
+            <template v-if="showManualInput">
               <p class="text-body-2 text-medium-emphasis mb-4">
                 Enter the GitHub organization or enterprise slug to view its Copilot metrics.
               </p>
@@ -90,13 +71,13 @@ function navigate() {
               />
             </template>
 
-            <template v-else-if="installations.length > 1">
+            <template v-else-if="organizations.length > 1">
               <p class="text-body-2 text-medium-emphasis mb-4">
                 Select which organization to view.
               </p>
               <v-select
                 v-model="selected"
-                :items="installations"
+                :items="organizations"
                 item-title="login"
                 item-value="login"
                 label="Organization"
@@ -107,7 +88,7 @@ function navigate() {
             </template>
           </v-card-text>
 
-          <v-card-actions v-if="!loading && !error && (installations.length > 1 || showManualInput)" class="px-4 pb-4">
+          <v-card-actions v-if="organizations.length > 1 || showManualInput" class="px-4 pb-4">
             <v-spacer />
             <v-btn
               color="primary"

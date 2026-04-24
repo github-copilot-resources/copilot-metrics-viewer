@@ -8,16 +8,24 @@ Self-hosted, read-only dashboard for GitHub Copilot usage metrics. Reads from th
 
 ## Permissions (Read-Only)
 
+**Self-hosted deployments** (with server-side token — PAT or GitHub App private key):
 - Organization → Members: Read
 - Organization → Copilot Metrics: Read
 - Organization → Copilot Seat Management: Read
 
-No write permissions requested. Optional AI chat needs Models → Read.
+**Hosted app (copilot-metrics.net / marketplace):**
+- No org-level permissions requested by the app itself
+- All API calls use the logged-in user's own GitHub credentials
+- Users must hold Copilot metrics access in their org to view any data
+- The GitHub App installation is used only for organization auto-detection at login
+
+No write permissions requested in either mode. Optional AI chat needs Models → Read.
 
 ## Data Handling
 
-- **Direct API mode**: No data stored; fetched from GitHub on each page load.
-- **Historical mode** (optional): Cached in deployer-managed PostgreSQL for retention beyond 28 days.
+- **Hosted app (copilot-metrics.net)**: No data stored or processed server-side. API calls go directly from the server to GitHub using your own credentials on each request. Nothing is retained between sessions.
+- **Self-hosted, direct API mode**: No data stored; fetched from GitHub on each page load.
+- **Self-hosted, historical mode** (optional): Cached in deployer-managed PostgreSQL for retention beyond 28 days.
 - **No telemetry, analytics, or phone-home.** No data sent to publisher or third parties.
 - AI conversations exist only in browser session — never stored server-side.
 - Sessions use encrypted cookies (deployer-configured 32+ char secret).

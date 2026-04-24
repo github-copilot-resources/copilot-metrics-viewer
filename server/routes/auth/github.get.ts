@@ -1,7 +1,7 @@
 export default defineOAuthGitHubEventHandler({
   config: {
-    // Default to read:user so the authorize URL is never built with an empty scope= param (GitHub returns 404).
-    // Override via NUXT_OAUTH_GITHUB_CLIENT_SCOPE (comma-separated) when additional scopes are needed.
+    // Default scopes: read:user for profile, read:org for org membership (used by org picker).
+    // Override via NUXT_OAUTH_GITHUB_CLIENT_SCOPE (comma-separated) when needed.
     scope: process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE
       ? process.env.NUXT_OAUTH_GITHUB_CLIENT_SCOPE.split(',')
       : ['read:user'],
@@ -28,11 +28,45 @@ export default defineOAuthGitHubEventHandler({
     })
 
     // If a default org/ent is pinned via env var, go straight to the home page.
-    // Otherwise go to the org picker — /api/installations will use the App JWT (private app)
-    // or the user's token (public app) to build the correct list, regardless of whether the
-    // logged-in GitHub user is personally a member of the org.
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
-    return sendRedirect(event, defaultOrg ? '/' : '/select-org')
+    if (defaultOrg) {
+      return sendRedirect(event, '/')
+    }
+
+    // Public app: enumerate this user's accessible installations using the fresh token.
+    // /user/installations is scoped to the specific GitHub App (matched by client ID),
+    // so it only returns orgs where THIS app is installed AND the user has access.
+    if (config.public.isPublicApp) {
+      try {
+        const data = await $fetch<{ installations: Array<{ account: { login: string; type: string } }> }>(
+          'https://api.github.com/user/installations?per_page=100',
+          {
+            headers: {
+              Authorization: `token ${tokens.access_token}`,
+              Accept: 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28'
+            }
+          }
+        )
+        const organizations = (data.installations || []).map(i => ({
+          login: i.account.login,
+          type: i.account.type
+        }))
+
+        // Store in session so select-org page can read it without another API call.
+        await setUserSession(event, { organizations })
+
+        // Single org: skip the picker, go straight to the dashboard.
+        if (organizations.length === 1) {
+          return sendRedirect(event, `/orgs/${organizations[0].login}`)
+        }
+      } catch (err) {
+        console.error('Error fetching installations:', err)
+        // Fall through to /select-org which shows a text input fallback.
+      }
+    }
+
+    return sendRedirect(event, '/select-org')
   },
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {

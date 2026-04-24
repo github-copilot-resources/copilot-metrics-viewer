@@ -5,7 +5,10 @@ import { listAppInstallations, type AppInstallation } from '../modules/github-ap
  *
  * Public/marketplace app (NUXT_PUBLIC_IS_PUBLIC_APP=true):
  *   - MUST NOT have a private key configured — throws 500 (misconfiguration)
- *   - Returns empty list; the UI shows a text input for the user to type their org slug
+ *   - If user logged in via GitHub OAuth: calls /user/orgs with the user's own token
+ *     to auto-populate the org picker with orgs they belong to.
+ *     Safe: only shows the logged-in user's own org memberships.
+ *   - Falls back to empty list (text input) if no GitHub token is in the session.
  *
  * Private/internal app:
  *   - App JWT lists all installations (small, known set) → dropdown in UI
@@ -36,8 +39,10 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // In public app mode the user types their org slug directly — no server-side enumeration.
-    return { installations: [] }
+    // Organizations were resolved during login (onSuccess) and stored in the session.
+    // Return them directly — no extra GitHub API call needed.
+    const orgs = (session as { organizations?: Array<{ login: string; type: string }> })?.organizations ?? []
+    return { installations: orgs }
   }
 
   // Private/internal app: list all installations via App JWT.

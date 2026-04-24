@@ -40,6 +40,17 @@ const setupAction = computed(() => route.query.setup_action as string | undefine
             </p>
 
             <v-alert
+              type="success"
+              variant="tonal"
+              density="compact"
+              class="mb-3"
+              icon="mdi-shield-check-outline"
+            >
+              <strong>Privacy:</strong> This app does not store, collect, or transmit your Copilot data.
+              All API calls are made directly to GitHub using <em>your own credentials</em> — no data passes through our servers.
+            </v-alert>
+
+            <v-alert
               type="warning"
               variant="tonal"
               density="compact"
