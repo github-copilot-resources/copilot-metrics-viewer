@@ -39,6 +39,39 @@ const setupAction = computed(() => route.query.setup_action as string | undefine
               adoption reports — features the GitHub API alone cannot provide.
             </p>
 
+            <v-divider class="mb-4" />
+
+            <p class="text-subtitle-2 text-medium-emphasis mb-2">
+              <v-icon size="small" class="mr-1">mdi-information-outline</v-icon>
+              How it works
+            </p>
+            <p class="text-body-2 text-medium-emphasis mb-2">
+              When you sign in with GitHub, the app receives a token that is valid for <em>both</em> your
+              account and this GitHub App. GitHub enforces the intersection of the two:
+            </p>
+            <v-table density="compact" class="mb-4 text-body-2">
+              <thead>
+                <tr>
+                  <th>What controls access</th>
+                  <th>What it means</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>GitHub App permissions</strong></td>
+                  <td>Hard ceiling — the app can only request data it is explicitly authorized for (Copilot Metrics, Seat Management, Members)</td>
+                </tr>
+                <tr>
+                  <td><strong>Your own GitHub permissions</strong></td>
+                  <td>Your org role still applies — you can only see orgs and data you personally have access to</td>
+                </tr>
+              </tbody>
+            </v-table>
+            <p class="text-body-2 text-medium-emphasis mb-4">
+              Neither party alone can escalate privileges. Even if you are an org owner, the token
+              cannot perform any action the App is not authorized for — and vice versa.
+            </p>
+
             <v-alert
               type="success"
               variant="tonal"
