@@ -482,7 +482,7 @@ export default defineNuxtComponent({
     const config = useRuntimeConfig();
 
     // requireAuth: new NUXT_PUBLIC_REQUIRE_AUTH flag; falls back to usingGithubAuth for backwards compat
-    const isAuthRequired = computed(() => config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp);
+    const isAuthRequired = computed(() => config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp || !!config.public.authProviders);
     const showLogoutButton = computed(() => isAuthRequired.value && loggedIn.value);
     const showAuthInfoDialog = ref(false);
 

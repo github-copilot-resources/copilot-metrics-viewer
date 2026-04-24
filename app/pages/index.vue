@@ -30,7 +30,7 @@ if (route.params.ent || route.params.org) {
 // yet logged in, let MainComponent display the login overlay first; after OAuth the
 // callback handler will redirect to /select-org or directly to the org.
 const { loggedIn } = useUserSession()
-const authRequired = config.public.usingGithubAuth || config.public.requireAuth || config.public.isPublicApp
+const authRequired = config.public.usingGithubAuth || config.public.requireAuth || config.public.isPublicApp || !!config.public.authProviders
 const hasOrg = route.params.org || route.params.ent || config.public.githubOrg || config.public.githubEnt
 if (!hasOrg && !config.public.isDataMocked && (!authRequired || loggedIn.value)) {
   await navigateTo('/select-org')

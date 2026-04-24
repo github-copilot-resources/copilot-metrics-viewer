@@ -19,7 +19,7 @@ interface GitHubInstallationsResponse {
  */
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
-  const isAuthRequired = config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp
+  const isAuthRequired = config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp || !!config.public.authProviders
 
   const session = await getUserSession(event)
 
