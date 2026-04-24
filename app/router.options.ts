@@ -32,6 +32,11 @@ export default {
             name: 'select-org',
             path: '/select-org',
             component: () => import('~/pages/select-org.vue')
+        },
+        {
+            name: 'install',
+            path: '/install',
+            component: () => import('~/pages/install/index.vue')
         }
     ],
 } satisfies RouterConfig
