@@ -43,7 +43,7 @@ function signJWT(payload: Record<string, unknown>, privateKeyPem: string): strin
 
   const key = createPrivateKey({ key: normalisePem(privateKeyPem), format: 'pem' })
   const sign = createSign('RSA-SHA256')
-  sign.update(signingInput)
+  sign.update(signingInput) // codeql[js/insufficient-password-hash] -- RS256 JWT signing, not password storage
   const sig = sign.sign(key)
   return `${signingInput}.${b64url(sig)}`
 }
@@ -51,7 +51,7 @@ function signJWT(payload: Record<string, unknown>, privateKeyPem: string): strin
 /** Build a short-lived JWT for GitHub App API calls. */
 function buildAppJwt(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000)
-  console.log(`[github-app-auth] Building JWT with App ID ${appId}`)
+  console.log('[github-app-auth] Building App JWT')
   try {
     return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
   } catch (err: unknown) {

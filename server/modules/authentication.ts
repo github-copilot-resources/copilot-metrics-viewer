@@ -28,7 +28,7 @@ export async function authenticateAndGetGitHubHeaders(event: H3Event<EventHandle
 
     // GitHub App installation token (preferred for decoupled auth — no PAT needed)
     // Accept numeric App ID (NUXT_GITHUB_APP_ID) or OAuth Client ID (NUXT_OAUTH_GITHUB_CLIENT_ID) as the JWT issuer
-    const githubAppId = config.githubAppId || config.oauth?.github?.clientId
+    const githubAppId = config.githubAppId || config.oauth?.github?.clientId;
     if (githubAppId && config.githubAppPrivateKey) {
         return await buildGitHubAppHeaders(event);
     }
