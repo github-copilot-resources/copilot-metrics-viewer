@@ -24,7 +24,7 @@ const setupAction = computed(() => route.query.setup_action as string | undefine
               <span v-else>
                 GitHub Copilot Metrics Viewer is now installed on your organization.
               </span>
-              Head to your deployment to start exploring Copilot usage data.
+              Head to your <a href="/">dashboard</a> to start exploring Copilot usage data.
             </p>
 
             <v-divider class="mb-4" />
