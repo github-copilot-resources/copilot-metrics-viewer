@@ -149,9 +149,15 @@ The CI release workflow **hard-fails** if the git tag does not match `package.js
 - Bumps the git tag (e.g. `v3.7.0`) without a matching change to `"version"` in `package.json`
 
 **The correct release workflow:**
-1. In a commit on `main`, bump `package.json` version to match the intended tag:
+1. In a commit on `main`, bump `package.json` **and** `package-lock.json` together — always use
+   `npm version` (never edit `package.json` manually) so both files stay in sync:
    ```bash
-   npm version 3.7.0 --no-git-tag-version   # updates package.json + package-lock.json
+   # Patch bump (3.6.1 → 3.6.2):
+   npm version patch --no-git-tag-version
+
+   # Or set an explicit version:
+   npm version 3.7.0 --no-git-tag-version
+
    git add package.json package-lock.json
    git commit -m "chore: bump version to 3.7.0"
    git push origin main
