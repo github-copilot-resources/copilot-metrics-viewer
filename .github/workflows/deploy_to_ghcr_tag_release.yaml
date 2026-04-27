@@ -62,6 +62,8 @@ jobs:
 
   push_to_ghcr:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     # needs: version_update
     steps:
       - name: Checkout GitHub Action
@@ -118,6 +120,8 @@ jobs:
 
   push_sync_to_ghcr:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4

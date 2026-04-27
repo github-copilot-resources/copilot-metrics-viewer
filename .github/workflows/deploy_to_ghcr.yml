@@ -15,6 +15,8 @@ permissions:
 jobs:
   push_to_ghcr:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
@@ -49,7 +51,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
@@ -58,6 +60,8 @@ jobs:
 
   push_sync_to_ghcr:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
@@ -87,7 +91,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push sync image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.sync

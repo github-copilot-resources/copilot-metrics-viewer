@@ -24,6 +24,8 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     if: |
       (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy') ||
       (github.event_name == 'pull_request' && github.event.action == 'synchronize' && contains(github.event.pull_request.labels.*.name, 'deploy')) ||
@@ -65,7 +67,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push app image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
@@ -73,7 +75,7 @@ jobs:
           tags: ghcr.io/${{ github.repository }}-preview:preview-latest
 
       - name: Build and push sync image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.sync
