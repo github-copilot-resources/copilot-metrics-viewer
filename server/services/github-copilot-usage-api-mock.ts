@@ -10,6 +10,10 @@
  */
 
 import type { DownloadLinksResponse, MetricsReportRequest, OrgReport, ReportDayTotals } from './github-copilot-usage-api';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import mockOrg28DayRaw from '../../public/mock-data/new-api/organization-28-day-report.json';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import mockOrg1DayRaw from '../../public/mock-data/new-api/organization-1-day-report.json';
 
 /** Base URL for local mock files served by Nuxt's public/ directory */
 function getMockBaseUrl(): string {
@@ -99,72 +103,63 @@ export function isMockMode(): boolean {
  * the metrics-util-v2 mock path that needs data before the HTTP server starts).
  */
 export function generateMockReport(startDay: string, endDay: string): OrgReport {
-  // Read from the static mock file if available (Node.js environments)
-  try {
-    const { readFileSync } = require('fs');
-    const { resolve } = require('path');
-    const filePath = resolve('public/mock-data/new-api/organization-28-day-report.json');
-    const data = JSON.parse(readFileSync(filePath, 'utf8')) as OrgReport;
+  // Use statically imported mock data (bundled at compile time — no filesystem dependency)
+  const data = JSON.parse(JSON.stringify(mockOrg28DayRaw)) as OrgReport;
 
-    const sorted = [...data.day_totals].sort((a, b) => a.day.localeCompare(b.day));
-    if (sorted.length === 0) return _generateFallbackReport(startDay, endDay);
+  const sorted = [...data.day_totals].sort((a, b) => a.day.localeCompare(b.day));
+  if (sorted.length === 0) return _generateFallbackReport(startDay, endDay);
 
-    const reqStart = new Date(startDay);
-    const reqEnd = new Date(endDay);
+  const reqStart = new Date(startDay);
+  const reqEnd = new Date(endDay);
 
-    // Try filtering to the requested range directly
-    const direct = sorted.filter(d => {
+  // Try filtering to the requested range directly
+  const direct = sorted.filter(d => {
+    const date = new Date(d.day);
+    return date >= reqStart && date <= reqEnd;
+  });
+
+  if (direct.length > 0) {
+    data.day_totals = direct;
+    data.report_start_day = startDay;
+    data.report_end_day = endDay;
+    return data;
+  }
+
+  // No overlap: shift all days so the file's last day aligns with reqEnd.
+  // This keeps relative temporal patterns intact while producing the requested date range.
+  const fileEndMs = new Date(sorted[sorted.length - 1].day).getTime();
+  const reqEndMs = reqEnd.getTime();
+  const offsetMs = reqEndMs - fileEndMs;
+
+  const shifted = sorted
+    .map(d => ({
+      ...d,
+      day: new Date(new Date(d.day).getTime() + offsetMs).toISOString().split('T')[0],
+    }))
+    .filter(d => {
       const date = new Date(d.day);
       return date >= reqStart && date <= reqEnd;
     });
 
-    if (direct.length > 0) {
-      data.day_totals = direct;
-      data.report_start_day = startDay;
-      data.report_end_day = endDay;
-      return data;
-    }
-
-    // No overlap: shift all days so the file's last day aligns with reqEnd.
-    // This keeps relative temporal patterns intact while producing the requested date range.
-    const fileEndMs = new Date(sorted[sorted.length - 1].day).getTime();
-    const reqEndMs = reqEnd.getTime();
-    const offsetMs = reqEndMs - fileEndMs;
-
-    const shifted = sorted
-      .map(d => ({
-        ...d,
-        day: new Date(new Date(d.day).getTime() + offsetMs).toISOString().split('T')[0],
-      }))
-      .filter(d => {
-        const date = new Date(d.day);
-        return date >= reqStart && date <= reqEnd;
-      });
-
-    if (shifted.length > 0) {
-      data.day_totals = shifted;
-      data.report_start_day = startDay;
-      data.report_end_day = endDay;
-      return data;
-    }
-  } catch {
-    // File not available — fall through to generator
+  if (shifted.length > 0) {
+    data.day_totals = shifted;
+    data.report_start_day = startDay;
+    data.report_end_day = endDay;
+    return data;
   }
+
   return _generateFallbackReport(startDay, endDay);
 }
 
 /** Minimal fallback when static file isn't available */
 function _generateFallbackReport(startDay: string, endDay: string): OrgReport {
-  // Try to use the 1-day report mock file as a per-day template
+  // Use statically imported 1-day template as per-day template
   let dayTemplate: ReportDayTotals | null = null;
   try {
-    const { readFileSync } = require('fs');
-    const { resolve } = require('path');
-    const filePath = resolve('public/mock-data/new-api/organization-1-day-report.json');
-    const data = JSON.parse(readFileSync(filePath, 'utf8')) as OrgReport;
+    const data = JSON.parse(JSON.stringify(mockOrg1DayRaw)) as OrgReport;
     dayTemplate = data.day_totals[0] ?? null;
   } catch {
-    // Template file unavailable — will use hardcoded fallback below
+    // Template unavailable — will use hardcoded fallback below
   }
 
   const start = new Date(startDay);
