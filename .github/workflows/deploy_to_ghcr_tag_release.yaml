@@ -117,6 +117,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           push: true
+          provenance: false
 
   push_sync_to_ghcr:
     runs-on: ubuntu-latest
@@ -161,3 +162,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           push: true
+          provenance: false

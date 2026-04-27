@@ -72,6 +72,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
+          provenance: false
           tags: ghcr.io/${{ github.repository }}-preview:preview-latest
 
       - name: Build and push sync image
@@ -80,6 +81,7 @@ jobs:
           context: .
           file: Dockerfile.sync
           push: true
+          provenance: false
           tags: ghcr.io/${{ github.repository }}-sync-preview:preview-latest
 
   deploy:
