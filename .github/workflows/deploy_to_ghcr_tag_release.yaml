@@ -11,8 +11,8 @@ on:
 
 permissions:
   packages: write
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
 
 jobs:
   # version_update:
@@ -62,12 +62,27 @@ jobs:
 
   push_to_ghcr:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     # needs: version_update
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.tag_name }}
+
+      # Fail fast if the release tag doesn't match package.json version.
+      # Fix: bump the version in a commit before pushing the release tag.
+      - name: Verify npm version matches release tag
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          TAG="${TAG#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "::error::Tag ${{ github.event.release.tag_name }} requires package.json version $TAG but found $PKG. Bump the version before releasing."
+            exit 1
+          fi
+          echo "✓ package.json version $PKG matches tag ${{ github.event.release.tag_name }}"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -105,6 +120,8 @@ jobs:
 
   push_sync_to_ghcr:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4

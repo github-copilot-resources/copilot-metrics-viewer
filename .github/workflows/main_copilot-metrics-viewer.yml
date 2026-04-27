@@ -15,7 +15,13 @@ jobs:
       name: 'production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
+    permissions:
+      contents: read
+
     steps:
+    # App settings (NUXT_PUBLIC_IS_DATA_MOCKED, NUXT_PUBLIC_SCOPE, etc.) are
+    # configured directly in the Azure Portal under Configuration > App Settings.
+    # They do not need to be set here — publish-profile auth doesn't support az cli.
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
@@ -23,4 +29,4 @@ jobs:
         app-name: 'copilot-metrics-viewer'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_e94dfd38811a421eafe5ce4eee13b68b }}
-        images: 'ghcr.io//${{ secrets.AzureAppService_ContainerUsername_6e6399ab4c2848209c95dce8fff002f0 }}/github-copilot-resources/copilot-metrics-viewer:${{ github.sha }}'
+        images: 'ghcr.io/github-copilot-resources/copilot-metrics-viewer:main'

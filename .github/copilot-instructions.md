@@ -2,7 +2,7 @@
 name: copilot-metrics-viewer
 description: Nuxt 3 web application for GitHub Copilot usage metrics and analytics
 stack: Vue.js, TypeScript, Nuxt 3, Vuetify, Chart.js
-version: 2.1.0
+version: 3.6.1
 ---
 
 # GitHub Copilot Metrics Viewer
@@ -137,6 +137,33 @@ Always test these scenarios after making changes (use development mode for relia
 3. **Basic functionality**: Start dev server and verify health endpoints respond
 4. **Linting awareness**: Run `npm run lint` (expect existing errors, don't introduce new ones)
 5. **Security check**: Ensure no secrets or credentials are committed
+6. **Version bump**: If this PR is intended as a release, ensure `package.json` version is updated (see Release Process below)
+
+## Release Process
+
+### Version Bump Rule (CRITICAL for code review)
+The CI release workflow **hard-fails** if the git tag does not match `package.json` version.
+
+**During code review, flag a missing version bump if the PR:**
+- Is labelled as a release or contains a changelog/release-notes update
+- Bumps the git tag (e.g. `v3.7.0`) without a matching change to `"version"` in `package.json`
+
+**The correct release workflow:**
+1. In a commit on `main`, bump `package.json` version to match the intended tag:
+   ```bash
+   npm version 3.7.0 --no-git-tag-version   # updates package.json + package-lock.json
+   git add package.json package-lock.json
+   git commit -m "chore: bump version to 3.7.0"
+   git push origin main
+   ```
+2. Push the matching release tag:
+   ```bash
+   git tag v3.7.0
+   git push origin v3.7.0
+   ```
+3. The CI pipeline checks `tag == package.json version` and fails with a clear error if they differ.
+
+**Version format:** `MAJOR.MINOR.PATCH` (semver, no `v` prefix in `package.json`).
 
 ## Common Tasks
 
