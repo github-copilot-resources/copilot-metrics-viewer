@@ -57,8 +57,13 @@ export default defineEventHandler(async (event) => {
   if (options.isDataMocked) {
     const isOrg = (options.scope || 'organization') === 'organization';
     const raw = isOrg ? mockUsersOrg28Day : mockUsersEnt28Day;
-    const records = (raw as { day_totals: UserDayRecord[] }).day_totals ?? [];
-    return aggregateUserDayRecords(records);
+    // Org mock uses UserDayRecord[] in day_totals → aggregate on the fly.
+    // Enterprise mock uses pre-aggregated UserTotals[] in user_totals → return directly.
+    const dayRecords = (raw as { day_totals?: UserDayRecord[] }).day_totals;
+    if (dayRecords) {
+      return aggregateUserDayRecords(dayRecords);
+    }
+    return (raw as { user_totals: UserTotals[] }).user_totals ?? [];
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────
