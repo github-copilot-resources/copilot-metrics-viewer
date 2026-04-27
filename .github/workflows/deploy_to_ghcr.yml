@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 permissions:
   packages: write
+  contents: write   # needed to push the version-bump commit back to main
 
 jobs:
   push_to_ghcr:
@@ -17,6 +20,29 @@ jobs:
     steps:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
+
+      # When a release tag (vX.Y.Z) is pushed, sync package.json to that version.
+      # This ensures the version shown in the app footer matches the release tag,
+      # and commits the bump back to main so the repo stays up to date.
+      # Note: requires "Allow GitHub Actions to bypass branch protection" to be
+      # enabled if main has push restrictions.
+      - name: Sync npm version to release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG=$(node -p "require('./package.json').version")
+          if [ "$TAG" = "$PKG" ]; then
+            echo "✓ package.json already at $TAG — nothing to do"
+            exit 0
+          fi
+          echo "Bumping package.json: $PKG → $TAG"
+          npm version "$TAG" --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to $TAG [skip ci]"
+          git push origin HEAD:refs/heads/main
+          echo "✓ pushed version bump to main"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
