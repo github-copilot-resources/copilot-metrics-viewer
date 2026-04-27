@@ -1,87 +1,1746 @@
 {
-  "report_day": "2026-03-03",
+  "report_start_day": "2026-04-26",
+  "report_end_day": "2026-04-26",
   "organization_id": "100000001",
   "enterprise_id": "200001",
-  "created_at": "2026-03-04T00:00:00Z",
+  "created_at": "2026-04-27T00:00:00Z",
   "user_totals": [
     {
       "login": "octocat",
       "user_id": 1,
       "total_active_days": 1,
-      "user_initiated_interaction_count": 18,
-      "code_generation_activity_count": 55,
+      "user_initiated_interaction_count": 24,
+      "code_generation_activity_count": 45,
       "code_acceptance_activity_count": 38,
-      "loc_suggested_to_add_sum": 220,
-      "loc_suggested_to_delete_sum": 5,
-      "loc_added_sum": 145,
-      "loc_deleted_sum": 4,
+      "loc_suggested_to_add_sum": 227,
+      "loc_suggested_to_delete_sum": 7,
+      "loc_added_sum": 151,
+      "loc_deleted_sum": 5,
       "totals_by_ide": [
         {
           "ide": "vscode",
-          "user_initiated_interaction_count": 18,
-          "code_generation_activity_count": 55,
-          "code_acceptance_activity_count": 38,
-          "loc_suggested_to_add_sum": 220,
-          "loc_suggested_to_delete_sum": 5,
-          "loc_added_sum": 145,
-          "loc_deleted_sum": 4
+          "user_initiated_interaction_count": 11,
+          "code_generation_activity_count": 26,
+          "code_acceptance_activity_count": 21,
+          "loc_suggested_to_add_sum": 131,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 74,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 53,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 25,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 44,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 29,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 11,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
         }
       ],
       "totals_by_feature": [
         {
           "feature": "code_completion",
-          "user_initiated_interaction_count": 0,
-          "code_generation_activity_count": 40,
-          "code_acceptance_activity_count": 28,
-          "loc_suggested_to_add_sum": 160,
-          "loc_suggested_to_delete_sum": 4,
-          "loc_added_sum": 105,
-          "loc_deleted_sum": 3
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 11,
+          "loc_suggested_to_add_sum": 74,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 8,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 118,
+          "loc_deleted_sum": 2
         },
         {
           "feature": "chat_panel_ask_mode",
-          "user_initiated_interaction_count": 18,
-          "code_generation_activity_count": 15,
-          "code_acceptance_activity_count": 10,
-          "loc_suggested_to_add_sum": 60,
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 43,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 45,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 14,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 6,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "octokitten",
+      "user_id": 2,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 22,
+      "code_generation_activity_count": 49,
+      "code_acceptance_activity_count": 44,
+      "loc_suggested_to_add_sum": 188,
+      "loc_suggested_to_delete_sum": 4,
+      "loc_added_sum": 173,
+      "loc_deleted_sum": 6,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 13,
+          "code_generation_activity_count": 28,
+          "code_acceptance_activity_count": 25,
+          "loc_suggested_to_add_sum": 85,
           "loc_suggested_to_delete_sum": 1,
-          "loc_added_sum": 40,
+          "loc_added_sum": 111,
+          "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 40,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 33,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 30,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 29,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 2,
+          "loc_suggested_to_add_sum": 8,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 7,
           "loc_deleted_sum": 1
         }
       ],
-      "totals_by_language_feature": [
+      "totals_by_feature": [
         {
-          "language": "typescript",
           "feature": "code_completion",
-          "code_generation_activity_count": 25,
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 12,
+          "loc_suggested_to_add_sum": 55,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 10,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 11,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 125,
+          "loc_deleted_sum": 4
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 30,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 37,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 12,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 2,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 5,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "monalisa",
+      "user_id": 3,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 23,
+      "code_generation_activity_count": 44,
+      "code_acceptance_activity_count": 31,
+      "loc_suggested_to_add_sum": 251,
+      "loc_suggested_to_delete_sum": 6,
+      "loc_added_sum": 135,
+      "loc_deleted_sum": 4,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 13,
+          "code_generation_activity_count": 23,
           "code_acceptance_activity_count": 18,
-          "loc_suggested_to_add_sum": 100,
+          "loc_suggested_to_add_sum": 146,
           "loc_suggested_to_delete_sum": 2,
-          "loc_added_sum": 65,
+          "loc_added_sum": 83,
           "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 41,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 30,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 53,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 26,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 10,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
         }
       ],
-      "totals_by_model_feature": [
+      "totals_by_feature": [
         {
-          "model": "auto",
           "feature": "code_completion",
-          "user_initiated_interaction_count": 0,
-          "code_generation_activity_count": 40,
-          "code_acceptance_activity_count": 28,
-          "loc_suggested_to_add_sum": 160,
-          "loc_suggested_to_delete_sum": 4,
-          "loc_added_sum": 105,
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 11,
+          "code_acceptance_activity_count": 9,
+          "loc_suggested_to_add_sum": 79,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 8,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 107,
+          "loc_deleted_sum": 2
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 51,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 3,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 6,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 40,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 14,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 7,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "hubot",
+      "user_id": 5,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 17,
+      "code_generation_activity_count": 44,
+      "code_acceptance_activity_count": 39,
+      "loc_suggested_to_add_sum": 239,
+      "loc_suggested_to_delete_sum": 4,
+      "loc_added_sum": 128,
+      "loc_deleted_sum": 6,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 7,
+          "code_generation_activity_count": 24,
+          "code_acceptance_activity_count": 22,
+          "loc_suggested_to_add_sum": 120,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 73,
+          "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 48,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 20,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 6,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 42,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 21,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 11,
+          "code_acceptance_activity_count": 11,
+          "loc_suggested_to_add_sum": 68,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 7,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 107,
           "loc_deleted_sum": 3
         },
         {
-          "model": "claude-4.5-sonnet",
           "feature": "chat_panel_ask_mode",
-          "user_initiated_interaction_count": 18,
-          "code_generation_activity_count": 15,
-          "code_acceptance_activity_count": 10,
-          "loc_suggested_to_add_sum": 60,
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 44,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 45,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 13,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 7,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "dependabot",
+      "user_id": 6,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 21,
+      "code_generation_activity_count": 44,
+      "code_acceptance_activity_count": 31,
+      "loc_suggested_to_add_sum": 217,
+      "loc_suggested_to_delete_sum": 5,
+      "loc_added_sum": 165,
+      "loc_deleted_sum": 4,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 12,
+          "code_generation_activity_count": 24,
+          "code_acceptance_activity_count": 19,
+          "loc_suggested_to_add_sum": 132,
           "loc_suggested_to_delete_sum": 1,
-          "loc_added_sum": 40,
+          "loc_added_sum": 75,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 40,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 28,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 49,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 28,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 9,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 14,
+          "code_acceptance_activity_count": 10,
+          "loc_suggested_to_add_sum": 62,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 9,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 127,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 6,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 33,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 6,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 34,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 13,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 6,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "primer",
+      "user_id": 7,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 18,
+      "code_generation_activity_count": 50,
+      "code_acceptance_activity_count": 34,
+      "loc_suggested_to_add_sum": 254,
+      "loc_suggested_to_delete_sum": 5,
+      "loc_added_sum": 158,
+      "loc_deleted_sum": 5,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 8,
+          "code_generation_activity_count": 23,
+          "code_acceptance_activity_count": 16,
+          "loc_suggested_to_add_sum": 137,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 79,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 47,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 30,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 11,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 45,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 25,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 13,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 7,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 13,
+          "code_acceptance_activity_count": 11,
+          "loc_suggested_to_add_sum": 72,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 9,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 11,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 124,
+          "loc_deleted_sum": 2
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 43,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 47,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 3,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 16,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 6,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "mona",
+      "user_id": 8,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 24,
+      "code_generation_activity_count": 51,
+      "code_acceptance_activity_count": 38,
+      "loc_suggested_to_add_sum": 153,
+      "loc_suggested_to_delete_sum": 5,
+      "loc_added_sum": 167,
+      "loc_deleted_sum": 4,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 12,
+          "code_generation_activity_count": 31,
+          "code_acceptance_activity_count": 17,
+          "loc_suggested_to_add_sum": 74,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 88,
+          "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 35,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 34,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 30,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 35,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 7,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 8,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 14,
+          "code_acceptance_activity_count": 9,
+          "loc_suggested_to_add_sum": 46,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 10,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 116,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 29,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 26,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 3,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "copilotcat",
+      "user_id": 9,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 20,
+      "code_generation_activity_count": 45,
+      "code_acceptance_activity_count": 46,
+      "loc_suggested_to_add_sum": 246,
+      "loc_suggested_to_delete_sum": 5,
+      "loc_added_sum": 167,
+      "loc_deleted_sum": 6,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 11,
+          "code_generation_activity_count": 20,
+          "code_acceptance_activity_count": 24,
+          "loc_suggested_to_add_sum": 120,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 104,
+          "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 8,
+          "loc_suggested_to_add_sum": 43,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 31,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 9,
+          "loc_suggested_to_add_sum": 55,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 30,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 2,
+          "loc_suggested_to_add_sum": 10,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 9,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 11,
+          "code_acceptance_activity_count": 13,
+          "loc_suggested_to_add_sum": 83,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 9,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 136,
+          "loc_deleted_sum": 4
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 8,
+          "loc_suggested_to_add_sum": 45,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 38,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 14,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 2,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 6,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "githubrocks",
+      "user_id": 10,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 19,
+      "code_generation_activity_count": 48,
+      "code_acceptance_activity_count": 45,
+      "loc_suggested_to_add_sum": 183,
+      "loc_suggested_to_delete_sum": 6,
+      "loc_added_sum": 125,
+      "loc_deleted_sum": 7,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 10,
+          "code_generation_activity_count": 28,
+          "code_acceptance_activity_count": 25,
+          "loc_suggested_to_add_sum": 90,
+          "loc_suggested_to_delete_sum": 3,
+          "loc_added_sum": 71,
+          "loc_deleted_sum": 3
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 8,
+          "loc_suggested_to_add_sum": 37,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 22,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 8,
+          "loc_suggested_to_add_sum": 40,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 24,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 11,
+          "loc_suggested_to_add_sum": 48,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 7,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 13,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 92,
+          "loc_deleted_sum": 5
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 8,
+          "loc_suggested_to_add_sum": 36,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 3,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 28,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 5,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "codewhisperer",
+      "user_id": 11,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 19,
+      "code_generation_activity_count": 59,
+      "code_acceptance_activity_count": 37,
+      "loc_suggested_to_add_sum": 205,
+      "loc_suggested_to_delete_sum": 5,
+      "loc_added_sum": 121,
+      "loc_deleted_sum": 4,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 10,
+          "code_generation_activity_count": 35,
+          "code_acceptance_activity_count": 18,
+          "loc_suggested_to_add_sum": 107,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 73,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 47,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 26,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 11,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 42,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 25,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 10,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 16,
+          "code_acceptance_activity_count": 9,
+          "loc_suggested_to_add_sum": 55,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 86,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 34,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 3,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 34,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 12,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 5,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "devbot",
+      "user_id": 12,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 19,
+      "code_generation_activity_count": 47,
+      "code_acceptance_activity_count": 43,
+      "loc_suggested_to_add_sum": 203,
+      "loc_suggested_to_delete_sum": 7,
+      "loc_added_sum": 138,
+      "loc_deleted_sum": 4,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 9,
+          "code_generation_activity_count": 23,
+          "code_acceptance_activity_count": 22,
+          "loc_suggested_to_add_sum": 114,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 79,
+          "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 45,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 31,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 33,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 29,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 2,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 15,
+          "code_acceptance_activity_count": 13,
+          "loc_suggested_to_add_sum": 53,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 7,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 90,
+          "loc_deleted_sum": 2
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 7,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 32,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 40,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 13,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 5,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "stacky",
+      "user_id": 13,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 20,
+      "code_generation_activity_count": 45,
+      "code_acceptance_activity_count": 44,
+      "loc_suggested_to_add_sum": 229,
+      "loc_suggested_to_delete_sum": 7,
+      "loc_added_sum": 177,
+      "loc_deleted_sum": 5,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 10,
+          "code_generation_activity_count": 21,
+          "code_acceptance_activity_count": 24,
+          "loc_suggested_to_add_sum": 128,
+          "loc_suggested_to_delete_sum": 3,
+          "loc_added_sum": 115,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 41,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 35,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 37,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 28,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 8,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 14,
+          "code_acceptance_activity_count": 12,
+          "loc_suggested_to_add_sum": 67,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 8,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 150,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 38,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 36,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 11,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 6,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "patchwork",
+      "user_id": 14,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 18,
+      "code_generation_activity_count": 54,
+      "code_acceptance_activity_count": 38,
+      "loc_suggested_to_add_sum": 158,
+      "loc_suggested_to_delete_sum": 5,
+      "loc_added_sum": 115,
+      "loc_deleted_sum": 6,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 9,
+          "code_generation_activity_count": 28,
+          "code_acceptance_activity_count": 18,
+          "loc_suggested_to_add_sum": 82,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 63,
+          "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 7,
+          "loc_suggested_to_add_sum": 36,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 18,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 27,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 24,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 2,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 6,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 16,
+          "code_acceptance_activity_count": 11,
+          "loc_suggested_to_add_sum": 41,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 79,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 24,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 3,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 26,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 3,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 3,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 10,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 4,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "bytecruncher",
+      "user_id": 15,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 23,
+      "code_generation_activity_count": 54,
+      "code_acceptance_activity_count": 31,
+      "loc_suggested_to_add_sum": 167,
+      "loc_suggested_to_delete_sum": 4,
+      "loc_added_sum": 129,
+      "loc_deleted_sum": 6,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 11,
+          "code_generation_activity_count": 31,
+          "code_acceptance_activity_count": 19,
+          "loc_suggested_to_add_sum": 82,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 66,
+          "loc_deleted_sum": 2
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 36,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 29,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 26,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 28,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 8,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 18,
+          "code_acceptance_activity_count": 9,
+          "loc_suggested_to_add_sum": 56,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 7,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 12,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 96,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 4,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 4,
+          "loc_suggested_to_add_sum": 29,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 28,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 4,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 3,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 10,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 4,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        }
+      ]
+    },
+    {
+      "login": "nullpointer",
+      "user_id": 16,
+      "total_active_days": 1,
+      "user_initiated_interaction_count": 22,
+      "code_generation_activity_count": 57,
+      "code_acceptance_activity_count": 34,
+      "loc_suggested_to_add_sum": 182,
+      "loc_suggested_to_delete_sum": 7,
+      "loc_added_sum": 109,
+      "loc_deleted_sum": 4,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 11,
+          "code_generation_activity_count": 31,
+          "code_acceptance_activity_count": 15,
+          "loc_suggested_to_add_sum": 92,
+          "loc_suggested_to_delete_sum": 2,
+          "loc_added_sum": 62,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "visualstudio",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 5,
+          "loc_suggested_to_add_sum": 41,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 23,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 10,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 31,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 17,
+          "loc_deleted_sum": 1
+        },
+        {
+          "ide": "neovim",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 1,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 1,
+          "loc_added_sum": 5,
+          "loc_deleted_sum": 1
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 15,
+          "code_acceptance_activity_count": 9,
+          "loc_suggested_to_add_sum": 55,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 6,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "agent_edit",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 14,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 1,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 72,
+          "loc_deleted_sum": 3
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 2,
+          "code_generation_activity_count": 8,
+          "code_acceptance_activity_count": 6,
+          "loc_suggested_to_add_sum": 33,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 3,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 3,
+          "code_generation_activity_count": 9,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 28,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 2,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_panel_custom_mode",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 3,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 9,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
+          "loc_deleted_sum": 1
+        },
+        {
+          "feature": "chat_inline",
+          "user_initiated_interaction_count": 1,
+          "code_generation_activity_count": 1,
+          "code_acceptance_activity_count": 0,
+          "loc_suggested_to_add_sum": 5,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 1,
           "loc_deleted_sum": 1
         }
       ]

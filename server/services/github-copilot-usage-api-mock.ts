@@ -37,10 +37,15 @@ export function mockRequestDownloadLinks(
     };
   }
 
+  // Use a rolling 28-day window ending today so charts always show recent dates
+  const today = new Date();
+  const endDay = today.toISOString().split('T')[0];
+  const startDay = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
   return {
     download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-28-day-report.json`],
-    report_start_day: '2026-02-04',
-    report_end_day: '2026-03-03',
+    report_start_day: startDay,
+    report_end_day: endDay,
   };
 }
 
@@ -63,10 +68,15 @@ export function mockRequestUserDownloadLinks(
     };
   }
 
+  // Use a rolling 28-day window ending today so charts always show recent dates
+  const today = new Date();
+  const endDay = today.toISOString().split('T')[0];
+  const startDay = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
   return {
     download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-users-28-day-report.json`],
-    report_start_day: '2026-02-04',
-    report_end_day: '2026-03-03',
+    report_start_day: startDay,
+    report_end_day: endDay,
   };
 }
 
@@ -95,21 +105,48 @@ export function generateMockReport(startDay: string, endDay: string): OrgReport 
     const { resolve } = require('path');
     const filePath = resolve('public/mock-data/new-api/organization-28-day-report.json');
     const data = JSON.parse(readFileSync(filePath, 'utf8')) as OrgReport;
-    // Filter to requested date range
-    const start = new Date(startDay);
-    const end = new Date(endDay);
-    data.day_totals = data.day_totals
-      .filter(d => {
-        const date = new Date(d.day);
-        return date >= start && date <= end;
-      })
-      .sort((a, b) => a.day.localeCompare(b.day));
-    if (data.day_totals.length > 0) {
+
+    const sorted = [...data.day_totals].sort((a, b) => a.day.localeCompare(b.day));
+    if (sorted.length === 0) return _generateFallbackReport(startDay, endDay);
+
+    const reqStart = new Date(startDay);
+    const reqEnd = new Date(endDay);
+
+    // Try filtering to the requested range directly
+    const direct = sorted.filter(d => {
+      const date = new Date(d.day);
+      return date >= reqStart && date <= reqEnd;
+    });
+
+    if (direct.length > 0) {
+      data.day_totals = direct;
       data.report_start_day = startDay;
       data.report_end_day = endDay;
       return data;
     }
-    // Requested range has no data in file — fall through to generator
+
+    // No overlap: shift all days so the file's last day aligns with reqEnd.
+    // This keeps relative temporal patterns intact while producing the requested date range.
+    const fileEndMs = new Date(sorted[sorted.length - 1].day).getTime();
+    const reqEndMs = reqEnd.getTime();
+    const offsetMs = reqEndMs - fileEndMs;
+
+    const shifted = sorted
+      .map(d => ({
+        ...d,
+        day: new Date(new Date(d.day).getTime() + offsetMs).toISOString().split('T')[0],
+      }))
+      .filter(d => {
+        const date = new Date(d.day);
+        return date >= reqStart && date <= reqEnd;
+      });
+
+    if (shifted.length > 0) {
+      data.day_totals = shifted;
+      data.report_start_day = startDay;
+      data.report_end_day = endDay;
+      return data;
+    }
   } catch {
     // File not available — fall through to generator
   }
