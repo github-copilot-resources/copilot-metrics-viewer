@@ -118,29 +118,12 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     permissions:
-      id-token: write
       contents: read
 
     steps:
-    - name: Azure Login
-      uses: azure/login@v2
-      with:
-        client-id: ${{ secrets.AZURE_CLIENT_ID }}
-        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-    - name: Configure Azure App Settings
-      run: |
-        az webapp config appsettings set \
-          --name copilot-metrics-viewer \
-          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-          --settings \
-            NUXT_PUBLIC_IS_DATA_MOCKED=true \
-            NUXT_PUBLIC_SCOPE=organization \
-            NUXT_PUBLIC_GITHUB_ORG=mocked-org \
-            WEBSITES_PORT=80 \
-            NUXT_SESSION_PASSWORD="${{ secrets.NUXT_SESSION_PASSWORD }}"
-
+    # App settings (NUXT_PUBLIC_IS_DATA_MOCKED, NUXT_PUBLIC_SCOPE, etc.) are
+    # configured directly in the Azure Portal under Configuration > App Settings.
+    # They do not need to be set here — publish-profile auth doesn't support az cli.
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
