@@ -75,7 +75,10 @@ jobs:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          # Release event: checkout at the tag.
+          # workflow_dispatch re-run: no ref = default branch (latest commit on main).
+          # The version-check below ensures package.json still matches the tag.
+          ref: ${{ github.event.release.tag_name }}
 
       # Fail fast if the release tag doesn't match package.json version.
       # Fix: bump the version in a commit before pushing the release tag.
@@ -133,10 +136,12 @@ jobs:
       - name: Checkout GitHub Action
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          # Release event: checkout at the tag.
+          # workflow_dispatch re-run: no ref = default branch (latest commit on main).
+          # The version-check below ensures package.json still matches the tag.
+          ref: ${{ github.event.release.tag_name }}
 
       # Fail fast if the release tag doesn't match package.json version.
-      # Fix: bump the version in a commit before pushing the release tag.
       - name: Verify npm version matches release tag
         run: |
           TAG="${{ github.event.release.tag_name || inputs.tag }}"
