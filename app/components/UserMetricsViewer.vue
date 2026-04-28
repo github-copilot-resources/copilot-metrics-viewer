@@ -1,10 +1,42 @@
 <template>
   <div>
+    <!-- Org Tree + main content layout -->
+    <v-row no-gutters class="flex-nowrap fill-height">
+      <!-- Org tree sidebar -->
+      <v-col
+        v-if="entraEnabled && orgTreeOpen"
+        cols="auto"
+        style="width: 300px; min-width: 240px; max-width: 340px; border-right: 1px solid rgba(0,0,0,0.1);"
+        class="d-flex flex-column"
+      >
+        <OrgTreePanel
+          :user-metrics="userMetrics"
+          :session-email="sessionEmail"
+          @select="onOrgTreeSelect"
+        />
+      </v-col>
+
+      <!-- Main content -->
+      <v-col>
     <!-- Info panel — same style as Organization tab -->
     <v-card variant="outlined" class="mx-4 mt-3 mb-2 pa-3" density="compact">
       <div class="d-flex flex-wrap align-start gap-2 text-body-2">
         <div class="mr-3" style="flex: 1; min-width: 250px;">
-          <div class="font-weight-bold text-body-1 mb-1">👤 User Metrics</div>
+          <div class="d-flex align-center gap-2">
+            <div class="font-weight-bold text-body-1 mb-1">👤 User Metrics</div>
+            <!-- Org tree toggle -->
+            <v-btn
+              v-if="entraEnabled"
+              size="x-small"
+              :variant="orgTreeOpen ? 'tonal' : 'outlined'"
+              :color="orgTreeOpen ? 'primary' : undefined"
+              class="mb-1"
+              prepend-icon="mdi-account-supervisor-outline"
+              @click="orgTreeOpen = !orgTreeOpen"
+            >
+              Org Tree
+            </v-btn>
+          </div>
           <div class="text-medium-emphasis">
             Per-user Copilot activity breakdown for the reporting period. Shows interactions, code
             completions, acceptance rates, and AI-generated lines of code per developer.
@@ -158,6 +190,23 @@
         <br>
         <h2>Per-User Copilot Usage Metrics</h2>
         <div class="text-caption mb-4">{{ dateRangeDescription }}</div>
+
+        <!-- Org tree filter banner -->
+        <v-alert
+          v-if="orgFilterLogins.length > 0"
+          type="info"
+          variant="tonal"
+          density="compact"
+          closable
+          class="mb-3"
+          @click:close="clearOrgFilter"
+        >
+          <div class="d-flex align-center gap-2">
+            <v-icon size="16">mdi-account-supervisor-outline</v-icon>
+            <span>Showing <strong>{{ orgFilteredUsers.length }}</strong> users under <strong>{{ orgFilterLabel }}</strong></span>
+            <v-btn size="x-small" variant="text" @click="clearOrgFilter">Clear filter</v-btn>
+          </div>
+        </v-alert>
 
         <!-- Understanding your metrics moved to top of page -->
         <v-row class="mb-4" align="center">
@@ -436,6 +485,8 @@
         </v-container>
       </v-main>
     </div>
+      </v-col>
+    </v-row>
   </div>
 </template>
 
@@ -457,12 +508,13 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import OrgTreePanel from './OrgTreePanel.vue';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
 
 export default defineComponent({
   name: 'UserMetricsViewer',
-  components: { Line, Bar, Doughnut },
+  components: { Line, Bar, Doughnut, OrgTreePanel },
   props: {
     userMetrics: {
       type: Array as PropType<UserTotals[]>,
@@ -482,11 +534,35 @@ export default defineComponent({
     queryParams: {
       type: Object as PropType<Record<string, string>>,
       default: () => ({})
+    },
+    /** Whether Entra integration is enabled (shows org tree panel). */
+    entraEnabled: {
+      type: Boolean,
+      default: false
+    },
+    /** Email of the logged-in user for org tree auto-load. */
+    sessionEmail: {
+      type: String,
+      default: ''
     }
   },
   setup(props) {
     const search = ref('');
     const activityFilter = ref('all');
+
+    // ── Org tree state ─────────────────────────────────────────────────────
+    const orgTreeOpen = ref(false);
+    const orgFilterLogins = ref<string[]>([]);
+    const orgFilterLabel = ref('');
+
+    function onOrgTreeSelect(logins: string[]) {
+      orgFilterLogins.value = logins;
+    }
+
+    function clearOrgFilter() {
+      orgFilterLogins.value = [];
+      orgFilterLabel.value = '';
+    }
 
     // ── User selection for drill-down charts ───────────────────────────────
     const selectedUserLogin = ref<string | null>(null);
@@ -591,8 +667,13 @@ export default defineComponent({
       return ((totalAccepted / totalGenerated) * 100).toFixed(1);
     });
 
+    const orgFilteredUsers = computed(() => {
+      if (orgFilterLogins.value.length === 0) return props.userMetrics;
+      return props.userMetrics.filter(u => orgFilterLogins.value.includes(u.login));
+    });
+
     const filteredUsers = computed(() => {
-      let result = [...props.userMetrics];
+      let result = [...orgFilteredUsers.value];
 
       if (activityFilter.value === 'active') {
         result = result.filter(u => u.total_active_days >= 7);
@@ -1096,6 +1177,13 @@ export default defineComponent({
       chartTrendLoading,
       chartTrendChartData,
       chartTrendOptions,
+      // org tree
+      orgTreeOpen,
+      orgFilterLogins,
+      orgFilterLabel,
+      orgFilteredUsers,
+      onOrgTreeSelect,
+      clearOrgFilter,
     };
   },
   data() {

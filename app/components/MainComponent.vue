@@ -189,6 +189,8 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription"
               :user-metrics-history="userMetricsHistory"
               :query-params="seatsQueryParams"
+              :entra-enabled="entraEnabled"
+              :session-email="sessionEmail"
             />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
@@ -562,6 +564,15 @@ export default defineNuxtComponent({
       return options.toParams();
     });
 
+    const entraEnabled = computed(() => config.public.entraEnabled || config.public.isDataMocked);
+    const sessionEmail = computed(() => {
+      if (!user.value) return '';
+      // GitHub OAuth stores email separately; Microsoft OAuth stores email as login
+      return (user.value as Record<string, unknown>).email as string
+        || (user.value.login && user.value.login.includes('@') ? user.value.login : '')
+        || '';
+    });
+
     return {
       isDark,
       toggleTheme,
@@ -582,6 +593,8 @@ export default defineNuxtComponent({
       seatsCurrentPage,
       seatsQueryParams,
       aiQueryParams,
+      entraEnabled,
+      sessionEmail,
     };
   },
 })

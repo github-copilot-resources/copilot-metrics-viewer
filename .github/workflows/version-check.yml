@@ -1,0 +1,42 @@
+name: Version bump check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Check npm version is bumped above latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "package.json version: $PKG_VERSION"
+
+          # Get the latest release tag (default to v0.0.0 if no releases exist)
+          LATEST_TAG=$(gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName // "v0.0.0"' 2>/dev/null || echo "v0.0.0")
+          LATEST_VERSION="${LATEST_TAG#v}"
+          echo "Latest release version: $LATEST_VERSION"
+
+          # Compare: PKG_VERSION must be strictly greater than LATEST_VERSION
+          node -e "
+          const pkg = '$PKG_VERSION'.split('.').map(Number);
+          const rel = '$LATEST_VERSION'.split('.').map(Number);
+          const gt = pkg[0] > rel[0] ||
+                     (pkg[0] === rel[0] && pkg[1] > rel[1]) ||
+                     (pkg[0] === rel[0] && pkg[1] === rel[1] && pkg[2] > rel[2]);
+          if (!gt) {
+            console.error('::error::Version not bumped: package.json has $PKG_VERSION but latest release is $LATEST_VERSION. Run \`npm version patch\` (or minor/major) before merging.');
+            process.exit(1);
+          }
+          console.log('✓ Version $PKG_VERSION is greater than latest release $LATEST_VERSION');
+          "
