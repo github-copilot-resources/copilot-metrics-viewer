@@ -40,12 +40,14 @@ export async function runSync() {
   if (!githubToken) {
     logger.error('NUXT_GITHUB_TOKEN environment variable is required');
     process.exit(1);
+    return; // guard: allows tests to mock process.exit without continuing
   }
 
   const identifier = githubOrg || githubEnt || '';
   if (!identifier) {
     logger.error('NUXT_PUBLIC_GITHUB_ORG or NUXT_PUBLIC_GITHUB_ENT must be set');
     process.exit(1);
+    return; // guard: allows tests to mock process.exit without continuing
   }
 
   const headers = {
@@ -88,8 +90,11 @@ export async function runSync() {
   }
 }
 
-// Run the sync only when executed as the main entry point (not when imported for testing)
-const _isMain = process.argv[1]?.endsWith('sync-entry.ts') || process.argv[1]?.endsWith('sync-entry.js');
+// Run the sync only when executed as the main entry point (not when imported for testing).
+// Using fileURLToPath(import.meta.url) is the standard ESM way to detect the main module —
+// it works correctly with tsx (.ts), compiled output (.js), and bundled builds alike.
+import { fileURLToPath } from 'node:url';
+const _isMain = fileURLToPath(import.meta.url) === process.argv[1];
 if (_isMain) {
   runSync();
 }

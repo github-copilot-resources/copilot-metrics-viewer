@@ -56,21 +56,43 @@ import { runSync } from '../server/sync-entry.ts';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Snapshot the process env so we can restore it after each test. */
-function withEnv(env: Record<string, string | undefined>, fn: () => Promise<void>) {
+/** The set of env vars managed by these tests. */
+const MANAGED_VARS = [
+  'NUXT_GITHUB_TOKEN',
+  'NUXT_PUBLIC_GITHUB_ORG',
+  'NUXT_PUBLIC_GITHUB_ENT',
+  'NUXT_PUBLIC_SCOPE',
+  'SYNC_DAYS_BACK',
+] as const;
+
+/**
+ * Save the current values of the managed env vars, apply the provided
+ * overrides for the test, then restore the originals afterwards.
+ * Only the vars listed in MANAGED_VARS are touched — Node internals and
+ * other test infrastructure env vars are left completely untouched.
+ */
+function withEnv(env: Partial<Record<(typeof MANAGED_VARS)[number], string | undefined>>, fn: () => Promise<void>) {
   return async () => {
-    const saved = { ...process.env };
+    // Save originals
+    const saved: Record<string, string | undefined> = {};
+    for (const key of MANAGED_VARS) saved[key] = process.env[key];
+
     try {
-      // Clear then apply the provided env
-      for (const key of Object.keys(process.env)) delete process.env[key];
-      for (const [k, v] of Object.entries(env)) {
+      // Clear all managed vars, then apply the provided ones
+      for (const key of MANAGED_VARS) delete process.env[key];
+      for (const [k, v] of Object.entries(env) as [string, string | undefined][]) {
         if (v !== undefined) process.env[k] = v;
       }
       await fn();
     } finally {
-      // Restore
-      for (const key of Object.keys(process.env)) delete process.env[key];
-      Object.assign(process.env, saved);
+      // Restore originals
+      for (const key of MANAGED_VARS) {
+        if (saved[key] !== undefined) {
+          process.env[key] = saved[key];
+        } else {
+          delete process.env[key];
+        }
+      }
     }
   };
 }
@@ -80,7 +102,7 @@ const BASE_ENV = {
   NUXT_PUBLIC_GITHUB_ORG: 'test-org',
   NUXT_PUBLIC_SCOPE: 'organization',
   SYNC_DAYS_BACK: '7',
-};
+} as const;
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -185,10 +207,9 @@ describe('sync-entry: missing env vars', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Spy on process.exit to prevent the test process from actually exiting
-    exitSpy = vi.spyOn(process, 'exit').mockImplementation(
-      (() => { throw new Error('process.exit called'); }) as () => never
-    );
+    // Replace process.exit with a no-op spy so the test process doesn't actually exit.
+    // The spy records that exit was called; we check the exit code via the argument.
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
   });
 
   afterEach(() => {
@@ -199,7 +220,7 @@ describe('sync-entry: missing env vars', () => {
     NUXT_PUBLIC_GITHUB_ORG: 'test-org',
     NUXT_PUBLIC_SCOPE: 'organization',
   }, async () => {
-    await expect(runSync()).rejects.toThrow('process.exit called');
+    await runSync();
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(mockSyncBulk).not.toHaveBeenCalled();
   }));
@@ -208,7 +229,7 @@ describe('sync-entry: missing env vars', () => {
     NUXT_GITHUB_TOKEN: 'test-token-abc',
     NUXT_PUBLIC_SCOPE: 'organization',
   }, async () => {
-    await expect(runSync()).rejects.toThrow('process.exit called');
+    await runSync();
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(mockSyncBulk).not.toHaveBeenCalled();
   }));
