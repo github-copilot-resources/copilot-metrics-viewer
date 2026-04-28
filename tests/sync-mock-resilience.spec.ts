@@ -102,7 +102,7 @@ describe('isMockMode() in non-mock environments', () => {
     // function falls back to process.env — verify that path's string-comparison logic.
     const envTrue = 'true';
     const envFalse = 'false';
-    const envUnset = undefined;
+    const envUnset: string | undefined = undefined;
     expect(envTrue === 'true').toBe(true);
     expect(envFalse === 'true').toBe(false);
     expect(envUnset === 'true').toBe(false);
