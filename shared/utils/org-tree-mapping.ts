@@ -1,5 +1,4 @@
-import type { OrgTreeNode } from '../types/org-tree'
-import type { UserTotals } from '../../server/services/github-copilot-usage-api'
+import type { OrgTreeNode, UserTotals } from '../types/org-tree'
 
 /**
  * Normalize a string for login matching:

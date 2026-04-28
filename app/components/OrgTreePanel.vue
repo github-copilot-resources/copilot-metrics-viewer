@@ -94,9 +94,8 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, watch } from 'vue'
-import type { OrgTreeNode, OrgSearchResult, OrgTreeResponse } from '../../shared/types/org-tree'
-import { mapCopilotDataToTree, getSubtreeLogins } from '../../shared/utils/org-tree-mapping'
-import type { UserTotals } from '../../server/services/github-copilot-usage-api'
+import type { OrgTreeNode, OrgSearchResult, OrgTreeResponse, UserTotals } from '#shared/types/org-tree'
+import { mapCopilotDataToTree, getSubtreeLogins } from '#shared/utils/org-tree-mapping'
 import OrgTreeNodeItem from './OrgTreeNodeItem.vue'
 
 export default defineComponent({
