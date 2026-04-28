@@ -24,7 +24,7 @@ import { syncBulk } from './services/sync-service';
 import { initSchema } from './storage/db';
 import { closePool } from './storage/db';
 
-async function runSync() {
+export async function runSync() {
   const logger = console;
 
   // Get configuration from environment
@@ -88,5 +88,8 @@ async function runSync() {
   }
 }
 
-// Run the sync
-runSync();
+// Run the sync only when executed as the main entry point (not when imported for testing)
+const _isMain = process.argv[1]?.endsWith('sync-entry.ts') || process.argv[1]?.endsWith('sync-entry.js');
+if (_isMain) {
+  runSync();
+}
