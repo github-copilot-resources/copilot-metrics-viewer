@@ -14,7 +14,7 @@ import { describe, it, expect, vi } from 'vitest';
 // Intercept createRequire from node:module BEFORE the mock module is imported.
 // This simulates the sync-container scenario where public/mock-data/ files are absent.
 vi.mock('node:module', async (importOriginal) => {
-  const actual = await importOriginal() as { createRequire: (url: string) => (path: string) => unknown };
+  const actual = await importOriginal() as typeof import('node:module');
   return {
     ...actual,
     createRequire: (url: string) => {

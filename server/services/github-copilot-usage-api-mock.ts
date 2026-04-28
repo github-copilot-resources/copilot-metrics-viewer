@@ -178,7 +178,7 @@ function _generateFallbackReport(startDay: string, endDay: string): OrgReport {
   let dayTemplate: ReportDayTotals | null = null;
   try {
     const raw = _loadMockOrg1Day();
-    if (!raw) throw new Error('Mock data unavailable');
+    if (!raw) throw new Error('organization-1-day-report.json unavailable for day template');
     const data = JSON.parse(JSON.stringify(raw)) as OrgReport;
     dayTemplate = data.day_totals[0] ?? null;
   } catch {
