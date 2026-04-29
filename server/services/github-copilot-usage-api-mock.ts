@@ -9,11 +9,30 @@
  * anonymized real API responses. Nuxt serves them as static assets.
  */
 
+import { createRequire } from 'node:module';
 import type { DownloadLinksResponse, MetricsReportRequest, OrgReport, ReportDayTotals } from './github-copilot-usage-api';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import mockOrg28DayRaw from '../../public/mock-data/new-api/organization-28-day-report.json';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import mockOrg1DayRaw from '../../public/mock-data/new-api/organization-1-day-report.json';
+
+// Lazy loaders — called only when mock data is actually needed.
+// Using createRequire instead of static imports avoids a hard module-load
+// failure when the mock JSON files are absent (e.g. in the sync-service
+// container where NUXT_PUBLIC_IS_DATA_MOCKED=false and public/ is not copied).
+function _loadMockOrg28Day(): OrgReport | null {
+  try {
+    const req = createRequire(import.meta.url);
+    return req('../../public/mock-data/new-api/organization-28-day-report.json') as OrgReport;
+  } catch {
+    return null;
+  }
+}
+
+function _loadMockOrg1Day(): OrgReport | null {
+  try {
+    const req = createRequire(import.meta.url);
+    return req('../../public/mock-data/new-api/organization-1-day-report.json') as OrgReport;
+  } catch {
+    return null;
+  }
+}
 
 /** Base URL for local mock files served by Nuxt's public/ directory */
 function getMockBaseUrl(): string {
@@ -103,8 +122,10 @@ export function isMockMode(): boolean {
  * the metrics-util-v2 mock path that needs data before the HTTP server starts).
  */
 export function generateMockReport(startDay: string, endDay: string): OrgReport {
-  // Use statically imported mock data (bundled at compile time — no filesystem dependency)
-  const data = JSON.parse(JSON.stringify(mockOrg28DayRaw)) as OrgReport;
+  // Lazily load mock data — returns null when files are absent (e.g. sync container)
+  const raw = _loadMockOrg28Day();
+  if (!raw) return _generateFallbackReport(startDay, endDay);
+  const data = JSON.parse(JSON.stringify(raw)) as OrgReport;
 
   const sorted = [...data.day_totals].sort((a, b) => a.day.localeCompare(b.day));
   if (sorted.length === 0) return _generateFallbackReport(startDay, endDay);
@@ -156,7 +177,9 @@ function _generateFallbackReport(startDay: string, endDay: string): OrgReport {
   // Use statically imported 1-day template as per-day template
   let dayTemplate: ReportDayTotals | null = null;
   try {
-    const data = JSON.parse(JSON.stringify(mockOrg1DayRaw)) as OrgReport;
+    const raw = _loadMockOrg1Day();
+    if (!raw) throw new Error('organization-1-day-report.json unavailable for day template');
+    const data = JSON.parse(JSON.stringify(raw)) as OrgReport;
     dayTemplate = data.day_totals[0] ?? null;
   } catch {
     // Template unavailable — will use hardcoded fallback below

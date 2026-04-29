@@ -17,6 +17,7 @@ COPY shared ./shared
 COPY app/model ./app/model
 COPY app/types ./app/types
 COPY app/utils ./app/utils
+COPY public/mock-data ./public/mock-data
 COPY nuxt.config.ts tsconfig.json tsconfig.sync.json ./
 
 # Production stage
@@ -33,6 +34,7 @@ RUN npm ci
 COPY --from=builder /app/server ./server
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/app ./app
+COPY --from=builder /app/public ./public
 COPY --from=builder /app/nuxt.config.ts ./nuxt.config.ts
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
 COPY --from=builder /app/tsconfig.sync.json ./tsconfig.sync.json
