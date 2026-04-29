@@ -1,8 +1,48 @@
 <template>
   <div class="org-tree-panel">
-    <!-- Search / selection area -->
-    <div class="pa-3 pb-2">
+    <!-- MSAL Sign-in banner (shown when MSAL is configured and user is not signed in) -->
+    <div v-if="msalMode && !msal.isSignedIn.value" class="pa-3 pb-2">
       <div class="text-caption text-medium-emphasis font-weight-medium mb-2">🏢 ORG TREE</div>
+      <v-alert v-if="msal.error.value" type="warning" density="compact" variant="tonal" class="mb-2 text-caption">
+        {{ msal.error.value }}
+      </v-alert>
+      <v-btn
+        color="primary"
+        variant="tonal"
+        size="small"
+        block
+        prepend-icon="mdi-microsoft"
+        :loading="signingIn"
+        @click="onSignIn"
+      >
+        Sign in with Microsoft
+      </v-btn>
+      <div class="text-caption text-medium-emphasis mt-2" style="line-height:1.4">
+        Sign in to browse your organisation's hierarchy and filter Copilot metrics by manager subtree.
+      </div>
+    </div>
+
+    <!-- Search / selection area (shown once MSAL is not required, or user is signed in) -->
+    <div v-else class="pa-3 pb-2">
+      <div class="d-flex align-center justify-space-between mb-2">
+        <div class="text-caption text-medium-emphasis font-weight-medium">🏢 ORG TREE</div>
+        <!-- MSAL signed-in indicator -->
+        <div v-if="msalMode && msal.isSignedIn.value" class="d-flex align-center gap-1">
+          <v-tooltip :text="`Signed in as ${msal.activeAccount.value?.username ?? ''}`" location="bottom">
+            <template #activator="{ props: tip }">
+              <v-chip v-bind="tip" size="x-small" color="success" variant="tonal" closable @click:close="onSignOut">
+                <v-icon start size="12">mdi-microsoft</v-icon>
+                {{ shortName(msal.activeAccount.value?.name ?? msal.activeAccount.value?.username ?? '') }}
+              </v-chip>
+            </template>
+          </v-tooltip>
+        </div>
+      </div>
+
+      <v-alert v-if="msalMode && msal.error.value" type="warning" density="compact" variant="tonal" class="mb-2 text-caption">
+        {{ msal.error.value }}
+        <v-btn v-if="!msal.isSignedIn.value" size="x-small" variant="text" class="ml-1" @click="onSignIn">Sign in</v-btn>
+      </v-alert>
 
       <v-autocomplete
         v-model="selectedResult"
@@ -115,6 +155,13 @@ export default defineComponent({
   },
   emits: ['select'],
   setup(props, { emit }) {
+    const config = useRuntimeConfig()
+    const msal = useMsal()
+
+    // MSAL mode is active when entraClientId is set in public config and data is not mocked
+    const msalMode = computed(() => !!config.public.entraClientId && !config.public.isDataMocked)
+    const signingIn = ref(false)
+
     const searchQuery = ref('')
     const searchResults = ref<OrgSearchResult[]>([])
     const selectedResult = ref<OrgSearchResult | null>(null)
@@ -131,6 +178,29 @@ export default defineComponent({
 
     function initials(name: string): string {
       return name.split(' ').map(p => p[0] ?? '').slice(0, 2).join('').toUpperCase()
+    }
+
+    function shortName(name: string): string {
+      const parts = name.trim().split(' ')
+      return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : name
+    }
+
+    async function onSignIn() {
+      signingIn.value = true
+      await msal.signIn()
+      signingIn.value = false
+    }
+
+    async function onSignOut() {
+      clearTree()
+      await msal.signOut()
+    }
+
+    async function getAuthHeaders(): Promise<Record<string, string>> {
+      if (!msalMode.value) return {}
+      const token = await msal.acquireTokenSilent()
+      if (!token) return {}
+      return { Authorization: `Bearer ${token}` }
     }
 
     const treeStats = computed(() => {
@@ -156,7 +226,8 @@ export default defineComponent({
       searchDebounce = setTimeout(async () => {
         searching.value = true
         try {
-          searchResults.value = await $fetch<OrgSearchResult[]>(`/api/org-search?q=${encodeURIComponent(q)}`)
+          const headers = await getAuthHeaders()
+          searchResults.value = await $fetch<OrgSearchResult[]>(`/api/org-search?q=${encodeURIComponent(q)}`, { headers })
         } catch { searchResults.value = [] } finally { searching.value = false }
       }, 300)
     }
@@ -167,7 +238,8 @@ export default defineComponent({
       treeRoot.value = null
       clearSelection()
       try {
-        const res = await $fetch<OrgTreeResponse>(`/api/org-tree?userEmail=${encodeURIComponent(email)}`)
+        const headers = await getAuthHeaders()
+        const res = await $fetch<OrgTreeResponse>(`/api/org-tree?userEmail=${encodeURIComponent(email)}`, { headers })
         mapCopilotDataToTree(res.root, props.userMetrics)
         treeRoot.value = res.root
       } catch (err: unknown) {
@@ -219,16 +291,18 @@ export default defineComponent({
       if (treeRoot.value) mapCopilotDataToTree(treeRoot.value, metrics)
     })
 
-    // Auto-load session user's subtree
+    // Auto-load session user's subtree — only when NOT in MSAL mode (MSAL requires explicit sign-in)
     watch(() => props.sessionEmail, (email) => {
-      if (email && !treeRoot.value) loadTree(email)
+      if (email && !treeRoot.value && !msalMode.value) loadTree(email)
     }, { immediate: true })
 
     return {
+      msal, msalMode, signingIn,
       searchQuery, searchResults, selectedResult, searching,
       loadingTree, treeError, treeRoot,
       selectedLogins, selectionLabel, treeStats,
-      initials, onSearchInput, onPersonSelected,
+      initials, shortName, onSignIn, onSignOut,
+      onSearchInput, onPersonSelected,
       clearTree, clearSelection, onNodeSelect,
     }
   }

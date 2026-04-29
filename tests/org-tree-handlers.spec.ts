@@ -21,6 +21,7 @@ vi.mock('#app/nuxt', async (importOriginal) => {
 // ── Stub h3 globals that server handlers expect ────────────────────────────────
 ;(globalThis as any).defineEventHandler = (handler: any) => handler
 ;(globalThis as any).getQuery = (event: any) => event._query ?? {}
+;(globalThis as any).getRequestHeader = (event: any, name: string) => (event._headers ?? {})[name.toLowerCase()] ?? undefined
 
 // ── Helper: set mock config then fresh-import handler ────────────────────────
 function setConfig(isDataMocked: boolean, entra = false) {
@@ -33,6 +34,12 @@ function setConfig(isDataMocked: boolean, entra = false) {
 async function loadSearchHandler(isDataMocked: boolean, entra = false) {
   setConfig(isDataMocked, entra)
   vi.resetModules()
+  vi.mock('../server/services/microsoft-graph-service', () => ({
+    searchUsers: vi.fn(),
+    searchUsersWithToken: vi.fn(),
+    getSubtree: vi.fn(),
+    getSubtreeWithToken: vi.fn(),
+  }))
   const mod = await import('../server/api/org-search')
   return (mod as any).default
 }
@@ -42,7 +49,9 @@ async function loadTreeHandler(isDataMocked: boolean, entra = false) {
   vi.resetModules()
   vi.mock('../server/services/microsoft-graph-service', () => ({
     searchUsers: vi.fn(),
+    searchUsersWithToken: vi.fn(),
     getSubtree: vi.fn(),
+    getSubtreeWithToken: vi.fn(),
   }))
   const mod = await import('../server/api/org-tree')
   return (mod as any).default

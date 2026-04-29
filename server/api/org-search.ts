@@ -1,4 +1,4 @@
-import { searchUsers } from '../services/microsoft-graph-service'
+import { searchUsers, searchUsersWithToken } from '../services/microsoft-graph-service'
 import type { OrgSearchResult } from '../../shared/types/org-tree'
 
 // Mock search data matching the entra-org-tree.json
@@ -30,6 +30,14 @@ export default defineEventHandler(async (event): Promise<OrgSearchResult[]> => {
     )
   }
 
+  // Delegated token path — token obtained via MSAL browser popup
+  const authHeader = getRequestHeader(event, 'authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7)
+    return searchUsersWithToken(token, q)
+  }
+
+  // Service principal path — server-side app credentials
   const tenantId = config.entraTenantId
   const clientId = config.entraClientId
   const clientSecret = config.entraClientSecret

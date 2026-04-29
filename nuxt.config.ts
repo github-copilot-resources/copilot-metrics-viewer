@@ -146,6 +146,9 @@ export default defineNuxtConfig({
       hiddenTabs: '',  // Comma-separated list of tab names to hide (NUXT_PUBLIC_HIDDEN_TABS)
       enableAiChat: true,  // Enable AI-powered chat for metrics Q&A (NUXT_PUBLIC_ENABLE_AI_CHAT)
       entraEnabled: false,  // Enable Entra org tree panel in user metrics tab (NUXT_PUBLIC_ENTRA_ENABLED)
+      // MSAL browser-side auth (delegated permissions — no server secret needed)
+      entraClientId: '',    // NUXT_PUBLIC_ENTRA_CLIENT_ID — app registration client ID for MSAL popup auth
+      entraTenantId: '',    // NUXT_PUBLIC_ENTRA_TENANT_ID — tenant ID (defaults to 'common' for multi-tenant)
     }
   }
 })

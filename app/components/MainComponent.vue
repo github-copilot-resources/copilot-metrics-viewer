@@ -564,7 +564,9 @@ export default defineNuxtComponent({
       return options.toParams();
     });
 
-    const entraEnabled = computed(() => config.public.entraEnabled || config.public.isDataMocked);
+    const entraEnabled = computed(() =>
+      config.public.entraEnabled || config.public.isDataMocked || !!config.public.entraClientId
+    );
     const sessionEmail = computed(() => {
       if (!user.value) return '';
       // GitHub OAuth stores email separately; Microsoft OAuth stores email as login

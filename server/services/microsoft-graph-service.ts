@@ -95,6 +95,31 @@ export async function searchUsers(
   query: string
 ): Promise<EntraUser[]> {
   const token = await getAccessToken(tenantId, clientId, clientSecret)
+  return searchUsersWithToken(token, query)
+}
+
+export async function getSubtree(
+  tenantId: string,
+  clientId: string,
+  clientSecret: string,
+  userEmail: string,
+  maxDepth = 3
+): Promise<OrgTreeNode> {
+  const cacheKey = `sp:${userEmail}:${maxDepth}`
+  const cached = subtreeCache.get(cacheKey)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.node
+  }
+
+  const token = await getAccessToken(tenantId, clientId, clientSecret)
+  const node = await buildSubtree(token, userEmail, 0, maxDepth)
+
+  subtreeCache.set(cacheKey, { node, expiresAt: Date.now() + CACHE_TTL_MS })
+  return node
+}
+
+/** Search users using a delegated access token obtained via MSAL browser popup. */
+export async function searchUsersWithToken(token: string, query: string): Promise<EntraUser[]> {
   try {
     const res = await $fetch<{ value: EntraUser[] }>(
       `https://graph.microsoft.com/v1.0/users?$search="displayName:${query}"&$select=id,displayName,mail,userPrincipalName,jobTitle&$top=15&$orderby=displayName`,
@@ -111,22 +136,14 @@ export async function searchUsers(
   }
 }
 
-export async function getSubtree(
-  tenantId: string,
-  clientId: string,
-  clientSecret: string,
+/**
+ * Build org subtree using a delegated access token obtained via MSAL browser popup.
+ * Does NOT use the shared subtreeCache to avoid cross-user/cross-tenant pollution.
+ */
+export async function getSubtreeWithToken(
+  token: string,
   userEmail: string,
   maxDepth = 3
 ): Promise<OrgTreeNode> {
-  const cacheKey = `${userEmail}:${maxDepth}`
-  const cached = subtreeCache.get(cacheKey)
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.node
-  }
-
-  const token = await getAccessToken(tenantId, clientId, clientSecret)
-  const node = await buildSubtree(token, userEmail, 0, maxDepth)
-
-  subtreeCache.set(cacheKey, { node, expiresAt: Date.now() + CACHE_TTL_MS })
-  return node
+  return buildSubtree(token, userEmail, 0, maxDepth)
 }
