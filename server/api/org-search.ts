@@ -1,4 +1,4 @@
-import { searchUsers, searchUsersWithToken } from '../services/microsoft-graph-service'
+import { searchUsersWithToken } from '../services/microsoft-graph-service'
 import type { OrgSearchResult } from '../../shared/types/org-tree'
 
 // Mock search data matching the entra-org-tree.json
@@ -37,14 +37,5 @@ export default defineEventHandler(async (event): Promise<OrgSearchResult[]> => {
     return searchUsersWithToken(token, q)
   }
 
-  // Service principal path — server-side app credentials
-  const tenantId = config.entraTenantId
-  const clientId = config.entraClientId
-  const clientSecret = config.entraClientSecret
-
-  if (!tenantId || !clientId || !clientSecret) {
-    throw createError({ statusCode: 503, statusMessage: 'Entra ID is not configured on this server' })
-  }
-
-  return searchUsers(tenantId, clientId, clientSecret, q)
+  throw createError({ statusCode: 503, statusMessage: 'Entra ID is not configured on this server' })
 })

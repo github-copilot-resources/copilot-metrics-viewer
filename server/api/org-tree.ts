@@ -1,4 +1,4 @@
-import { getSubtree, getSubtreeWithToken } from '../services/microsoft-graph-service'
+import { getSubtreeWithToken } from '../services/microsoft-graph-service'
 import type { OrgTreeNode, OrgTreeResponse } from '../../shared/types/org-tree'
 
 function countNodes(node: OrgTreeNode): number {
@@ -50,16 +50,7 @@ export default defineEventHandler(async (event): Promise<OrgTreeResponse> => {
       const token = authHeader.slice(7)
       root = await getSubtreeWithToken(token, userEmail, maxDepth)
     } else {
-      // Service principal path — server-side app credentials
-      const tenantId = config.entraTenantId
-      const clientId = config.entraClientId
-      const clientSecret = config.entraClientSecret
-
-      if (!tenantId || !clientId || !clientSecret) {
-        throw createError({ statusCode: 503, statusMessage: 'Entra ID is not configured on this server' })
-      }
-
-      root = await getSubtree(tenantId, clientId, clientSecret, userEmail, maxDepth)
+      throw createError({ statusCode: 503, statusMessage: 'Entra ID is not configured on this server' })
     }
   }
 

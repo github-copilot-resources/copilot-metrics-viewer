@@ -86,10 +86,6 @@ export default defineNuxtConfig({
     // GitHub App credentials (alternative to PAT — works with any OAuth provider)
     githubAppId: '',            // NUXT_GITHUB_APP_ID — numeric App ID (preferred); GitHub also accepts the Client ID (NUXT_OAUTH_GITHUB_CLIENT_ID)
     githubAppPrivateKey: '',    // NUXT_GITHUB_APP_PRIVATE_KEY (PEM, \n-escaped)
-    // Entra ID / Microsoft Graph (for org hierarchy view in user metrics tab)
-    entraTenantId: '',          // NUXT_ENTRA_TENANT_ID
-    entraClientId: '',          // NUXT_ENTRA_CLIENT_ID
-    entraClientSecret: '',      // NUXT_ENTRA_CLIENT_SECRET
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,
@@ -145,8 +141,6 @@ export default defineNuxtConfig({
       enableHistoricalMode: false,  // Enable storage-backed historical queries (NUXT_PUBLIC_ENABLE_HISTORICAL_MODE)
       hiddenTabs: '',  // Comma-separated list of tab names to hide (NUXT_PUBLIC_HIDDEN_TABS)
       enableAiChat: true,  // Enable AI-powered chat for metrics Q&A (NUXT_PUBLIC_ENABLE_AI_CHAT)
-      entraEnabled: false,  // Enable Entra org tree panel in user metrics tab (NUXT_PUBLIC_ENTRA_ENABLED)
-      // MSAL browser-side auth (delegated permissions — no server secret needed)
       entraClientId: '',    // NUXT_PUBLIC_ENTRA_CLIENT_ID — app registration client ID for MSAL popup auth
       entraTenantId: '',    // NUXT_PUBLIC_ENTRA_TENANT_ID — tenant ID (defaults to 'common' for multi-tenant)
     }

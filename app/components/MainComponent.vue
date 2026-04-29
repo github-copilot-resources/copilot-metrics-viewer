@@ -565,7 +565,7 @@ export default defineNuxtComponent({
     });
 
     const entraEnabled = computed(() =>
-      config.public.entraEnabled || config.public.isDataMocked || !!config.public.entraClientId
+      config.public.isDataMocked || !!config.public.entraClientId
     );
     const sessionEmail = computed(() => {
       if (!user.value) return '';

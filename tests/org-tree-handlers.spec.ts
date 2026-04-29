@@ -3,9 +3,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // ── vi.hoisted: runs at hoist-time so it's available inside vi.mock factories ─
 const mockCfg = vi.hoisted(() => ({
   public: { isDataMocked: false },
-  entraTenantId: '',
-  entraClientId: '',
-  entraClientSecret: '',
 }))
 
 // ── Mock Nuxt's runtime-config source so useRuntimeConfig() returns mockCfg ──
@@ -24,33 +21,26 @@ vi.mock('#app/nuxt', async (importOriginal) => {
 ;(globalThis as any).getRequestHeader = (event: any, name: string) => (event._headers ?? {})[name.toLowerCase()] ?? undefined
 
 // ── Helper: set mock config then fresh-import handler ────────────────────────
-function setConfig(isDataMocked: boolean, entra = false) {
+function setConfig(isDataMocked: boolean) {
   mockCfg.public.isDataMocked = isDataMocked
-  mockCfg.entraTenantId = entra ? 't1' : ''
-  mockCfg.entraClientId = entra ? 'c1' : ''
-  mockCfg.entraClientSecret = entra ? 's1' : ''
 }
 
-async function loadSearchHandler(isDataMocked: boolean, entra = false) {
-  setConfig(isDataMocked, entra)
+async function loadSearchHandler(isDataMocked: boolean) {
+  setConfig(isDataMocked)
   vi.resetModules()
   vi.mock('../server/services/microsoft-graph-service', () => ({
-    searchUsers: vi.fn(),
     searchUsersWithToken: vi.fn(),
-    getSubtree: vi.fn(),
     getSubtreeWithToken: vi.fn(),
   }))
   const mod = await import('../server/api/org-search')
   return (mod as any).default
 }
 
-async function loadTreeHandler(isDataMocked: boolean, entra = false) {
-  setConfig(isDataMocked, entra)
+async function loadTreeHandler(isDataMocked: boolean) {
+  setConfig(isDataMocked)
   vi.resetModules()
   vi.mock('../server/services/microsoft-graph-service', () => ({
-    searchUsers: vi.fn(),
     searchUsersWithToken: vi.fn(),
-    getSubtree: vi.fn(),
     getSubtreeWithToken: vi.fn(),
   }))
   const mod = await import('../server/api/org-tree')
@@ -102,9 +92,9 @@ describe('org-search handler (mock mode)', () => {
   })
 })
 
-describe('org-search handler (live mode)', () => {
-  it('throws 503 when Entra is not configured', async () => {
-    const handler = await loadSearchHandler(false, false)
+describe('org-search handler (live mode — no auth header)', () => {
+  it('throws 503 when no Authorization header is provided', async () => {
+    const handler = await loadSearchHandler(false)
     await expect(
       handler({ _query: { q: 'alice' } })
     ).rejects.toMatchObject({ statusCode: 503 })
@@ -156,9 +146,9 @@ describe('org-tree handler (mock mode)', () => {
   })
 })
 
-describe('org-tree handler (live mode)', () => {
-  it('throws 503 when Entra is not configured', async () => {
-    const handler = await loadTreeHandler(false, false)
+describe('org-tree handler (live mode — no auth header)', () => {
+  it('throws 503 when no Authorization header is provided', async () => {
+    const handler = await loadTreeHandler(false)
     await expect(
       handler({ _query: { userEmail: 'alice@example.com' } })
     ).rejects.toMatchObject({ statusCode: 503 })
@@ -169,7 +159,7 @@ describe('org-tree handler (live mode)', () => {
 
 describe('org-search handler (delegated token)', () => {
   it('calls searchUsersWithToken when Authorization header is present', async () => {
-    const handler = await loadSearchHandler(false, false)
+    const handler = await loadSearchHandler(false)
     const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
     const mockFn = vi.mocked(searchUsersWithToken)
     mockFn.mockResolvedValue([{ id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com' }])
@@ -184,21 +174,21 @@ describe('org-search handler (delegated token)', () => {
     expect(result[0].displayName).toBe('Alice')
   })
 
-  it('does not call searchUsers (SP path) when Authorization header is present', async () => {
-    const handler = await loadSearchHandler(false, false)
-    const { searchUsers, searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
+  it('returns empty array when searchUsersWithToken returns nothing', async () => {
+    const handler = await loadSearchHandler(false)
+    const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
     vi.mocked(searchUsersWithToken).mockResolvedValue([])
 
-    await handler({
+    const result = await handler({
       _query: { q: 'alice' },
       _headers: { authorization: 'Bearer fake-token-abc' },
     })
 
-    expect(vi.mocked(searchUsers)).not.toHaveBeenCalled()
+    expect(result).toEqual([])
   })
 
   it('propagates errors from searchUsersWithToken without SP fallback', async () => {
-    const handler = await loadSearchHandler(false, false)
+    const handler = await loadSearchHandler(false)
     const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
     vi.mocked(searchUsersWithToken).mockRejectedValue(new Error('Token expired'))
 
@@ -213,7 +203,7 @@ describe('org-search handler (delegated token)', () => {
 
 describe('org-tree handler (delegated token)', () => {
   it('calls getSubtreeWithToken when Authorization header is present', async () => {
-    const handler = await loadTreeHandler(false, false)
+    const handler = await loadTreeHandler(false)
     const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
     const mockFn = vi.mocked(getSubtreeWithToken)
     const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
@@ -229,22 +219,23 @@ describe('org-tree handler (delegated token)', () => {
     expect(result.totalNodes).toBe(1)
   })
 
-  it('does not call getSubtree (SP path) when Authorization header is present', async () => {
-    const handler = await loadTreeHandler(false, false)
-    const { getSubtree, getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
+  it('returns correct node counts when getSubtreeWithToken resolves', async () => {
+    const handler = await loadTreeHandler(false)
+    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
+    const child = { id: 'u2', displayName: 'Bob', userPrincipalName: 'bob@example.com', mail: 'bob@example.com', jobTitle: 'IC', directReports: [] }
+    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Manager', directReports: [child] }
     vi.mocked(getSubtreeWithToken).mockResolvedValue(mockRoot)
 
-    await handler({
+    const result = await handler({
       _query: { userEmail: 'alice@example.com' },
       _headers: { authorization: 'Bearer fake-token-xyz' },
     })
 
-    expect(vi.mocked(getSubtree)).not.toHaveBeenCalled()
+    expect(result.totalNodes).toBe(2)
   })
 
   it('propagates errors from getSubtreeWithToken without SP fallback', async () => {
-    const handler = await loadTreeHandler(false, false)
+    const handler = await loadTreeHandler(false)
     const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
     vi.mocked(getSubtreeWithToken).mockRejectedValue(new Error('Consent required'))
 
@@ -257,7 +248,7 @@ describe('org-tree handler (delegated token)', () => {
   })
 
   it('respects maxDepth query param in delegated mode', async () => {
-    const handler = await loadTreeHandler(false, false)
+    const handler = await loadTreeHandler(false)
     const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
     const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
     vi.mocked(getSubtreeWithToken).mockResolvedValue(mockRoot)
