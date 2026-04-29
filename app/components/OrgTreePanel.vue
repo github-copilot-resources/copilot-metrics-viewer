@@ -195,6 +195,7 @@ export default defineComponent({
     function clearSelection() {
       selectedLogins.value = []
       selectedNodeName.value = ''
+      emit('select', [])
     }
 
     function onNodeSelect(node: OrgTreeNode) {
