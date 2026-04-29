@@ -164,3 +164,109 @@ describe('org-tree handler (live mode)', () => {
     ).rejects.toMatchObject({ statusCode: 503 })
   })
 })
+
+// ── Delegated-token (MSAL) path ────────────────────────────────────────────────
+
+describe('org-search handler (delegated token)', () => {
+  it('calls searchUsersWithToken when Authorization header is present', async () => {
+    const handler = await loadSearchHandler(false, false)
+    const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
+    const mockFn = vi.mocked(searchUsersWithToken)
+    mockFn.mockResolvedValue([{ id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com' }])
+
+    const result = await handler({
+      _query: { q: 'alice' },
+      _headers: { authorization: 'Bearer fake-token-abc' },
+    })
+
+    expect(mockFn).toHaveBeenCalledWith('fake-token-abc', 'alice')
+    expect(result).toHaveLength(1)
+    expect(result[0].displayName).toBe('Alice')
+  })
+
+  it('does not call searchUsers (SP path) when Authorization header is present', async () => {
+    const handler = await loadSearchHandler(false, false)
+    const { searchUsers, searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
+    vi.mocked(searchUsersWithToken).mockResolvedValue([])
+
+    await handler({
+      _query: { q: 'alice' },
+      _headers: { authorization: 'Bearer fake-token-abc' },
+    })
+
+    expect(vi.mocked(searchUsers)).not.toHaveBeenCalled()
+  })
+
+  it('propagates errors from searchUsersWithToken without SP fallback', async () => {
+    const handler = await loadSearchHandler(false, false)
+    const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
+    vi.mocked(searchUsersWithToken).mockRejectedValue(new Error('Token expired'))
+
+    await expect(
+      handler({
+        _query: { q: 'alice' },
+        _headers: { authorization: 'Bearer expired-token' },
+      })
+    ).rejects.toThrow('Token expired')
+  })
+})
+
+describe('org-tree handler (delegated token)', () => {
+  it('calls getSubtreeWithToken when Authorization header is present', async () => {
+    const handler = await loadTreeHandler(false, false)
+    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
+    const mockFn = vi.mocked(getSubtreeWithToken)
+    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
+    mockFn.mockResolvedValue(mockRoot)
+
+    const result = await handler({
+      _query: { userEmail: 'alice@example.com' },
+      _headers: { authorization: 'Bearer fake-token-xyz' },
+    })
+
+    expect(mockFn).toHaveBeenCalledWith('fake-token-xyz', 'alice@example.com', 3)
+    expect(result.root.displayName).toBe('Alice')
+    expect(result.totalNodes).toBe(1)
+  })
+
+  it('does not call getSubtree (SP path) when Authorization header is present', async () => {
+    const handler = await loadTreeHandler(false, false)
+    const { getSubtree, getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
+    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
+    vi.mocked(getSubtreeWithToken).mockResolvedValue(mockRoot)
+
+    await handler({
+      _query: { userEmail: 'alice@example.com' },
+      _headers: { authorization: 'Bearer fake-token-xyz' },
+    })
+
+    expect(vi.mocked(getSubtree)).not.toHaveBeenCalled()
+  })
+
+  it('propagates errors from getSubtreeWithToken without SP fallback', async () => {
+    const handler = await loadTreeHandler(false, false)
+    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
+    vi.mocked(getSubtreeWithToken).mockRejectedValue(new Error('Consent required'))
+
+    await expect(
+      handler({
+        _query: { userEmail: 'alice@example.com' },
+        _headers: { authorization: 'Bearer bad-token' },
+      })
+    ).rejects.toThrow('Consent required')
+  })
+
+  it('respects maxDepth query param in delegated mode', async () => {
+    const handler = await loadTreeHandler(false, false)
+    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
+    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
+    vi.mocked(getSubtreeWithToken).mockResolvedValue(mockRoot)
+
+    await handler({
+      _query: { userEmail: 'alice@example.com', maxDepth: '5' },
+      _headers: { authorization: 'Bearer fake-token-xyz' },
+    })
+
+    expect(vi.mocked(getSubtreeWithToken)).toHaveBeenCalledWith('fake-token-xyz', 'alice@example.com', 5)
+  })
+})
