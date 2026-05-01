@@ -4,9 +4,14 @@
     <v-card variant="outlined" class="mx-4 mt-3 mb-1 pa-3" density="compact">
       <div class="d-flex flex-wrap align-start gap-2 text-body-2">
         <div class="mr-3" style="flex: 1; min-width: 250px;">
-          <div class="font-weight-bold text-body-1 mb-1">📊 Organization Dashboard</div>
+          <div class="font-weight-bold text-body-1 mb-1">{{ teamName ? `👥 Team Dashboard: ${teamName}` : '📊 Organization Dashboard' }}</div>
           <div class="text-medium-emphasis">
-            Copilot activity metrics for the current month. Tracks how developers use Copilot — from AI chat and agent mode to IDE code completions. Acceptance rates reflect <em>inline completions only</em>; CLI, agents, and github.com interactions won't appear there.
+            <template v-if="teamName">
+              Metrics scoped to <strong>{{ teamName }}</strong> team members. All views — from AI chat and agent mode to IDE code completions — reflect only this team's usage.
+            </template>
+            <template v-else>
+              Copilot activity metrics for the current month. Tracks how developers use Copilot — from AI chat and agent mode to IDE code completions. Acceptance rates reflect <em>inline completions only</em>; CLI, agents, and github.com interactions won't appear there.
+            </template>
           </div>
         </div>
         <v-divider vertical class="mx-2 hidden-sm-and-down" />
@@ -346,6 +351,10 @@ export default defineComponent({
     dateRangeDescription: {
       type: String,
       default: 'Over the last 28 days'
+    },
+    teamName: {
+      type: String,
+      default: ''
     }
   },
   setup(props) {

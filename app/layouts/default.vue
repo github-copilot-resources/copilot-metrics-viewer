@@ -15,9 +15,14 @@
 const config = useRuntimeConfig();
 const version = computed(() => config.public.version);
 const deployInfo = computed(() => config.public.deployInfo);
-const githubInfo = getDisplayName(config.public)
+const route = useRoute();
+const pageTitle = computed(() => {
+  const base = getDisplayName(config.public);
+  const team = route.params.team as string;
+  return team ? `${base} | Team : ${team}` : base;
+});
 useHead({
-  title: githubInfo,
+  title: pageTitle,
   meta: [
     { name: 'description', content: 'Copilot Metrics Dashboard' }
   ]

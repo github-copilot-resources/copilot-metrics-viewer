@@ -103,6 +103,26 @@
       </template>
     </v-banner>
 
+    <!-- Team scope indicator — shown when viewing a team-scoped URL -->
+    <v-alert
+      v-if="teamName"
+      type="info"
+      variant="tonal"
+      icon="mdi-account-group"
+      density="compact"
+      class="ma-2"
+    >
+      All metrics are scoped to team <strong>{{ teamName }}</strong> — every tab shows data for team members only.
+      <v-btn
+        v-if="parentUrl"
+        :to="parentUrl"
+        variant="text"
+        size="x-small"
+        append-icon="mdi-arrow-right"
+        class="ml-2"
+      >Back to {{ orgLabel }}</v-btn>
+    </v-alert>
+
     <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
       v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
@@ -113,7 +133,12 @@
     <div v-if="tab === 'seat analysis'" class="organization-info">
       <v-card flat class="pa-3 mb-2">
         <div class="text-body-2 text-center">
-          Displaying data for organization: <strong>{{ displayName }}</strong>
+          <template v-if="teamName">
+            Displaying seat data for team: <strong>{{ teamName }}</strong> (seats filtered to team members)
+          </template>
+          <template v-else>
+            Displaying data for organization: <strong>{{ orgLabel }}</strong>
+          </template>
         </div>
       </v-card>
     </div>
@@ -157,7 +182,7 @@
       <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
-            <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" />
+            <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" :team-name="teamName" />
             <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" />
             <BreakdownComponent
               v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
@@ -521,8 +546,18 @@ export default defineNuxtComponent({
     const itemName = computed(() =>
       route.value.params.team ? 'team' : (config.public.scope as string)
     );
-    const githubInfo = getDisplayName(config.public)
-    const displayName = computed(() => githubInfo);
+    const teamName = computed(() => (route.value.params.team as string) || '');
+    const orgLabel = computed(() => (route.value.params.org as string) || (route.value.params.ent as string) || config.public.githubOrg || config.public.githubEnt || '');
+    const parentUrl = computed<string | null>(() => {
+      const r = route.value;
+      if (r.params.org && r.params.team) return `/orgs/${r.params.org as string}`;
+      if (r.params.ent && r.params.team) return `/enterprises/${r.params.ent as string}`;
+      return null;
+    });
+    const displayName = computed(() => {
+      const base = getDisplayName(config.public);
+      return teamName.value ? `${base} | Team : ${teamName.value}` : base;
+    });
     const dateRange = ref({ since: undefined as string | undefined, until: undefined as string | undefined });
     const isLoading = ref(false);
     const route = ref(useRoute());
@@ -574,6 +609,9 @@ export default defineNuxtComponent({
       mockedDataMessage,
       itemName,
       displayName,
+      teamName,
+      orgLabel,
+      parentUrl,
       signInRequired,
       user,
       seatsFetch,
