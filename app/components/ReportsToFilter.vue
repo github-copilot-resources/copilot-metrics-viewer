@@ -95,18 +95,17 @@ function clear() {
 <template>
   <div>
     <!-- Sign-in prompt when MSAL is configured but user is not signed in -->
-    <div v-if="showSignInPrompt" class="d-flex align-center gap-2 flex-wrap">
-      <span class="text-caption text-medium-emphasis">Org filter:</span>
+    <div v-if="showSignInPrompt">
       <v-btn
-        size="x-small"
         variant="outlined"
-        prepend-icon="mdi-microsoft"
+        prepend-icon="mdi-account-supervisor-outline"
         :loading="signingIn"
+        class="filter-signin-btn"
         @click="signIn"
       >
-        Sign in
+        Sign in to filter by manager
       </v-btn>
-      <span v-if="msal.error.value" class="text-caption text-error">{{ msal.error.value }}</span>
+      <div v-if="msal.error.value" class="text-caption text-error mt-1">{{ msal.error.value }}</div>
     </div>
 
     <!-- Active filter chip (after person is selected and reports loaded) -->
@@ -160,3 +159,17 @@ function clear() {
     </v-autocomplete>
   </div>
 </template>
+
+<style scoped>
+.filter-signin-btn {
+  height: 40px;
+  width: 100%;
+  border-color: rgba(var(--v-border-color), var(--v-border-opacity));
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  justify-content: flex-start;
+  padding-inline: 12px;
+}
+</style>

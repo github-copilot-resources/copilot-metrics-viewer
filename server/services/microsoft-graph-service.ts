@@ -53,9 +53,11 @@ export async function getTransitiveReportsWithToken(
     }
     return results
   } catch (err: any) {
+    const status: number = err?.status ?? err?.statusCode ?? 0
     const code: string = err?.data?.error?.code ?? ''
-    // Only fall back on the explicit "not supported" error — re-throw everything else
-    if (code !== 'Request_UnsupportedQuery') throw err
+    // Fall back to directReports on any 400 (transitiveReports requires AAD P1/P2)
+    const isUnsupported = status === 400 || code === 'Request_UnsupportedQuery'
+    if (!isUnsupported) throw err
   }
 
   // Attempt 2: recursive directReports BFS (no P1/P2 required)
