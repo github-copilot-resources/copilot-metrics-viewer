@@ -639,20 +639,3 @@ NUXT_PUBLIC_ENTRA_TENANT_ID=common
 > `https://login.microsoftonline.com/{tenant-id}/adminconsent?client_id={client-id}`
 > After that, all users in the tenant can use the filter without any further prompts.
 
-### Alternative: paste an Azure CLI token
-
-If you don't want to set up an app registration, users can paste a Microsoft Graph access token directly into the filter UI. The token is stored in `sessionStorage` (cleared on tab close) and its expiry is decoded from the JWT and displayed.
-
-To get a narrowly-scoped token:
-
-```bash
-# Re-login with only the required Graph scopes
-az login --scope "https://graph.microsoft.com/User.Read" \
-         --scope "https://graph.microsoft.com/User.ReadBasic.All"
-
-# Then get the token
-az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv
-```
-
-In this mode, `NUXT_PUBLIC_ENTRA_CLIENT_ID` is **not required** — the "Paste Graph token" button appears automatically when it is not set.
-

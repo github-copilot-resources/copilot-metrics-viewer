@@ -16,71 +16,8 @@ const emit = defineEmits<{
 const msal = useMsal()
 const isSignedIn = msal.isSignedIn
 
-// --- Paste-token support ---
-const SESSION_KEY = 'entra_pasted_token'
-
-interface TokenInfo { token: string; name: string; upn: string; expiresAt: number }
-
-function decodeJwt(token: string): Record<string, any> | null {
-  try {
-    const payload = token.split('.')[1]
-    return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')))
-  } catch { return null }
-}
-
-function loadPastedToken(): TokenInfo | null {
-  if (import.meta.server) return null
-  try {
-    const raw = sessionStorage.getItem(SESSION_KEY)
-    if (!raw) return null
-    const info: TokenInfo = JSON.parse(raw)
-    if (Date.now() / 1000 >= info.expiresAt) { sessionStorage.removeItem(SESSION_KEY); return null }
-    return info
-  } catch { return null }
-}
-
-const pastedTokenInfo = ref<TokenInfo | null>(loadPastedToken())
-const showPasteInput = ref(false)
-const pasteInputValue = ref('')
-const pasteError = ref<string | null>(null)
-
-const pastedTokenExpiresIn = computed(() => {
-  if (!pastedTokenInfo.value) return ''
-  const mins = Math.round((pastedTokenInfo.value.expiresAt - Date.now() / 1000) / 60)
-  return mins > 0 ? `${mins}m` : 'expired'
-})
-
-function applyPastedToken() {
-  pasteError.value = null
-  const raw = pasteInputValue.value.trim()
-  if (!raw) return
-  const claims = decodeJwt(raw)
-  if (!claims || !claims.exp) { pasteError.value = 'Invalid token — paste a JWT access token'; return }
-  if (Date.now() / 1000 >= claims.exp) { pasteError.value = 'Token has already expired'; return }
-  const info: TokenInfo = {
-    token: raw,
-    name: claims.name ?? claims.unique_name ?? '',
-    upn: claims.upn ?? claims.preferred_username ?? claims.unique_name ?? '',
-    expiresAt: claims.exp,
-  }
-  sessionStorage.setItem(SESSION_KEY, JSON.stringify(info))
-  pastedTokenInfo.value = info
-  pasteInputValue.value = ''
-  showPasteInput.value = false
-}
-
-function clearPastedToken() {
-  sessionStorage.removeItem(SESSION_KEY)
-  pastedTokenInfo.value = null
-}
-
-// Show sign-in options when neither MSAL nor pasted token is available
-const showSignInPrompt = computed(() =>
-  !pastedTokenInfo.value && msal.isConfigured && !isSignedIn.value
-)
-const showPastePrompt = computed(() =>
-  !pastedTokenInfo.value && !msal.isConfigured
-)
+// Show sign-in prompt only when MSAL is configured but user is not signed in
+const showSignInPrompt = computed(() => msal.isConfigured && !isSignedIn.value)
 
 const searchQuery = ref('')
 const searchResults = ref<OrgSearchResult[]>([])
@@ -92,10 +29,6 @@ const apiError = ref<string | null>(null)
 const signingIn = ref(false)
 
 async function getHeaders(): Promise<Record<string, string>> {
-  // Prefer pasted token if present and not expired
-  if (pastedTokenInfo.value && Date.now() / 1000 < pastedTokenInfo.value.expiresAt) {
-    return { Authorization: `Bearer ${pastedTokenInfo.value.token}` }
-  }
   const token = await msal.acquireTokenSilent()
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
@@ -161,7 +94,7 @@ function clear() {
 
 <template>
   <div>
-    <!-- MSAL sign-in prompt + paste-token option -->
+    <!-- Sign-in prompt when MSAL is configured but user is not signed in -->
     <div v-if="showSignInPrompt" class="d-flex align-center gap-2 flex-wrap">
       <span class="text-caption text-medium-emphasis">Org filter:</span>
       <v-btn
@@ -173,60 +106,12 @@ function clear() {
       >
         Sign in
       </v-btn>
-      <span class="text-caption text-medium-emphasis">or</span>
-      <v-btn size="x-small" variant="text" @click="showPasteInput = !showPasteInput">
-        paste token
-      </v-btn>
       <span v-if="msal.error.value" class="text-caption text-error">{{ msal.error.value }}</span>
-    </div>
-
-    <!-- Paste-token only prompt (MSAL not configured) -->
-    <div v-else-if="showPastePrompt" class="d-flex align-center gap-2 flex-wrap">
-      <span class="text-caption text-medium-emphasis">Org filter:</span>
-      <v-btn size="x-small" variant="outlined" prepend-icon="mdi-key-outline" @click="showPasteInput = !showPasteInput">
-        Paste Graph token
-      </v-btn>
-    </div>
-
-    <!-- Paste-token input panel -->
-    <v-expand-transition>
-      <div v-if="showPasteInput && !pastedTokenInfo" class="mt-2">
-        <v-textarea
-          v-model="pasteInputValue"
-          label="Paste Azure Graph access token"
-          rows="2"
-          density="compact"
-          variant="outlined"
-          hide-details="auto"
-          :error-messages="pasteError ?? undefined"
-          placeholder="eyJ0eX..."
-          @keydown.enter.prevent="applyPastedToken"
-        />
-        <div class="d-flex align-center gap-2 mt-1 flex-wrap">
-          <v-btn size="x-small" color="primary" @click="applyPastedToken">Apply</v-btn>
-          <v-btn size="x-small" variant="text" @click="showPasteInput = false">Cancel</v-btn>
-          <span class="text-caption text-medium-emphasis">
-            Get token:
-            <code class="text-caption">az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv</code>
-          </span>
-        </div>
-      </div>
-    </v-expand-transition>
-
-    <!-- Pasted token badge (token is active) -->
-    <div v-if="pastedTokenInfo && !selectedPerson && !loadingReports" class="d-flex align-center gap-2 flex-wrap">
-      <v-chip size="small" variant="tonal" color="secondary" prepend-icon="mdi-key-outline">
-        {{ pastedTokenInfo.name || pastedTokenInfo.upn }}
-        <span class="ml-1 text-caption opacity-70">({{ pastedTokenExpiresIn }})</span>
-        <template #append>
-          <v-icon size="x-small" class="ml-1" style="cursor:pointer" @click="clearPastedToken">mdi-close</v-icon>
-        </template>
-      </v-chip>
     </div>
 
     <!-- Active filter chip (after person is selected and reports loaded) -->
     <v-chip
-      v-if="selectedPerson && !loadingReports"
+      v-else-if="selectedPerson && !loadingReports"
       closable
       color="primary"
       variant="tonal"
@@ -244,9 +129,9 @@ function clear() {
       <span class="text-caption text-medium-emphasis">Loading org reports…</span>
     </div>
 
-    <!-- Search autocomplete (shown when authenticated via MSAL or pasted token) -->
+    <!-- Search autocomplete -->
     <v-autocomplete
-      v-if="(isSignedIn || pastedTokenInfo) && !selectedPerson && !loadingReports"
+      v-else-if="isSignedIn"
       v-model="selectedPerson"
       v-model:search="searchQuery"
       :items="searchResults"
