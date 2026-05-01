@@ -406,7 +406,7 @@ export async function syncSeats(
       return { success: true, snapshotDate: today, seatCount: existing?.length ?? 0 };
     }
 
-    const baseUrl = 'https://api.github.com';
+    const baseUrl = process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
     const apiUrl = scope === 'enterprise'
       ? `${baseUrl}/enterprises/${identifier}/copilot/billing/seats`
       : `${baseUrl}/orgs/${identifier}/copilot/billing/seats`;

@@ -62,6 +62,11 @@ function buildAppJwt(appId: string, privateKey: string): string {
 
 // ── Installation listing ───────────────────────────────────────────────────────
 
+/** Returns the GitHub API base URL, honouring the NUXT_GITHUB_API_BASE_URL override for GHE.com. */
+function getGitHubApiBaseUrl(): string {
+  return process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
+}
+
 /**
  * List all orgs/users the GitHub App is installed on.
  * Paginates through all results and caches for INSTALLATIONS_CACHE_TTL_SECONDS.
@@ -83,7 +88,7 @@ export async function listAppInstallations(appId: string, privateKey: string): P
 
       while (true) {
         const page_items = await $fetch<Array<{ id: number; account: { login: string; type: string } }>>(
-          `https://api.github.com/app/installations?per_page=100&page=${page}`,
+          `${getGitHubApiBaseUrl()}/app/installations?per_page=100&page=${page}`,
           {
             headers: {
               Accept: 'application/vnd.github+json',
@@ -114,7 +119,7 @@ export async function listAppInstallations(appId: string, privateKey: string): P
 
 async function fetchInstallationToken(jwt: string, installationId: number): Promise<{ token: string; expiresAt: number }> {
   const response = await $fetch<{ token: string; expires_at: string }>(
-    `https://api.github.com/app/installations/${installationId}/access_tokens`,
+    `${getGitHubApiBaseUrl()}/app/installations/${installationId}/access_tokens`,
     {
       method: 'POST',
       headers: {

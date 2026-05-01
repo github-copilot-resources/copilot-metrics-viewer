@@ -7,6 +7,19 @@ import type { RouteLocationNormalizedLoadedGeneric } from 'vue-router';
 
 export type Scope = 'organization' | 'enterprise';
 
+/**
+ * Returns the GitHub API base URL.
+ * Reads NUXT_GITHUB_API_BASE_URL from the environment so GHE.com users can
+ * point the app at their dedicated subdomain (e.g. https://api.SUBDOMAIN.ghe.com).
+ * Falls back to the standard https://api.github.com.
+ *
+ * NOTE: This variable is server-only; it is never exposed to the browser bundle.
+ *       All callers of the URL-building methods below run exclusively on the server.
+ */
+function getGitHubApiBaseUrl(): string {
+    return (typeof process !== 'undefined' && process.env.NUXT_GITHUB_API_BASE_URL) || 'https://api.github.com';
+}
+
 export interface OptionsData {
     since?: string;
     until?: string;
@@ -274,7 +287,7 @@ export class Options {
      * Get the API URL based on scope and configuration
      */
     getApiUrl(): string {
-        const baseUrl = 'https://api.github.com';
+        const baseUrl = getGitHubApiBaseUrl();
         let url = '';
 
         switch (this.scope) {
@@ -309,7 +322,7 @@ export class Options {
      * Get the Seats API URL based on scope and configuration
      */
     getSeatsApiUrl(): string {
-        const baseUrl = 'https://api.github.com';
+        const baseUrl = getGitHubApiBaseUrl();
 
         switch (this.scope) {
             case 'organization':
@@ -335,7 +348,7 @@ export class Options {
      * to support browsing org-level teams in Full GHEC enterprises.
      */
     getTeamsApiUrl(): string {
-        const baseUrl = 'https://api.github.com';
+        const baseUrl = getGitHubApiBaseUrl();
 
         switch (this.scope) {
             case 'organization':
@@ -365,7 +378,7 @@ export class Options {
      * endpoint to support org-level teams in Full GHEC enterprises.
      */
     getTeamMembersApiUrl(): string {
-        const baseUrl = 'https://api.github.com';
+        const baseUrl = getGitHubApiBaseUrl();
 
         switch (this.scope) {
             case 'organization':
