@@ -71,6 +71,24 @@ Select **one team** for a full deep-dive view with KPI tiles, time-series charts
   <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">
 </p>
 
+#### Team-Scoped Direct URLs
+
+You can link directly to a fully team-scoped dashboard — every tab (IDE metrics, chat, agents, languages, etc.) will automatically filter to that team's members only. A blue banner at the top of the page confirms the active scope and provides a quick link back to the organization view.
+
+```
+https://<your-host>/orgs/<org>/teams/<team>
+https://<your-host>/enterprises/<enterprise>/teams/<team>
+```
+
+Examples:
+- `http://localhost:3000/orgs/octo-demo-org/teams/the-a-team`
+- `http://localhost:3000/enterprises/octo-demo-ent/teams/the-a-team`
+- `http://localhost:3000/orgs/mocked-org/teams/the-a-team?mock=true` _(mock data)_
+
+<p align="center">
+  <img width="800" alt="Team-scoped dashboard showing blue banner with team name and Back to Org button" src="./images/team-scoped-dashboard.png">
+</p>
+
 ### Per-User Metrics
 View individual user-level Copilot usage metrics including code completions, chat interactions, and code review activity. Summary tiles show total users, active users, and average acceptance rate.
 
@@ -212,6 +230,8 @@ can be overridden by route parameters, e.g.
 - `http://localhost:3000/orgs/octo-demo-org/teams/the-a-team`
 - `http://localhost:3000/enterprises/octo-demo-ent/teams/the-a-team`
 - `http://localhost:3000/orgs/mocked-org?mock=true`
+
+When navigating to a team-scoped URL, a blue banner appears at the top confirming the active team scope and offering a **Back to org** button. All tabs automatically filter to team members only.
 
 #### NUXT_PUBLIC_SCOPE (Required!)
 
