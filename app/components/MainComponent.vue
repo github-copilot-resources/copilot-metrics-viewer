@@ -518,7 +518,9 @@ export default defineNuxtComponent({
     });
 
     const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
-    const itemName = computed(() => config.public.scope);
+    const itemName = computed(() =>
+      route.value.params.team ? 'team' : (config.public.scope as string)
+    );
     const githubInfo = getDisplayName(config.public)
     const displayName = computed(() => githubInfo);
     const dateRange = ref({ since: undefined as string | undefined, until: undefined as string | undefined });
