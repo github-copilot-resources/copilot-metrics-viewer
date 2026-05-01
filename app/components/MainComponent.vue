@@ -120,7 +120,7 @@
         size="x-small"
         append-icon="mdi-arrow-right"
         class="ml-2"
-        :aria-label="`Navigate back to ${orgLabel} organization view`"
+        :aria-label="`Return to ${orgLabel} organization view`"
       >Back to {{ orgLabel }}</v-btn>
     </v-alert>
 
@@ -269,6 +269,7 @@ import AiChatPanel from './AiChatPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
+import { routeParamStr } from '@/utils/routeUtils';
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -544,14 +545,6 @@ export default defineNuxtComponent({
     });
 
     const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
-
-    /** Safely extract a string route param (route params can be string | string[]). */
-    function routeParamStr(params: Record<string, string | string[]>, key: string): string {
-      const v = params[key];
-      if (typeof v === 'string') return v;
-      if (Array.isArray(v)) return v[0] ?? '';
-      return '';
-    }
 
     const itemName = computed(() =>
       route.value.params.team ? 'team' : (config.public.scope as string)
