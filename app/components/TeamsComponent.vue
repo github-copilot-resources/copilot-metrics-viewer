@@ -152,7 +152,16 @@
                 <span>Interactions</span>
                 <span class="font-weight-medium">{{ card.totalInteractions.toLocaleString() }}</span>
               </div>
-              <div class="text-caption text-medium-emphasis mt-1">{{ dateRangeDesc }}</div>
+              <div class="d-flex align-center justify-space-between mt-2">
+                <div class="text-caption text-medium-emphasis">{{ dateRangeDesc }}</div>
+                <v-btn
+                  :to="getTeamDetailUrl(card.slug)"
+                  variant="outlined"
+                  size="small"
+                  append-icon="mdi-open-in-new"
+                  :aria-label="`Navigate to detailed metrics for ${card.teamName}`"
+                >VIEW TEAM</v-btn>
+              </div>
             </v-card>
           </v-col>
         </v-row>
