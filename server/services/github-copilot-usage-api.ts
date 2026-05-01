@@ -404,7 +404,7 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
 // --- API Functions ---
 
 /** Returns the GitHub API base URL, honouring the NUXT_GITHUB_API_BASE_URL override for GHE.com. */
-function getGitHubApiBaseUrl(): string {
+export function getGitHubApiBaseUrl(): string {
   return process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
 }
 

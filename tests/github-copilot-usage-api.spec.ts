@@ -2,8 +2,8 @@
  * Tests for GitHub Copilot Usage Metrics API client
  */
 
-import { describe, it, expect } from 'vitest';
-import { parseNDJSON, normalizeReportResponse } from '../server/services/github-copilot-usage-api';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { parseNDJSON, normalizeReportResponse, getGitHubApiBaseUrl } from '../server/services/github-copilot-usage-api';
 import type { ReportDayTotals, OrgReport } from '../server/services/github-copilot-usage-api';
 import { generateMockReport, mockRequestDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
 import { transformReportToMetrics, transformDayToMetrics } from '../server/services/report-transformer';
@@ -341,6 +341,33 @@ describe('GitHub Copilot Usage API', () => {
       expect(result.day_totals[0].daily_active_users).toBe(201);
       expect(result.day_totals[0].weekly_active_users).toBe(850);
       expect(result.day_totals[0].loc_suggested_to_add_sum).toBe(1000);
+    });
+  });
+
+  describe('GHE.com — configurable API base URL', () => {
+    const savedEnv = process.env.NUXT_GITHUB_API_BASE_URL;
+
+    afterEach(() => {
+      if (savedEnv === undefined) {
+        delete process.env.NUXT_GITHUB_API_BASE_URL;
+      } else {
+        process.env.NUXT_GITHUB_API_BASE_URL = savedEnv;
+      }
+    });
+
+    it('defaults to https://api.github.com when NUXT_GITHUB_API_BASE_URL is not set', () => {
+      delete process.env.NUXT_GITHUB_API_BASE_URL;
+      expect(getGitHubApiBaseUrl()).toBe('https://api.github.com');
+    });
+
+    it('returns the custom base URL when NUXT_GITHUB_API_BASE_URL is set', () => {
+      process.env.NUXT_GITHUB_API_BASE_URL = 'https://api.mysubdomain.ghe.com';
+      expect(getGitHubApiBaseUrl()).toBe('https://api.mysubdomain.ghe.com');
+    });
+
+    it('falls back to https://api.github.com when NUXT_GITHUB_API_BASE_URL is empty string', () => {
+      process.env.NUXT_GITHUB_API_BASE_URL = '';
+      expect(getGitHubApiBaseUrl()).toBe('https://api.github.com');
     });
   });
 });
