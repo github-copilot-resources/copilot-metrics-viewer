@@ -31,13 +31,14 @@ export async function getTransitiveReportsWithToken(
   upn: string
 ): Promise<TransitiveReportMember[]> {
   const results: TransitiveReportMember[] = []
+  // transitiveReports is an "advanced query" — requires ConsistencyLevel + $count=true
   let url: string | null =
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/transitiveReports?${MEMBER_SELECT}`
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/transitiveReports?${MEMBER_SELECT}&$count=true`
   let pages = 0
 
   while (url && pages < MAX_PAGES) {
     const res = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: 'eventual' },
     })
     for (const m of res.value ?? []) {
       if (m.id && m.userPrincipalName) {
