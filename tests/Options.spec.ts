@@ -683,6 +683,63 @@ describe('Options', () => {
     })
   })
 
+  describe('GHE.com — NUXT_GITHUB_API_BASE_URL override', () => {
+    const GHE_BASE = 'https://api.mysubdomain.ghe.com'
+    const savedEnv = process.env.NUXT_GITHUB_API_BASE_URL
+
+    beforeEach(() => {
+      process.env.NUXT_GITHUB_API_BASE_URL = GHE_BASE
+    })
+
+    afterEach(() => {
+      if (savedEnv === undefined) {
+        delete process.env.NUXT_GITHUB_API_BASE_URL
+      } else {
+        process.env.NUXT_GITHUB_API_BASE_URL = savedEnv
+      }
+    })
+
+    test('getApiUrl uses custom base URL for organization scope', () => {
+      const options = new Options({ scope: 'organization', githubOrg: 'my-org' })
+      expect(options.getApiUrl()).toBe(`${GHE_BASE}/orgs/my-org/copilot/metrics`)
+    })
+
+    test('getApiUrl uses custom base URL for enterprise scope', () => {
+      const options = new Options({ scope: 'enterprise', githubEnt: 'my-ent' })
+      expect(options.getApiUrl()).toBe(`${GHE_BASE}/enterprises/my-ent/copilot/metrics`)
+    })
+
+    test('getSeatsApiUrl uses custom base URL for organization scope', () => {
+      const options = new Options({ scope: 'organization', githubOrg: 'my-org' })
+      expect(options.getSeatsApiUrl()).toBe(`${GHE_BASE}/orgs/my-org/copilot/billing/seats`)
+    })
+
+    test('getSeatsApiUrl uses custom base URL for enterprise scope', () => {
+      const options = new Options({ scope: 'enterprise', githubEnt: 'my-ent' })
+      expect(options.getSeatsApiUrl()).toBe(`${GHE_BASE}/enterprises/my-ent/copilot/billing/seats`)
+    })
+
+    test('getTeamsApiUrl uses custom base URL for organization scope', () => {
+      const options = new Options({ scope: 'organization', githubOrg: 'my-org' })
+      expect(options.getTeamsApiUrl()).toBe(`${GHE_BASE}/orgs/my-org/teams`)
+    })
+
+    test('getTeamsApiUrl uses custom base URL for enterprise scope', () => {
+      const options = new Options({ scope: 'enterprise', githubEnt: 'my-ent' })
+      expect(options.getTeamsApiUrl()).toBe(`${GHE_BASE}/enterprises/my-ent/teams`)
+    })
+
+    test('getTeamMembersApiUrl uses custom base URL for organization scope', () => {
+      const options = new Options({ scope: 'organization', githubOrg: 'my-org', githubTeam: 'my-team' })
+      expect(options.getTeamMembersApiUrl()).toBe(`${GHE_BASE}/orgs/my-org/teams/my-team/members`)
+    })
+
+    test('getTeamMembersApiUrl uses custom base URL for enterprise scope', () => {
+      const options = new Options({ scope: 'enterprise', githubEnt: 'my-ent', githubTeam: 'my-team' })
+      expect(options.getTeamMembersApiUrl()).toBe(`${GHE_BASE}/enterprises/my-ent/teams/my-team/memberships`)
+    })
+  })
+
   describe('getMockDataPath', () => {
     test('returns correct path for organization scope', () => {
       const options1 = new Options({ scope: 'organization' })

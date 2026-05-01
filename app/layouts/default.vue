@@ -12,12 +12,19 @@
 </template>
 
 <script lang="ts" setup>
+import { routeParamStr } from '@/utils/routeUtils';
+
 const config = useRuntimeConfig();
 const version = computed(() => config.public.version);
 const deployInfo = computed(() => config.public.deployInfo);
-const githubInfo = getDisplayName(config.public)
+const route = useRoute();
+const pageTitle = computed(() => {
+  const base = getDisplayName(config.public);
+  const team = routeParamStr(route.params, 'team');
+  return team ? `${base} | Team : ${team}` : base;
+});
 useHead({
-  title: githubInfo,
+  title: pageTitle,
   meta: [
     { name: 'description', content: 'Copilot Metrics Dashboard' }
   ]
