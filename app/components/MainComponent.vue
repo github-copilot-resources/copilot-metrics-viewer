@@ -138,7 +138,7 @@
             Displaying seat data for team: <strong>{{ teamName }}</strong> (seats filtered to team members)
           </template>
           <template v-else>
-            Displaying data for organization: <strong>{{ orgLabel }}</strong>
+            Displaying data for: <strong>{{ orgLabel }}</strong>
           </template>
         </div>
       </v-card>
@@ -545,6 +545,10 @@ export default defineNuxtComponent({
     });
 
     const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
+    const dateRange = ref({ since: undefined as string | undefined, until: undefined as string | undefined });
+    const isLoading = ref(false);
+    const route = ref(useRoute());
+    const seatsCurrentPage = ref(1);
 
     const itemName = computed(() =>
       route.value.params.team ? 'team' : (config.public.scope as string)
@@ -567,10 +571,6 @@ export default defineNuxtComponent({
       const base = getDisplayName(config.public);
       return teamName.value ? `${base} | Team : ${teamName.value}` : base;
     });
-    const dateRange = ref({ since: undefined as string | undefined, until: undefined as string | undefined });
-    const isLoading = ref(false);
-    const route = ref(useRoute());
-    const seatsCurrentPage = ref(1);
 
     const signInRequired = computed(() => {
       return isAuthRequired.value && !loggedIn.value;

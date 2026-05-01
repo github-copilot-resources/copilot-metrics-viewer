@@ -12,13 +12,15 @@
 </template>
 
 <script lang="ts" setup>
+import { routeParamStr } from '@/utils/routeUtils';
+
 const config = useRuntimeConfig();
 const version = computed(() => config.public.version);
 const deployInfo = computed(() => config.public.deployInfo);
 const route = useRoute();
 const pageTitle = computed(() => {
   const base = getDisplayName(config.public);
-  const team = typeof route.params.team === 'string' ? route.params.team : '';
+  const team = routeParamStr(route.params, 'team');
   return team ? `${base} | Team : ${team}` : base;
 });
 useHead({
