@@ -138,7 +138,7 @@
             Displaying seat data for team: <strong>{{ teamName }}</strong> (seats filtered to team members)
           </template>
           <template v-else>
-            Displaying data for: <strong>{{ orgLabel }}</strong>
+            Displaying data for organization: <strong>{{ orgLabel }}</strong>
           </template>
         </div>
       </v-card>
