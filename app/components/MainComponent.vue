@@ -87,8 +87,10 @@
       <!-- v3.0 Migration Banner -->
     <v-banner
       v-if="showMigrationBanner"
-      color="info"
+      border="bottom"
+      border-color="info"
       icon="mdi-information"
+      icon-color="info"
       lines="two"
       class="migration-banner"
     >
@@ -106,9 +108,10 @@
     <!-- Team scope indicator — shown when viewing a team-scoped URL -->
     <v-alert
       v-if="teamName"
-      variant="outlined"
-      color="primary"
+      border="start"
+      border-color="primary"
       icon="mdi-account-group"
+      icon-color="primary"
       density="compact"
       class="ma-2"
     >
