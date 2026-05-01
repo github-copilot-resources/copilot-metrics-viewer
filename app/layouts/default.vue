@@ -18,7 +18,7 @@ const deployInfo = computed(() => config.public.deployInfo);
 const route = useRoute();
 const pageTitle = computed(() => {
   const base = getDisplayName(config.public);
-  const team = route.params.team as string;
+  const team = typeof route.params.team === 'string' ? route.params.team : '';
   return team ? `${base} | Team : ${team}` : base;
 });
 useHead({

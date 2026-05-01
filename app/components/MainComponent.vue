@@ -120,6 +120,7 @@
         size="x-small"
         append-icon="mdi-arrow-right"
         class="ml-2"
+        :aria-label="`Navigate back to ${orgLabel} organization view`"
       >Back to {{ orgLabel }}</v-btn>
     </v-alert>
 
@@ -543,15 +544,30 @@ export default defineNuxtComponent({
     });
 
     const mockedDataMessage = computed(() => config.public.isDataMocked ? 'Using mock data - see README if unintended' : '');
+
+    /** Safely extract a string route param (route params can be string | string[]). */
+    function routeParamStr(params: Record<string, string | string[]>, key: string): string {
+      const v = params[key];
+      if (typeof v === 'string') return v;
+      if (Array.isArray(v)) return v[0] ?? '';
+      return '';
+    }
+
     const itemName = computed(() =>
       route.value.params.team ? 'team' : (config.public.scope as string)
     );
-    const teamName = computed(() => (route.value.params.team as string) || '');
-    const orgLabel = computed(() => (route.value.params.org as string) || (route.value.params.ent as string) || config.public.githubOrg || config.public.githubEnt || '');
+    const teamName = computed(() => routeParamStr(route.value.params, 'team'));
+    const orgLabel = computed(() =>
+      routeParamStr(route.value.params, 'org') ||
+      routeParamStr(route.value.params, 'ent') ||
+      config.public.githubOrg || config.public.githubEnt || ''
+    );
     const parentUrl = computed<string | null>(() => {
-      const r = route.value;
-      if (r.params.org && r.params.team) return `/orgs/${r.params.org as string}`;
-      if (r.params.ent && r.params.team) return `/enterprises/${r.params.ent as string}`;
+      const org = routeParamStr(route.value.params, 'org');
+      const ent = routeParamStr(route.value.params, 'ent');
+      const team = routeParamStr(route.value.params, 'team');
+      if (org && team) return `/orgs/${org}`;
+      if (ent && team) return `/enterprises/${ent}`;
       return null;
     });
     const displayName = computed(() => {
