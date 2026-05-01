@@ -159,6 +159,7 @@
                   variant="outlined"
                   size="small"
                   append-icon="mdi-open-in-new"
+                  :aria-label="`Navigate to detailed metrics for ${card.teamName}`"
                 >VIEW TEAM</v-btn>
               </div>
             </v-card>
