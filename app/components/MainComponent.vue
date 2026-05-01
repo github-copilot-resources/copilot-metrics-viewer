@@ -87,10 +87,8 @@
       <!-- v3.0 Migration Banner -->
     <v-banner
       v-if="showMigrationBanner"
-      border="bottom"
-      border-color="info"
+      color="info"
       icon="mdi-information"
-      icon-color="info"
       lines="two"
       class="migration-banner"
     >
