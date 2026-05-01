@@ -106,7 +106,7 @@
     <!-- Team scope indicator — shown when viewing a team-scoped URL -->
     <v-alert
       v-if="teamName"
-      color="primary"
+      color="indigo"
       variant="flat"
       icon="mdi-account-group"
       icon-color="yellow"
@@ -119,7 +119,7 @@
         v-if="parentUrl"
         :to="parentUrl"
         variant="tonal"
-        color="primary"
+        color="indigo"
         size="x-small"
         append-icon="mdi-arrow-right"
         class="ml-2"
