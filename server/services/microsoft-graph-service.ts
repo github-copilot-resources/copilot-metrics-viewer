@@ -31,9 +31,10 @@ export async function getTransitiveReportsWithToken(
   upn: string
 ): Promise<TransitiveReportMember[]> {
   const results: TransitiveReportMember[] = []
-  // transitiveReports is an "advanced query" — requires ConsistencyLevel + $count=true
+  // transitiveReports returns DirectoryObject — cast to /microsoft.graph.user to use
+  // user-specific $select fields. Advanced query also requires ConsistencyLevel + $count=true.
   let url: string | null =
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/transitiveReports?${MEMBER_SELECT}&$count=true`
+    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/transitiveReports/microsoft.graph.user?${MEMBER_SELECT}&$count=true`
   let pages = 0
 
   while (url && pages < MAX_PAGES) {
