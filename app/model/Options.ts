@@ -13,11 +13,14 @@ export type Scope = 'organization' | 'enterprise';
  * point the app at their dedicated subdomain (e.g. https://api.SUBDOMAIN.ghe.com).
  * Falls back to the standard https://api.github.com.
  *
- * NOTE: This variable is server-only; it is never exposed to the browser bundle.
- *       All callers of the URL-building methods below run exclusively on the server.
+ * NOTE: NUXT_GITHUB_API_BASE_URL is a server-only variable and is never exposed to
+ *       the browser bundle. The URL-building methods below are only called from
+ *       server-side API handlers; client-side callers never invoke them.
+ *       When this module is bundled for the client, process.env.NUXT_GITHUB_API_BASE_URL
+ *       resolves to undefined and the fallback 'https://api.github.com' is used.
  */
 function getGitHubApiBaseUrl(): string {
-    return (typeof process !== 'undefined' && process.env.NUXT_GITHUB_API_BASE_URL) || 'https://api.github.com';
+    return process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
 }
 
 export interface OptionsData {
