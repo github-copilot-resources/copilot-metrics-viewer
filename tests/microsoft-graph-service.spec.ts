@@ -72,71 +72,70 @@ describe('searchUsersWithToken', () => {
   })
 })
 
-// ── getSubtreeWithToken ───────────────────────────────────────────────────────
+// ── getUserWithToken ──────────────────────────────────────────────────────────
 
-describe('getSubtreeWithToken', () => {
-  it('fetches user then direct reports and returns node', async () => {
-    mockFetch
-      .mockResolvedValueOnce(USER_ALICE)    // fetchUser
-      .mockResolvedValueOnce({ value: [] }) // fetchDirectReports
+describe('getUserWithToken', () => {
+  it('fetches a user by UPN using the delegated token', async () => {
+    mockFetch.mockResolvedValueOnce(USER_ALICE)
 
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    const result = await getSubtreeWithToken('my-token', 'alice@example.com', 1)
+    const { getUserWithToken } = await import('../server/services/microsoft-graph-service')
+    const result = await getUserWithToken('my-token', 'alice@example.com')
 
-    expect(result.id).toBe('user-alice')
-    expect(result.displayName).toBe('Alice')
-    expect(result.directReports).toEqual([])
+    expect(result?.id).toBe('user-alice')
+    expect(result?.displayName).toBe('Alice')
+    expect(mockFetch.mock.calls[0][1].headers).toMatchObject({
+      Authorization: 'Bearer my-token',
+    })
   })
 
-  it('builds subtree recursively up to maxDepth', async () => {
-    mockFetch
-      .mockResolvedValueOnce(USER_ALICE)              // fetchUser root
-      .mockResolvedValueOnce({ value: [USER_BOB] })   // directReports of root
-      .mockResolvedValueOnce(USER_BOB)                // fetchUser child
-      .mockResolvedValueOnce({ value: [] })            // directReports of child
-
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    const result = await getSubtreeWithToken('my-token', 'alice@example.com', 2)
-
-    expect(result.directReports).toHaveLength(1)
-    expect(result.directReports[0].id).toBe('user-bob')
-    expect(result.directReports[0].directReports).toEqual([])
-  })
-
-  it('stops expanding at maxDepth (child has empty directReports)', async () => {
-    mockFetch
-      .mockResolvedValueOnce(USER_ALICE)
-      .mockResolvedValueOnce({ value: [USER_BOB] })
-      .mockResolvedValueOnce(USER_BOB)              // fetchUser still called for child node
-
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    // maxDepth=1: root depth=0 (< 1) fetches reports; child depth=1 (not < 1) stops — no fetchDirectReports
-    const result = await getSubtreeWithToken('my-token', 'alice@example.com', 1)
-    expect(result.directReports).toHaveLength(1)
-    expect(result.directReports[0].directReports).toEqual([])
-    // Only 3 fetches: fetchUser(root) + fetchDirectReports(root) + fetchUser(child)
-    expect(mockFetch).toHaveBeenCalledTimes(3)
-  })
-
-  it('throws when user is not found', async () => {
+  it('returns null when the user is not found (Graph throws)', async () => {
     mockFetch.mockRejectedValueOnce(new Error('404 Not Found'))
 
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    await expect(
-      getSubtreeWithToken('my-token', 'notfound@example.com', 1)
-    ).rejects.toThrow('User not found')
+    const { getUserWithToken } = await import('../server/services/microsoft-graph-service')
+    const result = await getUserWithToken('my-token', 'notfound@example.com')
+    expect(result).toBeNull()
+  })
+})
+
+// ── getTransitiveReportsWithToken ─────────────────────────────────────────────
+
+describe('getTransitiveReportsWithToken', () => {
+  it('returns flat list of transitive reports', async () => {
+    mockFetch.mockResolvedValueOnce({ value: [USER_BOB] })
+
+    const { getTransitiveReportsWithToken } = await import('../server/services/microsoft-graph-service')
+    const result = await getTransitiveReportsWithToken('my-token', 'alice@example.com')
+
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('user-bob')
+    expect(result[0].userPrincipalName).toBe('bob@example.com')
   })
 
-  it('passes the delegated token in Authorization header for all Graph calls', async () => {
+  it('follows @odata.nextLink for pagination', async () => {
     mockFetch
-      .mockResolvedValueOnce(USER_ALICE)
-      .mockResolvedValueOnce({ value: [] })
+      .mockResolvedValueOnce({ value: [USER_ALICE], '@odata.nextLink': 'https://graph.microsoft.com/next' })
+      .mockResolvedValueOnce({ value: [USER_BOB] })
 
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    await getSubtreeWithToken('delegated-xyz', 'alice@example.com', 1)
+    const { getTransitiveReportsWithToken } = await import('../server/services/microsoft-graph-service')
+    const result = await getTransitiveReportsWithToken('my-token', 'root@example.com')
 
-    for (const call of mockFetch.mock.calls) {
-      expect(call[1]?.headers?.Authorization).toBe('Bearer delegated-xyz')
-    }
+    expect(result).toHaveLength(2)
+  })
+
+  it('returns empty array when there are no reports', async () => {
+    mockFetch.mockResolvedValueOnce({ value: [] })
+
+    const { getTransitiveReportsWithToken } = await import('../server/services/microsoft-graph-service')
+    const result = await getTransitiveReportsWithToken('my-token', 'leaf@example.com')
+    expect(result).toEqual([])
+  })
+
+  it('passes the delegated token in Authorization header', async () => {
+    mockFetch.mockResolvedValueOnce({ value: [] })
+
+    const { getTransitiveReportsWithToken } = await import('../server/services/microsoft-graph-service')
+    await getTransitiveReportsWithToken('delegated-xyz', 'alice@example.com')
+
+    expect(mockFetch.mock.calls[0][1].headers.Authorization).toBe('Bearer delegated-xyz')
   })
 })

@@ -1,6 +1,6 @@
 import type { AccountInfo } from '@azure/msal-browser'
 
-const SCOPES = ['User.Read', 'User.Read.All']
+const SCOPES = ['User.Read', 'User.ReadBasic.All']
 
 export interface MsalState {
   isConfigured: true
@@ -62,7 +62,10 @@ export function useMsal(): MsalState | MsalUnconfigured {
   async function signIn(): Promise<boolean> {
     error.value = null
     try {
-      const result = await instance.loginPopup({ scopes: SCOPES })
+      const result = await instance.loginPopup({
+        scopes: SCOPES,
+        redirectUri: `${window.location.origin}/api/msal/callback`,
+      })
       activeAccount.value = result.account
       return true
     } catch (err: unknown) {
@@ -70,7 +73,7 @@ export function useMsal(): MsalState | MsalUnconfigured {
       if (e?.errorCode === 'user_cancelled' || e?.errorCode === 'access_denied') {
         error.value = 'Sign-in was cancelled'
       } else if (e?.message?.includes('consent_required') || e?.message?.includes('interaction_required')) {
-        error.value = 'Admin consent required. Ask your Azure admin to grant User.Read.All for this app.'
+        error.value = 'Admin consent required. Ask your Azure admin to grant User.ReadBasic.All for this app.'
       } else if (e?.errorCode === 'popup_window_error') {
         error.value = 'Pop-up was blocked. Allow pop-ups for this site and try again.'
       } else {
@@ -98,7 +101,7 @@ export function useMsal(): MsalState | MsalUnconfigured {
 
   async function signOut(): Promise<void> {
     if (!activeAccount.value) return
-    await instance.logoutPopup({ account: activeAccount.value }).catch(() => null)
+    await instance.logoutPopup({ account: activeAccount.value, postLogoutRedirectUri: `${window.location.origin}/api/msal/callback` }).catch(() => null)
     activeAccount.value = null
     error.value = null
   }

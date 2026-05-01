@@ -1,5 +1,5 @@
 /**
- * Minimal Copilot usage totals needed for org-tree enrichment.
+ * Minimal Copilot usage totals needed for org filter enrichment.
  * Kept in shared/ to avoid importing server-only code from client components.
  */
 export interface UserTotals {
@@ -26,22 +26,6 @@ export interface EntraUser {
   officeLocation: string | null
 }
 
-/** A node in the org tree, may be enriched with Copilot data */
-export interface OrgTreeNode extends EntraUser {
-  directReports: OrgTreeNode[]
-  /** Matched Copilot totals for this user (if any) */
-  copilotData: UserTotals | null
-  /** GitHub login derived from email prefix matching */
-  githubLogin: string | null
-}
-
-/** Response shape for /api/org-tree */
-export interface OrgTreeResponse {
-  root: OrgTreeNode
-  totalNodes: number
-  copilotMatchCount: number
-}
-
 /** A flat user item returned by /api/org-search */
 export interface OrgSearchResult {
   id: string
@@ -49,4 +33,18 @@ export interface OrgSearchResult {
   mail: string | null
   userPrincipalName: string
   jobTitle: string | null
+}
+
+/** A member entry in the transitive reports list */
+export interface OrgReportsMember {
+  mail: string | null
+  userPrincipalName: string
+}
+
+/** Response shape for /api/org-reports */
+export interface OrgReportsResponse {
+  rootUser: EntraUser
+  members: OrgReportsMember[]
+  count: number
+  truncated: boolean
 }

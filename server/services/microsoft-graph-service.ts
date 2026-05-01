@@ -24,32 +24,65 @@ export async function getUserWithToken(token: string, upn: string): Promise<Entr
 
 /**
  * Fetch all transitive reports for a user using a delegated token.
- * Follows @odata.nextLink pagination up to MAX_PAGES.
+ *
+ * Tries /transitiveReports first (single call, requires AAD P1/P2).
+ * Falls back to recursive /directReports BFS (works in all tenants)
+ * when the tenant returns Request_UnsupportedQuery.
  */
 export async function getTransitiveReportsWithToken(
   token: string,
   upn: string
 ): Promise<TransitiveReportMember[]> {
-  const results: TransitiveReportMember[] = []
-  // transitiveReports returns DirectoryObject — cast to /microsoft.graph.user to use
-  // user-specific $select fields. Advanced query also requires ConsistencyLevel + $count=true.
-  let url: string | null =
-    `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/transitiveReports/microsoft.graph.user?${MEMBER_SELECT}&$count=true`
-  let pages = 0
+  const headers = { Authorization: `Bearer ${token}`, ConsistencyLevel: 'eventual' }
 
-  while (url && pages < MAX_PAGES) {
-    const res = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, {
-      headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: 'eventual' },
-    })
-    for (const m of res.value ?? []) {
-      if (m.id && m.userPrincipalName) {
-        results.push({ id: m.id, mail: m.mail ?? null, userPrincipalName: m.userPrincipalName })
+  // Attempt 1: transitiveReports (efficient single-round-trip)
+  try {
+    const results: TransitiveReportMember[] = []
+    let url: string | null =
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/transitiveReports/microsoft.graph.user?${MEMBER_SELECT}&$count=true`
+    let pages = 0
+    while (url && pages < MAX_PAGES) {
+      const res = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, { headers })
+      for (const m of res.value ?? []) {
+        if (m.id && m.userPrincipalName) {
+          results.push({ id: m.id, mail: m.mail ?? null, userPrincipalName: m.userPrincipalName })
+        }
       }
+      url = res['@odata.nextLink'] ?? null
+      pages++
     }
-    url = res['@odata.nextLink'] ?? null
-    pages++
+    return results
+  } catch (err: any) {
+    const code: string = err?.data?.error?.code ?? ''
+    // Only fall back on the explicit "not supported" error — re-throw everything else
+    if (code !== 'Request_UnsupportedQuery') throw err
   }
 
+  // Attempt 2: recursive directReports BFS (no P1/P2 required)
+  const fallbackHeaders = { Authorization: `Bearer ${token}` }
+  const results: TransitiveReportMember[] = []
+  const visited = new Set<string>()
+  const MAX_DEPTH = 6
+
+  async function fetchDirectReports(userId: string, depth: number): Promise<void> {
+    if (depth > MAX_DEPTH || visited.has(userId)) return
+    visited.add(userId)
+    let url: string | null =
+      `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/directReports/microsoft.graph.user?${MEMBER_SELECT}`
+    let pages = 0
+    while (url && pages < MAX_PAGES) {
+      const res = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, { headers: fallbackHeaders })
+      const batch = (res.value ?? []).filter((m: any) => m.id && m.userPrincipalName)
+      for (const m of batch) {
+        results.push({ id: m.id, mail: m.mail ?? null, userPrincipalName: m.userPrincipalName })
+      }
+      await Promise.all(batch.map((m: any) => fetchDirectReports(m.id, depth + 1)))
+      url = res['@odata.nextLink'] ?? null
+      pages++
+    }
+  }
+
+  await fetchDirectReports(upn, 0)
   return results
 }
 

@@ -30,20 +30,22 @@ async function loadSearchHandler(isDataMocked: boolean) {
   vi.resetModules()
   vi.mock('../server/services/microsoft-graph-service', () => ({
     searchUsersWithToken: vi.fn(),
-    getSubtreeWithToken: vi.fn(),
+    getUserWithToken: vi.fn(),
+    getTransitiveReportsWithToken: vi.fn(),
   }))
   const mod = await import('../server/api/org-search')
   return (mod as any).default
 }
 
-async function loadTreeHandler(isDataMocked: boolean) {
+async function loadReportsHandler(isDataMocked: boolean) {
   setConfig(isDataMocked)
   vi.resetModules()
   vi.mock('../server/services/microsoft-graph-service', () => ({
     searchUsersWithToken: vi.fn(),
-    getSubtreeWithToken: vi.fn(),
+    getUserWithToken: vi.fn(),
+    getTransitiveReportsWithToken: vi.fn(),
   }))
-  const mod = await import('../server/api/org-tree')
+  const mod = await import('../server/api/org-reports')
   return (mod as any).default
 }
 
@@ -101,61 +103,86 @@ describe('org-search handler (live mode — no auth header)', () => {
   })
 })
 
-// ── /api/org-tree ─────────────────────────────────────────────────────────────
+// ── /api/org-reports ──────────────────────────────────────────────────────────
 
-describe('org-tree handler (mock mode)', () => {
-  it('throws 400 when userEmail is missing', async () => {
-    const handler = await loadTreeHandler(true)
+describe('org-reports handler (mock mode)', () => {
+  it('throws 400 when userUpn is missing', async () => {
+    const handler = await loadReportsHandler(true)
     await expect(
       handler({ _query: {} })
     ).rejects.toMatchObject({ statusCode: 400 })
   })
 
-  it('returns full mock tree for the root user email', async () => {
-    const handler = await loadTreeHandler(true)
-    const result = await handler({ _query: { userEmail: 'monalisa@octodemo.com' } })
-    expect(result.root.displayName).toBe('Monalisa Octocat')
-    expect(result.totalNodes).toBeGreaterThan(1)
-    expect(result.copilotMatchCount).toBeGreaterThanOrEqual(0)
+  it('returns transitive reports for the root user UPN', async () => {
+    const handler = await loadReportsHandler(true)
+    const result = await handler({ _query: { userUpn: 'monalisa@octodemo.com' } })
+    expect(result.rootUser.displayName).toBe('Monalisa Octocat')
+    expect(result.members.length).toBeGreaterThan(0)
+    expect(result.truncated).toBe(false)
   })
 
-  it('falls back to the root tree when email is not found', async () => {
-    const handler = await loadTreeHandler(true)
-    const result = await handler({ _query: { userEmail: 'notfound@octodemo.com' } })
-    expect(result.root).toBeDefined()
-    expect(result.totalNodes).toBeGreaterThan(1)
+  it('throws 404 when UPN is not found in mock tree', async () => {
+    const handler = await loadReportsHandler(true)
+    await expect(
+      handler({ _query: { userUpn: 'notfound@octodemo.com' } })
+    ).rejects.toMatchObject({ statusCode: 404 })
   })
 
-  it('returns sub-tree when a direct report email is requested', async () => {
-    const handler = await loadTreeHandler(true)
-    const result = await handler({ _query: { userEmail: 'defunkt@octodemo.com' } })
-    expect(result.root.displayName).toBe('Defunkt Jones')
-    expect(result.root.directReports.length).toBeGreaterThan(0)
-  })
-
-  it('does not throw for a valid maxDepth override', async () => {
-    const handler = await loadTreeHandler(true)
-    const result = await handler({ _query: { userEmail: 'monalisa@octodemo.com', maxDepth: '2' } })
-    expect(result.root).toBeDefined()
-  })
-
-  it('clamps maxDepth to 6 for extreme values', async () => {
-    const handler = await loadTreeHandler(true)
-    const result = await handler({ _query: { userEmail: 'monalisa@octodemo.com', maxDepth: '999' } })
-    expect(result.root).toBeDefined()
+  it('returns sub-reports when a direct report UPN is requested', async () => {
+    const handler = await loadReportsHandler(true)
+    const result = await handler({ _query: { userUpn: 'defunkt@octodemo.com' } })
+    expect(result.rootUser.displayName).toBe('Defunkt Jones')
+    expect(result.count).toBeGreaterThanOrEqual(0)
   })
 })
 
-describe('org-tree handler (live mode — no auth header)', () => {
+describe('org-reports handler (live mode — no auth header)', () => {
   it('throws 503 when no Authorization header is provided', async () => {
-    const handler = await loadTreeHandler(false)
+    const handler = await loadReportsHandler(false)
     await expect(
-      handler({ _query: { userEmail: 'alice@example.com' } })
+      handler({ _query: { userUpn: 'alice@example.com' } })
     ).rejects.toMatchObject({ statusCode: 503 })
   })
 })
 
-// ── Delegated-token (MSAL) path ────────────────────────────────────────────────
+describe('org-reports handler (delegated token)', () => {
+  it('calls getUserWithToken and getTransitiveReportsWithToken when Authorization header is present', async () => {
+    const handler = await loadReportsHandler(false)
+    const { getUserWithToken, getTransitiveReportsWithToken } = await import('../server/services/microsoft-graph-service')
+    vi.mocked(getUserWithToken).mockResolvedValue({
+      id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com',
+      mail: 'alice@example.com', jobTitle: 'Manager', department: null, officeLocation: null
+    })
+    vi.mocked(getTransitiveReportsWithToken).mockResolvedValue([
+      { id: 'u2', userPrincipalName: 'bob@example.com', mail: 'bob@example.com' },
+    ])
+
+    const result = await handler({
+      _query: { userUpn: 'alice@example.com' },
+      _headers: { authorization: 'Bearer fake-token-xyz' },
+    })
+
+    expect(vi.mocked(getUserWithToken)).toHaveBeenCalledWith('fake-token-xyz', 'alice@example.com')
+    expect(result.rootUser.displayName).toBe('Alice')
+    expect(result.members).toHaveLength(1)
+    expect(result.members[0].userPrincipalName).toBe('bob@example.com')
+  })
+
+  it('throws 404 when getUserWithToken returns null', async () => {
+    const handler = await loadReportsHandler(false)
+    const { getUserWithToken, getTransitiveReportsWithToken } = await import('../server/services/microsoft-graph-service')
+    vi.mocked(getUserWithToken).mockResolvedValue(null)
+    vi.mocked(getTransitiveReportsWithToken).mockResolvedValue([])
+
+    await expect(
+      handler({
+        _query: { userUpn: 'missing@example.com' },
+        _headers: { authorization: 'Bearer fake-token-xyz' },
+      })
+    ).rejects.toMatchObject({ statusCode: 404 })
+  })
+})
+// ── /api/org-search delegated-token path ─────────────────────────────────────
 
 describe('org-search handler (delegated token)', () => {
   it('calls searchUsersWithToken when Authorization header is present', async () => {
@@ -187,7 +214,7 @@ describe('org-search handler (delegated token)', () => {
     expect(result).toEqual([])
   })
 
-  it('propagates errors from searchUsersWithToken without SP fallback', async () => {
+  it('propagates errors from searchUsersWithToken', async () => {
     const handler = await loadSearchHandler(false)
     const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
     vi.mocked(searchUsersWithToken).mockRejectedValue(new Error('Token expired'))
@@ -198,66 +225,5 @@ describe('org-search handler (delegated token)', () => {
         _headers: { authorization: 'Bearer expired-token' },
       })
     ).rejects.toThrow('Token expired')
-  })
-})
-
-describe('org-tree handler (delegated token)', () => {
-  it('calls getSubtreeWithToken when Authorization header is present', async () => {
-    const handler = await loadTreeHandler(false)
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    const mockFn = vi.mocked(getSubtreeWithToken)
-    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
-    mockFn.mockResolvedValue(mockRoot)
-
-    const result = await handler({
-      _query: { userEmail: 'alice@example.com' },
-      _headers: { authorization: 'Bearer fake-token-xyz' },
-    })
-
-    expect(mockFn).toHaveBeenCalledWith('fake-token-xyz', 'alice@example.com', 3)
-    expect(result.root.displayName).toBe('Alice')
-    expect(result.totalNodes).toBe(1)
-  })
-
-  it('returns correct node counts when getSubtreeWithToken resolves', async () => {
-    const handler = await loadTreeHandler(false)
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    const child = { id: 'u2', displayName: 'Bob', userPrincipalName: 'bob@example.com', mail: 'bob@example.com', jobTitle: 'IC', directReports: [] }
-    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Manager', directReports: [child] }
-    vi.mocked(getSubtreeWithToken).mockResolvedValue(mockRoot)
-
-    const result = await handler({
-      _query: { userEmail: 'alice@example.com' },
-      _headers: { authorization: 'Bearer fake-token-xyz' },
-    })
-
-    expect(result.totalNodes).toBe(2)
-  })
-
-  it('propagates errors from getSubtreeWithToken without SP fallback', async () => {
-    const handler = await loadTreeHandler(false)
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    vi.mocked(getSubtreeWithToken).mockRejectedValue(new Error('Consent required'))
-
-    await expect(
-      handler({
-        _query: { userEmail: 'alice@example.com' },
-        _headers: { authorization: 'Bearer bad-token' },
-      })
-    ).rejects.toThrow('Consent required')
-  })
-
-  it('respects maxDepth query param in delegated mode', async () => {
-    const handler = await loadTreeHandler(false)
-    const { getSubtreeWithToken } = await import('../server/services/microsoft-graph-service')
-    const mockRoot = { id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: 'alice@example.com', jobTitle: 'Engineer', directReports: [] }
-    vi.mocked(getSubtreeWithToken).mockResolvedValue(mockRoot)
-
-    await handler({
-      _query: { userEmail: 'alice@example.com', maxDepth: '5' },
-      _headers: { authorization: 'Bearer fake-token-xyz' },
-    })
-
-    expect(vi.mocked(getSubtreeWithToken)).toHaveBeenCalledWith('fake-token-xyz', 'alice@example.com', 5)
   })
 })

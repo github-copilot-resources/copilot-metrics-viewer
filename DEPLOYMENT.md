@@ -366,6 +366,8 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `NUXT_OAUTH_KEYCLOAK_REALM` | Keycloak realm name | Keycloak OAuth |
 | `NUXT_AUTHORIZED_USERS` | Comma-separated logins/emails allowed to log in (any provider) | Optional |
 | `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated email domains allowed, e.g. `company.com` | Optional |
+| `NUXT_PUBLIC_ENTRA_CLIENT_ID` | App registration client ID for MSAL manager filter | Entra filter |
+| `NUXT_PUBLIC_ENTRA_TENANT_ID` | Tenant ID for MSAL (default: `common` for multi-tenant) | Entra filter |
 
 ## Authentication
 
@@ -590,4 +592,67 @@ When **both are empty** (default), all authenticated users are allowed. When eit
 
 > [!NOTE]
 > Provider-level restrictions (Microsoft tenant, Auth0 connections, Keycloak realm) are preferred over application-level allowlists — they deny access before reaching the app entirely.
+
+---
+
+## Entra ID Manager Filter (optional)
+
+The **Filter by Manager** feature lets users view Copilot metrics scoped to their own org subtree. When enabled, a "Filter by manager" autocomplete appears on the per-user metrics page. The user signs in with their Microsoft account via a browser popup (MSAL), and the app fetches their direct and transitive reports from Microsoft Graph to filter the metrics.
+
+This feature is **independent of the OAuth authentication** configured above — it only needs a separate, lightweight app registration for Microsoft Graph access.
+
+### Required permissions
+
+The app registration needs only two **delegated** permissions (no application permissions, no admin consent required by default):
+
+| Permission | Purpose |
+|---|---|
+| `User.Read` | Read the signed-in user's own profile |
+| `User.ReadBasic.All` | Read basic profile info of other users (name, email) to traverse the org hierarchy |
+
+> [!TIP]
+> `User.ReadBasic.All` does **not** require admin consent by default, making this suitable for **multi-tenant app registrations**. Users can consent themselves when they first use the filter.
+
+### App registration setup
+
+1. Open [Azure Portal → App Registrations → New Registration](https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/RegisteredApps)
+2. Set **Supported account types** to **"Accounts in any organizational directory (Any Microsoft Entra ID tenant — Multitenant)"** — this allows users from any tenant to use the filter without per-tenant app registrations
+3. Set **Redirect URI**: leave blank (MSAL popup flow does not require a redirect URI)
+4. Under **API permissions**, add:
+   - `Microsoft Graph` → **Delegated** → `User.Read` *(usually pre-added)*
+   - `Microsoft Graph` → **Delegated** → `User.ReadBasic.All`
+5. Note the **Application (client) ID**
+
+### Environment variables
+
+```bash
+# Enable the "Filter by Manager" feature on the per-user metrics page
+NUXT_PUBLIC_ENTRA_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+
+# Optional: set to your tenant ID to restrict to a single tenant.
+# Omit (or set to 'common') to allow users from any tenant — recommended for multi-tenant registrations.
+NUXT_PUBLIC_ENTRA_TENANT_ID=common
+```
+
+> [!NOTE]
+> If your tenant has a policy requiring admin consent for all app permissions (common in enterprise tenants), a tenant admin must grant consent once via:
+> `https://login.microsoftonline.com/{tenant-id}/adminconsent?client_id={client-id}`
+> After that, all users in the tenant can use the filter without any further prompts.
+
+### Alternative: paste an Azure CLI token
+
+If you don't want to set up an app registration, users can paste a Microsoft Graph access token directly into the filter UI. The token is stored in `sessionStorage` (cleared on tab close) and its expiry is decoded from the JWT and displayed.
+
+To get a narrowly-scoped token:
+
+```bash
+# Re-login with only the required Graph scopes
+az login --scope "https://graph.microsoft.com/User.Read" \
+         --scope "https://graph.microsoft.com/User.ReadBasic.All"
+
+# Then get the token
+az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv
+```
+
+In this mode, `NUXT_PUBLIC_ENTRA_CLIENT_ID` is **not required** — the "Paste Graph token" button appears automatically when it is not set.
 
