@@ -106,23 +106,21 @@
     <!-- Team scope indicator — shown when viewing a team-scoped URL -->
     <v-alert
       v-if="teamName"
-      color="indigo"
       variant="flat"
       icon="mdi-account-group"
-      icon-color="yellow"
       density="compact"
-      class="ma-2 text-yellow"
-      style="color: #FFD600;"
+      class="ma-2"
+      style="background-color: #1565C0; color: #FFD600;"
     >
       All metrics are scoped to team <strong>{{ teamName }}</strong> — every tab shows data for team members only.
       <v-btn
         v-if="parentUrl"
         :to="parentUrl"
-        variant="tonal"
-        color="indigo"
+        variant="outlined"
         size="x-small"
         append-icon="mdi-arrow-right"
         class="ml-2"
+        style="color: #FFD600; border-color: #FFD600;"
         :aria-label="`Return to ${orgLabel} organization view`"
       >Back to {{ orgLabel }}</v-btn>
     </v-alert>
