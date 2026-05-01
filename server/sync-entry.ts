@@ -10,6 +10,7 @@
  *   - NUXT_PUBLIC_GITHUB_ORG: GitHub organization slug
  *   - NUXT_PUBLIC_GITHUB_ENT: GitHub enterprise slug
  *   - NUXT_GITHUB_TOKEN: GitHub personal access token
+ *   - NUXT_GITHUB_API_BASE_URL: Optional API base URL override for GHE.com (e.g. https://api.SUBDOMAIN.ghe.com)
  *   - SYNC_DAYS_BACK: Number of days to sync (default: 28, uses bulk download)
  *   - DATABASE_URL: PostgreSQL connection string (or use PG* env vars)
  *   - HTTP_PROXY: Optional HTTP/HTTPS proxy URL (e.g. http://proxy:8080)

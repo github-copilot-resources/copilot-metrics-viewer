@@ -403,6 +403,11 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
 
 // --- API Functions ---
 
+/** Returns the GitHub API base URL, honouring the NUXT_GITHUB_API_BASE_URL override for GHE.com. */
+export function getGitHubApiBaseUrl(): string {
+  return process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
+}
+
 /**
  * Build the report URL for the given scope and report type.
  */
@@ -412,7 +417,7 @@ function buildReportUrl(
   day?: string
 ): string {
   const { scope, identifier } = request;
-  const base = 'https://api.github.com';
+  const base = getGitHubApiBaseUrl();
   const isOrg = scope === 'organization';
 
   if (isOrg) {
@@ -652,7 +657,7 @@ function buildUserReportUrl(
   day?: string
 ): string {
   const { scope, identifier } = request;
-  const base = 'https://api.github.com';
+  const base = getGitHubApiBaseUrl();
   const isOrg = scope === 'organization';
 
   if (isOrg) {

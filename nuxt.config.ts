@@ -80,6 +80,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     githubToken: '',
+    githubApiBaseUrl: '',       // NUXT_GITHUB_API_BASE_URL — override for GHE.com (e.g. https://api.SUBDOMAIN.ghe.com)
     aiToken: '',  // Dedicated token for GitHub Models API (NUXT_AI_TOKEN). Falls back to githubToken.
     aiModel: 'gpt-4o',  // Model for AI chat (NUXT_AI_MODEL)
     aiMaxToolRounds: '5',  // Max tool-calling iterations (NUXT_AI_MAX_TOOL_ROUNDS)

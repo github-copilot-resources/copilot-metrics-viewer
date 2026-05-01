@@ -278,6 +278,19 @@ Token is not used in the frontend.
 NUXT_GITHUB_TOKEN=
 ````
 
+#### NUXT_GITHUB_API_BASE_URL
+
+Optional. Overrides the GitHub API base URL used for all server-side API calls. Set this when accessing GitHub at **GHE.com** (GitHub Enterprise Cloud with data residency), where the API is available at a dedicated subdomain.
+
+```
+NUXT_GITHUB_API_BASE_URL=https://api.SUBDOMAIN.ghe.com
+```
+
+Defaults to `https://api.github.com` when not set. Leave unset for standard GitHub.com and GitHub Enterprise Cloud (non-data-residency) deployments.
+
+> [!NOTE]
+> **GHES (GitHub Enterprise Server) is not supported** — the Copilot usage metrics API is not available on GHES.
+
 #### NUXT_GITHUB_APP_ID / NUXT_GITHUB_APP_PRIVATE_KEY
 
 **Alternative to PAT** — use a GitHub App installation token for backend data access. When both are set, they take priority over `NUXT_GITHUB_TOKEN`. This is the recommended credential when users authenticate via Google, Microsoft, Auth0, or Keycloak (i.e., non-GitHub identity providers), since the token is machine-issued and not tied to any individual user account.

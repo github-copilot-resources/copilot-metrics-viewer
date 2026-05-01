@@ -8,6 +8,7 @@ export default defineOAuthGitHubEventHandler({
   },
   async onSuccess(event, { user, tokens }) {
     const config = useRuntimeConfig(event);
+    const apiBaseUrl = config.githubApiBaseUrl || 'https://api.github.com';
 
     // Authorize before creating a session
     if (!isUserAuthorized(event, { login: user.login, email: user.email })) {
@@ -39,7 +40,7 @@ export default defineOAuthGitHubEventHandler({
     if (config.public.isPublicApp) {
       try {
         const data = await $fetch<{ installations: Array<{ account: { login: string; type: string } }> }>(
-          'https://api.github.com/user/installations?per_page=100',
+          `${apiBaseUrl}/user/installations?per_page=100`,
           {
             headers: {
               Authorization: `token ${tokens.access_token}`,

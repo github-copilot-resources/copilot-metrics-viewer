@@ -42,6 +42,7 @@ export default defineEventHandler(async (event): Promise<EnterpriseOrgsResponse>
     const query = getQuery(event)
     const options = Options.fromQuery(query)
     const config = useRuntimeConfig()
+    const apiBaseUrl = config.githubApiBaseUrl || 'https://api.github.com'
 
     // Fill missing scope/context from runtime config
     if (!options.scope && config.public.scope) options.scope = config.public.scope as Scope
@@ -101,7 +102,7 @@ export default defineEventHandler(async (event): Promise<EnterpriseOrgsResponse>
         let isFullGhec = false
 
         while (hasNextPage) {
-            const result = await $fetch<GraphQLResponse>('https://api.github.com/graphql', {
+            const result = await $fetch<GraphQLResponse>(`${apiBaseUrl}/graphql`, {
                 method: 'POST',
                 headers: fetchHeaders,
                 body: JSON.stringify({
