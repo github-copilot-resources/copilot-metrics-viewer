@@ -119,8 +119,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
   }
 
   // 1. Mock mode — return immediately, no DB, no API
-  //    Controlled by NUXT_PUBLIC_IS_DATA_MOCKED env var, not per-request params
-  if (isMockMode()) {
+  //    Controlled by NUXT_PUBLIC_IS_DATA_MOCKED env var OR per-request ?mock=true query param
+  if (isMockMode() || options.isDataMocked) {
     if (isLegacyMode()) {
       logger.info('Using mocked data mode (legacy format — USE_LEGACY_API=true)');
       const metrics = await getLegacyMetricsData(event);
