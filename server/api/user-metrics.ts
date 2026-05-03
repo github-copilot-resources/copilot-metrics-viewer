@@ -60,10 +60,16 @@ export default defineEventHandler(async (event) => {
     // Org mock uses UserDayRecord[] in day_totals → aggregate on the fly.
     // Enterprise mock uses pre-aggregated UserTotals[] in user_totals → return directly.
     const dayRecords = (raw as { day_totals?: UserDayRecord[] }).day_totals;
-    if (dayRecords) {
-      return aggregateUserDayRecords(dayRecords);
+    let userTotals: UserTotals[] = dayRecords
+      ? aggregateUserDayRecords(dayRecords)
+      : ((raw as { user_totals: UserTotals[] }).user_totals ?? []);
+
+    // Apply team filter in mock mode using the same mock membership table as seats
+    if (options.githubTeam) {
+      const members = await filterByTeamIfNeeded(userTotals, options, new Headers());
+      userTotals = members;
     }
-    return (raw as { user_totals: UserTotals[] }).user_totals ?? [];
+    return userTotals;
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────

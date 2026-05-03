@@ -13,11 +13,18 @@ const emit = defineEmits<{
   select: [logins: string[], label: string]
 }>()
 
+const config = useRuntimeConfig()
+const isMockMode = computed(() =>
+  config.public.isDataMocked === true || config.public.isDataMocked === 'true'
+)
+
 const msal = useMsal()
 const isSignedIn = msal.isSignedIn
 
-// Show sign-in prompt only when MSAL is configured but user is not signed in
-const showSignInPrompt = computed(() => msal.isConfigured && !isSignedIn.value)
+// Show sign-in prompt only when MSAL is configured but user is not signed in (and not mock mode)
+const showSignInPrompt = computed(() => !isMockMode.value && msal.isConfigured && !isSignedIn.value)
+// Show search when signed in via MSAL or when in mock mode (API works without auth)
+const showSearch = computed(() => isSignedIn.value || isMockMode.value)
 
 const searchQuery = ref('')
 const searchResults = ref<OrgSearchResult[]>([])
@@ -130,7 +137,7 @@ function clear() {
 
     <!-- Search autocomplete -->
     <v-autocomplete
-      v-else-if="isSignedIn"
+      v-else-if="showSearch"
       v-model="selectedPerson"
       v-model:search="searchQuery"
       :items="searchResults"

@@ -28,6 +28,15 @@ export interface TeamMember {
   [key: string]: unknown; // allow additional fields without using any
 }
 
+// Mock team membership — matches the mock teams defined in teams.ts
+const MOCK_TEAM_MEMBERS: Record<string, TeamMember[]> = {
+  'the-a-team':    [{ login: 'monalisa', id: 1 }, { login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }],
+  'dev-team':      [{ login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }, { login: 'hubot', id: 8 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }],
+  'frontend-team': [{ login: 'codertocat', id: 3 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }],
+  'backend-team':  [{ login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }, { login: 'hubot', id: 8 }],
+  'qa-team':       [{ login: 'hubot', id: 8 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }],
+};
+
 /**
  * Fetch all members of a team handling GitHub API pagination.
  * Supports both organization teams (via /members) and enterprise teams
@@ -40,6 +49,11 @@ export interface TeamMember {
 export async function fetchAllTeamMembers(options: Options, headers: HeadersInit): Promise<TeamMember[]> {
   if (!options.githubTeam) {
     return [];
+  }
+
+  // Mock mode: return pre-defined team membership without hitting GitHub API
+  if (options.isDataMocked) {
+    return MOCK_TEAM_MEMBERS[options.githubTeam] ?? [];
   }
 
   const membersUrl = options.getTeamMembersApiUrl();
@@ -166,9 +180,15 @@ export default defineEventHandler(async (event) => {
     const path = resolve(mockedDataPath);
     const data = readFileSync(path, 'utf8');
     const dataJson = JSON.parse(data);
-    const seatsData = deduplicateSeats(
+    let seatsData = deduplicateSeats(
       dataJson.seats.map((item: unknown) => new Seat(item))
     );
+    // Apply team filter in mock mode
+    if (options.githubTeam) {
+      const mockMembers = MOCK_TEAM_MEMBERS[options.githubTeam] ?? [];
+      const memberLogins = new Set(mockMembers.map(m => m.login.toLowerCase()));
+      seatsData = seatsData.filter(s => memberLogins.has(s.login.toLowerCase()));
+    }
     logger.info('Using mocked data');
     return paginateSeats(seatsData, uiPage, uiPerPage);
   }
