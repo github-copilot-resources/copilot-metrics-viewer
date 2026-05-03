@@ -123,9 +123,16 @@ export class Options {
             } else {
                 options.scope = 'organization';
             }
-            if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
-            if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
-            if (config.public.githubTeam) options.githubTeam = config.public.githubTeam;
+            // In mock mode with no URL-based org/ent, use a fixed mock identity
+            // so the UI never shows a real org name when browsing demo data
+            if (options.isDataMocked) {
+                options.githubOrg = 'octodemo';
+                options.scope = 'organization';
+            } else {
+                if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
+                if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
+                if (config.public.githubTeam) options.githubTeam = config.public.githubTeam;
+            }
         }
 
         return options;

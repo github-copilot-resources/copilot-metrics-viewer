@@ -14,8 +14,10 @@ const emit = defineEmits<{
 }>()
 
 const config = useRuntimeConfig()
+const route = useRoute()
 const isMockMode = computed(() =>
-  config.public.isDataMocked === true || config.public.isDataMocked === 'true'
+  config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+  route.query.mock === 'true' || route.query.mock === '1'
 )
 
 const msal = useMsal()
@@ -49,7 +51,7 @@ function onSearchInput(q: string) {
     try {
       const headers = await getHeaders()
       searchResults.value = await $fetch<OrgSearchResult[]>('/api/org-search', {
-        query: { q },
+        query: { q, ...(isMockMode.value ? { mock: 'true' } : {}) },
         headers,
       })
     } catch {
@@ -68,7 +70,7 @@ async function onPersonSelect(person: OrgSearchResult | null) {
   try {
     const headers = await getHeaders()
     const resp = await $fetch<OrgReportsResponse>('/api/org-reports', {
-      query: { userUpn: person.userPrincipalName },
+      query: { userUpn: person.userPrincipalName, ...(isMockMode.value ? { mock: 'true' } : {}) },
       headers,
     })
     filterCount.value = resp.count

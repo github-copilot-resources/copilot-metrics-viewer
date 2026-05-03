@@ -18,8 +18,15 @@ const config = useRuntimeConfig();
 const version = computed(() => config.public.version);
 const deployInfo = computed(() => config.public.deployInfo);
 const route = useRoute();
+const isMockMode = computed(() =>
+  config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+  route.query.mock === 'true' || route.query.mock === '1'
+);
 const pageTitle = computed(() => {
-  const base = getDisplayName(config.public);
+  const publicConfig = isMockMode.value
+    ? { ...config.public, githubOrg: 'octodemo', githubEnt: '' }
+    : config.public;
+  const base = getDisplayName(publicConfig);
   const team = routeParamStr(route.params, 'team');
   return team ? `${base} | Team : ${team}` : base;
 });

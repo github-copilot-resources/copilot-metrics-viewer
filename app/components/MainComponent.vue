@@ -556,10 +556,14 @@ export default defineNuxtComponent({
       route.value.params.team ? 'team' : (config.public.scope as string)
     );
     const teamName = computed(() => routeParamStr(route.value.params, 'team'));
+    const isMockMode = computed(() =>
+      config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+      route.value.query.mock === 'true' || route.value.query.mock === '1'
+    );
     const orgLabel = computed(() =>
       routeParamStr(route.value.params, 'org') ||
       routeParamStr(route.value.params, 'ent') ||
-      config.public.githubOrg || config.public.githubEnt || ''
+      (isMockMode.value ? 'octodemo' : (config.public.githubOrg || config.public.githubEnt || ''))
     );
     const parentUrl = computed<string | null>(() => {
       const org = routeParamStr(route.value.params, 'org');
@@ -570,7 +574,10 @@ export default defineNuxtComponent({
       return null;
     });
     const displayName = computed(() => {
-      const base = getDisplayName(config.public);
+      const publicConfig = isMockMode.value
+        ? { ...config.public, githubOrg: 'octodemo', githubEnt: '' }
+        : config.public;
+      const base = getDisplayName(publicConfig);
       return teamName.value ? `${base} | Team : ${teamName.value}` : base;
     });
 

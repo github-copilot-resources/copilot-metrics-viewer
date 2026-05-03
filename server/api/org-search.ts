@@ -22,7 +22,7 @@ export default defineEventHandler(async (event): Promise<OrgSearchResult[]> => {
     return []
   }
 
-  if (config.public.isDataMocked) {
+  if (config.public.isDataMocked || query.mock === 'true') {
     const lower = q.toLowerCase()
     return MOCK_USERS.filter(u =>
       u.displayName.toLowerCase().includes(lower) ||

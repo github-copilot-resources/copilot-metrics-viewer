@@ -42,7 +42,7 @@ export default defineEventHandler(async (event): Promise<OrgReportsResponse> => 
     throw createError({ statusCode: 400, statusMessage: 'userUpn query parameter is required' })
   }
 
-  if (config.public.isDataMocked) {
+  if (config.public.isDataMocked || query.mock === 'true') {
     const mockData = await import('../../public/mock-data/entra-org-tree.json')
     const root = mockData.default as unknown as MockTreeNode
     const node = findNodeInTree(root, userUpn)
