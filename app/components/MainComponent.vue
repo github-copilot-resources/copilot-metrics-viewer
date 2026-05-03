@@ -185,7 +185,7 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" :team-name="teamName" />
-            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" />
+            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" :entra-enabled="entraEnabled" />
             <BreakdownComponent
               v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
               :date-range-description="dateRangeDescription" :report-data="reportData"
@@ -216,7 +216,6 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription"
               :user-metrics-history="userMetricsHistory"
               :query-params="seatsQueryParams"
-              :entra-enabled="entraEnabled"
               :session-email="sessionEmail"
             />
             <ApiResponse

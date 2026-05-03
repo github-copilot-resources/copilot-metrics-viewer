@@ -114,8 +114,15 @@
         <div class="d-flex align-center gap-4 flex-shrink-0 mt-1 ml-2">
           <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
           <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
+          <v-chip v-else-if="entraOnlyMode" color="indigo" size="small" prepend-icon="mdi-account-supervisor-outline">Org Filter</v-chip>
           <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" class="ml-2" @click="clearSelection">Clear All</v-btn>
         </div>
+      </div>
+
+      <!-- Entra ID manager filter (shown when entraEnabled) -->
+      <div v-if="entraEnabled" class="mt-3 pt-3" style="border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity))">
+        <div class="text-caption text-medium-emphasis mb-2">Or filter by reporting hierarchy</div>
+        <ReportsToFilter :user-metrics="allUserMetrics" @select="onEntraSelect" />
       </div>
     </v-card>
 
@@ -349,6 +356,58 @@
       </v-container>
     </div>
 
+    <!-- ═══════════════════════════════════════════════ ENTRA ORG FILTER (no team selected) -->
+    <div v-else-if="entraOnlyMode">
+      <v-container fluid class="px-4 pb-0">
+        <v-card elevation="2" class="pa-3 mt-1">
+          <div class="d-flex align-center gap-2">
+            <v-icon color="indigo">mdi-account-supervisor-outline</v-icon>
+            <span class="text-subtitle-1 font-weight-medium">Reports to {{ entraFilterLabel }}</span>
+            <v-spacer />
+          </div>
+          <div class="text-caption text-medium-emphasis mt-1">
+            {{ sortedUserMetrics.length }} user{{ sortedUserMetrics.length !== 1 ? 's' : '' }} in reporting hierarchy
+          </div>
+        </v-card>
+      </v-container>
+
+      <v-container fluid class="px-4 mt-2 pb-4">
+        <v-card class="pa-3">
+          <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-1">User Activity</v-card-title>
+          <v-card-subtitle class="pb-2 text-caption">Sorted by interactions</v-card-subtitle>
+          <v-progress-linear v-if="entraUserMetricsLoading" indeterminate color="primary" class="mb-2" />
+          <v-table v-if="sortedUserMetrics.length" density="compact">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th class="text-right">Active Days</th>
+                <th class="text-right">Interactions</th>
+                <th class="text-right">Code Generated</th>
+                <th class="text-right">Acceptance Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="user in sortedUserMetrics" :key="user.login">
+                <td><span class="font-weight-medium">{{ user.login }}</span></td>
+                <td class="text-right">{{ user.total_active_days }}</td>
+                <td class="text-right">{{ user.user_initiated_interaction_count.toLocaleString() }}</td>
+                <td class="text-right">{{ user.code_generation_activity_count.toLocaleString() }}</td>
+                <td class="text-right">
+                  {{ user.code_generation_activity_count
+                    ? ((user.code_acceptance_activity_count / user.code_generation_activity_count) * 100).toFixed(1) + '%'
+                    : '—' }}
+                </td>
+              </tr>
+            </tbody>
+          </v-table>
+          <div v-else-if="!entraUserMetricsLoading" class="text-center text-medium-emphasis py-6">
+            <v-icon size="40" color="grey-lighten-1">mdi-account-outline</v-icon>
+            <p class="mt-2 text-body-2">No users found in reporting hierarchy</p>
+          </div>
+        </v-card>
+      </v-container>
+    </div>
+
     <!-- ═══════════════════════════════════════════════ COMPARISON MODE (2+ teams) -->
     <div v-else-if="comparisonMode">
       <!-- Per-team summary cards -->
@@ -498,6 +557,7 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { ReportDayTotals, UserTotals } from '../../server/services/github-copilot-usage-api';
 import { PALETTE } from '@/utils/chartPlugins'
+import ReportsToFilter from './ReportsToFilter.vue'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -574,10 +634,11 @@ const DONUT_COLORS = ['#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#36A2EB', '#F
 
 export default defineComponent({
   name: 'TeamsComponent',
-  components: { LineChart, BarChart, Doughnut },
+  components: { LineChart, BarChart, Doughnut, ReportsToFilter },
   props: {
     dateRange: { type: Object as PropType<DateRange>, required: false, default: () => ({}) },
-    dateRangeDescription: { type: String, default: '' }
+    dateRangeDescription: { type: String, default: '' },
+    entraEnabled: { type: Boolean, default: false }
   },
   setup(props) {
     const theme = useTheme()
@@ -932,11 +993,39 @@ export default defineComponent({
     const userMetricsError = ref<string | null>(null)
     const userMetricsLoading = ref(false)
 
-    const sortedUserMetrics = computed(() =>
-      [...singleTeamUserMetrics.value].sort(
-        (a, b) => b.user_initiated_interaction_count - a.user_initiated_interaction_count
-      )
-    )
+    // ── Entra / Org-hierarchy filter ──────────────────────────────────────────
+    const entraFilterLogins = ref<string[]>([])
+    const entraFilterLabel = ref('')
+    const entraFilterActive = computed(() => entraFilterLabel.value !== '')
+    const entraOnlyMode = computed(() => entraFilterActive.value && selectedTeams.value.length === 0)
+
+    // All user metrics (pre-fetched so ReportsToFilter can match email→login)
+    const allUserMetrics = ref<UserTotals[]>([])
+    const entraUserMetricsLoading = ref(false)
+
+    const loadAllUserMetrics = async () => {
+      entraUserMetricsLoading.value = true
+      try {
+        const route = useRoute()
+        const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+        allUserMetrics.value = await $fetch<UserTotals[]>('/api/user-metrics', { params: options.toParams() }).catch(() => [])
+      } finally {
+        entraUserMetricsLoading.value = false
+      }
+    }
+
+    function onEntraSelect(logins: string[], label: string) {
+      entraFilterLogins.value = logins
+      entraFilterLabel.value = label
+    }
+
+    const sortedUserMetrics = computed(() => {
+      let source = entraOnlyMode.value ? allUserMetrics.value : singleTeamUserMetrics.value
+      if (entraFilterActive.value) {
+        source = source.filter(u => entraFilterLogins.value.includes(u.login))
+      }
+      return [...source].sort((a, b) => b.user_initiated_interaction_count - a.user_initiated_interaction_count)
+    })
 
     const loadUserMetricsForTeam = async (slug: string) => {
       userMetricsLoading.value = true
@@ -1184,6 +1273,8 @@ export default defineComponent({
       // For enterprise scope, detect Full GHEC and load orgs before teams
       await loadEnterpriseOrgs()
       await loadTeams()
+      // Pre-fetch all user metrics so ReportsToFilter can match Entra UPNs to logins
+      if (props.entraEnabled) loadAllUserMetrics()
     })
 
     watch(selectedTeams, async () => { await updateChartData() })
@@ -1230,6 +1321,14 @@ export default defineComponent({
       sortedUserMetrics,
       userMetricsError,
       userMetricsLoading,
+      // Entra org filter
+      entraFilterLogins,
+      entraFilterLabel,
+      entraFilterActive,
+      entraOnlyMode,
+      allUserMetrics,
+      entraUserMetricsLoading,
+      onEntraSelect,
       // comparison
       comparisonSummaryCards,
       comparisonModelsData,

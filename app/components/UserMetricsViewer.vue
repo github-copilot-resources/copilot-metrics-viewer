@@ -161,23 +161,6 @@
         <h2>Per-User Copilot Usage Metrics</h2>
         <div class="text-caption mb-4">{{ dateRangeDescription }}</div>
 
-        <!-- Org tree filter banner -->
-        <v-alert
-          v-if="orgFilterLogins.length > 0"
-          type="info"
-          variant="tonal"
-          density="compact"
-          closable
-          class="mb-3"
-          @click:close="clearOrgFilter"
-        >
-          <div class="d-flex align-center gap-2">
-            <v-icon size="16">mdi-account-supervisor-outline</v-icon>
-            <span>Showing <strong>{{ orgFilteredUsers.length }}</strong> users under <strong>{{ orgFilterLabel }}</strong></span>
-            <v-btn size="x-small" variant="text" @click="clearOrgFilter">Clear filter</v-btn>
-          </div>
-        </v-alert>
-
         <!-- Understanding your metrics moved to top of page -->
         <v-row class="mb-4" align="center">
           <v-col cols="12" md="4">
@@ -202,12 +185,6 @@
               density="compact"
               variant="outlined"
               hide-details
-            />
-          </v-col>
-          <v-col v-if="entraEnabled" cols="12" md="5">
-            <ReportsToFilter
-              :user-metrics="userMetrics"
-              @select="onReportsToSelect"
             />
           </v-col>
         </v-row>
@@ -482,13 +459,12 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import ReportsToFilter from './ReportsToFilter.vue';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement, Title, Tooltip, Legend);
 
 export default defineComponent({
   name: 'UserMetricsViewer',
-  components: { Line, Bar, Doughnut, ReportsToFilter },
+  components: { Line, Bar, Doughnut },
   props: {
     userMetrics: {
       type: Array as PropType<UserTotals[]>,
@@ -509,12 +485,7 @@ export default defineComponent({
       type: Object as PropType<Record<string, string>>,
       default: () => ({})
     },
-    /** Whether Entra integration is enabled (shows org tree panel). */
-    entraEnabled: {
-      type: Boolean,
-      default: false
-    },
-    /** Email of the logged-in user for org tree auto-load. */
+    /** Email of the logged-in user (unused here; kept for compat). */
     sessionEmail: {
       type: String,
       default: ''
@@ -523,20 +494,6 @@ export default defineComponent({
   setup(props) {
     const search = ref('');
     const activityFilter = ref('all');
-
-    // ── Org filter state ────────────────────────────────────────────────────
-    const orgFilterLogins = ref<string[]>([]);
-    const orgFilterLabel = ref('');
-
-    function onReportsToSelect(logins: string[], label: string) {
-      orgFilterLogins.value = logins;
-      orgFilterLabel.value = label;
-    }
-
-    function clearOrgFilter() {
-      orgFilterLogins.value = [];
-      orgFilterLabel.value = '';
-    }
 
     // ── User selection for drill-down charts ───────────────────────────────
     const selectedUserLogin = ref<string | null>(null);
@@ -641,10 +598,7 @@ export default defineComponent({
       return ((totalAccepted / totalGenerated) * 100).toFixed(1);
     });
 
-    const orgFilteredUsers = computed(() => {
-      if (orgFilterLogins.value.length === 0) return props.userMetrics;
-      return props.userMetrics.filter(u => orgFilterLogins.value.includes(u.login));
-    });
+    const orgFilteredUsers = computed(() => props.userMetrics);
 
     const filteredUsers = computed(() => {
       let result = [...orgFilteredUsers.value];
@@ -1153,10 +1107,7 @@ export default defineComponent({
       chartTrendOptions,
       // org filter
       orgFilterLogins,
-      orgFilterLabel,
       orgFilteredUsers,
-      onReportsToSelect,
-      clearOrgFilter,
     };
   },
   data() {
