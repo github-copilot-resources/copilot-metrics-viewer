@@ -346,7 +346,8 @@
                 <tbody>
                   <tr v-for="user in sortedUserMetrics" :key="user.login">
                     <td>
-                      <span class="font-weight-medium">{{ user.login }}</span>
+                      <span class="font-weight-medium" :class="user.total_active_days === 0 ? 'text-medium-emphasis' : ''">{{ user.login }}</span>
+                      <v-chip v-if="user.total_active_days === 0" size="x-small" variant="tonal" color="warning" class="ml-2">inactive</v-chip>
                     </td>
                     <td class="text-right">{{ user.total_active_days }}</td>
                     <td class="text-right">{{ user.user_initiated_interaction_count.toLocaleString() }}</td>
@@ -770,7 +771,13 @@ export default defineComponent({
         { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: props.dateRangeDescription, tooltip: 'Daily active users on the latest available day' },
         { label: 'Acceptance Rate', value: `${acceptanceRate}%`, color: 'success', subtitle: 'Completions accepted ÷ generated', tooltip: 'Weighted code acceptance rate (acceptances ÷ generations) over the date range' },
         { label: 'Interactions', value: totalInteractions ? totalInteractions.toLocaleString() : (totalAcc + totalGen).toLocaleString(), color: 'primary', subtitle: 'User-initiated requests', tooltip: 'Total user-initiated Copilot interactions over the date range' },
-        { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' }
+        { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' },
+        ...(singleTeamUserMetrics.value.length > 0 ? (() => {
+          const totalMembers = singleTeamUserMetrics.value.length
+          const activeMembers = singleTeamUserMetrics.value.filter(u => u.total_active_days > 0).length
+          const adoptionPct = Math.round(activeMembers / totalMembers * 100)
+          return [{ label: 'Copilot Adoption', value: `${adoptionPct}%`, color: 'success', subtitle: `${activeMembers} of ${totalMembers} members active`, tooltip: 'Percentage of team members with a Copilot seat who used Copilot at least once in the period' }]
+        })() : []),
       ]
     })
 
