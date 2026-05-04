@@ -49,9 +49,7 @@
           clearable
           variant="outlined"
           density="compact"
-          :theme="isDark ? 'dark' : 'light'"
           :menu-props="{
-            contentClass: 'orgs-select-menu',
             maxHeight: 360,
             scrim: false,
             offset: 8
@@ -92,9 +90,7 @@
           clearable
           variant="outlined"
           density="compact"
-          :theme="isDark ? 'dark' : 'light'"
           :menu-props="{
-            contentClass: 'teams-select-menu',
             maxHeight: 360,
             scrim: false,
             closeOnContentClick: false,
@@ -513,7 +509,6 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, watch, onMounted, type PropType } from 'vue'
-import { useTheme } from 'vuetify'
 import { Line as LineChart, Bar as BarChart, Doughnut } from 'vue-chartjs'
 import { Options } from '@/model/Options'
 import type { ChartData, ChartDataset } from 'chart.js'
@@ -606,8 +601,6 @@ export default defineComponent({
     entraEnabled: { type: Boolean, default: false }
   },
   setup(props) {
-    const theme = useTheme()
-    const isDark = computed(() => theme.global.current.value.dark)
     const config = useRuntimeConfig()
     const isHistoricalMode = computed(() =>
       config.public?.enableHistoricalMode === true || config.public?.enableHistoricalMode === 'true'
@@ -1343,7 +1336,6 @@ export default defineComponent({
       scopeType,
       clearSelection,
       getTeamDetailUrl,
-      isDark,
       isHistoricalMode,
       dateRangeDesc: props.dateRangeDescription
     }
@@ -1352,37 +1344,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-:deep(.teams-select-menu) {
-  max-height: 360px;
-  overflow-y: auto;
-  background-color: rgb(var(--v-theme-surface)) !important;
-  color: rgb(var(--v-theme-on-surface)) !important;
-  box-shadow: 0 6px 24px rgba(59, 75, 191, 0.15);
-  border: 1px solid var(--app-accent-weak);
-  z-index: 2000;
-  border-radius: 8px;
-  min-width: unset;
-}
-
-:deep(.teams-select-menu .v-list) {
-  padding: 8px 0;
-  background-color: transparent !important;
-  color: inherit !important;
-}
-
-:deep(.teams-select-menu .v-list-item) {
-  min-height: 40px;
-  color: rgb(var(--v-theme-on-surface)) !important;
-}
-
-:deep(.teams-select-menu .v-list-item-title),
-:deep(.teams-select-menu .v-list-item-subtitle) {
-  color: rgb(var(--v-theme-on-surface)) !important;
-}
-
-:deep(.teams-select-menu .v-checkbox .v-selection-control) {
-  align-items: center;
-}
 
 .lang-rate-table :deep(th) {
   font-size: 0.75rem;
