@@ -317,6 +317,16 @@ export default defineNuxtComponent({
       };
 
       await this.fetchMetrics();
+
+      // Re-fetch user metrics with updated date range
+      const { execute: executeUserMetrics, data: userMetricsData, error: userMetricsError } = this.userMetricsFetch;
+      await executeUserMetrics();
+      if (userMetricsError.value) {
+        console.warn('User metrics fetch failed:', userMetricsError.value);
+      } else {
+        this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
+        this.userMetricsReady = true;
+      }
     },
     async fetchMetrics() {
       if (this.signInRequired || !this.dateRange.since || !this.dateRange.until || this.isLoading) {
@@ -607,7 +617,7 @@ export default defineNuxtComponent({
       server: true,
       immediate: false,
       query: computed(() => {
-        const options = Options.fromRoute(route.value);
+        const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
         return options.toParams();
       })
     });

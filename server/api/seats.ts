@@ -227,7 +227,7 @@ export default defineEventHandler(async (event) => {
   // ── Organization scope: fetch only the GitHub pages needed for this UI page ─
   // For enterprise and team scopes we need all pages (for deduplication / filtering),
   // so we fall through to the "fetch all" path below.
-  const isOrgOnly = options.scope === 'organization';
+  const isOrgOnly = options.scope === 'organization' && !options.githubTeam;
 
   if (isOrgOnly) {
     // Determine which GitHub pages cover the requested UI page window
