@@ -126,8 +126,8 @@ export async function getUserMetricsHistory(
     const totalAcc = totals.reduce((s, u) => s + u.code_acceptance_activity_count, 0);
 
     result.push({
-      report_start_day: dates[0],
-      report_end_day: dates[dates.length - 1],
+      report_start_day: dates[0]!,
+      report_end_day: dates[dates.length - 1]!,
       total_users: totals.length,
       // A user is "active" if they appear in any stored record for this month.
       // (The original 7-day threshold was designed for a fixed 28-day window;
@@ -180,7 +180,7 @@ export async function getUserTimeSeries(
     const acc = user.code_acceptance_activity_count;
 
     series.push({
-      report_end_day: dates[dates.length - 1],
+      report_end_day: dates[dates.length - 1]!,
       total_active_days: user.total_active_days,
       user_initiated_interaction_count: user.user_initiated_interaction_count,
       code_generation_activity_count: gen,

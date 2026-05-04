@@ -52,7 +52,7 @@ vi.mock('../server/storage/db', () => ({
 }));
 
 // Import runSync after mocks are registered
-import { runSync } from '../server/sync-entry.ts';
+import { runSync } from '../server/sync-entry';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -143,7 +143,7 @@ describe('sync-entry: happy path', () => {
   it('calls syncBulk with organisation scope from env', withEnv(BASE_ENV, async () => {
     await runSync();
     expect(mockSyncBulk).toHaveBeenCalledOnce();
-    const [scope, identifier, _headers, _teamSlug, daysBack] = mockSyncBulk.mock.calls[0];
+    const [scope, identifier, _headers, _teamSlug, daysBack] = mockSyncBulk.mock.calls[0]!;
     expect(scope).toBe('organization');
     expect(identifier).toBe('test-org');
     expect(daysBack).toBe(7);
@@ -155,7 +155,7 @@ describe('sync-entry: happy path', () => {
     NUXT_PUBLIC_GITHUB_ENT: 'test-ent',
   }, async () => {
     await runSync();
-    const [scope, identifier] = mockSyncBulk.mock.calls[0];
+    const [scope, identifier] = mockSyncBulk.mock.calls[0]!;
     expect(scope).toBe('enterprise');
     expect(identifier).toBe('test-ent');
   }));
@@ -165,7 +165,7 @@ describe('sync-entry: happy path', () => {
     NUXT_PUBLIC_SCOPE: 'team-organization',
   }, async () => {
     await runSync();
-    const [scope] = mockSyncBulk.mock.calls[0];
+    const [scope] = mockSyncBulk.mock.calls[0]!;
     expect(scope).toBe('organization');
   }));
 
@@ -175,7 +175,7 @@ describe('sync-entry: happy path', () => {
     NUXT_PUBLIC_GITHUB_ENT: 'test-ent',
   }, async () => {
     await runSync();
-    const [scope] = mockSyncBulk.mock.calls[0];
+    const [scope] = mockSyncBulk.mock.calls[0]!;
     expect(scope).toBe('enterprise');
   }));
 
@@ -203,7 +203,8 @@ describe('sync-entry: happy path', () => {
 });
 
 describe('sync-entry: missing env vars', () => {
-  let exitSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let exitSpy: ReturnType<typeof vi.spyOn<any, any>>;
 
   beforeEach(() => {
     vi.clearAllMocks();

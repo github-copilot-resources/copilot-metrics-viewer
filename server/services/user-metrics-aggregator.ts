@@ -59,8 +59,8 @@ export function aggregateTeamMetrics(
     .map(([day, records]) => aggregateDayRecords(day, records));
 
   const allDays = day_totals.map(d => d.day);
-  const report_start_day = allDays.length > 0 ? allDays[0] : '';
-  const report_end_day = allDays.length > 0 ? allDays[allDays.length - 1] : '';
+  const report_start_day = allDays.length > 0 ? allDays[0]! : '';
+  const report_end_day = allDays.length > 0 ? allDays[allDays.length - 1]! : '';
 
   return {
     report_start_day,

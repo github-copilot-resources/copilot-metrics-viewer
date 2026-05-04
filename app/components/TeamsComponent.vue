@@ -221,7 +221,7 @@
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card class="pa-3">
               <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-2">Language Distribution</v-card-title>
-              <div v-if="singleTeamLangDonutData.labels.length" style="height:260px">
+              <div v-if="(singleTeamLangDonutData.labels?.length ?? 0) > 0" style="height:260px">
                 <Doughnut :data="singleTeamLangDonutData" :options="donutOptions" />
               </div>
               <div v-else class="text-center text-medium-emphasis py-8">
@@ -233,7 +233,7 @@
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card class="pa-3">
               <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-2">Editor Usage</v-card-title>
-              <div v-if="singleTeamEditorBarData.labels.length" style="height:260px">
+              <div v-if="(singleTeamEditorBarData.labels?.length ?? 0) > 0" style="height:260px">
                 <BarChart :data="singleTeamEditorBarData" :options="horizontalBarOptions" />
               </div>
               <div v-else class="text-center text-medium-emphasis py-8">
@@ -261,7 +261,7 @@
           <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
             <v-card class="pa-3 mb-2">
               <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-2">Top Models by Interactions</v-card-title>
-              <div v-if="singleTeamModelsData.labels.length" style="height:260px">
+              <div v-if="(singleTeamModelsData.labels?.length ?? 0) > 0" style="height:260px">
                 <BarChart :data="singleTeamModelsData" :options="horizontalBarOptions" />
               </div>
               <div v-else class="text-center text-medium-emphasis py-6">
@@ -584,7 +584,7 @@ export default defineComponent({
     const isDark = computed(() => theme.global.current.value.dark)
     const config = useRuntimeConfig()
     const isHistoricalMode = computed(() =>
-      config.public?.enableHistoricalMode === true || config.public?.enableHistoricalMode === 'true'
+      config.public?.enableHistoricalMode === true
     )
 
     const availableTeams = ref<Team[]>([])
@@ -893,8 +893,8 @@ export default defineComponent({
         datasets: modelKeys.map((mk, i) => ({
           label: mk,
           data: data.map(d => (d.totals_by_model_feature ?? []).find(mf => mf.model === mk)?.user_initiated_interaction_count ?? 0),
-          borderColor: PALETTE[i % PALETTE.length].border,
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          borderColor: PALETTE[i % PALETTE.length]!.border,
+          backgroundColor: PALETTE[i % PALETTE.length]!.bg,
           fill: false,
           tension: 0.3,
         }))
@@ -916,8 +916,8 @@ export default defineComponent({
         datasets: featureKeys.map((fk, i) => ({
           label: featureLabel(fk),
           data: data.map(d => (d.totals_by_feature ?? []).find(f => f.feature === fk)?.user_initiated_interaction_count ?? 0),
-          borderColor: PALETTE[i % PALETTE.length].border,
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          borderColor: PALETTE[i % PALETTE.length]!.border,
+          backgroundColor: PALETTE[i % PALETTE.length]!.bg,
           fill: false,
           tension: 0.3,
         }))

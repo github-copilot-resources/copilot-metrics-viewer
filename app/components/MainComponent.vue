@@ -231,8 +231,8 @@ v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMet
 
     <!-- AI Chat Panel (feature-gated) -->
     <AiChatPanel
-      v-if="config?.public?.enableAiChat === true || config?.public?.enableAiChat === 'true'"
-      :current-tab="tab"
+      v-if="config?.public?.enableAiChat === true"
+      :current-tab="tab ?? undefined"
       :query-params="aiQueryParams"
       :metrics="metrics"
       :seats="seats"
@@ -248,10 +248,10 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
-import type { SeatsApiResponse } from '../server/api/seats';
-import type { ReportDayTotals, UserTotals } from "../../server/services/github-copilot-usage-api";
-import type { SeatHistoryEntry } from "../../server/storage/seats-storage";
-import type { UserMetricsHistoryEntry } from "../../server/storage/user-metrics-storage";
+import type { SeatsApiResponse } from '#server/api/seats';
+import type { ReportDayTotals, UserTotals } from '#server/services/github-copilot-usage-api';
+import type { SeatHistoryEntry } from '#server/storage/seats-storage';
+import type { UserMetricsHistoryEntry } from '#server/storage/user-metrics-storage';
 import type { H3Error } from 'h3'
 
 //Components
@@ -312,7 +312,7 @@ export default defineNuxtComponent({
 
       // Store holiday options
       this.holidayOptions = {
-        excludeHolidays: newDateRange.excludeHolidays,
+        excludeHolidays: newDateRange.excludeHolidays ?? false,
       };
 
       await this.fetchMetrics();

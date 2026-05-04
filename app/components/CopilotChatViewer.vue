@@ -200,16 +200,16 @@ export default defineComponent({
           {
             label: 'Chat Interactions',
             data: data.map((m: Metrics) => m.total_chat_turns),
-            borderColor: PALETTE[3].border,
-            backgroundColor: PALETTE[3].bg,
+            borderColor: PALETTE[3]!.border,
+            backgroundColor: PALETTE[3]!.bg,
             fill: true,
             tension: 0.3,
           },
           {
             label: 'Code Actions',
             data: data.map((m: Metrics) => m.total_chat_acceptances),
-            borderColor: PALETTE[2].border,
-            backgroundColor: PALETTE[2].bg,
+            borderColor: PALETTE[2]!.border,
+            backgroundColor: PALETTE[2]!.bg,
             fill: true,
             tension: 0.3,
           },
@@ -222,8 +222,8 @@ export default defineComponent({
           {
             label: 'Active Chat Users',
             data: data.map((m: Metrics) => m.total_active_chat_users),
-            backgroundColor: PALETTE[0].bg,
-            borderColor: PALETTE[0].border,
+            backgroundColor: PALETTE[0]!.bg,
+            borderColor: PALETTE[0]!.border,
             borderRadius: 4,
           },
         ],
@@ -239,8 +239,8 @@ export default defineComponent({
                 ? Number(((m.total_chat_acceptances / m.total_chat_turns) * 100).toFixed(1))
                 : 0
             ),
-            borderColor: PALETTE[1].border,
-            backgroundColor: PALETTE[1].bg,
+            borderColor: PALETTE[1]!.border,
+            backgroundColor: PALETTE[1]!.bg,
             fill: true,
             tension: 0.3,
           },

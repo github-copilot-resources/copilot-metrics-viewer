@@ -16,7 +16,7 @@ import { saveSeats, hasSeats, getLatestSeats } from '../storage/seats-storage';
 import { Seat } from '@/model/Seat';
 // ofetch fallback for standalone (non-Nitro) environments
 import { $fetch as _ofetch } from 'ofetch';
-const _fetch = typeof $fetch !== 'undefined' ? $fetch : _ofetch;
+const _fetch: typeof _ofetch = typeof $fetch !== 'undefined' ? ($fetch as typeof _ofetch) : _ofetch;
 import { 
   createPendingSyncStatus, 
   markSyncInProgress, 
@@ -277,19 +277,8 @@ export async function detectGaps(
 
   const current = new Date(start);
   while (current <= end) {
-    const dateStr = current.toISOString().split('T')[0];
+    const dateStr = current.toISOString().split('T')[0]!;
     const exists = await hasMetrics(scope, identifier, dateStr, teamSlug);
-    if (!exists) {
-      missingDates.push(dateStr);
-    }
-    current.setDate(current.getDate() + 1);
-  }
-
-  return missingDates;
-}
-
-/**
- * Sync only missing dates using bulk download.
  */
 export async function syncGaps(
   scope: 'organization' | 'enterprise',
@@ -365,9 +354,7 @@ export async function getSyncStats(
   const current = new Date(start);
   while (current <= end) {
     totalDays++;
-    const dateStr = current.toISOString().split('T')[0];
-    const exists = await hasMetrics(scope, identifier, dateStr, teamSlug);
-    if (exists) {
+    const dateStr = current.toISOString().split('T')[0]!;
       syncedDays++;
     } else {
       missingDates.push(dateStr);
@@ -396,7 +383,7 @@ export async function syncSeats(
   headers: HeadersInit
 ): Promise<SeatsSyncResult> {
   const logger = console;
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0]!;
 
   try {
     const alreadySynced = await hasSeats(scope, identifier, today);

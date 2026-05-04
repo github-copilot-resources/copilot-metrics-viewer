@@ -27,17 +27,17 @@ export function initializeProxyAgent(exitOnError = false): ProxyAgent | null {
   if (!process.env.HTTP_PROXY) return null;
 
   try {
-    let tlsOptions: { tls?: { ca: Buffer[] } } = {};
+    let tlsOptions: { requestTls?: { ca: Buffer[] } } = {};
 
     if (process.env.CUSTOM_CA_PATH) {
       if (!existsSync(process.env.CUSTOM_CA_PATH)) {
         throw new Error(`CUSTOM_CA_PATH file not found: ${process.env.CUSTOM_CA_PATH}`);
       }
-      tlsOptions = { tls: { ca: [readFileSync(process.env.CUSTOM_CA_PATH)] } };
+      tlsOptions = { requestTls: { ca: [readFileSync(process.env.CUSTOM_CA_PATH)] } };
     }
 
     const proxyAgent = new ProxyAgent({
-      uri: process.env.HTTP_PROXY,
+      uri: process.env.HTTP_PROXY!,
       ...tlsOptions
     });
 

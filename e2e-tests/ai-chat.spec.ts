@@ -5,7 +5,7 @@ test.describe('AI Chat Panel', () => {
   test.describe.configure({ mode: 'serial' })
 
   let dashboard: DashboardPage
-  let page: ReturnType<typeof test['page']>
+  let page: import('@playwright/test').Page
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage()

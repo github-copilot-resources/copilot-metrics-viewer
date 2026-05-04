@@ -111,7 +111,7 @@ export function isMockMode(): boolean {
   if (typeof useRuntimeConfig === 'function') {
     try {
       const config = useRuntimeConfig();
-      return config.public.isDataMocked === true || config.public.isDataMocked === 'true';
+      return config.public.isDataMocked === true;
     } catch { /* fall through to env var check */ }
   }
   return process.env.NUXT_PUBLIC_IS_DATA_MOCKED === 'true';
@@ -148,16 +148,16 @@ export function generateMockReport(startDay: string, endDay: string): OrgReport 
 
   // No overlap: shift all days so the file's last day aligns with reqEnd.
   // This keeps relative temporal patterns intact while producing the requested date range.
-  const fileEndMs = new Date(sorted[sorted.length - 1].day).getTime();
+  const fileEndMs = new Date(sorted[sorted.length - 1]!.day).getTime();
   const reqEndMs = reqEnd.getTime();
   const offsetMs = reqEndMs - fileEndMs;
 
-  const shifted = sorted
+  const shifted: ReportDayTotals[] = sorted
     .map(d => ({
       ...d,
-      day: new Date(new Date(d.day).getTime() + offsetMs).toISOString().split('T')[0],
+      day: new Date(new Date(d.day).getTime() + offsetMs).toISOString().split('T')[0] ?? d.day,
     }))
-    .filter(d => {
+    .filter((d): d is ReportDayTotals => {
       const date = new Date(d.day);
       return date >= reqStart && date <= reqEnd;
     });
@@ -190,7 +190,7 @@ function _generateFallbackReport(startDay: string, endDay: string): OrgReport {
   const dayTotals: ReportDayTotals[] = [];
   const current = new Date(start);
   while (current <= end) {
-    const day = current.toISOString().split('T')[0];
+    const day = current.toISOString().split('T')[0]!;
     dayTotals.push(dayTemplate ? { ...dayTemplate, day } : _generateMinimalDay(day));
     current.setDate(current.getDate() + 1);
   }

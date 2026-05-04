@@ -1,0 +1,389 @@
+
+app/components/BreakdownComponent.vue: 30 errors
+  app/components/BreakdownComponent.vue(186,22): error TS2322: Type 'string' is not assignable to type '"flat" | "text" | "elevated" | "tonal" | "outlined" | "plain" | undefined'.
+  app/components/BreakdownComponent.vue(236,61): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(237,69): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(270,61): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(271,69): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(567,11): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(568,11): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(575,50): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(583,40): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(583,81): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(584,30): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(585,26): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(591,50): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(591,91): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(592,30): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(593,26): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(606,50): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(607,46): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(628,28): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(629,24): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(702,11): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(703,11): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(712,38): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(712,78): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(713,28): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(714,24): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(726,49): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(727,45): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(936,16): error TS2532: Object is possibly 'undefined'.
+  app/components/BreakdownComponent.vue(939,16): error TS2532: Object is possibly 'undefined'.
+
+tests/user-metrics-aggregator.spec.ts: 23 errors
+  tests/user-metrics-aggregator.spec.ts(104,5): error TS2353: Object literal may only specify known properties, and 'totals_by_language_model' does not exist in type 'UserDayRecord'.
+  tests/user-metrics-aggregator.spec.ts(136,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(147,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(148,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(149,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(150,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(151,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(164,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(165,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(166,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(212,20): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(213,16): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(228,24): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(229,18): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(244,26): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(247,26): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(264,19): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(281,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(282,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(283,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(318,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(319,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics-aggregator.spec.ts(332,12): error TS2532: Object is possibly 'undefined'.
+
+tests/pg-storage.spec.ts: 21 errors
+  tests/pg-storage.spec.ts(109,10): error TS2352: Conversion of type '{ date: string; total_active_users: number; total_engaged_users: number; copilot_ide_code_completions: { editors: never[]; languages: never[]; total_code_acceptances: number; total_code_suggestions: number; total_code_lines_accepted: number; total_code_lines_suggested: number; }; ... 9 more ...; total_chat_turns: nu...' to type 'CopilotMetrics' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  tests/pg-storage.spec.ts(193,14): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(194,14): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(296,14): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(317,14): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(346,14): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(347,14): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(353,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(359,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(371,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(449,23): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(449,61): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(459,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(461,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(470,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(515,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(516,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(524,14): error TS18048: 'entry' is possibly 'undefined'.
+  tests/pg-storage.spec.ts(532,23): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(532,60): error TS2532: Object is possibly 'undefined'.
+  tests/pg-storage.spec.ts(580,14): error TS2532: Object is possibly 'undefined'.
+
+app/components/MetricsViewer.vue: 19 errors
+  app/components/MetricsViewer.vue(285,38): error TS2307: Cannot find module '@/server/services/github-copilot-usage-api' or its corresponding type declarations.
+  app/components/MetricsViewer.vue(569,50): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(570,22): error TS7006: Parameter 'fs' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(570,26): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(645,19): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(646,16): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(652,64): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(653,24): error TS2532: Object is possibly 'undefined'.
+  app/components/MetricsViewer.vue(654,28): error TS2532: Object is possibly 'undefined'.
+  app/components/MetricsViewer.vue(673,54): error TS2532: Object is possibly 'undefined'.
+  app/components/MetricsViewer.vue(674,50): error TS2532: Object is possibly 'undefined'.
+  app/components/MetricsViewer.vue(688,23): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(689,24): error TS7006: Parameter 's' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(689,27): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(702,19): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(703,16): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(709,64): error TS7006: Parameter 'f' implicitly has an 'any' type.
+  app/components/MetricsViewer.vue(710,28): error TS2532: Object is possibly 'undefined'.
+  app/components/MetricsViewer.vue(711,24): error TS2532: Object is possibly 'undefined'.
+
+server/services/github-copilot-usage-api.ts: 19 errors
+  server/services/github-copilot-usage-api.ts(460,10): error TS7053: Element implicitly has an 'any' type because expression of type '"x-github-api-version"' can't be used to index type '{ [k: string]: string; } | { [x: number]: [string, string]; length: number; toString(): string; toLocaleString(): string; toLocaleString(locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; ... 37 more ...; [Symbol.unscopables]: { ...; }; }'.
+  server/services/github-copilot-usage-api.ts(461,3): error TS7053: Element implicitly has an 'any' type because expression of type '"X-GitHub-Api-Version"' can't be used to index type '{ [k: string]: string; } | { [x: number]: [string, string]; length: number; toString(): string; toLocaleString(): string; toLocaleString(locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; ... 37 more ...; [Symbol.unscopables]: { ...; }; }'.
+  server/services/github-copilot-usage-api.ts(464,28): error TS2349: This expression is not callable.
+  server/services/github-copilot-usage-api.ts(486,56): error TS2352: Conversion of type 'ReportDayTotals' to type 'OrgReport' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  server/services/github-copilot-usage-api.ts(511,26): error TS2349: This expression is not callable.
+  server/services/github-copilot-usage-api.ts(521,3): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  server/services/github-copilot-usage-api.ts(533,19): error TS2532: Object is possibly 'undefined'.
+  server/services/github-copilot-usage-api.ts(548,23): error TS2532: Object is possibly 'undefined'.
+  server/services/github-copilot-usage-api.ts(549,21): error TS2532: Object is possibly 'undefined'.
+  server/services/github-copilot-usage-api.ts(591,36): error TS2345: Argument of type '{ report_start_day?: string | undefined; report_end_day?: string | undefined; organization_id?: string | undefined; enterprise_id?: string | undefined; created_at?: string | undefined; day_totals?: ReportDayTotals[] | undefined; }' is not assignable to parameter of type 'OrgReport'.
+  server/services/github-copilot-usage-api.ts(594,3): error TS2322: Type '{ report_start_day?: string | undefined; report_end_day?: string | undefined; organization_id?: string | undefined; enterprise_id?: string | undefined; created_at?: string | undefined; day_totals?: ReportDayTotals[] | undefined; }' is not assignable to type 'OrgReport'.
+  server/services/github-copilot-usage-api.ts(620,3): error TS2322: Type '{ report_start_day?: string | undefined; report_end_day?: string | undefined; organization_id?: string | undefined; enterprise_id?: string | undefined; created_at?: string | undefined; day_totals?: ReportDayTotals[] | undefined; }' is not assignable to type 'OrgReport'.
+  server/services/github-copilot-usage-api.ts(696,10): error TS7053: Element implicitly has an 'any' type because expression of type '"x-github-api-version"' can't be used to index type '{ [k: string]: string; } | { [x: number]: [string, string]; length: number; toString(): string; toLocaleString(): string; toLocaleString(locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; ... 37 more ...; [Symbol.unscopables]: { ...; }; }'.
+  server/services/github-copilot-usage-api.ts(697,3): error TS7053: Element implicitly has an 'any' type because expression of type '"X-GitHub-Api-Version"' can't be used to index type '{ [k: string]: string; } | { [x: number]: [string, string]; length: number; toString(): string; toLocaleString(): string; toLocaleString(locales: string | string[], options?: (NumberFormatOptions & DateTimeFormatOptions) | undefined): string; ... 37 more ...; [Symbol.unscopables]: { ...; }; }'.
+  server/services/github-copilot-usage-api.ts(700,28): error TS2349: This expression is not callable.
+  server/services/github-copilot-usage-api.ts(717,21): error TS2349: This expression is not callable.
+  server/services/github-copilot-usage-api.ts(801,9): error TS2322: Type '{ report_start_day?: string | undefined; report_end_day?: string | undefined; organization_id?: string; enterprise_id?: string; created_at?: string; user_totals?: UserTotals[] | undefined; }' is not assignable to type 'UserReport'.
+  server/services/github-copilot-usage-api.ts(825,9): error TS2322: Type '{ report_start_day?: string | undefined; report_end_day?: string | undefined; organization_id?: string; enterprise_id?: string; created_at?: string; user_totals?: UserTotals[] | undefined; }' is not assignable to type 'UserReport'.
+  server/services/github-copilot-usage-api.ts(839,21): error TS2349: This expression is not callable.
+
+app/components/AgentModeViewer.vue: 16 errors
+  app/components/AgentModeViewer.vue(325,38): error TS2307: Cannot find module '@/server/services/github-copilot-usage-api' or its corresponding type declarations.
+  app/components/AgentModeViewer.vue(635,98): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(642,52): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(642,89): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(643,42): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(643,87): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(648,57): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(648,94): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(649,42): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(649,70): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(659,118): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(659,194): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(682,78): error TS18048: 'totals' is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(683,31): error TS18048: 'totals' is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(684,42): error TS2532: Object is possibly 'undefined'.
+  app/components/AgentModeViewer.vue(685,38): error TS2532: Object is possibly 'undefined'.
+
+app/components/PullRequestViewer.vue: 16 errors
+  app/components/PullRequestViewer.vue(213,104): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(213,140): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(214,104): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(214,140): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(215,104): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(215,140): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(222,126): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(222,162): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(223,126): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(223,162): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(230,126): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(230,162): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(231,126): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(231,162): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(232,126): error TS2532: Object is possibly 'undefined'.
+  app/components/PullRequestViewer.vue(232,162): error TS2532: Object is possibly 'undefined'.
+
+tests/user-metrics.spec.ts: 15 errors
+  tests/user-metrics.spec.ts(188,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics.spec.ts(189,12): error TS2532: Object is possibly 'undefined'.
+  tests/user-metrics.spec.ts(310,11): error TS2322: Type '{ code_generation_activity_count: number; code_acceptance_activity_count: number; login?: string | undefined; user_id?: number | undefined; total_active_days?: number | undefined; ... 8 more ...; totals_by_model_feature?: UserModelFeatureTotals[]; }' is not assignable to type 'UserTotals'.
+  tests/user-metrics.spec.ts(321,11): error TS2322: Type '{ totals_by_ide: never[]; login?: string | undefined; user_id?: number | undefined; total_active_days?: number | undefined; user_initiated_interaction_count?: number | undefined; code_generation_activity_count?: number | undefined; ... 7 more ...; totals_by_model_feature?: UserModelFeatureTotals[]; }' is not assignable to type 'UserTotals'.
+  tests/user-metrics.spec.ts(332,11): error TS2322: Type '{ totals_by_language_feature: never[]; login?: string | undefined; user_id?: number | undefined; total_active_days?: number | undefined; user_initiated_interaction_count?: number | undefined; ... 8 more ...; totals_by_model_feature?: UserModelFeatureTotals[]; }' is not assignable to type 'UserTotals'.
+  tests/user-metrics.spec.ts(346,21): error TS2322: Type 'UserTotals | undefined' is not assignable to type 'UserTotals'.
+  tests/user-metrics.spec.ts(352,21): error TS2322: Type 'UserTotals | undefined' is not assignable to type 'UserTotals'.
+  tests/user-metrics.spec.ts(357,11): error TS2322: Type '{ report_start_day?: string | undefined; report_end_day?: string | undefined; organization_id?: string; enterprise_id?: string; created_at?: string; user_totals?: UserTotals[] | undefined; }' is not assignable to type 'UserReport'.
+  tests/user-metrics.spec.ts(369,11): error TS2322: Type '{ report_start_day?: string | undefined; report_end_day?: string | undefined; organization_id?: string; enterprise_id?: string; created_at?: string; user_totals?: UserTotals[] | undefined; }' is not assignable to type 'UserReport'.
+  tests/user-metrics.spec.ts(465,3): error TS2304: Cannot find name 'beforeEach'.
+  tests/user-metrics.spec.ts(471,3): error TS2304: Cannot find name 'afterEach'.
+  tests/user-metrics.spec.ts(516,3): error TS2304: Cannot find name 'beforeEach'.
+  tests/user-metrics.spec.ts(520,3): error TS2304: Cannot find name 'afterEach'.
+  tests/user-metrics.spec.ts(578,3): error TS2304: Cannot find name 'beforeEach'.
+  tests/user-metrics.spec.ts(587,3): error TS2304: Cannot find name 'afterEach'.
+
+tests/github-copilot-usage-api.spec.ts: 14 errors
+  tests/github-copilot-usage-api.spec.ts(57,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(58,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(59,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(60,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(108,45): error TS2345: Argument of type 'ReportDayTotals | undefined' is not assignable to parameter of type 'ReportDayTotals'.
+  tests/github-copilot-usage-api.spec.ts(111,47): error TS18048: 'dayData' is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(122,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(123,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(124,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(138,45): error TS2345: Argument of type 'ReportDayTotals | undefined' is not assignable to parameter of type 'ReportDayTotals'.
+  tests/github-copilot-usage-api.spec.ts(154,45): error TS2345: Argument of type 'ReportDayTotals | undefined' is not assignable to parameter of type 'ReportDayTotals'.
+  tests/github-copilot-usage-api.spec.ts(341,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(342,14): error TS2532: Object is possibly 'undefined'.
+  tests/github-copilot-usage-api.spec.ts(343,14): error TS2532: Object is possibly 'undefined'.
+
+server/services/sync-service.ts: 11 errors
+  server/services/sync-service.ts(281,56): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  server/services/sync-service.ts(283,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  server/services/sync-service.ts(369,56): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  server/services/sync-service.ts(373,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  server/services/sync-service.ts(402,61): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  server/services/sync-service.ts(406,31): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  server/services/sync-service.ts(420,25): error TS2349: This expression is not callable.
+  server/services/sync-service.ts(429,26): error TS2349: This expression is not callable.
+  server/services/sync-service.ts(436,40): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  server/services/sync-service.ts(439,29): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  server/services/sync-service.ts(444,30): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+
+tests/sync-storage.spec.ts: 11 errors
+  tests/sync-storage.spec.ts(62,64): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  tests/sync-storage.spec.ts(416,14): error TS18049: 'm.copilot_ide_code_completions' is possibly 'null' or 'undefined'.
+  tests/sync-storage.spec.ts(417,14): error TS18049: 'm.copilot_ide_code_completions' is possibly 'null' or 'undefined'.
+  tests/sync-storage.spec.ts(429,22): error TS18048: 'day' is possibly 'undefined'.
+  tests/sync-storage.spec.ts(430,25): error TS2532: Object is possibly 'undefined'.
+  tests/sync-storage.spec.ts(430,25): error TS2533: Object is possibly 'null' or 'undefined'.
+  tests/sync-storage.spec.ts(438,43): error TS2345: Argument of type 'ReportDayTotals | undefined' is not assignable to parameter of type 'ReportDayTotals'.
+  tests/sync-storage.spec.ts(441,33): error TS18048: 'day' is possibly 'undefined'.
+  tests/sync-storage.spec.ts(443,14): error TS18049: 'metrics.copilot_ide_code_completions' is possibly 'null' or 'undefined'.
+  tests/sync-storage.spec.ts(452,12): error TS2532: Object is possibly 'undefined'.
+  tests/sync-storage.spec.ts(452,12): error TS2533: Object is possibly 'null' or 'undefined'.
+
+app/components/CopilotChatViewer.vue: 8 errors
+  app/components/CopilotChatViewer.vue(203,26): error TS2532: Object is possibly 'undefined'.
+  app/components/CopilotChatViewer.vue(204,30): error TS2532: Object is possibly 'undefined'.
+  app/components/CopilotChatViewer.vue(211,26): error TS2532: Object is possibly 'undefined'.
+  app/components/CopilotChatViewer.vue(212,30): error TS2532: Object is possibly 'undefined'.
+  app/components/CopilotChatViewer.vue(225,30): error TS2532: Object is possibly 'undefined'.
+  app/components/CopilotChatViewer.vue(226,26): error TS2532: Object is possibly 'undefined'.
+  app/components/CopilotChatViewer.vue(242,26): error TS2532: Object is possibly 'undefined'.
+  app/components/CopilotChatViewer.vue(243,30): error TS2532: Object is possibly 'undefined'.
+
+app/components/TeamsComponent.vue: 8 errors
+  app/components/TeamsComponent.vue(224,26): error TS18048: '__VLS_ctx.singleTeamLangDonutData.labels' is possibly 'undefined'.
+  app/components/TeamsComponent.vue(236,26): error TS18048: '__VLS_ctx.singleTeamEditorBarData.labels' is possibly 'undefined'.
+  app/components/TeamsComponent.vue(264,26): error TS18048: '__VLS_ctx.singleTeamModelsData.labels' is possibly 'undefined'.
+  app/components/TeamsComponent.vue(587,55): error TS2367: This comparison appears to be unintentional because the types 'boolean' and 'string' have no overlap.
+  app/components/TeamsComponent.vue(896,24): error TS2532: Object is possibly 'undefined'.
+  app/components/TeamsComponent.vue(897,28): error TS2532: Object is possibly 'undefined'.
+  app/components/TeamsComponent.vue(919,24): error TS2532: Object is possibly 'undefined'.
+  app/components/TeamsComponent.vue(920,28): error TS2532: Object is possibly 'undefined'.
+
+e2e-tests/z-index.spec.ts: 8 errors
+  e2e-tests/z-index.spec.ts(16,36): error TS2339: Property 'page' does not exist on type 'TestType<PlaywrightTestArgs & PlaywrightTestOptions, PlaywrightWorkerArgs & PlaywrightWorkerOptions>'.
+  e2e-tests/z-index.spec.ts(48,49): error TS7031: Binding element 'x' implicitly has an 'any' type.
+  e2e-tests/z-index.spec.ts(48,52): error TS7031: Binding element 'y' implicitly has an 'any' type.
+  e2e-tests/z-index.spec.ts(86,47): error TS7031: Binding element 'x' implicitly has an 'any' type.
+  e2e-tests/z-index.spec.ts(86,50): error TS7031: Binding element 'y' implicitly has an 'any' type.
+  e2e-tests/z-index.spec.ts(119,43): error TS7006: Parameter 'el' implicitly has an 'any' type.
+  e2e-tests/z-index.spec.ts(142,47): error TS7031: Binding element 'x' implicitly has an 'any' type.
+  e2e-tests/z-index.spec.ts(142,50): error TS7031: Binding element 'y' implicitly has an 'any' type.
+
+shared/utils/metrics-util-v2.ts: 8 errors
+  shared/utils/metrics-util-v2.ts(57,10): error TS2367: This comparison appears to be unintentional because the types 'boolean' and 'string' have no overlap.
+  shared/utils/metrics-util-v2.ts(166,95): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  shared/utils/metrics-util-v2.ts(194,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  shared/utils/metrics-util-v2.ts(195,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  shared/utils/metrics-util-v2.ts(200,89): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  shared/utils/metrics-util-v2.ts(330,53): error TS18048: 'dayData' is possibly 'undefined'.
+  shared/utils/metrics-util-v2.ts(330,66): error TS2345: Argument of type 'CopilotMetrics | undefined' is not assignable to parameter of type 'CopilotMetrics'.
+  shared/utils/metrics-util-v2.ts(332,39): error TS18048: 'dayData' is possibly 'undefined'.
+
+tests/api-migration-integration.spec.ts: 8 errors
+  tests/api-migration-integration.spec.ts(19,14): error TS2532: Object is possibly 'undefined'.
+  tests/api-migration-integration.spec.ts(20,14): error TS2532: Object is possibly 'undefined'.
+  tests/api-migration-integration.spec.ts(21,14): error TS2532: Object is possibly 'undefined'.
+  tests/api-migration-integration.spec.ts(28,27): error TS2532: Object is possibly 'undefined'.
+  tests/api-migration-integration.spec.ts(35,28): error TS2322: Type 'ReportDayTotals | undefined' is not assignable to type 'ReportDayTotals'.
+  tests/api-migration-integration.spec.ts(35,50): error TS2322: Type 'ReportDayTotals | undefined' is not assignable to type 'ReportDayTotals'.
+  tests/api-migration-integration.spec.ts(35,72): error TS2322: Type 'ReportDayTotals | undefined' is not assignable to type 'ReportDayTotals'.
+  tests/api-migration-integration.spec.ts(87,20): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+
+server/services/github-copilot-usage-api-mock.ts: 6 errors
+  server/services/github-copilot-usage-api-mock.ts(114,53): error TS2367: This comparison appears to be unintentional because the types 'boolean' and 'string' have no overlap.
+  server/services/github-copilot-usage-api-mock.ts(151,30): error TS2532: Object is possibly 'undefined'.
+  server/services/github-copilot-usage-api-mock.ts(161,29): error TS2769: No overload matches this call.
+  server/services/github-copilot-usage-api-mock.ts(166,5): error TS2322: Type '{ day: string | undefined; organization_id: string; enterprise_id: string; daily_active_users: number; weekly_active_users: number; monthly_active_users: number; monthly_active_chat_users?: number | undefined; ... 15 more ...; totals_by_cli?: ReportCliTotals | undefined; }[]' is not assignable to type 'ReportDayTotals[]'.
+  server/services/github-copilot-usage-api-mock.ts(194,20): error TS2345: Argument of type '{ day: string; organization_id: string; enterprise_id: string; daily_active_users: number; weekly_active_users: number; monthly_active_users: number; monthly_active_agent_users: number; ... 11 more ...; loc_deleted_sum: number; } | { ...; }' is not assignable to parameter of type 'ReportDayTotals'.
+  server/services/github-copilot-usage-api-mock.ts(194,80): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+
+tests/sync-mock-resilience.spec.ts: 5 errors
+  tests/sync-mock-resilience.spec.ts(65,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/sync-mock-resilience.spec.ts(66,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/sync-mock-resilience.spec.ts(67,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/sync-mock-resilience.spec.ts(68,12): error TS18048: 'day' is possibly 'undefined'.
+  tests/sync-mock-resilience.spec.ts(107,12): error TS2367: This comparison appears to be unintentional because the types '"false"' and '"true"' have no overlap.
+
+app/components/MainComponent.vue: 4 errors
+  app/components/MainComponent.vue(234,54): error TS2367: This comparison appears to be unintentional because the types 'boolean | undefined' and 'string' have no overlap.
+  app/components/MainComponent.vue(235,8): error TS2322: Type 'null' is not assignable to type 'string | undefined'.
+  app/components/MainComponent.vue(251,39): error TS2307: Cannot find module '../server/api/seats' or its corresponding type declarations.
+  app/components/MainComponent.vue(315,9): error TS2322: Type 'boolean | undefined' is not assignable to type 'boolean'.
+
+tests/seats-deduplication.nuxt.spec.ts: 4 errors
+  tests/seats-deduplication.nuxt.spec.ts(113,12): error TS2532: Object is possibly 'undefined'.
+  tests/seats-deduplication.nuxt.spec.ts(114,12): error TS2532: Object is possibly 'undefined'.
+  tests/seats-deduplication.nuxt.spec.ts(161,12): error TS2532: Object is possibly 'undefined'.
+  tests/seats-deduplication.nuxt.spec.ts(162,12): error TS2532: Object is possibly 'undefined'.
+
+server/storage/user-metrics-storage.ts: 3 errors
+  server/storage/user-metrics-storage.ts(129,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  server/storage/user-metrics-storage.ts(130,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  server/storage/user-metrics-storage.ts(183,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+
+tests/holidays.spec.ts: 3 errors
+  tests/holidays.spec.ts(40,19): error TS2339: Property 'length' does not exist on type 'false | Holiday[]'.
+  tests/holidays.spec.ts(41,12): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type 'false | Holiday[]'.
+  tests/holidays.spec.ts(42,12): error TS7053: Element implicitly has an 'any' type because expression of type '0' can't be used to index type 'false | Holiday[]'.
+
+tests/sync-entry.spec.ts: 3 errors
+  tests/sync-entry.spec.ts(55,25): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+  tests/sync-entry.spec.ts(146,11): error TS2488: Type 'any[] | undefined' must have a '[Symbol.iterator]()' method that returns an iterator.
+  tests/sync-entry.spec.ts(212,5): error TS2322: Type 'MockInstance<(code?: string | number | null | undefined) => never>' is not assignable to type 'MockInstance<(this: unknown, ...args: unknown[]) => unknown>'.
+
+app/components/AgentActivityViewer.vue: 2 errors
+  app/components/AgentActivityViewer.vue(268,38): error TS2339: Property 'date' does not exist on type 'ReportDayTotals'.
+  app/components/AgentActivityViewer.vue(283,19): error TS18048: 'latestDay' is possibly 'undefined'.
+
+app/model/Options.ts: 2 errors
+  app/model/Options.ts(99,65): error TS2367: This comparison appears to be unintentional because the types 'boolean' and 'string' have no overlap.
+  app/model/Options.ts(128,43): error TS2322: Type '{}' is not assignable to type 'string'.
+
+app/pages/select-org.vue: 2 errors
+  app/pages/select-org.vue(22,29): error TS2532: Object is possibly 'undefined'.
+  app/pages/select-org.vue(24,22): error TS2532: Object is possibly 'undefined'.
+
+server/api/enterprise-orgs.ts: 2 errors
+  server/api/enterprise-orgs.ts(105,19): error TS7022: 'result' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+  server/api/enterprise-orgs.ts(119,19): error TS7022: 'orgsData' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+
+server/routes/auth/github.get.ts: 2 errors
+  server/routes/auth/github.get.ts(20,9): error TS2353: Object literal may only specify known properties, and 'login' does not exist in type 'User'.
+  server/routes/auth/github.get.ts(62,47): error TS2532: Object is possibly 'undefined'.
+
+server/services/ai-tool-executor.ts: 2 errors
+  server/services/ai-tool-executor.ts(96,24): error TS2532: Object is possibly 'undefined'.
+  server/services/ai-tool-executor.ts(96,45): error TS2532: Object is possibly 'undefined'.
+
+server/services/user-metrics-aggregator.ts: 2 errors
+  server/services/user-metrics-aggregator.ts(66,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  server/services/user-metrics-aggregator.ts(67,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+
+tests/seats-api-integration.nuxt.spec.ts: 2 errors
+  tests/seats-api-integration.nuxt.spec.ts(123,12): error TS2532: Object is possibly 'undefined'.
+  tests/seats-api-integration.nuxt.spec.ts(124,12): error TS2532: Object is possibly 'undefined'.
+
+e2e-tests/ai-chat.spec.ts: 1 errors
+  e2e-tests/ai-chat.spec.ts(8,36): error TS2339: Property 'page' does not exist on type 'TestType<PlaywrightTestArgs & PlaywrightTestOptions, PlaywrightWorkerArgs & PlaywrightWorkerOptions>'.
+
+nuxt.config.ts: 1 errors
+  nuxt.config.ts(67,5): error TS2353: Object literal may only specify known properties, and 'github' does not exist in type 'Partial<ModuleOptions>'.
+
+server/api/admin/sync-status.get.ts: 1 errors
+  server/api/admin/sync-status.get.ts(28,9): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+
+server/api/ai/chat.post.ts: 1 errors
+  server/api/ai/chat.post.ts(73,38): error TS2367: This comparison appears to be unintentional because the types 'boolean' and 'string' have no overlap.
+
+server/api/teams.ts: 1 errors
+  server/api/teams.ts(24,19): error TS2538: Type 'undefined' cannot be used as an index type.
+
+server/modules/github-app-auth.ts: 1 errors
+  server/modules/github-app-auth.ts(200,68): error TS18048: 'installation' is possibly 'undefined'.
+
+server/plugins/http-agent.ts: 1 errors
+  server/plugins/http-agent.ts(10,7): error TS2353: Object literal may only specify known properties, and 'httpsProxy' does not exist in type 'FetchOptions<ResponseType, any>'.
+
+server/routes/auth/auth0.get.ts: 1 errors
+  server/routes/auth/auth0.get.ts(10,9): error TS2353: Object literal may only specify known properties, and 'login' does not exist in type 'User'.
+
+server/routes/auth/google.get.ts: 1 errors
+  server/routes/auth/google.get.ts(9,9): error TS2353: Object literal may only specify known properties, and 'login' does not exist in type 'User'.
+
+server/routes/auth/keycloak.get.ts: 1 errors
+  server/routes/auth/keycloak.get.ts(12,9): error TS2322: Type 'undefined' is not assignable to type 'string'.
+
+server/routes/auth/microsoft.get.ts: 1 errors
+  server/routes/auth/microsoft.get.ts(12,9): error TS2322: Type 'undefined' is not assignable to type 'string'.
+
+server/storage/seats-storage.ts: 1 errors
+  server/storage/seats-storage.ts(106,3): error TS2322: Type '{ snapshot_date: string | undefined; total_seats: number; never_active: number; inactive_7d: number; inactive_30d: number; }[]' is not assignable to type 'SeatHistoryEntry[]'.
+
+server/storage/sync-storage.ts: 1 errors
+  server/storage/sync-storage.ts(153,5): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+
+server/utils/proxy-agent.ts: 1 errors
+  server/utils/proxy-agent.ts(39,39): error TS2345: Argument of type '{ tls?: { ca: Buffer[]; }; uri: string; }' is not assignable to parameter of type 'string | Options'.
+
+shared/utils/metrics-util.ts: 1 errors
+  shared/utils/metrics-util.ts(182,9): error TS2322: Type '{ date: string | undefined; total_active_users?: number | undefined; total_engaged_users?: number | undefined; copilot_ide_code_completions?: CopilotIdeCodeCompletions | null | undefined; copilot_ide_chat?: CopilotIdeChat | ... 1 more ... | undefined; copilot_dotcom_chat?: CopilotDotcomChat | ... 1 more ... | undefi...' is not assignable to type 'CopilotMetrics[]'.
+
+tests/Options.spec.ts: 1 errors
+  tests/Options.spec.ts(694,5): error TS2304: Cannot find name 'afterEach'.

@@ -23,6 +23,8 @@ function makeUser(
     user_id: id,
     user_login: login,
     day,
+    report_start_day: day,
+    report_end_day: day,
     organization_id: 'org-1',
     enterprise_id: 'ent-1',
     user_initiated_interaction_count: 10,
@@ -133,7 +135,7 @@ describe('aggregateTeamMetrics', () => {
 
     expect(result.day_totals).toHaveLength(1);
     // 2 team members active on 2026-02-10
-    expect(result.day_totals[0].daily_active_users).toBe(2);
+    expect(result.day_totals[0]!.daily_active_users).toBe(2);
   });
 
   it('sums scalar counts across team members for the same day', () => {
@@ -143,7 +145,7 @@ describe('aggregateTeamMetrics', () => {
     ];
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
 
-    const day = result.day_totals[0];
+    const day = result.day_totals[0]!;
     expect(day.code_generation_activity_count).toBe(80);  // 40 + 40
     expect(day.code_acceptance_activity_count).toBe(20);  // 10 + 10
     expect(day.loc_suggested_to_add_sum).toBe(400);        // 200 + 200
@@ -161,9 +163,9 @@ describe('aggregateTeamMetrics', () => {
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
 
     expect(result.day_totals).toHaveLength(3);
-    expect(result.day_totals[0].day).toBe('2026-02-10');
-    expect(result.day_totals[1].day).toBe('2026-02-11');
-    expect(result.day_totals[2].day).toBe('2026-02-12');
+    expect(result.day_totals[0]!.day).toBe('2026-02-10');
+    expect(result.day_totals[1]!.day).toBe('2026-02-11');
+    expect(result.day_totals[2]!.day).toBe('2026-02-12');
   });
 
   it('sets report_start_day and report_end_day from day range', () => {
@@ -207,7 +209,7 @@ describe('aggregateTeamMetrics', () => {
       }),
     ];
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
-    const day = result.day_totals[0];
+    const day = result.day_totals[0]!;
 
     const vscode = day.totals_by_ide.find(i => i.ide === 'vscode');
     const vs = day.totals_by_ide.find(i => i.ide === 'visualstudio');
@@ -223,7 +225,7 @@ describe('aggregateTeamMetrics', () => {
   it('merges feature totals by feature name', () => {
     const records = [makeUser('alice', 1, '2026-02-10'), makeUser('bob', 2, '2026-02-10')];
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
-    const day = result.day_totals[0];
+    const day = result.day_totals[0]!;
 
     const completion = day.totals_by_feature.find(f => f.feature === 'code_completion');
     const chat = day.totals_by_feature.find(f => f.feature === 'chat_panel_ask_mode');
@@ -239,7 +241,7 @@ describe('aggregateTeamMetrics', () => {
   it('merges language-feature totals by language+feature key', () => {
     const records = [makeUser('alice', 1, '2026-02-10'), makeUser('bob', 2, '2026-02-10')];
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
-    const day = result.day_totals[0];
+    const day = result.day_totals[0]!;
 
     const tsCompletion = day.totals_by_language_feature.find(
       lf => lf.language === 'typescript' && lf.feature === 'code_completion'
@@ -259,7 +261,7 @@ describe('aggregateTeamMetrics', () => {
   it('merges model-feature totals by model+feature key', () => {
     const records = [makeUser('alice', 1, '2026-02-10'), makeUser('bob', 2, '2026-02-10')];
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
-    const day = result.day_totals[0];
+    const day = result.day_totals[0]!;
 
     const model = day.totals_by_model_feature.find(
       mf => mf.model === 'gpt-5.3-codex' && mf.feature === 'code_completion'
@@ -276,7 +278,7 @@ describe('aggregateTeamMetrics', () => {
       makeUser('charlie', 3, '2026-02-10', { used_chat: true, used_agent: false }),
     ];
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob', 'charlie']));
-    const day = result.day_totals[0];
+    const day = result.day_totals[0]!;
 
     expect(day.monthly_active_chat_users).toBe(2);
     expect(day.monthly_active_agent_users).toBe(1);
@@ -315,8 +317,8 @@ describe('aggregateTeamMetrics', () => {
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
 
     expect(result.day_totals).toHaveLength(2);
-    expect(result.day_totals[0].daily_active_users).toBe(1);
-    expect(result.day_totals[1].daily_active_users).toBe(1);
+    expect(result.day_totals[0]!.daily_active_users).toBe(1);
+    expect(result.day_totals[1]!.daily_active_users).toBe(1);
   });
 
   it('matches team members case-insensitively', () => {
@@ -329,6 +331,6 @@ describe('aggregateTeamMetrics', () => {
     const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
 
     expect(result.day_totals).toHaveLength(1);
-    expect(result.day_totals[0].daily_active_users).toBe(2);
+    expect(result.day_totals[0]!.daily_active_users).toBe(2);
   });
 });

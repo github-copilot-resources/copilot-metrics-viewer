@@ -190,7 +190,7 @@ export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Pr
       throw new Error(`GitHub App is not installed on org/enterprise "${targetOrg}". Available: ${installations.map(i => i.login).join(', ')}`)
     }
   } else if (installations.length === 1) {
-    installation = installations[0]
+    installation = installations[0]!
   } else if (installations.length === 0) {
     throw new Error('GitHub App has no installations. Install the App on your org first.')
   } else {

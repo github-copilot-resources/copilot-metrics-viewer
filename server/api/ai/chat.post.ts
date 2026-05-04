@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
 
   // Feature gate check
-  if (!config.public.enableAiChat && config.public.enableAiChat !== 'true') {
+  if (!config.public.enableAiChat) {
     throw createError({
       statusCode: 403,
       statusMessage: 'AI Chat is not enabled. Set NUXT_PUBLIC_ENABLE_AI_CHAT=true to enable.',

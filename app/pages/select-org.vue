@@ -19,9 +19,9 @@ const showManualInput = computed(() => organizations.value.length === 0)
 
 watch(organizations, (orgs) => {
   if (orgs.length === 1) {
-    router.replace(`/orgs/${orgs[0].login}`)
+    router.replace(`/orgs/${orgs[0]!.login}`)
   } else if (orgs.length > 1) {
-    selected.value = orgs[0].login
+    selected.value = orgs[0]!.login
   }
 }, { immediate: true })
 

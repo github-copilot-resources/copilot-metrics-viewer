@@ -120,7 +120,7 @@ describe('Enterprise Seats API Integration', () => {
     
     // Should have only 1 seat (the one with null assignee is filtered out)
     expect(deduplicatedSeats).toHaveLength(1)
-    expect(deduplicatedSeats[0].login).toBe('validuser')
-    expect(deduplicatedSeats[0].id).toBe(1)
+    expect(deduplicatedSeats[0]!.login).toBe('validuser')
+    expect(deduplicatedSeats[0]!.id).toBe(1)
   })
 })

@@ -124,7 +124,7 @@ export async function getSeatsHistorySummary(
     }
 
     return {
-      snapshot_date: new Date(row.snapshot_date).toISOString().split('T')[0],
+      snapshot_date: new Date(row.snapshot_date).toISOString().split('T')[0]!,
       total_seats: seats.length,
       never_active,
       inactive_7d,

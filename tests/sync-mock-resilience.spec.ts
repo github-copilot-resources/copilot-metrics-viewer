@@ -61,7 +61,7 @@ describe('Mock data loading resilience (sync-service scenario)', () => {
     expect(report.enterprise_id).toBeTruthy();
     expect(report.day_totals).toHaveLength(1);
 
-    const day = report.day_totals[0];
+    const day = report.day_totals[0]!;
     expect(day.totals_by_ide).toBeDefined();
     expect(day.totals_by_feature).toBeDefined();
     expect(day.totals_by_language_feature).toBeDefined();
@@ -104,7 +104,7 @@ describe('isMockMode() in non-mock environments', () => {
     const envFalse = 'false';
     const envUnset: string | undefined = undefined;
     expect(envTrue === 'true').toBe(true);
-    expect(envFalse === 'true').toBe(false);
+    expect((envFalse as string) === 'true').toBe(false);
     expect(envUnset === 'true').toBe(false);
   });
 });

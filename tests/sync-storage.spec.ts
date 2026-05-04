@@ -58,7 +58,7 @@ vi.mock('../server/storage/metrics-storage', () => ({
     const end = new Date(query.endDate);
     const current = new Date(start);
     while (current <= end) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = current.toISOString().split('T')[0]!;
       const key = buildKey(query.scope, query.scopeIdentifier, dateStr, query.teamSlug);
       const stored = storageMap.get(key) as StoredMetrics | undefined;
       if (stored) results.push(stored.data);
@@ -413,8 +413,8 @@ describe('Transformer Round-Trip', () => {
       expect(m.date).toBeTruthy();
       expect(m.total_active_users).toBeGreaterThan(0);
       expect(m.copilot_ide_code_completions).toBeDefined();
-      expect(m.copilot_ide_code_completions.editors).toBeDefined();
-      expect(m.copilot_ide_code_completions.editors.length).toBeGreaterThan(0);
+      expect(m.copilot_ide_code_completions?.editors).toBeDefined();
+      expect(m.copilot_ide_code_completions?.editors.length).toBeGreaterThan(0);
       expect(m.copilot_ide_chat).toBeDefined();
       expect(m.copilot_dotcom_chat).toBeDefined();
       expect(m.copilot_dotcom_pull_requests).toBeDefined();
@@ -424,23 +424,23 @@ describe('Transformer Round-Trip', () => {
   it('should preserve IDE names from report', () => {
     const report = generateMockReport('2026-02-10', '2026-02-10');
     const metrics = transformReportToMetrics(report);
-    const day = report.day_totals[0];
+    const day = report.day_totals[0]!;
 
     const ideNames = day.totals_by_ide.map(i => i.ide);
-    const editorNames = metrics[0].copilot_ide_code_completions.editors.map(e => e.name);
+    const editorNames = metrics[0]!.copilot_ide_code_completions?.editors.map(e => e.name);
 
     expect(editorNames).toEqual(expect.arrayContaining(ideNames));
   });
 
   it('should map code_completion language features', () => {
     const report = generateMockReport('2026-02-10', '2026-02-10');
-    const day = report.day_totals[0];
+    const day = report.day_totals[0]!;
     const metrics = transformDayToMetrics(day);
 
     // Code completions should have language data from code_completion feature
     const codeCompletionLangs = day.totals_by_language_feature.filter(lf => lf.feature === 'code_completion');
     if (codeCompletionLangs.length > 0) {
-      expect(metrics.copilot_ide_code_completions.languages.length).toBeGreaterThan(0);
+      expect(metrics.copilot_ide_code_completions?.languages.length).toBeGreaterThan(0);
     }
   });
 
@@ -449,6 +449,6 @@ describe('Transformer Round-Trip', () => {
     const metrics = transformReportToMetrics(report);
 
     // IDE chat should have editors
-    expect(metrics[0].copilot_ide_chat.editors).toBeDefined();
+    expect(metrics[0]!.copilot_ide_chat?.editors).toBeDefined();
   });
 });

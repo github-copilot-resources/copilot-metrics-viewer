@@ -93,7 +93,7 @@ function getMetricsSummary(data: CachedData): ToolCallResult {
   const acceptanceRate = totalSuggestions > 0 ? ((totalAcceptances / totalSuggestions) * 100).toFixed(1) : '0';
   const lineAcceptanceRate = totalLinesSuggested > 0 ? ((totalLinesAccepted / totalLinesSuggested) * 100).toFixed(1) : '0';
 
-  const dateRange = `${metrics[0].day} to ${metrics[metrics.length - 1].day}`;
+  const dateRange = `${metrics[0]!.day} to ${metrics[metrics.length - 1]!.day}`;
 
   return {
     success: true,

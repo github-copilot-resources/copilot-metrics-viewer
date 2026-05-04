@@ -322,7 +322,7 @@
 <script lang="ts">
 import { defineComponent, ref, watch, computed, type PropType, shallowRef } from 'vue';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
-import type { ReportDayTotals } from '@/server/services/github-copilot-usage-api';
+import type { ReportDayTotals } from '#server/services/github-copilot-usage-api';
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { Line as LineChart, Bar as BarChart, Doughnut } from 'vue-chartjs';
@@ -626,27 +626,27 @@ export default defineComponent({
                     const model = mf.model ?? 'Unknown';
                     if (!modelInterByDay[model]) modelInterByDay[model] = data.map(() => 0);
                     const cnt = mf.user_initiated_interaction_count ?? 0;
-                    modelInterByDay[model][idx] += cnt;
-                    dayTotals[idx] += cnt;
+                    modelInterByDay[model]![idx] = (modelInterByDay[model]![idx] ?? 0) + cnt;
+                    dayTotals[idx] = (dayTotals[idx] ?? 0) + cnt;
                 }
             });
             const allModels = Object.entries(modelInterByDay).sort((a, b) => b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
             const top5 = allModels.slice(0, 5);
-            const otherData = allModels.slice(5).reduce((acc, [, vals]) => acc.map((v, i) => v + vals[i]), data.map(() => 0));
+            const otherData = allModels.slice(5).reduce((acc, [, vals]) => acc.map((v, i) => v + (vals[i] ?? 0)), data.map(() => 0));
 
             modelUsagePerDayChartData.value = {
                 labels,
                 datasets: [
                     ...top5.map(([model, vals], i) => ({
                         label: model,
-                        data: vals.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
-                        backgroundColor: PALETTE[i % PALETTE.length].bg, borderColor: PALETTE[i % PALETTE.length].border,
+                        data: vals.map((v, idx) => { const dt = dayTotals[idx] ?? 0; return dt > 0 ? parseFloat((v / dt * 100).toFixed(2)) : 0; }),
+                        backgroundColor: PALETTE[i % PALETTE.length]!.bg, borderColor: PALETTE[i % PALETTE.length]!.border,
                         fill: 'stack', tension: 0.3,
                     })),
                     ...(allModels.length > 5 ? [{
                         label: 'Other',
-                        data: otherData.map((v, idx) => dayTotals[idx] > 0 ? parseFloat((v / dayTotals[idx] * 100).toFixed(2)) : 0),
-                        backgroundColor: PALETTE[5].bg, borderColor: PALETTE[5].border,
+                        data: otherData.map((v, idx) => { const dt = dayTotals[idx] ?? 0; return dt > 0 ? parseFloat((v / dt * 100).toFixed(2)) : 0; }),
+                        backgroundColor: PALETTE[5]!.bg, borderColor: PALETTE[5]!.border,
                         fill: 'stack', tension: 0.3,
                     }] : [])
                 ],
@@ -656,7 +656,7 @@ export default defineComponent({
                 .sort((a, b) => b.total - a.total);
             chatModelDonutData.value = {
                 labels: modelAggregates.map(m => m.model),
-                datasets: [{ data: modelAggregates.map(m => m.total), backgroundColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].bg), borderColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length].border) }],
+                datasets: [{ data: modelAggregates.map(m => m.total), backgroundColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length]!.bg), borderColor: modelAggregates.map((_, i) => PALETTE[i % PALETTE.length]!.border) }],
             };
 
             const modeModelMatrix: Record<string, Record<string, number>> = {};
@@ -675,14 +675,14 @@ export default defineComponent({
             modelPerChatModeData.value = {
                 labels: topModelLabels,
                 datasets: modeKeys.map((mode, i) => {
-                    const totals = modeModelMatrix[mode];
+                    const totals = modeModelMatrix[mode] ?? {};
                     return {
                         label: mode,
                         data: topModelLabels.map(m => m === 'Other'
                             ? allModels.slice(5).reduce((s, [model]) => s + (totals[model] ?? 0), 0)
                             : totals[m] ?? 0),
-                        backgroundColor: PALETTE[i % PALETTE.length].bg,
-                        borderColor: PALETTE[i % PALETTE.length].border,
+                        backgroundColor: PALETTE[i % PALETTE.length]!.bg,
+                        borderColor: PALETTE[i % PALETTE.length]!.border,
                     };
                 }),
             };
