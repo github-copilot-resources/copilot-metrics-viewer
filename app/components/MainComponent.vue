@@ -272,6 +272,7 @@ import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
 import { routeParamStr } from '@/utils/routeUtils';
+import { resolveDisplayName } from '#shared/utils/resolveDisplayName';
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -583,13 +584,15 @@ export default defineNuxtComponent({
       if (ent && team) return `/enterprises/${ent}`;
       return null;
     });
-    const displayName = computed(() => {
-      const publicConfig = isMockMode.value
-        ? { ...config.public, githubOrg: 'octodemo', githubEnt: '' }
-        : config.public;
-      const base = getDisplayName(publicConfig);
-      return teamName.value ? `${base} | Team : ${teamName.value}` : base;
-    });
+    const displayName = computed(() => resolveDisplayName({
+      urlOrg: routeParamStr(route.value.params, 'org'),
+      urlEnt: routeParamStr(route.value.params, 'ent'),
+      isMockMode: isMockMode.value,
+      configOrg: config.public.githubOrg as string,
+      configEnt: config.public.githubEnt as string,
+      configScope: config.public.scope as string,
+      teamName: teamName.value,
+    }));
 
     const signInRequired = computed(() => {
       return isAuthRequired.value && !loggedIn.value;

@@ -13,6 +13,7 @@
 
 <script lang="ts" setup>
 import { routeParamStr } from '@/utils/routeUtils';
+import { resolveDisplayName } from '#shared/utils/resolveDisplayName';
 
 const config = useRuntimeConfig();
 const version = computed(() => config.public.version);
@@ -22,14 +23,15 @@ const isMockMode = computed(() =>
   config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
   route.query.mock === 'true' || route.query.mock === '1'
 );
-const pageTitle = computed(() => {
-  const publicConfig = isMockMode.value
-    ? { ...config.public, githubOrg: 'octodemo', githubEnt: '' }
-    : config.public;
-  const base = getDisplayName(publicConfig);
-  const team = routeParamStr(route.params, 'team');
-  return team ? `${base} | Team : ${team}` : base;
-});
+const pageTitle = computed(() => resolveDisplayName({
+  urlOrg: routeParamStr(route.params, 'org'),
+  urlEnt: routeParamStr(route.params, 'ent'),
+  isMockMode: isMockMode.value,
+  configOrg: config.public.githubOrg as string,
+  configEnt: config.public.githubEnt as string,
+  configScope: config.public.scope as string,
+  teamName: routeParamStr(route.params, 'team'),
+}));
 useHead({
   title: pageTitle,
   meta: [

@@ -1106,7 +1106,6 @@ export default defineComponent({
       chartTrendChartData,
       chartTrendOptions,
       // org filter
-      orgFilterLogins,
       orgFilteredUsers,
     };
   },
