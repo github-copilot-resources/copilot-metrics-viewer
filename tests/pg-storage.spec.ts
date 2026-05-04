@@ -121,7 +121,7 @@ function mockMetrics(date: string): CopilotMetrics {
     total_active_chat_users: 25,
     total_chat_acceptances: 15,
     total_chat_turns: 30,
-  } as CopilotMetrics;
+  } as unknown as CopilotMetrics;
 }
 
 // Minimal ReportDayTotals fixture for hasMetrics (requires report_data IS NOT NULL)
@@ -314,7 +314,7 @@ describe('PostgreSQL Storage Layer', () => {
       const result = await getSeats('organization', 'test-org', '2026-02-15');
       expect(result).not.toBeNull();
       expect(result).toHaveLength(2);
-      expect(result![0].login).toBe('user1');
+      expect(result![0]!.login).toBe('user1');
     });
 
     it('should get latest seats snapshot', async () => {
