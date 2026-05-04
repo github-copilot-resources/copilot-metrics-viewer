@@ -279,6 +279,17 @@ export async function detectGaps(
   while (current <= end) {
     const dateStr = current.toISOString().split('T')[0]!;
     const exists = await hasMetrics(scope, identifier, dateStr, teamSlug);
+    if (!exists) {
+      missingDates.push(dateStr);
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return missingDates;
+}
+
+/**
+ * Sync only missing dates using bulk download.
  */
 export async function syncGaps(
   scope: 'organization' | 'enterprise',
@@ -355,6 +366,8 @@ export async function getSyncStats(
   while (current <= end) {
     totalDays++;
     const dateStr = current.toISOString().split('T')[0]!;
+    const exists = await hasMetrics(scope, identifier, dateStr, teamSlug);
+    if (exists) {
       syncedDays++;
     } else {
       missingDates.push(dateStr);

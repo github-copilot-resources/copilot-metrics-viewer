@@ -32,7 +32,7 @@ describe('API Migration Integration', () => {
 
     it('should sort transformed metrics chronologically when report day_totals are out of order', () => {
       const report = generateMockReport('2026-02-20', '2026-02-22');
-      report.day_totals = [report.day_totals[2], report.day_totals[0], report.day_totals[1]];
+      report.day_totals = [report.day_totals[2]!, report.day_totals[0]!, report.day_totals[1]!];
 
       const metrics = transformReportToMetrics(report);
 
@@ -84,7 +84,7 @@ describe('API Migration Integration', () => {
 
       const current = new Date(start);
       while (current <= end) {
-        dates.push(current.toISOString().split('T')[0]);
+        dates.push(current.toISOString().split('T')[0]!);
         current.setDate(current.getDate() + 1);
       }
 

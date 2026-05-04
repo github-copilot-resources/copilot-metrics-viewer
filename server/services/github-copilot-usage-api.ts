@@ -799,6 +799,13 @@ export async function fetchLatestUserReport(
 
   // Merge: use first report as base, combine user_totals from all files
   const merged: UserReport = { ...reports[0]! };
+  merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
+
+  return merged;
+}
+
+/**
+ * Fetch a single day's user-level metrics report.
  */
 export async function fetchUserReportForDate(
   request: MetricsReportRequest,
@@ -816,6 +823,13 @@ export async function fetchUserReportForDate(
   );
 
   const merged: UserReport = { ...reports[0]! };
+  merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
+
+  return merged;
+}
+
+/**
+ * Download a user-level report file and return the raw per-day per-user records
  * without aggregating into UserTotals[].
  *
  * Used for storing individual daily records in the user_day_metrics table so that

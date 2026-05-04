@@ -136,6 +136,7 @@ describe('GitHub Copilot Usage API', () => {
     it('should map language data from totals_by_language_feature', () => {
       const report = generateMockReport('2026-02-20', '2026-02-20');
       const metrics = transformDayToMetrics(report.day_totals[0]!);
+      const completions = metrics.copilot_ide_code_completions;
       expect(completions?.languages?.length).toBeGreaterThan(0);
       expect(completions?.editors?.[0]?.models?.length).toBeGreaterThan(0);
       
