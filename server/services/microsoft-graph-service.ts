@@ -91,8 +91,9 @@ export async function getTransitiveReportsWithToken(
 /** Search users using a delegated access token obtained via MSAL browser popup. */
 export async function searchUsersWithToken(token: string, query: string): Promise<EntraUser[]> {
   try {
+    // Note: $orderby is incompatible with $search on Microsoft Graph — results are sorted by relevance
     const res = await $fetch<{ value: EntraUser[] }>(
-      `https://graph.microsoft.com/v1.0/users?$search="displayName:${query}"&$select=id,displayName,mail,userPrincipalName,jobTitle&$top=15&$orderby=displayName`,
+      `https://graph.microsoft.com/v1.0/users?$search="displayName:${query}"&$select=id,displayName,mail,userPrincipalName,jobTitle&$top=15`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

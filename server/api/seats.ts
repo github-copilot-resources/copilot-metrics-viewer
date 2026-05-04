@@ -4,6 +4,8 @@ import { Options } from '@/model/Options';
 import { resolve } from 'path';
 import { getLatestSeats } from '../storage/seats-storage';
 import { filterSeatsByTeamMembers } from '../utils/seats-filter';
+import { findNodeInTree, collectNodeAndDescendants, normalizeUPNtoLogin } from '../utils/entra-mock-tree';
+import type { MockTreeNode } from '../utils/entra-mock-tree';
 
 /** UI page size cap — GitHub API max is 100, so 300 = 3 GitHub calls per page. */
 const UI_MAX_PER_PAGE = 300;
@@ -41,9 +43,45 @@ const MOCK_TEAM_MEMBERS: Record<string, TeamMember[]> = {
 };
 
 /**
+ * Resolve members for a "reports-to:<upn>" virtual team.
+ * If options.reportToLogins is already set (pre-resolved by the client), use it.
+ * Otherwise (mock mode only), resolve from the mock Entra org tree.
+ */
+async function resolveReportsToMembers(options: Options): Promise<TeamMember[]> {
+  // Fast path: client already resolved logins (passed via ?users=<b64>)
+  if (options.reportToLogins?.length) {
+    return options.reportToLogins.map(login => ({ login, id: 0 }));
+  }
+
+  // Mock path: resolve from the local mock Entra org tree
+  if (options.isDataMocked) {
+    const upn = options.githubTeam!.replace(/^reports-to:/i, '');
+    const treePath = resolve('public/mock-data/entra-org-tree.json');
+    let root: MockTreeNode;
+    try {
+      root = JSON.parse(readFileSync(treePath, 'utf8')) as MockTreeNode;
+    } catch {
+      return [];
+    }
+    const node = findNodeInTree(root, upn);
+    if (!node) return [];
+    return collectNodeAndDescendants(node).map(u => ({
+      login: normalizeUPNtoLogin(u.userPrincipalName),
+      id: 0,
+    }));
+  }
+
+  // Real MSAL mode without pre-resolved logins: cannot resolve without auth
+  return [];
+}
+
+/**
  * Fetch all members of a team handling GitHub API pagination.
  * Supports both organization teams (via /members) and enterprise teams
  * (via /memberships with X-GitHub-Api-Version: 2026-03-10).
+ *
+ * Also handles virtual "reports-to:<upn>" teams by resolving from the
+ * pre-decoded login list (options.reportToLogins) or the mock Entra tree.
  *
  * @param options Options containing scope/org/team information
  * @param headers Headers (with Authorization) forwarded from the incoming request
@@ -52,6 +90,11 @@ const MOCK_TEAM_MEMBERS: Record<string, TeamMember[]> = {
 export async function fetchAllTeamMembers(options: Options, headers: HeadersInit): Promise<TeamMember[]> {
   if (!options.githubTeam) {
     return [];
+  }
+
+  // reports-to virtual team: resolve from pre-decoded logins or mock tree
+  if (options.githubTeam.startsWith('reports-to:')) {
+    return resolveReportsToMembers(options);
   }
 
   // Mock mode: return pre-defined team membership without hitting GitHub API
@@ -188,9 +231,8 @@ export default defineEventHandler(async (event) => {
     );
     // Apply team filter in mock mode
     if (options.githubTeam) {
-      const mockMembers = MOCK_TEAM_MEMBERS[options.githubTeam] ?? [];
-      const memberLogins = new Set(mockMembers.map(m => m.login.toLowerCase()));
-      seatsData = seatsData.filter(s => memberLogins.has(s.login.toLowerCase()));
+      const mockMembers = await fetchAllTeamMembers(options, new Headers());
+      seatsData = filterSeatsByTeamMembers(seatsData, mockMembers);
     }
     logger.info('Using mocked data');
     return paginateSeats(seatsData, uiPage, uiPerPage);

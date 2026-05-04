@@ -179,6 +179,78 @@ describe('Options', () => {
     })
   })
 
+  describe('reportsto virtual team', () => {
+    test('fromRoute with upn sets githubTeam to reports-to: prefix', () => {
+      const mockRoute = createMockRoute({ org: 'test-org', upn: 'monalisa@octodemo.com' })
+      const options = Options.fromRoute(mockRoute)
+      expect(options.githubTeam).toBe('reports-to:monalisa@octodemo.com')
+      expect(options.githubOrg).toBe('test-org')
+      expect(options.scope).toBe('organization')
+    })
+
+    test('fromRoute with enterprise upn sets githubTeam to reports-to: prefix', () => {
+      const mockRoute = createMockRoute({ ent: 'test-ent', upn: 'monalisa@octodemo.com' })
+      const options = Options.fromRoute(mockRoute)
+      expect(options.githubTeam).toBe('reports-to:monalisa@octodemo.com')
+      expect(options.githubEnt).toBe('test-ent')
+    })
+
+    test('fromRoute with upn and users query decodes reportToLogins', () => {
+      // Encode logins the same way encodeUsersParam does
+      const logins = ['monalisa', 'defunkt', 'octocat']
+      const b64 = btoa(logins.join(',')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+      const mockRoute = createMockRoute({ org: 'test-org', upn: 'monalisa@octodemo.com' }, { users: b64 })
+      const options = Options.fromRoute(mockRoute)
+      expect(options.reportToLogins).toEqual(logins)
+    })
+
+    test('toParams encodes reportToLogins as users param', () => {
+      const options = new Options({
+        githubOrg: 'test-org',
+        scope: 'organization',
+        githubTeam: 'reports-to:monalisa@octodemo.com',
+        reportToLogins: ['monalisa', 'defunkt'],
+      })
+      const params = options.toParams()
+      expect(params.users).toBeDefined()
+      // Decode and verify round-trip
+      const padded = params.users.replace(/-/g, '+').replace(/_/g, '/')
+      const decoded = atob(padded)
+      expect(decoded).toBe('monalisa,defunkt')
+    })
+
+    test('reportToLogins round-trips through toParams and fromQuery', () => {
+      const logins = ['alicechen', 'bobmartinez', 'codertocat']
+      const options = new Options({
+        githubOrg: 'octodemo',
+        scope: 'organization',
+        githubTeam: 'reports-to:alice@octodemo.com',
+        reportToLogins: logins,
+      })
+      const params = options.toParams()
+      const restored = Options.fromQuery(params)
+      expect(restored.reportToLogins).toEqual(logins)
+    })
+
+    test('fromQuery without users param leaves reportToLogins undefined', () => {
+      const options = Options.fromQuery({ githubOrg: 'test-org', githubTeam: 'reports-to:alice@co.com' })
+      expect(options.reportToLogins).toBeUndefined()
+    })
+
+    test('clone preserves reportToLogins', () => {
+      const options = new Options({ reportToLogins: ['monalisa', 'defunkt'] })
+      const cloned = options.clone()
+      expect(cloned.reportToLogins).toEqual(['monalisa', 'defunkt'])
+    })
+
+    test('merge carries reportToLogins from other', () => {
+      const base = new Options({ githubOrg: 'test-org' })
+      const other = new Options({ reportToLogins: ['monalisa'] })
+      const merged = base.merge(other)
+      expect(merged.reportToLogins).toEqual(['monalisa'])
+    })
+  })
+
   describe('fromURLSearchParams', () => {
     test('creates options from URL search params with holidays parameters', () => {
       const params = new URLSearchParams()

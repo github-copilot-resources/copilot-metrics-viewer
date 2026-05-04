@@ -523,7 +523,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, watch, onMounted, type PropType } from 'vue'
 import { Line as LineChart, Bar as BarChart, Doughnut } from 'vue-chartjs'
-import { Options } from '@/model/Options'
+import { Options, encodeUsersParam } from '@/model/Options'
 import type { ChartData, ChartDataset } from 'chart.js'
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Metrics } from '@/model/Metrics';
@@ -1047,6 +1047,13 @@ export default defineComponent({
       try {
         const route = useRoute()
         const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+        // Strip the reports-to virtual team filter so we get all org users for
+        // email→login matching. The actual scope filter is reapplied server-side
+        // only after logins are resolved and encoded in ?users=.
+        if (options.githubTeam?.startsWith('reports-to:')) {
+          options.githubTeam = undefined
+          options.reportToLogins = undefined
+        }
         allUserMetrics.value = await $fetch<UserTotals[]>('/api/user-metrics', { params: options.toParams() }).catch(() => [])
       } finally {
         entraUserMetricsLoading.value = false
@@ -1068,7 +1075,28 @@ export default defineComponent({
           router.replace(base + query)
         }
       }
-      if (logins.length > 0) loadEntraOrgMetrics()
+      if (logins.length > 0) {
+        loadEntraOrgMetrics()
+        // If we're on a /reportsto/ URL, encode logins into the URL so the
+        // entire dashboard (metrics, seats, user-metrics) gets scoped.
+        if (route.params.upn && upn) {
+          const encoded = encodeUsersParam(logins)
+          const currentEncoded = route.query.users as string | undefined
+          if (encoded !== currentEncoded) {
+            const base = route.params.org
+              ? `/orgs/${route.params.org}/reportsto/${upn}`
+              : `/enterprises/${route.params.ent}/reportsto/${upn}`
+            router.replace({
+              path: base,
+              query: {
+                ...(route.query.mock ? { mock: route.query.mock } : {}),
+                users: encoded,
+                name: label,
+              },
+            })
+          }
+        }
+      }
     }
 
     const sortedUserMetrics = computed(() => {

@@ -125,6 +125,28 @@
       >Back to {{ orgLabel }}</v-btn>
     </v-alert>
 
+    <!-- Reports-to scope indicator — shown when viewing a /reportsto/:upn URL -->
+    <v-alert
+      v-if="reportsToName && !teamName"
+      variant="flat"
+      icon="mdi-account-supervisor"
+      density="compact"
+      class="ma-2"
+      style="background-color: #2E7D32; color: #FFFFFF;"
+    >
+      All metrics are scoped to reports under <strong>{{ reportsToName }}</strong>.
+      <v-btn
+        v-if="parentUrl"
+        :to="parentUrl"
+        variant="outlined"
+        size="x-small"
+        append-icon="mdi-arrow-right"
+        class="ml-2"
+        style="color: #FFFFFF; border-color: #FFFFFF;"
+        :aria-label="`Return to ${orgLabel} organization view`"
+      >Back to {{ orgLabel }}</v-btn>
+    </v-alert>
+
     <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
       v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
@@ -488,6 +510,14 @@ export default defineNuxtComponent({
       }
     });
 
+    // Re-run fetchMetrics when ?users= changes (after TeamsComponent resolves logins
+    // and encodes them into the URL — MetricsViewer needs to re-fetch with the new scope).
+    this.$watch(() => (this.route as ReturnType<typeof useRoute>).query.users, () => {
+      if ((this.route as ReturnType<typeof useRoute>).params.upn) {
+        this.fetchMetrics();
+      }
+    });
+
     // Load initial data
     try {
 
@@ -579,6 +609,12 @@ export default defineNuxtComponent({
       route.value.params.team ? 'team' : (config.public.scope as string)
     );
     const teamName = computed(() => routeParamStr(route.value.params, 'team'));
+    const reportsToName = computed<string>(() => {
+      const upn = routeParamStr(route.value.params, 'upn');
+      if (!upn) return '';
+      // Prefer the human-readable label passed as ?name=, fall back to the UPN
+      return (route.value.query.name as string) || upn;
+    });
     const isMockMode = computed(() =>
       config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
       route.value.query.mock === 'true' || route.value.query.mock === '1'
@@ -592,8 +628,11 @@ export default defineNuxtComponent({
       const org = routeParamStr(route.value.params, 'org');
       const ent = routeParamStr(route.value.params, 'ent');
       const team = routeParamStr(route.value.params, 'team');
+      const upn = routeParamStr(route.value.params, 'upn');
       if (org && team) return `/orgs/${org}`;
       if (ent && team) return `/enterprises/${ent}`;
+      if (org && upn) return `/orgs/${org}`;
+      if (ent && upn) return `/enterprises/${ent}`;
       return null;
     });
     const displayName = computed(() => resolveDisplayName({
@@ -664,6 +703,7 @@ export default defineNuxtComponent({
       itemName,
       displayName,
       teamName,
+      reportsToName,
       orgLabel,
       parentUrl,
       signInRequired,

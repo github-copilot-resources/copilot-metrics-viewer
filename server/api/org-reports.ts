@@ -1,37 +1,7 @@
 import { getUserWithToken, getTransitiveReportsWithToken } from '../services/microsoft-graph-service'
-import type { OrgReportsResponse, OrgReportsMember } from '../../shared/types/org-tree'
-
-interface MockTreeNode {
-  id: string
-  displayName: string
-  mail: string | null
-  userPrincipalName: string
-  jobTitle: string | null
-  department: string | null
-  officeLocation: string | null
-  directReports: MockTreeNode[]
-}
-
-function findNodeInTree(node: MockTreeNode, upn: string): MockTreeNode | null {
-  const norm = upn.toLowerCase()
-  if (node.userPrincipalName.toLowerCase() === norm || (node.mail ?? '').toLowerCase() === norm) {
-    return node
-  }
-  for (const child of node.directReports) {
-    const found = findNodeInTree(child, upn)
-    if (found) return found
-  }
-  return null
-}
-
-function collectDescendants(node: MockTreeNode): OrgReportsMember[] {
-  const result: OrgReportsMember[] = []
-  for (const child of node.directReports) {
-    result.push({ mail: child.mail, userPrincipalName: child.userPrincipalName })
-    result.push(...collectDescendants(child))
-  }
-  return result
-}
+import type { OrgReportsResponse } from '../../shared/types/org-tree'
+import { findNodeInTree, collectDescendants } from '../utils/entra-mock-tree'
+import type { MockTreeNode } from '../utils/entra-mock-tree'
 
 export default defineEventHandler(async (event): Promise<OrgReportsResponse> => {
   const config = useRuntimeConfig(event)

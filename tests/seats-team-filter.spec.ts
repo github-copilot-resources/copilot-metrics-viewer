@@ -5,12 +5,14 @@
  *  - filterSeatsByTeamMembers() pure function
  *  - Historical mode (no auth) + team scope → 503
  *  - Historical mode (with auth) + team scope → filtered result
+ *  - reports-to: virtual team handling in fetchAllTeamMembers
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { Seat } from '@/model/Seat'
 import type { TeamMember } from '../server/api/seats'
 import { filterSeatsByTeamMembers } from '../server/utils/seats-filter'
+import { Options } from '@/model/Options'
 
 // ── filterSeatsByTeamMembers unit tests ──────────────────────────────────────
 
@@ -142,5 +144,52 @@ describe('/api/seats handler – historical mode team filtering', () => {
     expect(result.seats).toHaveLength(1)
     expect(result.seats[0].login).toBe('octocat')
     expect(result.total_seats).toBe(1)
+  })
+})
+
+// ── fetchAllTeamMembers — reports-to: virtual team ───────────────────────────
+
+describe('fetchAllTeamMembers – reports-to: virtual team', () => {
+  it('returns pre-resolved logins when reportToLogins is set', async () => {
+    const { fetchAllTeamMembers } = await import('../server/api/seats')
+    const options = new Options({
+      githubOrg: 'octodemo',
+      scope: 'organization',
+      githubTeam: 'reports-to:monalisa@octodemo.com',
+      reportToLogins: ['monalisa', 'defunkt', 'octocat'],
+    })
+    const members = await fetchAllTeamMembers(options, new Headers())
+    expect(members.map(m => m.login)).toEqual(['monalisa', 'defunkt', 'octocat'])
+    // Synthetic members have id: 0
+    expect(members.every(m => m.id === 0)).toBe(true)
+  })
+
+  it('resolves from mock Entra tree when no reportToLogins (mock mode)', async () => {
+    process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'true'
+    const { fetchAllTeamMembers } = await import('../server/api/seats')
+    const options = new Options({
+      githubOrg: 'octodemo',
+      scope: 'organization',
+      githubTeam: 'reports-to:monalisa@octodemo.com',
+      isDataMocked: true,
+    })
+    const members = await fetchAllTeamMembers(options, new Headers())
+    // monalisa@octodemo.com should resolve to 'monalisa' login (and descendants)
+    const logins = members.map(m => m.login)
+    expect(logins).toContain('monalisa')
+    process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
+  })
+
+  it('returns empty array when reports-to team has no reportToLogins in real mode', async () => {
+    process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
+    const { fetchAllTeamMembers } = await import('../server/api/seats')
+    const options = new Options({
+      githubOrg: 'octodemo',
+      scope: 'organization',
+      githubTeam: 'reports-to:unknown@octodemo.com',
+      isDataMocked: false,
+    })
+    const members = await fetchAllTeamMembers(options, new Headers())
+    expect(members).toHaveLength(0)
   })
 })
