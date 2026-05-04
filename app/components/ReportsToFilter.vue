@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useMsal } from '~/composables/useMsal'
-import { matchEmailsToLogins } from '../../shared/utils/org-login-matching'
-import type { OrgSearchResult, OrgReportsResponse } from '../../shared/types/org-tree'
-import type { UserTotals } from '../../shared/types/org-tree'
+import { matchEmailsToLogins } from '#shared/utils/org-login-matching'
+import type { OrgSearchResult, OrgReportsResponse } from '#shared/types/org-tree'
+import type { UserTotals } from '#shared/types/org-tree'
 
 const props = defineProps<{
   userMetrics: UserTotals[]
