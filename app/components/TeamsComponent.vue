@@ -2,7 +2,7 @@
   <div style="position: relative;">
     <!-- Loading overlay while fetching team metrics -->
     <v-overlay
-      :model-value="isLoading"
+      :model-value="isLoading || entraOrgLoading"
       contained
       persistent
       class="align-center justify-center"
@@ -126,10 +126,10 @@
       </div>
     </v-card>
 
-    <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE -->
-    <div v-if="singleTeamMode">
-      <!-- Team header — same compact card as comparison mode -->
-      <v-container fluid class="px-4 pb-0">
+    <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE + ENTRA FILTER -->
+    <div v-if="singleTeamMode || entraOnlyMode">
+      <!-- Team header — single team mode -->
+      <v-container v-if="singleTeamMode" fluid class="px-4 pb-0">
         <v-row dense>
           <v-col v-for="card in comparisonSummaryCards" :key="card.teamName" cols="12" sm="6" md="4" lg="3">
             <v-card elevation="3" class="pa-3" :style="`border-left: 4px solid ${card.color.border}`">
@@ -172,6 +172,23 @@
             </v-card>
           </v-col>
         </v-row>
+      </v-container>
+
+      <!-- Entra hierarchy header -->
+      <v-container v-else-if="entraOnlyMode" fluid class="px-4 pb-0">
+        <v-card elevation="2" class="pa-3 mt-1">
+          <div class="d-flex align-center gap-2">
+            <v-icon color="indigo">mdi-account-supervisor-outline</v-icon>
+            <span class="text-subtitle-1 font-weight-medium">Reports to {{ entraFilterLabel }}</span>
+            <v-spacer />
+          </div>
+          <div class="text-caption text-medium-emphasis mt-1">
+            {{ sortedUserMetrics.length }} user{{ sortedUserMetrics.length !== 1 ? 's' : '' }} in reporting hierarchy
+          </div>
+          <v-alert type="info" variant="tonal" density="compact" class="mt-2 text-caption">
+            Charts show organisation-wide metrics. User table is filtered to the selected hierarchy.
+          </v-alert>
+        </v-card>
       </v-container>
 
       <!-- KPI Tiles -->
@@ -353,58 +370,6 @@
             </v-card>
           </v-col>
         </v-row>
-      </v-container>
-    </div>
-
-    <!-- ═══════════════════════════════════════════════ ENTRA ORG FILTER (no team selected) -->
-    <div v-else-if="entraOnlyMode">
-      <v-container fluid class="px-4 pb-0">
-        <v-card elevation="2" class="pa-3 mt-1">
-          <div class="d-flex align-center gap-2">
-            <v-icon color="indigo">mdi-account-supervisor-outline</v-icon>
-            <span class="text-subtitle-1 font-weight-medium">Reports to {{ entraFilterLabel }}</span>
-            <v-spacer />
-          </div>
-          <div class="text-caption text-medium-emphasis mt-1">
-            {{ sortedUserMetrics.length }} user{{ sortedUserMetrics.length !== 1 ? 's' : '' }} in reporting hierarchy
-          </div>
-        </v-card>
-      </v-container>
-
-      <v-container fluid class="px-4 mt-2 pb-4">
-        <v-card class="pa-3">
-          <v-card-title class="text-subtitle-1 font-weight-medium pt-1 pb-1">User Activity</v-card-title>
-          <v-card-subtitle class="pb-2 text-caption">Sorted by interactions</v-card-subtitle>
-          <v-progress-linear v-if="entraUserMetricsLoading" indeterminate color="primary" class="mb-2" />
-          <v-table v-if="sortedUserMetrics.length" density="compact">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th class="text-right">Active Days</th>
-                <th class="text-right">Interactions</th>
-                <th class="text-right">Code Generated</th>
-                <th class="text-right">Acceptance Rate</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in sortedUserMetrics" :key="user.login">
-                <td><span class="font-weight-medium">{{ user.login }}</span></td>
-                <td class="text-right">{{ user.total_active_days }}</td>
-                <td class="text-right">{{ user.user_initiated_interaction_count.toLocaleString() }}</td>
-                <td class="text-right">{{ user.code_generation_activity_count.toLocaleString() }}</td>
-                <td class="text-right">
-                  {{ user.code_generation_activity_count
-                    ? ((user.code_acceptance_activity_count / user.code_generation_activity_count) * 100).toFixed(1) + '%'
-                    : '—' }}
-                </td>
-              </tr>
-            </tbody>
-          </v-table>
-          <div v-else-if="!entraUserMetricsLoading" class="text-center text-medium-emphasis py-6">
-            <v-icon size="40" color="grey-lighten-1">mdi-account-outline</v-icon>
-            <p class="mt-2 text-body-2">No users found in reporting hierarchy</p>
-          </div>
-        </v-card>
       </v-container>
     </div>
 
@@ -777,8 +742,8 @@ export default defineComponent({
 
     // ── Single Team KPIs ──────────────────────────────────────────────────────
     const singleTeamKPIs = computed(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return []
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return []
+      const td = activeViewData.value
 
       let activeUsers = 0
       if (td.reportData.length) {
@@ -818,8 +783,8 @@ export default defineComponent({
 
     // ── Single Team Time Series ───────────────────────────────────────────────
     const singleTeamAcceptanceRateData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const td = activeViewData.value
       const color = CHART_COLORS[0]!
 
       let days: string[] = []
@@ -846,8 +811,8 @@ export default defineComponent({
     })
 
     const singleTeamActiveUsersData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const td = activeViewData.value
       const color = CHART_COLORS[1]!
 
       let days: string[] = []
@@ -871,8 +836,8 @@ export default defineComponent({
 
     // ── Single Team Language Donut ─────────────────────────────────────────────
     const singleTeamLangDonutData = computed<ChartData<'doughnut', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const agg = aggregateLangStats(perTeamData.value[0])
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const agg = aggregateLangStats(activeViewData.value)
       const sorted = Object.entries(agg).sort((a, b) => b[1].suggestions - a[1].suggestions).slice(0, 10)
       if (!sorted.length) return { labels: [], datasets: [] }
       return {
@@ -886,8 +851,8 @@ export default defineComponent({
     })
 
     const topLanguages = computed(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return []
-      const agg = aggregateLangStats(perTeamData.value[0])
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return []
+      const agg = aggregateLangStats(activeViewData.value)
       return Object.entries(agg)
         .sort((a, b) => b[1].suggestions - a[1].suggestions)
         .slice(0, 15)
@@ -900,8 +865,8 @@ export default defineComponent({
 
     // ── Single Team Editor Bar ─────────────────────────────────────────────────
     const singleTeamEditorBarData = computed<ChartData<'bar', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const agg = aggregateEditorStats(perTeamData.value[0])
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const agg = aggregateEditorStats(activeViewData.value)
       const sorted = Object.entries(agg).sort((a, b) => b[1].interactions - a[1].interactions)
       if (!sorted.length) return { labels: [], datasets: [] }
       return {
@@ -918,8 +883,8 @@ export default defineComponent({
 
     // ── Single Team Models ────────────────────────────────────────────────────
     const singleTeamModelsData = computed<ChartData<'bar', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const td = activeViewData.value
       const modelAgg: Record<string, number> = {}
       td.reportData.forEach(d => {
         d.totals_by_model_feature?.forEach(mf => {
@@ -941,8 +906,8 @@ export default defineComponent({
 
     // ── Model Usage Over Time ─────────────────────────────────────────────────
     const singleTeamModelUsageOverTimeData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const data = perTeamData.value[0].reportData
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const data = activeViewData.value.reportData
       const modelKeys = [...new Set(
         data.flatMap(d => (d.totals_by_model_feature ?? [])
           .filter(mf => (mf.user_initiated_interaction_count ?? 0) > 0)
@@ -964,8 +929,8 @@ export default defineComponent({
 
     // ── Feature Usage Over Time ───────────────────────────────────────────────
     const singleTeamFeatureUsageData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const data = perTeamData.value[0].reportData
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const data = activeViewData.value.reportData
       const featureKeys = [...new Set(
         data.flatMap(d => (d.totals_by_feature ?? [])
           .filter(f => (f.user_initiated_interaction_count ?? 0) > 0)
@@ -999,6 +964,32 @@ export default defineComponent({
     const entraFilterActive = computed(() => entraFilterLabel.value !== '')
     const entraOnlyMode = computed(() => entraFilterActive.value && selectedTeams.value.length === 0)
 
+    // Org-level metrics for Entra filter charts
+    const entraOrgData = ref<PerTeamData | null>(null)
+    const entraOrgLoading = ref(false)
+
+    const loadEntraOrgMetrics = async () => {
+      if (entraOrgData.value) return
+      entraOrgLoading.value = true
+      try {
+        const route = useRoute()
+        const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+        const response = await $fetch<MetricsApiResponse>('/api/metrics', { params: options.toParams() })
+        entraOrgData.value = {
+          slug: '__entra__',
+          metrics: (response.metrics as Metrics[]) || [],
+          usage: (response.usage as CopilotMetrics[]) || [],
+          reportData: response.reportData || []
+        }
+      } finally {
+        entraOrgLoading.value = false
+      }
+    }
+
+    const activeViewData = computed(() =>
+      entraOnlyMode.value ? entraOrgData.value : (perTeamData.value[0] ?? null)
+    )
+
     // All user metrics (pre-fetched so ReportsToFilter can match email→login)
     const allUserMetrics = ref<UserTotals[]>([])
     const entraUserMetricsLoading = ref(false)
@@ -1017,6 +1008,7 @@ export default defineComponent({
     function onEntraSelect(logins: string[], label: string) {
       entraFilterLogins.value = logins
       entraFilterLabel.value = label
+      if (logins.length > 0) loadEntraOrgMetrics()
     }
 
     const sortedUserMetrics = computed(() => {
@@ -1289,7 +1281,11 @@ export default defineComponent({
       }
     })
 
-    watch(() => props.dateRange, async () => { await updateChartData() }, { deep: true })
+    watch(() => props.dateRange, async () => {
+      entraOrgData.value = null
+      if (entraFilterActive.value) loadEntraOrgMetrics()
+      await updateChartData()
+    }, { deep: true })
 
     return {
       // state
@@ -1328,6 +1324,8 @@ export default defineComponent({
       entraOnlyMode,
       allUserMetrics,
       entraUserMetricsLoading,
+      entraOrgData,
+      entraOrgLoading,
       onEntraSelect,
       // comparison
       comparisonSummaryCards,
