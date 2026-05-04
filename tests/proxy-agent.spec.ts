@@ -87,7 +87,7 @@ describe('initializeProxyAgent', () => {
     expect(MockProxyAgent).toHaveBeenCalledWith(
       expect.objectContaining({
         uri: 'http://proxy.example.com:8080',
-        tls: { ca: [fakeBuffer] },
+        requestTls: { ca: [fakeBuffer] },
       })
     );
     expect(result).toBe(mockProxyAgentInstance);
