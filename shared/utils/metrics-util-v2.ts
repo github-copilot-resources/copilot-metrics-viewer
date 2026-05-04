@@ -162,7 +162,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
         }
         const teamLogins = new Set(teamMembers.map(m => m.login));
 
-        const request: MetricsReportRequest = { scope: options.scope!, identifier, isMocked: options.isDataMocked };(options.scope!, identifier, startDate, endDate);
+        const request: MetricsReportRequest = { scope: options.scope!, identifier, isMocked: options.isDataMocked };
+        const userDayRecords = await getUserDayMetricsByDateRange(options.scope!, identifier, startDate, endDate);
         if (userDayRecords.length > 0) {
           logger.info(`Aggregating team metrics from ${userDayRecords.length} per-day user DB records`);
           const report = aggregateTeamMetrics(userDayRecords, teamLogins);

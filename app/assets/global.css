@@ -124,9 +124,9 @@
     background: transparent !important;
   }
 
-  /* Teams dropdown menu: structural styles (apply in all themes) */
-  .v-overlay__content.teams-select-menu {
-    background-color: rgb(var(--v-theme-surface)) !important;
+  /* Teams / orgs dropdown menu: structural styles (apply in all themes) */
+  .v-overlay__content.teams-select-menu,
+  .v-overlay__content.orgs-select-menu {
     border: 1px solid var(--app-accent-weak);
     box-shadow: 0 6px 24px rgba(56, 79, 184, 0.15);
     border-radius: 8px;
@@ -136,36 +136,67 @@
     z-index: 2000;
   }
 
-  /* Hover highlight inside teams dropdown aligns with tab/button accent */
-  .v-overlay__content.teams-select-menu .v-list-item:hover {
+  /* Hover / active highlight aligns with tab/button accent */
+  .v-overlay__content.teams-select-menu .v-list-item:hover,
+  .v-overlay__content.orgs-select-menu .v-list-item:hover {
+    background-color: var(--app-accent-weak) !important;
+  }
+  .v-overlay__content.teams-select-menu .v-list-item--active,
+  .v-overlay__content.orgs-select-menu .v-list-item--active {
     background-color: var(--app-accent-weak) !important;
   }
 
-  /* Keep selected item highlighted with same light blue as hover */
-  .v-overlay__content.teams-select-menu .v-list-item--active {
-    background-color: var(--app-accent-weak) !important;
+  /* Light mode: white background, black text */
+  html.v-theme--light .v-overlay__content.teams-select-menu,
+  html.v-theme--light .v-overlay__content.teams-select-menu .v-list,
+  html.v-theme--light .v-overlay__content.orgs-select-menu,
+  html.v-theme--light .v-overlay__content.orgs-select-menu .v-list {
+    background-color: #fff !important;
   }
-
-  /* In light mode: force black text so it reads on the white surface */
-  .v-theme--light .v-overlay__content.teams-select-menu .v-list-item,
-  .v-theme--light .v-overlay__content.teams-select-menu .v-list-item .v-list-item-title,
-  .v-theme--light .v-overlay__content.teams-select-menu .v-list-item .v-list-item-subtitle,
-  .v-theme--light .v-overlay__content.teams-select-menu .v-list-item .v-icon,
-  .v-theme--light .v-overlay__content.teams-select-menu .v-list-item .v-selection-control .v-icon {
+  html.v-theme--light .v-overlay__content.teams-select-menu .v-list-item,
+  html.v-theme--light .v-overlay__content.teams-select-menu .v-list-item-title,
+  html.v-theme--light .v-overlay__content.teams-select-menu .v-list-item-subtitle,
+  html.v-theme--light .v-overlay__content.teams-select-menu .v-icon,
+  html.v-theme--light .v-overlay__content.orgs-select-menu .v-list-item,
+  html.v-theme--light .v-overlay__content.orgs-select-menu .v-list-item-title,
+  html.v-theme--light .v-overlay__content.orgs-select-menu .v-list-item-subtitle,
+  html.v-theme--light .v-overlay__content.orgs-select-menu .v-icon {
     color: #000 !important;
   }
 
-  /* Remove dark overlay layer inside those list items */
+  /* Dark mode: dark surface, light text — anchor on html so teleported overlays inherit */
+  html.v-theme--dark .v-overlay__content.teams-select-menu,
+  html.v-theme--dark .v-overlay__content.teams-select-menu .v-list,
+  html.v-theme--dark .v-overlay__content.orgs-select-menu,
+  html.v-theme--dark .v-overlay__content.orgs-select-menu .v-list {
+    background-color: #1e1e1e !important;
+    color: #e8e8e8 !important;
+  }
+  html.v-theme--dark .v-overlay__content.teams-select-menu .v-list-item,
+  html.v-theme--dark .v-overlay__content.teams-select-menu .v-list-item-title,
+  html.v-theme--dark .v-overlay__content.teams-select-menu .v-list-item-subtitle,
+  html.v-theme--dark .v-overlay__content.teams-select-menu .v-icon,
+  html.v-theme--dark .v-overlay__content.orgs-select-menu .v-list-item,
+  html.v-theme--dark .v-overlay__content.orgs-select-menu .v-list-item-title,
+  html.v-theme--dark .v-overlay__content.orgs-select-menu .v-list-item-subtitle,
+  html.v-theme--dark .v-overlay__content.orgs-select-menu .v-icon {
+    color: #e8e8e8 !important;
+  }
+
+  /* Remove internal overlay layer on list items */
   .v-overlay__content.teams-select-menu .v-list-item .v-list-item__overlay,
-  .v-overlay__content.teams-select-menu .v-list-item--active .v-list-item__overlay {
+  .v-overlay__content.teams-select-menu .v-list-item--active .v-list-item__overlay,
+  .v-overlay__content.orgs-select-menu .v-list-item .v-list-item__overlay,
+  .v-overlay__content.orgs-select-menu .v-list-item--active .v-list-item__overlay {
     background: transparent !important;
   }
 
-  .v-overlay__content.teams-select-menu .v-list {
+  .v-overlay__content.teams-select-menu .v-list,
+  .v-overlay__content.orgs-select-menu .v-list {
     padding: 8px 0;
   }
-
-  .v-overlay__content.teams-select-menu .v-list-item {
+  .v-overlay__content.teams-select-menu .v-list-item,
+  .v-overlay__content.orgs-select-menu .v-list-item {
     min-height: 40px;
   }
 
@@ -177,9 +208,26 @@
     background-image: none !important;
   }
   /* In light mode: force black text for contrast on light chip */
-  .v-theme--light .v-chip.select-chip,
-  .v-theme--light .v-chip.selected-team-chip {
+  html.v-theme--light .v-chip.select-chip,
+  html.v-theme--light .v-chip.selected-team-chip {
     color: #000 !important;
+  }
+  html.v-theme--light .v-chip.select-chip .v-icon,
+  html.v-theme--light .v-chip.selected-team-chip .v-icon,
+  html.v-theme--light .v-chip.select-chip .v-chip__content,
+  html.v-theme--light .v-chip.selected-team-chip .v-chip__content {
+    color: #000 !important;
+  }
+  /* In dark mode: force light text on the tinted chip */
+  html.v-theme--dark .v-chip.select-chip,
+  html.v-theme--dark .v-chip.selected-team-chip {
+    color: #e8e8e8 !important;
+  }
+  html.v-theme--dark .v-chip.select-chip .v-icon,
+  html.v-theme--dark .v-chip.selected-team-chip .v-icon,
+  html.v-theme--dark .v-chip.select-chip .v-chip__content,
+  html.v-theme--dark .v-chip.selected-team-chip .v-chip__content {
+    color: #e8e8e8 !important;
   }
   .v-chip.select-chip .v-chip__overlay,
   .v-chip.selected-team-chip .v-chip__overlay {
@@ -193,12 +241,6 @@
   .v-chip.selected-team-chip:hover .v-chip__overlay {
     background: transparent !important;
   }
-  .v-theme--light .v-chip.select-chip .v-icon,
-  .v-theme--light .v-chip.selected-team-chip .v-icon,
-  .v-theme--light .v-chip.select-chip .v-chip__content,
-  .v-theme--light .v-chip.selected-team-chip .v-chip__content {
-    color: #000 !important;
-  }
 
   /* Data table pagination & items-per-page menu styling */
   /* Ensure pagination toolbar inherits surface background and consistent spacing */
@@ -211,14 +253,24 @@
     min-width: 90px; 
   }
 
-  /* Dropdown menu for items-per-page (was showing black background entries in light mode) */
-  /* Only override colours in light mode — dark mode uses Vuetify theme defaults */
-  .v-theme--light .v-overlay__content .v-list-item[role="option"] { 
+  /* Dropdown menu for items-per-page — explicit light/dark overrides */
+  html.v-theme--light .v-overlay__content .v-list-item[role="option"] { 
     background: #fff !important; 
     color: #000 !important; 
   }
-  .v-theme--light .v-overlay__content .v-list-item[role="option"] .v-list-item-title { 
+  html.v-theme--light .v-overlay__content .v-list-item[role="option"] .v-list-item-title { 
     color: #000 !important; 
+  }
+  html.v-theme--dark .v-overlay__content .v-list-item[role="option"] { 
+    background: #1e1e1e !important; 
+    color: #e8e8e8 !important; 
+  }
+  html.v-theme--dark .v-overlay__content .v-list-item[role="option"] .v-list-item-title { 
+    color: #e8e8e8 !important; 
+  }
+  html.v-theme--dark .v-overlay__content .v-list-item[role="option"]:hover,
+  html.v-theme--dark .v-overlay__content .v-list-item[role="option"].v-list-item--active {
+    background: #2a3a6e !important;
   }
   .v-overlay__content .v-list-item[role="option"]:hover { 
     background: var(--app-accent-weak) !important; 
