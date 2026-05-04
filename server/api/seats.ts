@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
 import { resolve } from 'path';
 import { getLatestSeats } from '../storage/seats-storage';
+import { filterSeatsByTeamMembers } from '../utils/seats-filter';
 
 /** UI page size cap — GitHub API max is 100, so 300 = 3 GitHub calls per page. */
 const UI_MAX_PER_PAGE = 300;
@@ -196,6 +197,14 @@ export default defineEventHandler(async (event) => {
   if (!event.context.headers?.has('Authorization')) {
     // ── Historical mode without auth — serve from DB ───────────────────────
     if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+      // Team-scoped requests require fetching team members from GitHub, which
+      // needs auth. Without auth we cannot apply the team filter safely.
+      if (options.githubTeam) {
+        throw createError({
+          statusCode: 503,
+          statusMessage: 'Team-scoped seat data in historical mode requires authentication.',
+        });
+      }
       logger.info('No auth in historical mode, serving latest seats from storage');
       const scope      = options.scope      || 'organization';
       const identifier = options.githubOrg  || options.githubEnt || '';
@@ -215,7 +224,12 @@ export default defineEventHandler(async (event) => {
       const stored = await getLatestSeats(scope, identifier);
       if (stored) {
         logger.info(`Serving ${stored.length} seats from storage`);
-        return paginateSeats(deduplicateSeats(stored), uiPage, uiPerPage);
+        let seats = deduplicateSeats(stored);
+        if (options.githubTeam) {
+          const teamMembers = await fetchAllTeamMembers(options, event.context.headers);
+          seats = filterSeatsByTeamMembers(seats, teamMembers);
+        }
+        return paginateSeats(seats, uiPage, uiPerPage);
       }
       logger.info('No seats in storage yet, falling back to live API');
     }
@@ -306,12 +320,7 @@ export default defineEventHandler(async (event) => {
   }
 
   let deduplicatedSeats = deduplicateSeats(seatsData);
-
-  if (teamMembers.length > 0) {
-    deduplicatedSeats = deduplicatedSeats.filter(
-      seat => teamMembers.some(member => member.id === seat.id)
-    );
-  }
+  deduplicatedSeats = filterSeatsByTeamMembers(deduplicatedSeats, teamMembers);
 
   return paginateSeats(deduplicatedSeats, uiPage, uiPerPage);
 })
