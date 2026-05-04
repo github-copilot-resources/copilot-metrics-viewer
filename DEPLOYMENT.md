@@ -99,8 +99,23 @@ Application will use a pre-built docker image hosted in GitHub registry: `ghcr.i
 > [!CAUTION]
 > When deploying to a private network, specify a subnet (at least /23) for the Azure Container Apps Environment.
 App deployment does not create any DNS entries for the application, in order to create a private DNS Zone linked to provided Virtual Network, follow up the deployment with DNS deployment targeting same resource group:
->
->[![DNS Zone deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fdns%2Fazuredeploy.json)
+
+#### VNet / subnet requirements
+
+| Requirement | Value |
+|---|---|
+| **Minimum subnet size** | `/23` (512 addresses) — Azure Container Apps Consumption environment reserves a large number of IPs for internal infrastructure |
+| **Recommended subnet size** | `/22` or larger to allow room for scaling |
+| **Subnet delegation** | `Microsoft.App/environments` — the subnet must be **exclusively** delegated to this service; no other resources can share it |
+| **VNet address space** | Any RFC-1918 range works (e.g. `10.0.0.0/16`); the `/23` subnet must fall within it |
+
+> [!NOTE]
+> To delegate a subnet in the Azure Portal: go to the subnet → **Subnet delegation** → select `Microsoft.App/environments`.
+> Using Azure CLI: `az network vnet subnet update --delegations Microsoft.App/environments ...`
+
+App deployment does not create any DNS entries for the application. To create a private DNS Zone linked to your Virtual Network, follow up the deployment with the DNS deployment targeting the same resource group:
+
+[![DNS Zone deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgithub-copilot-resources%2Fcopilot-metrics-viewer%2Fmain%2Fazure-deploy%2Fdns%2Fazuredeploy.json)
 
 ## Scenario 2: Azure Deployment with azd
 
