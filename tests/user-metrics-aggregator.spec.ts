@@ -331,4 +331,46 @@ describe('aggregateTeamMetrics', () => {
     expect(result.day_totals).toHaveLength(1);
     expect(result.day_totals[0].daily_active_users).toBe(2);
   });
+
+  // ── Bug #366: Model usage per language chart empty in team view ─────────────
+
+  it('synthesizes non-empty totals_by_language_model from language and model feature data (bug #366)', () => {
+    // makeUser() provides typescript+python language_feature and gpt-5.3-codex model_feature
+    const records = [makeUser('alice', 1, '2026-02-10'), makeUser('bob', 2, '2026-02-10')];
+    const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
+    const day = result.day_totals[0];
+
+    // Should now have synthesized entries instead of empty array
+    expect(day.totals_by_language_model.length).toBeGreaterThan(0);
+
+    // Every language from totals_by_language_feature should appear
+    const languages = new Set(day.totals_by_language_model.map(e => e.language));
+    expect(languages).toContain('typescript');
+    expect(languages).toContain('python');
+
+    // Every model from totals_by_model_feature should appear
+    const models = new Set(day.totals_by_language_model.map(e => e.model));
+    expect(models).toContain('gpt-5.3-codex');
+
+    // All code_generation_activity_count values should be non-negative integers
+    for (const entry of day.totals_by_language_model) {
+      expect(entry.code_generation_activity_count).toBeGreaterThanOrEqual(0);
+    }
+
+    // The sum of generated counts across all entries should equal the model total
+    // (model total for gpt-5.3-codex code_completion across 2 users = 2 × 30 = 60)
+    const totalGen = day.totals_by_language_model
+      .filter(e => e.model === 'gpt-5.3-codex')
+      .reduce((s, e) => s + e.code_generation_activity_count, 0);
+    expect(totalGen).toBe(60);
+  });
+
+  it('returns empty totals_by_language_model when records have no completion feature data', () => {
+    const noCompletionRecord = makeUser('alice', 1, '2026-02-10', {
+      totals_by_language_feature: [],
+      totals_by_model_feature: [],
+    });
+    const result = aggregateTeamMetrics([noCompletionRecord], new Set(['alice']));
+    expect(result.day_totals[0].totals_by_language_model).toHaveLength(0);
+  });
 });
