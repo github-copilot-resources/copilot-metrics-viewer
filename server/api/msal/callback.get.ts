@@ -1,16 +1,59 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+// Self-contained MSAL popup bridge.
+// Reads the auth response from the popup's URL, sends it to the main window
+// via BroadcastChannel (matching MSAL 5.x's popup handling), and closes the window.
+// Fallback: if window.close() is blocked (pop-up was opened in main tab),
+// redirect back to the app root so the user isn't stranded.
+const BRIDGE_SCRIPT = `
+(function () {
+  function decodeBase64Url(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return atob(s);
+  }
 
-// Read the MSAL redirect bridge at startup (6KB UMD bundle, handles popup postMessage flow)
-let bridgeScript = ''
-try {
-  bridgeScript = readFileSync(
-    resolve(process.cwd(), 'node_modules/@azure/msal-browser/lib/redirect-bridge/msal-redirect-bridge.min.js'),
-    'utf-8'
-  )
-} catch {
-  // Fallback: bridge unavailable; popup will time out gracefully
-}
+  function getResponse() {
+    var hash = window.location.hash;
+    var query = window.location.search;
+    var payload = '', state = null;
+    if (hash && hash.length > 1) {
+      var h = hash.slice(1);
+      var p = new URLSearchParams(h);
+      if (p.has('state')) { payload = h; state = p.get('state'); }
+    }
+    if (!state && query && query.length > 1) {
+      var q = query.slice(1);
+      var p2 = new URLSearchParams(q);
+      if (p2.has('state')) { payload = q; state = p2.get('state'); }
+    }
+    return { payload: payload, state: state };
+  }
+
+  try {
+    var r = getResponse();
+    if (r.state) {
+      var parts = r.state.split('|');
+      var lib = JSON.parse(decodeBase64Url(parts[0]));
+      if (lib && lib.id) {
+        var ch = new BroadcastChannel(lib.id);
+        ch.postMessage({ v: 1, payload: r.payload });
+        ch.close();
+      }
+    }
+  } catch (e) { /* ignore parse errors */ }
+
+  try { window.close(); } catch (e) {}
+
+  // If window.close() was blocked (e.g. browser policy), navigate home
+  // so the user isn't stranded on the raw callback URL.
+  setTimeout(function () {
+    try {
+      if (!window.closed) {
+        window.location.replace(window.location.origin + '/');
+      }
+    } catch (e) {}
+  }, 800);
+})();
+`
 
 const html = `<!DOCTYPE html>
 <html>
@@ -19,14 +62,7 @@ const html = `<!DOCTYPE html>
   <title>Authenticating…</title>
 </head>
 <body>
-<script>
-${bridgeScript}
-</script>
-<script>
-  if (typeof msalRedirectBridge !== 'undefined') {
-    msalRedirectBridge.broadcastResponseToMainFrame().catch(function() {});
-  }
-</script>
+<script>${BRIDGE_SCRIPT}<\/script>
 </body>
 </html>`
 
