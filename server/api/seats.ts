@@ -30,10 +30,12 @@ export interface TeamMember {
 }
 
 // Mock team membership — matches the mock teams defined in teams.ts
+// IDs 9–11 are intentionally absent from mock usage data to demonstrate
+// the inactive-member stub feature (shown with "inactive" chip in the UI).
 const MOCK_TEAM_MEMBERS: Record<string, TeamMember[]> = {
-  'the-a-team':    [{ login: 'monalisa', id: 1 }, { login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }],
-  'dev-team':      [{ login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }, { login: 'hubot', id: 8 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }],
-  'frontend-team': [{ login: 'codertocat', id: 3 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }],
+  'the-a-team':    [{ login: 'monalisa', id: 1 }, { login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }, { login: 'newjoiner', id: 9 }],
+  'dev-team':      [{ login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }, { login: 'hubot', id: 8 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }, { login: 'newjoiner', id: 9 }, { login: 'quietdev', id: 10 }],
+  'frontend-team': [{ login: 'codertocat', id: 3 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }, { login: 'designerdev', id: 11 }],
   'backend-team':  [{ login: 'defunkt', id: 2 }, { login: 'octocat', id: 4 }, { login: 'octokitten', id: 5 }, { login: 'hubot', id: 8 }],
   'qa-team':       [{ login: 'hubot', id: 8 }, { login: 'alicechen', id: 6 }, { login: 'bobmartinez', id: 7 }],
 };
