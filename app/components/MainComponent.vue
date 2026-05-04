@@ -185,7 +185,7 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" :team-name="teamName" />
-            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" :entra-enabled="entraEnabled" />
+            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" :entra-enabled="entraEnabled" :initial-upn="(route.params.upn as string) || ''" />
             <BreakdownComponent
               v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
               :date-range-description="dateRangeDescription" :report-data="reportData"
@@ -474,8 +474,20 @@ export default defineNuxtComponent({
 
     // Filter out hidden tabs based on NUXT_PUBLIC_HIDDEN_TABS environment variable
     this.tabItems = applyHiddenTabs(this.tabItems, this.config.public.hiddenTabs as string);
+
+    // Auto-switch to teams tab when a /reportsto/:upn URL is visited
+    if (this.route?.params?.upn && this.tabItems.includes('teams')) {
+      this.tab = 'teams';
+    }
   },
   async mounted() {
+    // React to client-side navigation between /reportsto/ URLs
+    this.$watch(() => (this.route as ReturnType<typeof useRoute>).params.upn, (newUpn: string | undefined) => {
+      if (newUpn && this.tabItems.includes('teams')) {
+        this.tab = 'teams';
+      }
+    });
+
     // Load initial data
     try {
 

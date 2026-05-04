@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useMsal } from '~/composables/useMsal'
 import { matchEmailsToLogins } from '#shared/utils/org-login-matching'
 import type { OrgSearchResult, OrgReportsResponse } from '#shared/types/org-tree'
@@ -7,10 +7,11 @@ import type { UserTotals } from '#shared/types/org-tree'
 
 const props = defineProps<{
   userMetrics: UserTotals[]
+  initialUpn?: string
 }>()
 
 const emit = defineEmits<{
-  select: [logins: string[], label: string]
+  select: [logins: string[], label: string, upn?: string]
 }>()
 
 const config = useRuntimeConfig()
@@ -65,7 +66,7 @@ function onSearchInput(q: string) {
 async function onPersonSelect(person: OrgSearchResult | null) {
   apiError.value = null
   filterCount.value = 0
-  if (!person) { emit('select', [], ''); return }
+  if (!person) { emit('select', [], '', ''); return }
   loadingReports.value = true
   try {
     const headers = await getHeaders()
@@ -75,11 +76,11 @@ async function onPersonSelect(person: OrgSearchResult | null) {
     })
     filterCount.value = resp.count
     const logins = matchEmailsToLogins(resp.members, props.userMetrics)
-    emit('select', logins, person.displayName)
+    emit('select', logins, person.displayName, person.userPrincipalName)
   } catch (e: any) {
     apiError.value = e?.data?.message ?? e?.message ?? 'Failed to load reports'
     selectedPerson.value = null
-    emit('select', [], '')
+    emit('select', [], '', '')
   } finally {
     loadingReports.value = false
   }
@@ -97,8 +98,58 @@ function clear() {
   searchResults.value = []
   filterCount.value = 0
   apiError.value = null
-  emit('select', [], '')
+  emit('select', [], '', '')
 }
+
+async function resolveUpn(upn: string) {
+  if (!upn || !showSearch.value) return
+  loadingReports.value = true
+  apiError.value = null
+  filterCount.value = 0
+  try {
+    const headers = await getHeaders()
+    const resp = await $fetch<OrgReportsResponse>('/api/org-reports', {
+      query: { userUpn: upn, ...(isMockMode.value ? { mock: 'true' } : {}) },
+      headers,
+    })
+    selectedPerson.value = {
+      id: resp.rootUser.id,
+      displayName: resp.rootUser.displayName,
+      mail: resp.rootUser.mail,
+      userPrincipalName: resp.rootUser.userPrincipalName,
+      jobTitle: resp.rootUser.jobTitle,
+    }
+    filterCount.value = resp.count
+    const logins = matchEmailsToLogins(resp.members, props.userMetrics)
+    emit('select', logins, resp.rootUser.displayName, upn)
+  } catch (e: any) {
+    apiError.value = e?.data?.message ?? e?.message ?? 'Failed to load reports'
+    emit('select', [], '', '')
+  } finally {
+    loadingReports.value = false
+  }
+}
+
+// Activate filter on mount if initialUpn was provided via URL
+onMounted(() => {
+  if (props.initialUpn) resolveUpn(props.initialUpn)
+})
+
+// React to initialUpn changes (client-side navigation between /reportsto/ routes)
+watch(() => props.initialUpn, (newUpn, oldUpn) => {
+  if (newUpn && newUpn !== oldUpn) {
+    resolveUpn(newUpn)
+  } else if (!newUpn && oldUpn) {
+    clear()
+  }
+})
+
+// Re-attempt resolution after MSAL sign-in completes
+watch(showSearch, (isVisible) => {
+  if (isVisible && props.initialUpn && !selectedPerson.value && !loadingReports.value) {
+    resolveUpn(props.initialUpn)
+  }
+})
 </script>
 
 <template>

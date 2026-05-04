@@ -118,7 +118,7 @@
       <!-- Entra ID manager filter (shown when entraEnabled) -->
       <div v-if="entraEnabled" class="mt-3 pt-3" style="border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity))">
         <div class="text-caption text-medium-emphasis mb-2">Or filter by reporting hierarchy</div>
-        <ReportsToFilter :user-metrics="allUserMetrics" @select="onEntraSelect" />
+        <ReportsToFilter :user-metrics="allUserMetrics" :initial-upn="resolvedInitialUpn" @select="onEntraSelect" />
       </div>
     </v-card>
 
@@ -177,6 +177,18 @@
             <v-icon color="indigo">mdi-account-supervisor-outline</v-icon>
             <span class="text-subtitle-1 font-weight-medium">Reports to {{ entraFilterLabel }}</span>
             <v-spacer />
+            <v-tooltip location="top" :text="permalinkCopied ? 'Copied!' : 'Copy shareable link'">
+              <template #activator="{ props: tip }">
+                <v-btn
+                  v-bind="tip"
+                  :icon="permalinkCopied ? 'mdi-check' : 'mdi-link-variant'"
+                  size="small"
+                  variant="text"
+                  :color="permalinkCopied ? 'success' : undefined"
+                  @click="copyPermalink"
+                />
+              </template>
+            </v-tooltip>
           </div>
           <div class="text-caption text-medium-emphasis mt-1">
             {{ sortedUserMetrics.length }} user{{ sortedUserMetrics.length !== 1 ? 's' : '' }} in reporting hierarchy
@@ -599,12 +611,19 @@ export default defineComponent({
   props: {
     dateRange: { type: Object as PropType<DateRange>, required: false, default: () => ({}) },
     dateRangeDescription: { type: String, default: '' },
-    entraEnabled: { type: Boolean, default: false }
+    entraEnabled: { type: Boolean, default: false },
+    initialUpn: { type: String, default: '' }
   },
   setup(props) {
     const config = useRuntimeConfig()
+    const route = useRoute()
+    const router = useRouter()
     const isHistoricalMode = computed(() =>
       config.public?.enableHistoricalMode === true || config.public?.enableHistoricalMode === 'true'
+    )
+    const isMockMode = computed(() =>
+      config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+      route.query.mock === 'true' || route.query.mock === '1'
     )
 
     const availableTeams = ref<Team[]>([])
@@ -961,8 +980,37 @@ export default defineComponent({
     // ── Entra / Org-hierarchy filter ──────────────────────────────────────────
     const entraFilterLogins = ref<string[]>([])
     const entraFilterLabel = ref('')
+    const entraFilterUpn = ref('')
     const entraFilterActive = computed(() => entraFilterLabel.value !== '')
     const entraOnlyMode = computed(() => entraFilterActive.value && selectedTeams.value.length === 0)
+
+    // UPN passed to ReportsToFilter only after allUserMetrics is loaded (so matching works)
+    const resolvedInitialUpn = ref('')
+
+    // Permalink helpers
+    const permalinkCopied = ref(false)
+    const getReportsToUrl = (): string => {
+      const upn = entraFilterUpn.value
+      if (!upn) return ''
+      const encodedUpn = encodeURIComponent(upn)
+      const org = route.params.org as string | undefined
+      const ent = route.params.ent as string | undefined
+      let base = ent
+        ? `/enterprises/${ent}/reportsto/${encodedUpn}`
+        : `/orgs/${org}/reportsto/${encodedUpn}`
+      if (route.query.mock) base += `?mock=${route.query.mock}`
+      return base
+    }
+    async function copyPermalink() {
+      if (!process.client) return
+      const path = getReportsToUrl()
+      if (!path) return
+      try {
+        await navigator.clipboard.writeText(window.location.origin + path)
+        permalinkCopied.value = true
+        setTimeout(() => { permalinkCopied.value = false }, 2000)
+      } catch { /* ignore clipboard errors */ }
+    }
 
     // Org-level metrics for Entra filter charts
     const entraOrgData = ref<PerTeamData | null>(null)
@@ -1005,9 +1053,21 @@ export default defineComponent({
       }
     }
 
-    function onEntraSelect(logins: string[], label: string) {
+    function onEntraSelect(logins: string[], label: string, upn?: string) {
       entraFilterLogins.value = logins
       entraFilterLabel.value = label
+      entraFilterUpn.value = upn ?? ''
+      if (logins.length === 0) {
+        entraOrgData.value = null
+        // If we're on a /reportsto/ URL, navigate back to the base org/enterprise URL
+        if (route.params.upn) {
+          const base = route.params.org
+            ? `/orgs/${route.params.org}`
+            : `/enterprises/${route.params.ent}`
+          const query = route.query.mock ? `?mock=${route.query.mock}` : ''
+          router.replace(base + query)
+        }
+      }
       if (logins.length > 0) loadEntraOrgMetrics()
     }
 
@@ -1266,7 +1326,13 @@ export default defineComponent({
       await loadEnterpriseOrgs()
       await loadTeams()
       // Pre-fetch all user metrics so ReportsToFilter can match Entra UPNs to logins
-      if (props.entraEnabled) loadAllUserMetrics()
+      if (props.entraEnabled) {
+        await loadAllUserMetrics()
+        // Signal ReportsToFilter to auto-activate if a UPN was provided via URL
+        if (props.initialUpn) {
+          resolvedInitialUpn.value = props.initialUpn
+        }
+      }
     })
 
     watch(selectedTeams, async () => { await updateChartData() })
@@ -1320,6 +1386,7 @@ export default defineComponent({
       // Entra org filter
       entraFilterLogins,
       entraFilterLabel,
+      entraFilterUpn,
       entraFilterActive,
       entraOnlyMode,
       allUserMetrics,
@@ -1327,6 +1394,10 @@ export default defineComponent({
       entraOrgData,
       entraOrgLoading,
       onEntraSelect,
+      resolvedInitialUpn,
+      getReportsToUrl,
+      permalinkCopied,
+      copyPermalink,
       // comparison
       comparisonSummaryCards,
       comparisonModelsData,
