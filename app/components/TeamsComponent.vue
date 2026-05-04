@@ -145,7 +145,7 @@
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
                 <span>Active Users</span>
-                <span class="font-weight-medium">{{ card.activeUsers }}</span>
+                <span class="font-weight-medium">{{ card.activeUsers }}{{ singleTeamUserMetrics.length ? ` / ${singleTeamUserMetrics.length}` : '' }}</span>
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
                 <span>Acceptance Rate</span>
