@@ -144,8 +144,8 @@
                 </v-btn>
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
-                <span>Active Users</span>
-                <span class="font-weight-medium">{{ card.activeUsers }}{{ singleTeamUserMetrics.length ? ` / ${singleTeamUserMetrics.length}` : '' }}</span>
+                <span>Active Users (period)</span>
+                <span class="font-weight-medium">{{ singleTeamUserMetrics.length ? `${singleTeamUserMetrics.filter(u => u.total_active_days > 0).length} / ${singleTeamUserMetrics.length}` : card.activeUsers }}</span>
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
                 <span>Acceptance Rate</span>
