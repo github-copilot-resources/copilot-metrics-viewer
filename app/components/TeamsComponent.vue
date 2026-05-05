@@ -772,13 +772,15 @@ export default defineComponent({
       if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return []
       const td = activeViewData.value
 
+      // Unique users active in the period — prefer user-metrics (per-user totals),
+      // fall back to the max daily_active_users across the date range.
       let activeUsers = 0
-      if (td.reportData.length) {
-        const sorted = [...td.reportData].sort((a, b) => a.day.localeCompare(b.day))
-        activeUsers = sorted.at(-1)?.daily_active_users || 0
+      if (singleTeamUserMetrics.value.length > 0) {
+        activeUsers = singleTeamUserMetrics.value.filter(u => u.total_active_days > 0).length
+      } else if (td.reportData.length) {
+        activeUsers = Math.max(...td.reportData.map(d => d.daily_active_users || 0), 0)
       } else if (td.metrics.length) {
-        const sorted = [...td.metrics].sort((a, b) => a.day.localeCompare(b.day))
-        activeUsers = sorted.at(-1)?.total_active_users || 0
+        activeUsers = Math.max(...td.metrics.map(m => m.total_active_users || 0), 0)
       }
 
       let totalGen = 0, totalAcc = 0
@@ -801,7 +803,7 @@ export default defineComponent({
       const topLang = Object.entries(langAgg).sort((a, b) => b[1].suggestions - a[1].suggestions)[0]?.[0] || '—'
 
       return [
-        { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: props.dateRangeDescription, tooltip: 'Daily active users on the latest available day' },
+        { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: props.dateRangeDescription, tooltip: 'Unique users who used Copilot at least once during the period' },
         { label: 'Acceptance Rate', value: `${acceptanceRate}%`, color: 'success', subtitle: 'Completions accepted ÷ generated', tooltip: 'Weighted code acceptance rate (acceptances ÷ generations) over the date range' },
         { label: 'Interactions', value: totalInteractions ? totalInteractions.toLocaleString() : (totalAcc + totalGen).toLocaleString(), color: 'primary', subtitle: 'User-initiated requests', tooltip: 'Total user-initiated Copilot interactions over the date range' },
         { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' },
