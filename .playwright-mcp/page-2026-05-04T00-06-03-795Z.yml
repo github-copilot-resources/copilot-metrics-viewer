@@ -1,0 +1,130 @@
+- generic [ref=e1]:
+  - button [ref=e2] [cursor=pointer]:
+    - generic [ref=e4]: 󱙺
+  - generic [ref=e7]:
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - button [ref=e12] [cursor=pointer]:
+              - generic [ref=e14]: 󰊤
+            - generic [ref=e16]: "Copilot Metrics Viewer | Organization : octodemo"
+            - heading "Using mock data - see README if unintended" [level=2] [ref=e17]
+            - button "Show date range" [ref=e18] [cursor=pointer]:
+              - generic [ref=e20]: 󰃭
+            - button "Switch to dark mode" [ref=e21] [cursor=pointer]:
+              - generic [ref=e23]: 󰖔
+            - text: 󰀉
+            - button "Authentication info" [ref=e24] [cursor=pointer]:
+              - generic [ref=e26]: 󰢏
+          - tablist [ref=e28]:
+            - generic [ref=e30]:
+              - tab "organization" [ref=e31] [cursor=pointer]:
+                - generic [ref=e32]: organization
+              - tab "teams" [active] [selected] [ref=e33] [cursor=pointer]:
+                - generic [ref=e34]: teams
+              - tab "languages" [ref=e35] [cursor=pointer]:
+                - generic [ref=e36]: languages
+              - tab "editors" [ref=e37] [cursor=pointer]:
+                - generic [ref=e38]: editors
+              - tab "copilot chat" [ref=e39] [cursor=pointer]:
+                - generic [ref=e40]: copilot chat
+              - tab "agent activity" [ref=e41] [cursor=pointer]:
+                - generic [ref=e42]: agent activity
+              - tab "pull requests" [ref=e43] [cursor=pointer]:
+                - generic [ref=e44]: pull requests
+              - tab "models" [ref=e45] [cursor=pointer]:
+                - generic [ref=e46]: models
+              - tab "seat analysis" [ref=e47] [cursor=pointer]:
+                - generic [ref=e48]: seat analysis
+              - tab "user metrics" [ref=e49] [cursor=pointer]:
+                - generic [ref=e50]: user metrics
+              - tab "api response" [ref=e51] [cursor=pointer]:
+                - generic [ref=e52]: api response
+        - text: 󰄱
+        - generic [ref=e60]:
+          - text: 󰏌 󰏌 󰏌 󰔴 󰔴 󰔵 󰕪 󰕰 󰊓
+          - generic [ref=e63]:
+            - generic [ref=e66]:
+              - generic [ref=e67]: 🏢 Teams Dashboard
+              - generic [ref=e68]:
+                - text: Compare Copilot usage across teams. Select
+                - strong [ref=e69]: one team
+                - text: for a full deep-dive view with charts and per-user metrics, or
+                - strong [ref=e70]: multiple teams
+                - text: to compare them side by side.
+            - alert [ref=e71]:
+              - generic [ref=e73]: 󰀨
+              - generic [ref=e74]:
+                - strong [ref=e75]: "Performance notice:"
+                - text: Team metrics are computed by fetching enterprise-wide user data and filtering by team membership. Each team selection triggers a full user-metrics download, which may hit GitHub API rate limits with frequent use. For production use, enable
+                - strong [ref=e76]: historical mode
+                - text: (
+                - code [ref=e77]: ENABLE_HISTORICAL_MODE=true
+                - text: ) to cache data in the database and avoid repeated API calls.
+              - button "Close" [ref=e79] [cursor=pointer]:
+                - generic [ref=e81]: 󰅖
+            - generic [ref=e82]:
+              - generic [ref=e84]:
+                - combobox [ref=e86]:
+                  - generic [ref=e87]:
+                    - generic: Search and select teams
+                    - textbox "Search and select teams Search and select teams" [ref=e89]
+                  - text: 󰅙
+                  - button "Open" [ref=e91] [cursor=pointer]: 󰍝
+                - alert [ref=e93]:
+                  - generic [ref=e94]: Type to filter · 1 team = deep dive · 2+ teams = comparison
+              - generic [ref=e95]:
+                - generic [ref=e96]: Or filter by reporting hierarchy
+                - combobox [ref=e100]:
+                  - generic [ref=e102]: 󱄭
+                  - generic [ref=e103]:
+                    - generic: "Filter: reports to…"
+                    - 'textbox "Filter: reports to… Filter: reports to…" [ref=e105]'
+                  - text: 󰅙
+                  - button "Open" [ref=e107] [cursor=pointer]: 󰍝
+            - generic [ref=e110]:
+              - generic [ref=e111]: 󰭘
+              - heading "No Team Selected" [level=3] [ref=e112]
+              - paragraph [ref=e113]:
+                - text: Select
+                - strong [ref=e114]: one team
+                - text: for a full dashboard view, or
+                - strong [ref=e115]: multiple teams
+                - text: to compare their metrics side by side.
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - generic [ref=e118]: 󰕮
+                  - paragraph [ref=e119]:
+                    - text: 1 team → Deep Dive
+                    - text: Charts, languages, editors, models, users
+                - generic [ref=e120]:
+                  - generic [ref=e121]: 󰆊
+                  - paragraph [ref=e122]:
+                    - text: 2+ teams → Comparison
+                    - text: Side-by-side metrics comparison
+          - text: 󰀨
+    - contentinfo [ref=e55]:
+      - generic [ref=e56]:
+        - text: 2026 —
+        - strong [ref=e57]:
+          - link "Copilot Metrics Viewer" [ref=e58] [cursor=pointer]:
+            - /url: https://github.com/github-copilot-resources/copilot-metrics-viewer
+        - text: — 3.7.0
+  - generic:
+    - img
+  - generic [ref=e123]:
+    - button "Toggle Nuxt DevTools" [ref=e124] [cursor=pointer]:
+      - img [ref=e125]
+    - generic "Page load time" [ref=e128]:
+      - generic [ref=e129]: "342"
+      - generic [ref=e130]: ms
+    - button "Toggle Component Inspector" [ref=e132] [cursor=pointer]:
+      - img [ref=e133]
+  - generic:
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip

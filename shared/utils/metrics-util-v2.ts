@@ -54,7 +54,6 @@ function isLegacyMode(): boolean {
 function isStorageModeEnabled(): boolean {
   const config = useRuntimeConfig();
   return config.public?.enableHistoricalMode === true || 
-         config.public?.enableHistoricalMode === 'true' ||
          process.env.ENABLE_HISTORICAL_MODE === 'true';
 }
 
@@ -143,8 +142,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     : (options.githubOrg || options.githubEnt || '');
   if (isStorageModeEnabled()) {
     // Default to last 28 days if no date range specified
-    const endDate = options.until || new Date().toISOString().split('T')[0];
-    const startDate = options.since || new Date(Date.now() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const endDate = options.until || new Date().toISOString().split('T')[0]!;
+    const startDate = options.since || new Date(Date.now() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
     logger.info(`Historical mode: checking DB for ${identifier} (${startDate} to ${endDate})`);
 
     const isTeamScope = !!options.githubTeam;
@@ -325,9 +324,9 @@ async function fetchAndStore(
   // Store each day's aggregate to DB
   // Both metrics and reportData are sorted by day, so indices align
   for (let i = 0; i < reportData.length; i++) {
-    const dayData = reportData[i];
+    const dayData = reportData[i]!;
     try {
-      await saveMetrics(options.scope!, identifier, dayData.day, metrics[i], teamSlug, dayData);
+      await saveMetrics(options.scope!, identifier, dayData.day, metrics[i]!, teamSlug, dayData);
     } catch (err) {
       logger.error(`Failed to store ${dayData.day}:`, err);
     }

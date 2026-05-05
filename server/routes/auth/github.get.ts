@@ -60,7 +60,7 @@ export default defineOAuthGitHubEventHandler({
 
         // Single org: skip the picker, go straight to the dashboard.
         if (organizations.length === 1) {
-          return sendRedirect(event, `/orgs/${organizations[0].login}`)
+          return sendRedirect(event, `/orgs/${organizations[0]!.login}`)
         }
       } catch (err) {
         console.error('Error fetching installations:', err)

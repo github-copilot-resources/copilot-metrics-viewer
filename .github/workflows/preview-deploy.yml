@@ -399,6 +399,9 @@ jobs:
       pull-requests: write
       deployments: write
 
+    environment:
+      name: preview
+
     env:
       PR_NUMBER: ${{ github.event.pull_request.number || '' }}
 

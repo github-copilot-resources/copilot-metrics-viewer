@@ -16,23 +16,23 @@ describe('API Migration Integration', () => {
       const metrics = transformReportToMetrics(report);
 
       expect(metrics).toHaveLength(3);
-      expect(metrics[0].date).toBe('2026-02-20');
-      expect(metrics[0].total_active_users).toBeGreaterThan(0);
-      expect(metrics[0].copilot_ide_code_completions).toBeDefined();
+      expect(metrics[0]!.date).toBe('2026-02-20');
+      expect(metrics[0]!.total_active_users).toBeGreaterThan(0);
+      expect(metrics[0]!.copilot_ide_code_completions).toBeDefined();
     });
 
     it('should preserve language data through transformation', () => {
       const report = generateMockReport('2026-02-20', '2026-02-20');
       const metrics = transformReportToMetrics(report);
       
-      const completions = metrics[0].copilot_ide_code_completions;
+      const completions = metrics[0]!.copilot_ide_code_completions;
       expect(completions?.editors?.length).toBeGreaterThan(0);
       expect(completions?.languages?.length).toBeGreaterThan(0);
     });
 
     it('should sort transformed metrics chronologically when report day_totals are out of order', () => {
       const report = generateMockReport('2026-02-20', '2026-02-22');
-      report.day_totals = [report.day_totals[2], report.day_totals[0], report.day_totals[1]];
+      report.day_totals = [report.day_totals[2]!, report.day_totals[0]!, report.day_totals[1]!];
 
       const metrics = transformReportToMetrics(report);
 
@@ -84,7 +84,7 @@ describe('API Migration Integration', () => {
 
       const current = new Date(start);
       while (current <= end) {
-        dates.push(current.toISOString().split('T')[0]);
+        dates.push(current.toISOString().split('T')[0]!);
         current.setDate(current.getDate() + 1);
       }
 

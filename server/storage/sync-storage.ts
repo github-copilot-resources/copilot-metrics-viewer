@@ -150,7 +150,7 @@ function rowToSyncStatus(row: Record<string, unknown>): SyncStatus {
     scope: row.scope as string,
     scopeIdentifier: row.identifier as string,
     teamSlug: (row.team_slug as string) || undefined,
-    metricsDate: (row.metrics_date as Date).toISOString().split('T')[0],
+    metricsDate: (row.metrics_date as Date).toISOString().split('T')[0]!,
     status: row.status as SyncStatus['status'],
     errorMessage: row.error_message as string | undefined,
     attemptCount: row.attempt_count as number,

@@ -103,7 +103,7 @@ describe('fetchSamlIdentities', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2)
 
     // Second call should include the cursor
-    const body2 = JSON.parse(mockFetch.mock.calls[1][1].body)
+    const body2 = JSON.parse(mockFetch.mock.calls[1]![1].body)
     expect(body2.variables.after).toBe('cursor-abc')
   })
 
@@ -163,6 +163,6 @@ describe('fetchSamlIdentities', () => {
 
     await fetchSamlIdentities('my-org', 'token', 'https://ghes.example.com')
 
-    expect(mockFetch.mock.calls[0][0]).toBe('https://ghes.example.com/graphql')
+    expect(mockFetch.mock.calls[0]![0]).toBe('https://ghes.example.com/graphql')
   })
 })

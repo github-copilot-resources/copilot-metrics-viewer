@@ -21,7 +21,7 @@ function parseLinkHeader(linkHeader: string | null): Record<string, string> {
         const match = section.match(/^<([^>]+)>;\s*rel="([^"]+)"/)
         if (match) {
             const [, url, rel] = match
-            links[rel] = url
+            if (rel && url) links[rel] = url
         }
     }
     return links

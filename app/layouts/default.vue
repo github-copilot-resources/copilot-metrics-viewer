@@ -20,7 +20,7 @@ const version = computed(() => config.public.version);
 const deployInfo = computed(() => config.public.deployInfo);
 const route = useRoute();
 const isMockMode = computed(() =>
-  config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+  !!config.public.isDataMocked ||
   route.query.mock === 'true' || route.query.mock === '1'
 );
 const pageTitle = computed(() => resolveDisplayName({

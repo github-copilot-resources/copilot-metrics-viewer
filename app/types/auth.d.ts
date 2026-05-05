@@ -2,9 +2,11 @@
 
 declare module '#auth-utils' {
     interface User {
+        login: string;
         name: string;
         avatarUrl: string;
-        githubId: number;
+        githubId?: number;
+        email?: string;
     }
 
     // interface UserSession {

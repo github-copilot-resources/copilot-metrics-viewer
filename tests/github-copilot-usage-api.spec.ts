@@ -54,10 +54,10 @@ describe('GitHub Copilot Usage API', () => {
       expect(report.report_start_day).toBe('2026-02-20');
       expect(report.report_end_day).toBe('2026-02-22');
       expect(report.day_totals).toHaveLength(3);
-      expect(report.day_totals[0].day).toBe('2026-02-20');
-      expect(report.day_totals[0].daily_active_users).toBeGreaterThan(0);
-      expect(report.day_totals[0].totals_by_ide.length).toBeGreaterThan(0);
-      expect(report.day_totals[0].totals_by_feature.length).toBeGreaterThan(0);
+      expect(report.day_totals[0]!.day).toBe('2026-02-20');
+      expect(report.day_totals[0]!.daily_active_users).toBeGreaterThan(0);
+      expect(report.day_totals[0]!.totals_by_ide.length).toBeGreaterThan(0);
+      expect(report.day_totals[0]!.totals_by_feature.length).toBeGreaterThan(0);
     });
 
     it('should generate mock download links for 28-day report', () => {
@@ -104,7 +104,7 @@ describe('GitHub Copilot Usage API', () => {
   describe('Report Transformer', () => {
     it('should transform a day_totals entry to CopilotMetrics format', () => {
       const report = generateMockReport('2026-02-20', '2026-02-20');
-      const dayData = report.day_totals[0];
+      const dayData = report.day_totals[0]!;
       const metrics = transformDayToMetrics(dayData);
 
       expect(metrics.date).toBe('2026-02-20');
@@ -119,9 +119,9 @@ describe('GitHub Copilot Usage API', () => {
       const metrics = transformReportToMetrics(report);
 
       expect(metrics).toHaveLength(3);
-      expect(metrics[0].date).toBe('2026-02-18');
-      expect(metrics[1].date).toBe('2026-02-19');
-      expect(metrics[2].date).toBe('2026-02-20');
+      expect(metrics[0]!.date).toBe('2026-02-18');
+      expect(metrics[1]!.date).toBe('2026-02-19');
+      expect(metrics[2]!.date).toBe('2026-02-20');
 
       // Verify each has proper structure
       metrics.forEach(m => {
@@ -135,8 +135,7 @@ describe('GitHub Copilot Usage API', () => {
 
     it('should map language data from totals_by_language_feature', () => {
       const report = generateMockReport('2026-02-20', '2026-02-20');
-      const metrics = transformDayToMetrics(report.day_totals[0]);
-
+      const metrics = transformDayToMetrics(report.day_totals[0]!);
       const completions = metrics.copilot_ide_code_completions;
       expect(completions?.languages?.length).toBeGreaterThan(0);
       expect(completions?.editors?.[0]?.models?.length).toBeGreaterThan(0);
@@ -151,7 +150,7 @@ describe('GitHub Copilot Usage API', () => {
 
     it('should map chat data from totals_by_feature', () => {
       const report = generateMockReport('2026-02-20', '2026-02-20');
-      const metrics = transformDayToMetrics(report.day_totals[0]);
+      const metrics = transformDayToMetrics(report.day_totals[0]!);
 
       const chat = metrics.copilot_ide_chat;
       expect(chat?.editors?.length).toBeGreaterThan(0);
@@ -338,9 +337,9 @@ describe('GitHub Copilot Usage API', () => {
     it('should preserve all fields from flat ReportDayTotals in the wrapped day_totals entry', () => {
       const result = normalizeReportResponse(flatDayTotals);
 
-      expect(result.day_totals[0].daily_active_users).toBe(201);
-      expect(result.day_totals[0].weekly_active_users).toBe(850);
-      expect(result.day_totals[0].loc_suggested_to_add_sum).toBe(1000);
+      expect(result.day_totals[0]!.daily_active_users).toBe(201);
+      expect(result.day_totals[0]!.weekly_active_users).toBe(850);
+      expect(result.day_totals[0]!.loc_suggested_to_add_sum).toBe(1000);
     });
   });
 

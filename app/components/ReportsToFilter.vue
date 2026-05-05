@@ -16,7 +16,7 @@ const emit = defineEmits<{
 const config = useRuntimeConfig()
 const route = useRoute()
 const isMockMode = computed(() =>
-  config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+  !!config.public.isDataMocked ||
   route.query.mock === 'true' || route.query.mock === '1'
 )
 

@@ -9,7 +9,7 @@ import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, gen
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
 import { $fetch as _ofetch } from 'ofetch';
-const _fetch = typeof $fetch !== 'undefined' ? $fetch : _ofetch;
+const _fetch: typeof _ofetch = typeof $fetch !== 'undefined' ? ($fetch as typeof _ofetch) : _ofetch;
 
 // --- API Response Types ---
 
@@ -174,9 +174,11 @@ export interface UserDayRecord {
   loc_deleted_sum: number;
   used_agent?: boolean;
   used_chat?: boolean;
+  used_cli?: boolean;
   totals_by_ide?: UserIdeTotals[];
   totals_by_feature?: UserFeatureTotals[];
   totals_by_language_feature?: UserLanguageFeatureTotals[];
+  totals_by_language_model?: ReportLanguageModelTotals[];
   totals_by_model_feature?: UserModelFeatureTotals[];
 }
 
@@ -455,9 +457,9 @@ export async function requestDownloadLinks(
 
   // Build clean headers: start from auth middleware headers, then override API version.
   // Headers.entries() lowercases keys, so we normalize to avoid duplicate version headers.
-  const rawHeaders = headers instanceof Headers
+  const rawHeaders: Record<string, string> = headers instanceof Headers
     ? Object.fromEntries(headers.entries())
-    : { ...headers };
+    : { ...(headers as Record<string, string>) };
   // Remove any existing api-version header (lowercase from Headers) before setting the correct one
   delete rawHeaders['x-github-api-version'];
   rawHeaders['X-GitHub-Api-Version'] = '2026-03-10';
@@ -485,7 +487,7 @@ export async function requestDownloadLinks(
  */
 export function normalizeReportResponse(response: OrgReport | ReportDayTotals): OrgReport {
   // 1-day endpoint returns a flat ReportDayTotals (has `day` but no `day_totals` array)
-  if (response && 'day' in response && !Array.isArray((response as OrgReport).day_totals)) {
+  if (response && 'day' in response && !Array.isArray((response as unknown as OrgReport).day_totals)) {
     const dayTotals = response as ReportDayTotals;
     return {
       report_start_day: dayTotals.day,
@@ -497,7 +499,7 @@ export function normalizeReportResponse(response: OrgReport | ReportDayTotals): 
     };
   }
 
-  return response as OrgReport;
+  return response as unknown as OrgReport;
 }
 
 /**
@@ -520,7 +522,7 @@ export async function downloadReport(
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function toDateString(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split('T')[0] ?? '';
 }
 
 /**
@@ -532,7 +534,7 @@ function shiftReportDatesToToday(report: OrgReport): OrgReport {
   if (!report.day_totals || report.day_totals.length === 0) return report;
 
   const sorted = [...report.day_totals].sort((a, b) => a.day.localeCompare(b.day));
-  const lastDay = sorted[sorted.length - 1].day;
+  const lastDay = sorted[sorted.length - 1]!.day;
   const today = toDateString(new Date());
   const daysDiff = Math.round(
     (new Date(today).getTime() - new Date(lastDay).getTime()) / MS_PER_DAY
@@ -547,8 +549,8 @@ function shiftReportDatesToToday(report: OrgReport): OrgReport {
 
   return {
     ...report,
-    report_start_day: shiftedTotals[0].day,
-    report_end_day: shiftedTotals[shiftedTotals.length - 1].day,
+    report_start_day: shiftedTotals[0]!.day,
+    report_end_day: shiftedTotals[shiftedTotals.length - 1]!.day,
     day_totals: shiftedTotals,
   };
 }
@@ -582,7 +584,7 @@ export async function fetchLatestReport(
   );
 
   // Merge: use first report as base, combine day_totals from all files
-  const merged = { ...reports[0] };
+  const merged = { ...reports[0]! };
   if (reports.length > 1) {
     merged.day_totals = reports.flatMap(r => r.day_totals);
   }
@@ -614,7 +616,7 @@ export async function fetchReportForDate(
     download_links.map(url => downloadReport(url, request.identifier))
   );
 
-  const merged = { ...reports[0] };
+  const merged = { ...reports[0]! };
   if (reports.length > 1) {
     merged.day_totals = reports.flatMap(r => r.day_totals);
   }
@@ -692,9 +694,9 @@ export async function requestUserDownloadLinks(
 
   const url = buildUserReportUrl(request, reportType, day);
 
-  const rawHeaders = headers instanceof Headers
+  const rawHeaders: Record<string, string> = headers instanceof Headers
     ? Object.fromEntries(headers.entries())
-    : { ...headers };
+    : { ...(headers as Record<string, string>) };
   delete rawHeaders['x-github-api-version'];
   rawHeaders['X-GitHub-Api-Version'] = '2026-03-10';
 
@@ -717,10 +719,8 @@ export async function requestUserDownloadLinks(
  */
 export async function downloadUserReport(downloadUrl: string): Promise<UserReport> {
   const raw = await _fetch<unknown>(downloadUrl, {
-    responseType: 'text',
+    responseType: 'text' as 'json',
   });
-
-  // Parse the response text into an array of records
   let records: unknown[];
   if (typeof raw === 'string') {
     const trimmed = raw.trim();
@@ -800,7 +800,7 @@ export async function fetchLatestUserReport(
   );
 
   // Merge: use first report as base, combine user_totals from all files
-  const merged: UserReport = { ...reports[0] };
+  const merged: UserReport = { ...reports[0]! };
   merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
 
   return merged;
@@ -824,7 +824,7 @@ export async function fetchUserReportForDate(
     download_links.map(url => downloadUserReport(url))
   );
 
-  const merged: UserReport = { ...reports[0] };
+  const merged: UserReport = { ...reports[0]! };
   merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
 
   return merged;
@@ -838,7 +838,7 @@ export async function fetchUserReportForDate(
  * team-level metrics can be computed for any arbitrary date range beyond 28 days.
  */
 export async function downloadUserDayRecords(downloadUrl: string): Promise<UserDayRecord[]> {
-  const raw = await _fetch<unknown>(downloadUrl, { responseType: 'text' });
+  const raw = await _fetch<unknown>(downloadUrl, { responseType: 'text' as 'json' });
 
   let records: unknown[];
   if (typeof raw === 'string') {

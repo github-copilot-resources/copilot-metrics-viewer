@@ -9,7 +9,7 @@ export default defineOAuthMicrosoftEventHandler({
       user: {
         login: email,
         name: user.displayName,
-        avatarUrl: undefined
+        avatarUrl: ''
       }
     })
 

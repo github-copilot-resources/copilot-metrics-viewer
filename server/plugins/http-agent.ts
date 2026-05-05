@@ -7,9 +7,8 @@ export default defineNitroPlugin((nitro) => {
   if (proxyAgent) {
     const fetchWithProxy = ofetch.create({
       dispatcher: proxyAgent,
-      httpsProxy: process.env.HTTP_PROXY,
       proxy: false
-    });
+    } as Parameters<typeof ofetch.create>[0]);
 
     nitro.hooks.hook('request', (context) => {
       context.fetch = fetchWithProxy;

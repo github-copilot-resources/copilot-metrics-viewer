@@ -210,26 +210,26 @@ export default defineComponent({
       prActivityChartData.value = {
         labels,
         datasets: [
-          { label: 'Created',  data: data.map(d => d.pull_requests?.total_created  || 0), borderColor: PALETTE[0].border, backgroundColor: PALETTE[0].bg, fill: true, tension: 0.3 },
-          { label: 'Reviewed', data: data.map(d => d.pull_requests?.total_reviewed || 0), borderColor: PALETTE[1].border, backgroundColor: PALETTE[1].bg, fill: true, tension: 0.3 },
-          { label: 'Merged',   data: data.map(d => d.pull_requests?.total_merged   || 0), borderColor: PALETTE[2].border, backgroundColor: PALETTE[2].bg, fill: true, tension: 0.3 },
+          { label: 'Created',  data: data.map(d => d.pull_requests?.total_created  || 0), borderColor: PALETTE[0]!.border, backgroundColor: PALETTE[0]!.bg, fill: true, tension: 0.3 },
+          { label: 'Reviewed', data: data.map(d => d.pull_requests?.total_reviewed || 0), borderColor: PALETTE[1]!.border, backgroundColor: PALETTE[1]!.bg, fill: true, tension: 0.3 },
+          { label: 'Merged',   data: data.map(d => d.pull_requests?.total_merged   || 0), borderColor: PALETTE[2]!.border, backgroundColor: PALETTE[2]!.bg, fill: true, tension: 0.3 },
         ],
       };
 
       copilotPrChartData.value = {
         labels,
         datasets: [
-          { label: 'Created by Copilot',  data: data.map(d => d.pull_requests?.total_created_by_copilot  || 0), borderColor: PALETTE[3].border, backgroundColor: PALETTE[3].bg },
-          { label: 'Reviewed by Copilot', data: data.map(d => d.pull_requests?.total_reviewed_by_copilot || 0), borderColor: PALETTE[4].border, backgroundColor: PALETTE[4].bg },
+          { label: 'Created by Copilot',  data: data.map(d => d.pull_requests?.total_created_by_copilot  || 0), borderColor: PALETTE[3]!.border, backgroundColor: PALETTE[3]!.bg },
+          { label: 'Reviewed by Copilot', data: data.map(d => d.pull_requests?.total_reviewed_by_copilot || 0), borderColor: PALETTE[4]!.border, backgroundColor: PALETTE[4]!.bg },
         ],
       };
 
       reviewSuggestionsChartData.value = {
         labels,
         datasets: [
-          { label: 'Review Suggestions',  data: data.map(d => d.pull_requests?.total_suggestions         || 0), borderColor: PALETTE[5].border, backgroundColor: PALETTE[5].bg, fill: true, tension: 0.3 },
-          { label: 'Applied Suggestions', data: data.map(d => d.pull_requests?.total_applied_suggestions || 0), borderColor: PALETTE[6].border, backgroundColor: PALETTE[6].bg, fill: true, tension: 0.3 },
-          { label: 'Copilot Suggestions', data: data.map(d => d.pull_requests?.total_copilot_suggestions || 0), borderColor: PALETTE[2].border, backgroundColor: PALETTE[2].bg, fill: true, tension: 0.3 },
+          { label: 'Review Suggestions',  data: data.map(d => d.pull_requests?.total_suggestions         || 0), borderColor: PALETTE[5]!.border, backgroundColor: PALETTE[5]!.bg, fill: true, tension: 0.3 },
+          { label: 'Applied Suggestions', data: data.map(d => d.pull_requests?.total_applied_suggestions || 0), borderColor: PALETTE[6]!.border, backgroundColor: PALETTE[6]!.bg, fill: true, tension: 0.3 },
+          { label: 'Copilot Suggestions', data: data.map(d => d.pull_requests?.total_copilot_suggestions || 0), borderColor: PALETTE[2]!.border, backgroundColor: PALETTE[2]!.bg, fill: true, tension: 0.3 },
         ],
       };
     });

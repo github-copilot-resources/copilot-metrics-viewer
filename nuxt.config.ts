@@ -64,6 +64,7 @@ export default defineNuxtConfig({
   },
 
   auth: {
+    // @ts-expect-error - 'github' is a valid runtime option but not in ModuleOptions types
     github: {
       enabled: true,
       clientId: '',

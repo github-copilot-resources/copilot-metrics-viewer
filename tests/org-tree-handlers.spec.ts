@@ -189,7 +189,7 @@ describe('org-search handler (delegated token)', () => {
     const handler = await loadSearchHandler(false)
     const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
     const mockFn = vi.mocked(searchUsersWithToken)
-    mockFn.mockResolvedValue([{ id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com' }])
+    mockFn.mockResolvedValue([{ id: 'u1', displayName: 'Alice', userPrincipalName: 'alice@example.com', mail: null, jobTitle: null, department: null, officeLocation: null }])
 
     const result = await handler({
       _query: { q: 'alice' },

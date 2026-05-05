@@ -34,3 +34,7 @@ results.xml
 
 cody-test-org
 AgentPlan.md
+
+# Temporary output files
+typecheck-output.txt
+errors-grouped.txt

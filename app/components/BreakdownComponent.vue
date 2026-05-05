@@ -233,8 +233,8 @@
                     <td class="pl-4 text-caption font-weight-medium">{{ row.language }}</td>
                     <td v-for="rank in 3" :key="rank" class="text-caption">
                       <template v-if="topUsersPerLanguage.get(row.language)?.[rank - 1]">
-                        <span class="font-weight-medium">{{ topUsersPerLanguage.get(row.language)![rank - 1].login }}</span>
-                        <span class="text-medium-emphasis ml-1">({{ topUsersPerLanguage.get(row.language)![rank - 1].gen }})</span>
+                        <span class="font-weight-medium">{{ topUsersPerLanguage.get(row.language)![rank - 1]!.login }}</span>
+                        <span class="text-medium-emphasis ml-1">({{ topUsersPerLanguage.get(row.language)![rank - 1]!.gen }})</span>
                       </template>
                       <span v-else class="text-disabled">—</span>
                     </td>
@@ -267,8 +267,8 @@
                     <td class="pl-4 text-caption font-weight-medium">{{ row.ide }}</td>
                     <td v-for="rank in 3" :key="rank" class="text-caption">
                       <template v-if="topUsersPerEditor.get(row.ide)?.[rank - 1]">
-                        <span class="font-weight-medium">{{ topUsersPerEditor.get(row.ide)![rank - 1].login }}</span>
-                        <span class="text-medium-emphasis ml-1">({{ topUsersPerEditor.get(row.ide)![rank - 1].gen }})</span>
+                        <span class="font-weight-medium">{{ topUsersPerEditor.get(row.ide)![rank - 1]!.login }}</span>
+                        <span class="text-medium-emphasis ml-1">({{ topUsersPerEditor.get(row.ide)![rank - 1]!.gen }})</span>
                       </template>
                       <span v-else class="text-disabled">—</span>
                     </td>
@@ -564,15 +564,15 @@ export default defineComponent({
           const lang = lf.language ?? 'Unknown';
           if (!langActByDay[lang]) langActByDay[lang] = data.map(() => 0);
           const cnt = lf.code_generation_activity_count ?? 0;
-          langActByDay[lang][idx] += cnt;
-          langDayTotals[idx] += cnt;
+          langActByDay[lang]![idx] = (langActByDay[lang]![idx] ?? 0) + cnt;
+          langDayTotals[idx] = (langDayTotals[idx] ?? 0) + cnt;
         });
       });
       const allLangsSorted = Object.entries(langActByDay).sort((a, b) =>
         b[1].reduce((s, v) => s + v, 0) - a[1].reduce((s, v) => s + v, 0));
       const top5Langs = allLangsSorted.slice(0, 5);
       const otherLangsData = allLangsSorted.slice(5).reduce(
-        (acc, [, vals]) => acc.map((v, i) => v + vals[i]),
+        (acc, [, vals]) => acc.map((v, i) => v + (vals[i] ?? 0)),
         data.map(() => 0)
       );
       usagePerDayChartData.value = {
@@ -580,17 +580,17 @@ export default defineComponent({
         datasets: [
           ...top5Langs.map(([lang, vals], i) => ({
             label: lang,
-            data: vals.map((v, idx) => langDayTotals[idx] > 0 ? parseFloat((v / langDayTotals[idx] * 100).toFixed(2)) : 0),
-            backgroundColor: PALETTE[i % PALETTE.length].bg,
-            borderColor: PALETTE[i % PALETTE.length].border,
+            data: vals.map((v, idx) => { const dt = langDayTotals[idx] ?? 0; return dt > 0 ? parseFloat((v / dt * 100).toFixed(2)) : 0; }),
+            backgroundColor: PALETTE[i % PALETTE.length]!.bg,
+            borderColor: PALETTE[i % PALETTE.length]!.border,
             fill: 'stack' as const,
             tension: 0.3,
           })),
           ...(allLangsSorted.length > 5 ? [{
             label: 'Other',
-            data: otherLangsData.map((v, idx) => langDayTotals[idx] > 0 ? parseFloat((v / langDayTotals[idx] * 100).toFixed(2)) : 0),
-            backgroundColor: PALETTE[5 % PALETTE.length].bg,
-            borderColor: PALETTE[5 % PALETTE.length].border,
+            data: otherLangsData.map((v, idx) => { const dt = langDayTotals[idx] ?? 0; return dt > 0 ? parseFloat((v / dt * 100).toFixed(2)) : 0; }),
+            backgroundColor: PALETTE[5 % PALETTE.length]!.bg,
+            borderColor: PALETTE[5 % PALETTE.length]!.border,
             fill: 'stack' as const,
             tension: 0.3,
           }] : []),
@@ -603,8 +603,8 @@ export default defineComponent({
         labels: langAgg.map(l => l.lang),
         datasets: [{
           data: langAgg.map(l => l.total),
-          backgroundColor: langAgg.map((_, i) => PALETTE[i % PALETTE.length].bg),
-          borderColor: langAgg.map((_, i) => PALETTE[i % PALETTE.length].border),
+          backgroundColor: langAgg.map((_, i) => PALETTE[i % PALETTE.length]!.bg),
+          borderColor: langAgg.map((_, i) => PALETTE[i % PALETTE.length]!.border),
         }],
       };
 
@@ -625,8 +625,8 @@ export default defineComponent({
         datasets: modelKeys.map((model, i) => ({
           label: model,
           data: topLangLabels.map(lang => langModelMatrix[lang]?.[model] ?? 0),
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
-          borderColor: PALETTE[i % PALETTE.length].border,
+          backgroundColor: PALETTE[i % PALETTE.length]!.bg,
+          borderColor: PALETTE[i % PALETTE.length]!.border,
         })),
       };
     };
@@ -699,8 +699,8 @@ export default defineComponent({
           const ide = entry.ide;
           if (!ideActByDay[ide]) ideActByDay[ide] = data.map(() => 0);
           const cnt = entry.code_generation_activity_count ?? 0;
-          ideActByDay[ide][idx] += cnt;
-          ideDayTotals[idx] += cnt;
+          ideActByDay[ide]![idx] = (ideActByDay[ide]![idx] ?? 0) + cnt;
+          ideDayTotals[idx] = (ideDayTotals[idx] ?? 0) + cnt;
         });
       });
       const allIdesSorted = Object.entries(ideActByDay).sort((a, b) =>
@@ -709,9 +709,9 @@ export default defineComponent({
         labels,
         datasets: allIdesSorted.map(([ide, vals], i) => ({
           label: ide,
-          data: vals.map((v, idx) => ideDayTotals[idx] > 0 ? parseFloat((v / ideDayTotals[idx] * 100).toFixed(2)) : 0),
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
-          borderColor: PALETTE[i % PALETTE.length].border,
+          data: vals.map((v, idx) => { const dt = ideDayTotals[idx] ?? 0; return dt > 0 ? parseFloat((v / dt * 100).toFixed(2)) : 0; }),
+          backgroundColor: PALETTE[i % PALETTE.length]!.bg,
+          borderColor: PALETTE[i % PALETTE.length]!.border,
           fill: 'stack' as const,
           tension: 0.3,
         })),
@@ -723,8 +723,8 @@ export default defineComponent({
         labels: ideAgg.map(l => l.ide),
         datasets: [{
           data: ideAgg.map(l => l.total),
-          backgroundColor: ideAgg.map((_, i) => PALETTE[i % PALETTE.length].bg),
-          borderColor: ideAgg.map((_, i) => PALETTE[i % PALETTE.length].border),
+          backgroundColor: ideAgg.map((_, i) => PALETTE[i % PALETTE.length]!.bg),
+          borderColor: ideAgg.map((_, i) => PALETTE[i % PALETTE.length]!.border),
         }],
       };
 
@@ -933,10 +933,10 @@ export default defineComponent({
     },
     topItemName(): string {
       if (this.breakdownKey === 'language' && this.enhancedLanguageList.length > 0) {
-        return this.enhancedLanguageList[0].language;
+        return this.enhancedLanguageList[0]!.language;
       }
       if (this.breakdownKey === 'editor' && this.enhancedEditorList.length > 0) {
-        return this.enhancedEditorList[0].ide.replace(/\s*\(copilot_cli\)/, '');
+        return this.enhancedEditorList[0]!.ide.replace(/\s*\(copilot_cli\)/, '');
       }
       return '';
     },
@@ -965,7 +965,7 @@ export default defineComponent({
       };
       return map[feature] || 'blue-grey';
     },
-    featureChipVariant(feature: string): string {
+    featureChipVariant(feature: string): 'flat' | 'text' | 'elevated' | 'tonal' | 'outlined' | 'plain' {
       // Highlight agent_edit distinctly
       return (feature === 'agent_edit' || feature === 'copilot_ide_agent_edit') ? 'elevated' : 'tonal';
     },

@@ -282,7 +282,7 @@
 <script lang="ts">
 import { defineComponent, ref, toRef, watchEffect } from 'vue';
 import type { Metrics } from '@/model/Metrics';
-import type { ReportDayTotals } from '@/server/services/github-copilot-usage-api';
+import type { ReportDayTotals } from '#server/services/github-copilot-usage-api';
 import { weekendPlugin, gradientFillPlugin, PALETTE, formatCompact as fmtCompact } from '@/utils/chartPlugins';
 import {
   Chart as ChartJS,
@@ -510,7 +510,7 @@ export default defineComponent({
       if (!data || data.length === 0) return;
 
       // ── KPI: adoption ─────────────────────────────────────────────────
-      const latest = data[data.length - 1];
+      const latest = data[data.length - 1]!;
       ideActiveUsers.value = latest.monthly_active_users ?? 0;
       agentAdoptionNum.value = latest.monthly_active_agent_users ?? 0;
       agentAdoptionPct.value = ideActiveUsers.value > 0
@@ -650,8 +650,8 @@ export default defineComponent({
         datasets: allFeatureKeys.map((fk, i) => ({
           label: featureLabel(fk),
           data: data.map(d => (d.totals_by_feature ?? []).find(f => f.feature === fk)?.user_initiated_interaction_count ?? 0),
-          borderColor: PALETTE[i % PALETTE.length].border,
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
+          borderColor: PALETTE[i % PALETTE.length]!.border,
+          backgroundColor: PALETTE[i % PALETTE.length]!.bg,
           fill: false, tension: 0.3,
         }))
       };
@@ -670,8 +670,8 @@ export default defineComponent({
         datasets: [{
           label: 'Total interactions',
           data: topFeatures.map(([, v]) => v),
-          backgroundColor: topFeatures.map((_, i) => PALETTE[i % PALETTE.length].bg),
-          borderColor: topFeatures.map((_, i) => PALETTE[i % PALETTE.length].border),
+          backgroundColor: topFeatures.map((_, i) => PALETTE[i % PALETTE.length]!.bg),
+          borderColor: topFeatures.map((_, i) => PALETTE[i % PALETTE.length]!.border),
           borderWidth: 1,
         }]
       };
@@ -707,9 +707,8 @@ export default defineComponent({
         datasets: featureKeys.map((fk, i) => ({
           label: featureLabel(fk),
           data: data.map(d => (d.totals_by_feature ?? []).find(f => f.feature === fk)?.user_initiated_interaction_count ?? 0),
-          backgroundColor: PALETTE[i % PALETTE.length].bg,
-          borderColor: PALETTE[i % PALETTE.length].border,
-          stack: 'modes',
+          backgroundColor: PALETTE[i % PALETTE.length]!.bg,
+          borderColor: PALETTE[i % PALETTE.length]!.border,
         }))
       };
 

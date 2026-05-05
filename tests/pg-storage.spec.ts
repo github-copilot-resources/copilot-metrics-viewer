@@ -110,7 +110,7 @@ function mockMetrics(date: string): CopilotMetrics {
     date,
     total_active_users: 50,
     total_engaged_users: 40,
-    copilot_ide_code_completions: { editors: [], languages: [], total_code_acceptances: 100, total_code_suggestions: 200, total_code_lines_accepted: 500, total_code_lines_suggested: 1000 },
+    copilot_ide_code_completions: { editors: [], languages: [], total_code_acceptances: 100, total_code_suggestions: 200, total_code_lines_accepted: 500, total_code_lines_suggested: 1000, total_engaged_users: 40 },
     copilot_ide_chat: { editors: [], total_chats: 30, total_chat_copy_events: 5, total_chat_insertion_events: 10 },
     copilot_dotcom_chat: { models: [], total_chats: 20 },
     copilot_dotcom_pull_requests: { repositories: [], total_pr_summaries_created: 5 },
@@ -121,7 +121,7 @@ function mockMetrics(date: string): CopilotMetrics {
     total_active_chat_users: 25,
     total_chat_acceptances: 15,
     total_chat_turns: 30,
-  } as CopilotMetrics;
+  } as unknown as CopilotMetrics;
 }
 
 // Minimal ReportDayTotals fixture for hasMetrics (requires report_data IS NOT NULL)
@@ -190,8 +190,8 @@ describe('PostgreSQL Storage Layer', () => {
       });
 
       expect(results).toHaveLength(4);
-      expect(results[0].date).toBe('2026-02-11');
-      expect(results[3].date).toBe('2026-02-14');
+      expect(results[0]!.date).toBe('2026-02-11');
+      expect(results[3]!.date).toBe('2026-02-14');
     }, 15000);
 
     it('should check existence with hasMetrics', async () => {
@@ -293,7 +293,7 @@ describe('PostgreSQL Storage Layer', () => {
 
       const failed = await getFailedSyncs();
       expect(failed).toHaveLength(1);
-      expect(failed[0].errorMessage).toBe('error');
+      expect(failed[0]!.errorMessage).toBe('error');
     });
 
     it('should throw when marking non-existent sync', async () => {
@@ -314,7 +314,7 @@ describe('PostgreSQL Storage Layer', () => {
       const result = await getSeats('organization', 'test-org', '2026-02-15');
       expect(result).not.toBeNull();
       expect(result).toHaveLength(2);
-      expect(result![0].login).toBe('user1');
+      expect(result![0]!.login).toBe('user1');
     });
 
     it('should get latest seats snapshot', async () => {
@@ -343,20 +343,20 @@ describe('PostgreSQL Storage Layer', () => {
 
       const history = await getSeatsHistorySummary('organization', 'test-org');
       expect(history).toHaveLength(2);
-      expect(history[0].snapshot_date).toBe('2026-02-14');
-      expect(history[1].snapshot_date).toBe('2026-02-15');
+      expect(history[0]!.snapshot_date).toBe('2026-02-14');
+      expect(history[1]!.snapshot_date).toBe('2026-02-15');
     });
 
     it('should count total_seats correctly', async () => {
       await saveSeats('organization', 'test-org', '2026-02-15', makeSeats([null, '2026-02-15', '2026-02-01']) as any);
       const [entry] = await getSeatsHistorySummary('organization', 'test-org');
-      expect(entry.total_seats).toBe(3);
+      expect(entry!.total_seats).toBe(3);
     });
 
     it('should count never_active seats', async () => {
       await saveSeats('organization', 'test-org', '2026-02-15', makeSeats([null, null, '2026-02-15']) as any);
       const [entry] = await getSeatsHistorySummary('organization', 'test-org');
-      expect(entry.never_active).toBe(2);
+      expect(entry!.never_active).toBe(2);
     });
 
     it('should count inactive_7d using snapshot date as reference', async () => {
@@ -368,7 +368,7 @@ describe('PostgreSQL Storage Layer', () => {
       ]);
       await saveSeats('organization', 'test-org', '2026-03-01', seats as any);
       const [entry] = await getSeatsHistorySummary('organization', 'test-org');
-      expect(entry.inactive_7d).toBe(2);  // user0 + null user
+      expect(entry!.inactive_7d).toBe(2);  // user0 + null user
     });
 
     it('should return empty array when no snapshots exist', async () => {
@@ -446,7 +446,7 @@ describe('PostgreSQL Storage Layer', () => {
 
       const history = await getUserMetricsHistory('organization', 'test-org');
       expect(history).toHaveLength(2);
-      expect(new Date(history[0].report_end_day) < new Date(history[1].report_end_day)).toBe(true);
+      expect(new Date(history[0]!.report_end_day) < new Date(history[1]!.report_end_day)).toBe(true);
     });
 
     it('should aggregate total_users and active_users correctly', async () => {
@@ -456,9 +456,9 @@ describe('PostgreSQL Storage Layer', () => {
       ]);
 
       const [entry] = await getUserMetricsHistory('organization', 'test-org');
-      expect(entry.total_users).toBe(2);
+      expect(entry!.total_users).toBe(2);
       // active_users = users with ≥1 active day in the month (both alice and bob appear)
-      expect(entry.active_users).toBe(2);
+      expect(entry!.active_users).toBe(2);
     });
 
     it('should compute avg_acceptance_rate', async () => {
@@ -467,7 +467,7 @@ describe('PostgreSQL Storage Layer', () => {
       ]);
 
       const [entry] = await getUserMetricsHistory('organization', 'test-org');
-      expect(entry.avg_acceptance_rate).toBeCloseTo(50, 0); // 20/40 * 100
+      expect(entry!.avg_acceptance_rate).toBeCloseTo(50, 0); // 20/40 * 100
     });
 
     it('should return empty array when no data exists', async () => {
@@ -512,8 +512,8 @@ describe('PostgreSQL Storage Layer', () => {
       await saveUserDayMetricsBatch('organization', 'test-org', [mockDayRecord('octocat', 1, '2026-02-15')]);
 
       const [entry] = await getUserTimeSeries('organization', 'test-org', 'octocat');
-      expect(entry.total_active_days).toBe(1);
-      expect(entry.code_generation_activity_count).toBe(1240);
+      expect(entry!.total_active_days).toBe(1);
+      expect(entry!.code_generation_activity_count).toBe(1240);
     });
 
     it('should compute acceptance_rate', async () => {
@@ -521,7 +521,7 @@ describe('PostgreSQL Storage Layer', () => {
 
       const [entry] = await getUserTimeSeries('organization', 'test-org', 'octocat');
       // 860/1240 * 100 ≈ 69.4
-      expect(entry.acceptance_rate).toBeCloseTo(69.4, 0);
+      expect(entry!.acceptance_rate).toBeCloseTo(69.4, 0);
     });
 
     it('should order entries by report_end_day ascending', async () => {
@@ -529,7 +529,7 @@ describe('PostgreSQL Storage Layer', () => {
       await saveUserDayMetricsBatch('organization', 'test-org', [mockDayRecord('octocat', 1, '2026-01-15')]);
 
       const series = await getUserTimeSeries('organization', 'test-org', 'octocat');
-      expect(new Date(series[0].report_end_day) < new Date(series[1].report_end_day)).toBe(true);
+      expect(new Date(series[0]!.report_end_day) < new Date(series[1]!.report_end_day)).toBe(true);
     });
   });
 
@@ -577,7 +577,7 @@ describe('PostgreSQL Storage Layer', () => {
 
       const result = await getUserDayMetricsByDateRange('organization', 'test-org', '2026-02-15', '2026-02-15');
       expect(result).toHaveLength(1);
-      expect(result[0].code_generation_activity_count).toBe(99);
+      expect(result[0]!.code_generation_activity_count).toBe(99);
     });
 
     it('should check existence for a given date', async () => {

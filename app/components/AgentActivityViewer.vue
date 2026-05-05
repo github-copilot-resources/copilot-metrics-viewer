@@ -265,7 +265,7 @@ export default defineComponent({
       const data = toRef(props, 'reportData').value;
       if (!data || data.length === 0) return;
 
-      const labels = data.map(d => d.date ?? d.day);
+      const labels = data.map(d => d.day);
 
       // ── KPI totals ────────────────────────────────────────────
       let totalAdded = 0, totalDeleted = 0, agentAdded = 0, agentDeleted = 0;
@@ -279,7 +279,7 @@ export default defineComponent({
       agentLocChanged.value  = agentAdded + agentDeleted;
       agentContributionPct.value = totalLocChanged.value === 0 ? 0
         : (agentLocChanged.value / totalLocChanged.value) * 100;
-      const latestDay = data[data.length - 1];
+      const latestDay = data[data.length - 1]!;
       const mau = latestDay.monthly_active_users ?? 1;
       avgAgentLinesDeleted.value = mau > 0 ? Math.round(agentDeleted / mau) : 0;
 

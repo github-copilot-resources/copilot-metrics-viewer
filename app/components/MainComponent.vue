@@ -254,8 +254,8 @@ v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMet
 
     <!-- AI Chat Panel (feature-gated) -->
     <AiChatPanel
-      v-if="config?.public?.enableAiChat === true || config?.public?.enableAiChat === 'true'"
-      :current-tab="tab"
+      v-if="config?.public?.enableAiChat === true"
+      :current-tab="tab ?? undefined"
       :query-params="aiQueryParams"
       :metrics="metrics"
       :seats="seats"
@@ -271,10 +271,10 @@ import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Seat } from "@/model/Seat";
-import type { SeatsApiResponse } from '../server/api/seats';
-import type { ReportDayTotals, UserTotals } from "../../server/services/github-copilot-usage-api";
-import type { SeatHistoryEntry } from "../../server/storage/seats-storage";
-import type { UserMetricsHistoryEntry } from "../../server/storage/user-metrics-storage";
+import type { SeatsApiResponse } from '#server/api/seats';
+import type { ReportDayTotals, UserTotals } from '#server/services/github-copilot-usage-api';
+import type { SeatHistoryEntry } from '#server/storage/seats-storage';
+import type { UserMetricsHistoryEntry } from '#server/storage/user-metrics-storage';
 import type { H3Error } from 'h3'
 
 //Components
@@ -336,7 +336,7 @@ export default defineNuxtComponent({
 
       // Store holiday options
       this.holidayOptions = {
-        excludeHolidays: newDateRange.excludeHolidays,
+        excludeHolidays: newDateRange.excludeHolidays ?? false,
       };
 
       await this.fetchMetrics();
@@ -455,7 +455,7 @@ export default defineNuxtComponent({
   data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'api response'],
-      tab: null,
+      tab: null as string | null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
       metricsReady: false,
@@ -504,7 +504,7 @@ export default defineNuxtComponent({
   },
   async mounted() {
     // React to client-side navigation between /reportsto/ URLs
-    this.$watch(() => (this.route as ReturnType<typeof useRoute>).params.upn, (newUpn: string | undefined) => {
+    this.$watch(() => (this.route as ReturnType<typeof useRoute>).params.upn, (newUpn: string | string[] | undefined) => {
       if (newUpn && this.tabItems.includes('teams')) {
         this.tab = 'teams';
       }
@@ -616,7 +616,7 @@ export default defineNuxtComponent({
       return (route.value.query.name as string) || upn;
     });
     const isMockMode = computed(() =>
-      config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+      !!config.public.isDataMocked ||
       route.value.query.mock === 'true' || route.value.query.mock === '1'
     );
     const orgLabel = computed(() =>
@@ -687,7 +687,7 @@ export default defineNuxtComponent({
     const sessionEmail = computed(() => {
       if (!user.value) return '';
       // GitHub OAuth stores email separately; Microsoft OAuth stores email as login
-      return (user.value as Record<string, unknown>).email as string
+      return (user.value as unknown as Record<string, unknown>).email as string
         || (user.value.login && user.value.login.includes('@') ? user.value.login : '')
         || '';
     });

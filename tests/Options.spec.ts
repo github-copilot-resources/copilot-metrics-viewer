@@ -214,7 +214,7 @@ describe('Options', () => {
       const params = options.toParams()
       expect(params.users).toBeDefined()
       // Decode and verify round-trip
-      const padded = params.users.replace(/-/g, '+').replace(/_/g, '/')
+      const padded = params.users!.replace(/-/g, '+').replace(/_/g, '/')
       const decoded = atob(padded)
       expect(decoded).toBe('monalisa,defunkt')
     })

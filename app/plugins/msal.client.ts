@@ -5,7 +5,7 @@ export default defineNuxtPlugin(async () => {
   const clientId = config.public.entraClientId as string
 
   if (!clientId) {
-    return { provide: { msal: null } }
+    return { provide: { msal: null as null } }
   }
 
   const tenantId = (config.public.entraTenantId as string) || 'common'
@@ -26,13 +26,13 @@ export default defineNuxtPlugin(async () => {
   // Restore existing account from MSAL cache
   const accounts = instance.getAllAccounts()
 
+  const msal = {
+    instance,
+    activeAccount: ref<AccountInfo | null>(accounts[0] ?? null),
+    error: ref<string | null>(null),
+  }
+
   return {
-    provide: {
-      msal: {
-        instance,
-        activeAccount: ref<AccountInfo | null>(accounts[0] ?? null),
-        error: ref<string | null>(null),
-      },
-    },
+    provide: { msal: msal as typeof msal | null },
   }
 })

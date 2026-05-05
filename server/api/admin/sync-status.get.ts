@@ -19,8 +19,8 @@ export default defineEventHandler(async (event) => {
       const identifier = options.githubOrg || options.githubEnt || '';
       
       // Default to last 30 days if not specified
-      const endDate = options.until || new Date().toISOString().split('T')[0];
-      const startDate = options.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const endDate = options.until || new Date().toISOString().split('T')[0]!;
+      const startDate = options.since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
 
       const stats = await getSyncStats(
         options.scope,

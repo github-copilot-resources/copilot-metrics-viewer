@@ -119,7 +119,7 @@ export class Options {
         if (until) options.until = until;
 
         // Handle mocking — must explicitly be true/truthy string, not just any non-empty value
-        const isMocked = config.public.isDataMocked === true || config.public.isDataMocked === 'true';
+        const isMocked = config.public.isDataMocked === true;
         if (route.query.mock || isMocked) {
             options.isDataMocked = true;
         }
@@ -166,7 +166,7 @@ export class Options {
             } else {
                 if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
                 if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
-                if (config.public.githubTeam) options.githubTeam = config.public.githubTeam;
+                if (config.public.githubTeam) options.githubTeam = config.public.githubTeam as string;
             }
         }
 

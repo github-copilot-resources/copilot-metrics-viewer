@@ -34,7 +34,7 @@ describe('filterSeatsByTeamMembers()', () => {
     const members = makeMembers({ login: 'octocat', id: 1 })
     const result = filterSeatsByTeamMembers(seats, members)
     expect(result).toHaveLength(1)
-    expect(result[0].login).toBe('octocat')
+    expect(result[0]!.login).toBe('octocat')
   })
 
   it('returns all seats when teamMembers is empty (no filtering)', () => {
@@ -49,13 +49,13 @@ describe('filterSeatsByTeamMembers()', () => {
     const members = makeMembers({ login: 'octocat', id: 1 })
     const result = filterSeatsByTeamMembers([seat], members)
     expect(result).toHaveLength(1)
-    expect(result[0].login).toBe('octocat')
+    expect(result[0]!.login).toBe('octocat')
   })
 
   it('login comparison is case-insensitive', () => {
     const seats = [makeSeat('OctoCAT', 0)]
     const members = makeMembers({ login: 'octocat', id: 1 })
-    const result = filterSeatsByTeamMembers([seats[0]], members)
+    const result = filterSeatsByTeamMembers([seats[0]!], members)
     expect(result).toHaveLength(1)
   })
 

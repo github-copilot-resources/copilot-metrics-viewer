@@ -45,13 +45,13 @@ describe('searchUsersWithToken', () => {
     const results = await searchUsersWithToken('my-delegated-token', 'ali')
 
     expect(mockFetch).toHaveBeenCalledTimes(1)
-    expect(mockFetch.mock.calls[0][0]).toContain('displayName:ali')
-    expect(mockFetch.mock.calls[0][1].headers).toMatchObject({
+    expect(mockFetch.mock.calls[0]![0]).toContain('displayName:ali')
+    expect(mockFetch.mock.calls[0]![1].headers).toMatchObject({
       Authorization: 'Bearer my-delegated-token',
       ConsistencyLevel: 'eventual',
     })
     expect(results).toHaveLength(1)
-    expect(results[0].displayName).toBe('Alice')
+    expect(results[0]!.displayName).toBe('Alice')
   })
 
   it('returns empty array when Graph search throws', async () => {
@@ -68,7 +68,7 @@ describe('searchUsersWithToken', () => {
     const { searchUsersWithToken } = await import('../server/services/microsoft-graph-service')
     await searchUsersWithToken('delegated-token', 'test')
 
-    expect(mockFetch.mock.calls[0][0]).not.toContain('oauth2/v2.0/token')
+    expect(mockFetch.mock.calls[0]![0]).not.toContain('oauth2/v2.0/token')
   })
 })
 
@@ -83,7 +83,7 @@ describe('getUserWithToken', () => {
 
     expect(result?.id).toBe('user-alice')
     expect(result?.displayName).toBe('Alice')
-    expect(mockFetch.mock.calls[0][1].headers).toMatchObject({
+    expect(mockFetch.mock.calls[0]![1].headers).toMatchObject({
       Authorization: 'Bearer my-token',
     })
   })
@@ -107,8 +107,8 @@ describe('getTransitiveReportsWithToken', () => {
     const result = await getTransitiveReportsWithToken('my-token', 'alice@example.com')
 
     expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('user-bob')
-    expect(result[0].userPrincipalName).toBe('bob@example.com')
+    expect(result[0]!.id).toBe('user-bob')
+    expect(result[0]!.userPrincipalName).toBe('bob@example.com')
   })
 
   it('follows @odata.nextLink for pagination', async () => {
@@ -136,6 +136,6 @@ describe('getTransitiveReportsWithToken', () => {
     const { getTransitiveReportsWithToken } = await import('../server/services/microsoft-graph-service')
     await getTransitiveReportsWithToken('delegated-xyz', 'alice@example.com')
 
-    expect(mockFetch.mock.calls[0][1].headers.Authorization).toBe('Bearer delegated-xyz')
+    expect(mockFetch.mock.calls[0]![1].headers.Authorization).toBe('Bearer delegated-xyz')
   })
 })

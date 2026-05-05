@@ -1,0 +1,185 @@
+- generic [active] [ref=e1]:
+  - button [ref=e2] [cursor=pointer]:
+    - generic [ref=e4]: 󱙺
+  - generic [ref=e7]:
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - button [ref=e12] [cursor=pointer]:
+              - generic [ref=e14]: 󰊤
+            - generic [ref=e16]: "Copilot Metrics Viewer | Organization : octodemo"
+            - heading "Using mock data - see README if unintended" [level=2] [ref=e17]
+            - button "Show date range" [ref=e18] [cursor=pointer]:
+              - generic [ref=e20]: 󰃭
+            - button "Switch to dark mode" [ref=e21] [cursor=pointer]:
+              - generic [ref=e23]: 󰖔
+            - text: 󰀉
+            - button "Authentication info" [ref=e24] [cursor=pointer]:
+              - generic [ref=e26]: 󰢏
+          - tablist [ref=e28]:
+            - generic [ref=e30]:
+              - tab "organization" [selected] [ref=e31] [cursor=pointer]:
+                - generic [ref=e32]: organization
+              - tab "teams" [ref=e33] [cursor=pointer]:
+                - generic [ref=e34]: teams
+              - tab "languages" [ref=e35] [cursor=pointer]:
+                - generic [ref=e36]: languages
+              - tab "editors" [ref=e37] [cursor=pointer]:
+                - generic [ref=e38]: editors
+              - tab "copilot chat" [ref=e39] [cursor=pointer]:
+                - generic [ref=e40]: copilot chat
+              - tab "agent activity" [ref=e41] [cursor=pointer]:
+                - generic [ref=e42]: agent activity
+              - tab "pull requests" [ref=e43] [cursor=pointer]:
+                - generic [ref=e44]: pull requests
+              - tab "models" [ref=e45] [cursor=pointer]:
+                - generic [ref=e46]: models
+              - tab "seat analysis" [ref=e47] [cursor=pointer]:
+                - generic [ref=e48]: seat analysis
+              - tab "user metrics" [ref=e49] [cursor=pointer]:
+                - generic [ref=e50]: user metrics
+              - tab "api response" [ref=e51] [cursor=pointer]:
+                - generic [ref=e52]: api response
+        - text: 󰄱
+        - generic [ref=e60]:
+          - generic [ref=e63]:
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - generic [ref=e67]: 📊 Organization Dashboard
+                - generic [ref=e68]:
+                  - text: Copilot activity metrics for the current month. Tracks how developers use Copilot — from AI chat and agent mode to IDE code completions. Acceptance rates reflect
+                  - emphasis [ref=e69]: inline completions only
+                  - text: ; CLI, agents, and github.com interactions won't appear there.
+              - separator [ref=e70]
+              - generic [ref=e71]:
+                - generic [ref=e72]: LEARN MORE
+                - link "How metrics are calculated" [ref=e73] [cursor=pointer]:
+                  - /url: https://docs.github.com/en/copilot/reference/copilot-usage-metrics
+                  - generic [ref=e74]: 󰏌
+                  - generic [ref=e75]: How metrics are calculated
+                - link "How to interpret this dashboard" [ref=e76] [cursor=pointer]:
+                  - /url: https://docs.github.com/en/copilot/reference/interpret-copilot-metrics
+                  - generic [ref=e77]: 󰏌
+                  - generic [ref=e78]: How to interpret this dashboard
+                - link "Engineering System Success Playbook" [ref=e79] [cursor=pointer]:
+                  - /url: https://resources.github.com/engineering-system-success-playbook/
+                  - generic [ref=e80]: 󰏌
+                  - generic [ref=e81]: Engineering System Success Playbook
+            - generic [ref=e82]:
+              - generic [ref=e86]:
+                - generic [ref=e87]: IDE active users
+                - generic [ref=e88]: Current calendar month
+                - paragraph [ref=e89]: "6"
+                - generic [ref=e91]:
+                  - generic [ref=e92]: 󰔴
+                  - text: ~0%
+              - generic [ref=e96]:
+                - generic [ref=e97]: Agent adoption
+                - generic [ref=e98]: 6 out of 6 active users
+                - paragraph [ref=e99]: 100%
+                - progressbar [ref=e100]
+                - generic [ref=e104]:
+                  - generic [ref=e105]: 󰔴
+                  - text: ~0%
+              - generic [ref=e109]:
+                - generic [ref=e110]: Most used chat model
+                - generic [ref=e111]: Last 28 days
+                - paragraph [ref=e112]: claude-sonnet-4.6
+              - generic [ref=e116]:
+                - generic [ref=e117]: Top Copilot feature
+                - generic [ref=e118]: Last 28 days
+                - paragraph [ref=e119]: CLI
+              - generic [ref=e123]:
+                - generic [ref=e124]: Total chat requests
+                - generic [ref=e125]: Last 28 days
+                - paragraph [ref=e126]: 2.6k
+                - generic [ref=e128]:
+                  - generic [ref=e129]: 󰔵
+                  - text: +318%
+            - generic [ref=e130]:
+              - generic [ref=e134]:
+                - generic [ref=e135]: IDE Completion Acceptance Rate (count)
+                - paragraph [ref=e136]: 7.2%
+              - generic [ref=e140]:
+                - generic [ref=e141]: IDE Completion Acceptance Rate (lines)
+                - paragraph [ref=e142]: 21.1%
+              - generic [ref=e146]:
+                - generic [ref=e147]: Total IDE Code Completions
+                - paragraph [ref=e148]: 2,498
+              - generic [ref=e152]:
+                - generic [ref=e153]: Total Lines Suggested (IDE completions)
+                - paragraph [ref=e154]: 12,032
+            - main [ref=e155]:
+              - generic [ref=e156]:
+                - generic [ref=e158]:
+                  - button "Single column" [ref=e159] [cursor=pointer]:
+                    - generic [ref=e161]: 󰕪
+                  - button "Two columns" [ref=e162] [cursor=pointer]:
+                    - generic [ref=e164]: 󰕰
+                  - button "Full width" [ref=e165] [cursor=pointer]:
+                    - generic [ref=e167]: 󰊓
+                - generic [ref=e168]:
+                  - generic [ref=e170]:
+                    - generic [ref=e171]: IDE daily active users
+                    - generic [ref=e172]: Unique users who used Copilot on a given day, either via chat or code completions · Shaded columns = weekends
+                    - img [ref=e174]
+                  - generic [ref=e176]:
+                    - generic [ref=e177]: IDE weekly active users
+                    - generic [ref=e178]: Unique users who used Copilot in a given week, either via chat or code completions · Shaded columns = weekends
+                    - img [ref=e180]
+                  - generic [ref=e182]:
+                    - generic [ref=e183]: Active Users Over Time
+                    - generic [ref=e184]:
+                      - strong [ref=e185]: Monthly active users
+                      - text: = anyone who used any Copilot feature at least once in the past 28 days (IDE completions, chat, agent mode, CLI, PR summaries). Daily and weekly counts use shorter rolling windows. · Shaded columns = weekends
+                    - img [ref=e187]
+                  - generic [ref=e189]:
+                    - generic [ref=e190]: Feature Usage Over Time
+                    - generic [ref=e191]: "User-initiated interactions per feature per day — covers all Copilot features: IDE chat, agent mode, edit mode, inline chat, CLI, PR summaries, and more · Shaded columns = weekends"
+                    - img [ref=e193]
+                  - generic [ref=e195]:
+                    - generic [ref=e196]: Feature Activity Breakdown
+                    - generic [ref=e197]: Total user-initiated interactions per feature across the entire date range (top 10)
+                    - img [ref=e199]
+                  - generic [ref=e201]:
+                    - generic [ref=e202]: Average chat requests per active user
+                    - generic [ref=e203]: User-initiated requests across all chat modes, excluding code completions · Shaded columns = weekends
+                    - img [ref=e205]
+                  - generic [ref=e207]:
+                    - generic [ref=e208]: Requests per chat mode
+                    - generic [ref=e209]: User-initiated chat requests across all modes · Shaded columns = weekends
+                    - img [ref=e211]
+                  - generic [ref=e213]:
+                    - generic [ref=e214]: Code completions
+                    - generic [ref=e215]: Inline code suggestions shown and accepted · Shaded columns = weekends
+                    - img [ref=e217]
+                  - generic [ref=e219]:
+                    - generic [ref=e220]: Code completions acceptance rate
+                    - generic [ref=e221]: Percentage of shown inline completions that were accepted · Shaded columns = weekends
+                    - img [ref=e223]
+          - text: 󰀨
+    - contentinfo [ref=e55]:
+      - generic [ref=e56]:
+        - text: 2026 —
+        - strong [ref=e57]:
+          - link "Copilot Metrics Viewer" [ref=e58] [cursor=pointer]:
+            - /url: https://github.com/github-copilot-resources/copilot-metrics-viewer
+        - text: — 3.7.0
+  - generic:
+    - img
+  - generic [ref=e224]:
+    - button "Toggle Nuxt DevTools" [ref=e225] [cursor=pointer]:
+      - img [ref=e226]
+    - generic "Page load time" [ref=e229]:
+      - generic [ref=e230]: "174"
+      - generic [ref=e231]: ms
+    - button "Toggle Component Inspector" [ref=e233] [cursor=pointer]:
+      - img [ref=e234]
+  - generic:
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip

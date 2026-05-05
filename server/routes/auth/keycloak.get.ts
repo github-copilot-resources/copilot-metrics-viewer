@@ -9,7 +9,7 @@ export default defineOAuthKeycloakEventHandler({
       user: {
         login: user.preferred_username || email,
         name: user.name,
-        avatarUrl: undefined
+        avatarUrl: ''
       }
     })
 

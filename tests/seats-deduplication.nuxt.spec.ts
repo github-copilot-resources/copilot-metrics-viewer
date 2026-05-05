@@ -110,8 +110,8 @@ describe('Seat Deduplication', () => {
     const deduplicatedSeats = deduplicate(seats)
     
     expect(deduplicatedSeats).toHaveLength(1)
-    expect(deduplicatedSeats[0].team).toBe('New Team')
-    expect(deduplicatedSeats[0].last_activity_at).toBe('2021-10-20T00:53:32-06:00')
+    expect(deduplicatedSeats[0]!.team).toBe('New Team')
+    expect(deduplicatedSeats[0]!.last_activity_at).toBe('2021-10-20T00:53:32-06:00')
   })
   
   test('handles seats with null last_activity_at', () => {
@@ -158,7 +158,7 @@ describe('Seat Deduplication', () => {
     const deduplicatedSeats = deduplicate(seats)
     
     expect(deduplicatedSeats).toHaveLength(1)
-    expect(deduplicatedSeats[0].team).toBe('Team B')
-    expect(deduplicatedSeats[0].last_activity_at).toBe('2021-10-15T00:53:32-06:00')
+    expect(deduplicatedSeats[0]!.team).toBe('Team B')
+    expect(deduplicatedSeats[0]!.last_activity_at).toBe('2021-10-15T00:53:32-06:00')
   })
 })

@@ -37,9 +37,10 @@ describe('date-holidays integration', () => {
     
     expect(Array.isArray(result)).toBe(true)
     expect(result).toBeTruthy()
-    expect(result.length).toBeGreaterThan(0)
-    expect(result[0]).toHaveProperty('name')
-    expect(result[0].name).toContain('Christmas')
+    const holidayResult = result as import('date-holidays').HolidaysTypes.Holiday[] 
+    expect(holidayResult.length).toBeGreaterThan(0)
+    expect(holidayResult[0]).toHaveProperty('name')
+    expect(holidayResult[0]!.name).toContain('Christmas')
   })
 
   test('isHoliday returns false for non-holiday', () => {

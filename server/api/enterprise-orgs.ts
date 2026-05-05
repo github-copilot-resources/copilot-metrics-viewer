@@ -102,7 +102,7 @@ export default defineEventHandler(async (event): Promise<EnterpriseOrgsResponse>
         let isFullGhec = false
 
         while (hasNextPage) {
-            const result = await $fetch<GraphQLResponse>(`${apiBaseUrl}/graphql`, {
+            const result: GraphQLResponse = await $fetch<GraphQLResponse>(`${apiBaseUrl}/graphql`, {
                 method: 'POST',
                 headers: fetchHeaders,
                 body: JSON.stringify({

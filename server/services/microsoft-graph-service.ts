@@ -42,7 +42,7 @@ export async function getTransitiveReportsWithToken(
       `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(upn)}/transitiveReports/microsoft.graph.user?${MEMBER_SELECT}&$count=true`
     let pages = 0
     while (url && pages < MAX_PAGES) {
-      const res = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, { headers })
+      const res: { value: any[]; '@odata.nextLink'?: string } = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, { headers })
       for (const m of res.value ?? []) {
         if (m.id && m.userPrincipalName) {
           results.push({ id: m.id, mail: m.mail ?? null, userPrincipalName: m.userPrincipalName })
@@ -73,7 +73,7 @@ export async function getTransitiveReportsWithToken(
       `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(userId)}/directReports/microsoft.graph.user?${MEMBER_SELECT}`
     let pages = 0
     while (url && pages < MAX_PAGES) {
-      const res = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, { headers: fallbackHeaders })
+      const res: { value: any[]; '@odata.nextLink'?: string } = await $fetch<{ value: any[]; '@odata.nextLink'?: string }>(url, { headers: fallbackHeaders })
       const batch = (res.value ?? []).filter((m: any) => m.id && m.userPrincipalName)
       for (const m of batch) {
         results.push({ id: m.id, mail: m.mail ?? null, userPrincipalName: m.userPrincipalName })
