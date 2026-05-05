@@ -556,6 +556,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
+import { buildReportsToUrl } from '@/utils/routeUtils'
 
 const FEATURE_DISPLAY: Record<string, string> = {
   code_completion: 'Completions',
@@ -1001,26 +1002,18 @@ export default defineComponent({
     const resolvedInitialUpn = ref('')
 
     const getReportsToUrl = (): string => {
-      const upn = entraFilterUpn.value
-      if (!upn) return ''
-      const encodedUpn = encodeURIComponent(upn)
       const cfg = useRuntimeConfig()
-      let base: string
-      if (scopeType.value === 'enterprise') {
-        if (selectedOrg.value) {
-          base = `/orgs/${selectedOrg.value}/reportsto/${encodedUpn}`
-        } else {
-          base = `/enterprises/${cfg.public.githubEnt}/reportsto/${encodedUpn}`
-        }
-      } else {
-        base = `/orgs/${cfg.public.githubOrg}/reportsto/${encodedUpn}`
-      }
-      const query = new URLSearchParams()
-      if (route.query.mock) query.set('mock', route.query.mock as string)
-      if (entraFilterLogins.value.length) query.set('users', encodeUsersParam(entraFilterLogins.value))
-      if (entraFilterLabel.value) query.set('name', entraFilterLabel.value)
-      const qs = query.toString()
-      return qs ? `${base}?${qs}` : base
+      return buildReportsToUrl(
+        entraFilterUpn.value,
+        entraFilterLogins.value,
+        entraFilterLabel.value,
+        scopeType.value,
+        selectedOrg.value,
+        cfg.public.githubOrg as string,
+        cfg.public.githubEnt as string,
+        route.query.mock as string | undefined,
+        encodeUsersParam,
+      )
     }
 
     // Org-level metrics for Entra filter charts
