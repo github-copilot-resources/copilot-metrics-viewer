@@ -361,6 +361,466 @@
           "loc_deleted_sum": 7
         }
       ]
+    },
+    {
+      "login": "defunkt",
+      "user_id": 2,
+      "total_active_days": 20,
+      "user_initiated_interaction_count": 280,
+      "code_generation_activity_count": 890,
+      "code_acceptance_activity_count": 610,
+      "loc_suggested_to_add_sum": 3600,
+      "loc_suggested_to_delete_sum": 144,
+      "loc_added_sum": 2400,
+      "loc_deleted_sum": 72,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 280,
+          "code_generation_activity_count": 890,
+          "code_acceptance_activity_count": 610,
+          "loc_suggested_to_add_sum": 3600,
+          "loc_suggested_to_delete_sum": 144,
+          "loc_added_sum": 2400,
+          "loc_deleted_sum": 72
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 534,
+          "code_acceptance_activity_count": 427,
+          "loc_suggested_to_add_sum": 2340,
+          "loc_suggested_to_delete_sum": 90,
+          "loc_added_sum": 1560,
+          "loc_deleted_sum": 48
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 196,
+          "code_generation_activity_count": 222,
+          "code_acceptance_activity_count": 122,
+          "loc_suggested_to_add_sum": 720,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 480,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 84,
+          "code_generation_activity_count": 133,
+          "code_acceptance_activity_count": 61,
+          "loc_suggested_to_add_sum": 540,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 360,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "totals_by_language_feature": [
+        {
+          "language": "typescript",
+          "feature": "code_completion",
+          "code_generation_activity_count": 445,
+          "code_acceptance_activity_count": 305,
+          "loc_suggested_to_add_sum": 1620,
+          "loc_suggested_to_delete_sum": 72,
+          "loc_added_sum": 1080,
+          "loc_deleted_sum": 48
+        }
+      ],
+      "totals_by_model_feature": [
+        {
+          "model": "auto",
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 534,
+          "code_acceptance_activity_count": 427,
+          "loc_suggested_to_add_sum": 2340,
+          "loc_suggested_to_delete_sum": 90,
+          "loc_added_sum": 1560,
+          "loc_deleted_sum": 48
+        },
+        {
+          "model": "gpt-5.4",
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 196,
+          "code_generation_activity_count": 222,
+          "code_acceptance_activity_count": 122,
+          "loc_suggested_to_add_sum": 720,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 480,
+          "loc_deleted_sum": 0
+        }
+      ]
+    },
+    {
+      "login": "codertocat",
+      "user_id": 3,
+      "total_active_days": 9,
+      "user_initiated_interaction_count": 120,
+      "code_generation_activity_count": 410,
+      "code_acceptance_activity_count": 240,
+      "loc_suggested_to_add_sum": 1600,
+      "loc_suggested_to_delete_sum": 64,
+      "loc_added_sum": 950,
+      "loc_deleted_sum": 28,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 120,
+          "code_generation_activity_count": 410,
+          "code_acceptance_activity_count": 240,
+          "loc_suggested_to_add_sum": 1600,
+          "loc_suggested_to_delete_sum": 64,
+          "loc_added_sum": 950,
+          "loc_deleted_sum": 28
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 246,
+          "code_acceptance_activity_count": 168,
+          "loc_suggested_to_add_sum": 1040,
+          "loc_suggested_to_delete_sum": 40,
+          "loc_added_sum": 617,
+          "loc_deleted_sum": 19
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 84,
+          "code_generation_activity_count": 102,
+          "code_acceptance_activity_count": 48,
+          "loc_suggested_to_add_sum": 320,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 190,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 36,
+          "code_generation_activity_count": 61,
+          "code_acceptance_activity_count": 24,
+          "loc_suggested_to_add_sum": 240,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 142,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "totals_by_language_feature": [
+        {
+          "language": "javascript",
+          "feature": "code_completion",
+          "code_generation_activity_count": 205,
+          "code_acceptance_activity_count": 120,
+          "loc_suggested_to_add_sum": 720,
+          "loc_suggested_to_delete_sum": 32,
+          "loc_added_sum": 427,
+          "loc_deleted_sum": 19
+        }
+      ],
+      "totals_by_model_feature": [
+        {
+          "model": "auto",
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 246,
+          "code_acceptance_activity_count": 168,
+          "loc_suggested_to_add_sum": 1040,
+          "loc_suggested_to_delete_sum": 40,
+          "loc_added_sum": 617,
+          "loc_deleted_sum": 19
+        },
+        {
+          "model": "gpt-5.4",
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 84,
+          "code_generation_activity_count": 102,
+          "code_acceptance_activity_count": 48,
+          "loc_suggested_to_add_sum": 320,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 190,
+          "loc_deleted_sum": 0
+        }
+      ]
+    },
+    {
+      "login": "hubot",
+      "user_id": 8,
+      "total_active_days": 15,
+      "user_initiated_interaction_count": 190,
+      "code_generation_activity_count": 620,
+      "code_acceptance_activity_count": 400,
+      "loc_suggested_to_add_sum": 2400,
+      "loc_suggested_to_delete_sum": 96,
+      "loc_added_sum": 1550,
+      "loc_deleted_sum": 46,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 190,
+          "code_generation_activity_count": 620,
+          "code_acceptance_activity_count": 400,
+          "loc_suggested_to_add_sum": 2400,
+          "loc_suggested_to_delete_sum": 96,
+          "loc_added_sum": 1550,
+          "loc_deleted_sum": 46
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 372,
+          "code_acceptance_activity_count": 280,
+          "loc_suggested_to_add_sum": 1560,
+          "loc_suggested_to_delete_sum": 60,
+          "loc_added_sum": 1007,
+          "loc_deleted_sum": 31
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 133,
+          "code_generation_activity_count": 155,
+          "code_acceptance_activity_count": 80,
+          "loc_suggested_to_add_sum": 480,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 310,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 57,
+          "code_generation_activity_count": 93,
+          "code_acceptance_activity_count": 40,
+          "loc_suggested_to_add_sum": 360,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 232,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "totals_by_language_feature": [
+        {
+          "language": "python",
+          "feature": "code_completion",
+          "code_generation_activity_count": 310,
+          "code_acceptance_activity_count": 200,
+          "loc_suggested_to_add_sum": 1080,
+          "loc_suggested_to_delete_sum": 48,
+          "loc_added_sum": 697,
+          "loc_deleted_sum": 31
+        }
+      ],
+      "totals_by_model_feature": [
+        {
+          "model": "auto",
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 372,
+          "code_acceptance_activity_count": 280,
+          "loc_suggested_to_add_sum": 1560,
+          "loc_suggested_to_delete_sum": 60,
+          "loc_added_sum": 1007,
+          "loc_deleted_sum": 31
+        },
+        {
+          "model": "gpt-5.4",
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 133,
+          "code_generation_activity_count": 155,
+          "code_acceptance_activity_count": 80,
+          "loc_suggested_to_add_sum": 480,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 310,
+          "loc_deleted_sum": 0
+        }
+      ]
+    },
+    {
+      "login": "alicechen",
+      "user_id": 6,
+      "total_active_days": 18,
+      "user_initiated_interaction_count": 240,
+      "code_generation_activity_count": 750,
+      "code_acceptance_activity_count": 520,
+      "loc_suggested_to_add_sum": 3000,
+      "loc_suggested_to_delete_sum": 120,
+      "loc_added_sum": 1950,
+      "loc_deleted_sum": 58,
+      "totals_by_ide": [
+        {
+          "ide": "vscode",
+          "user_initiated_interaction_count": 240,
+          "code_generation_activity_count": 750,
+          "code_acceptance_activity_count": 520,
+          "loc_suggested_to_add_sum": 3000,
+          "loc_suggested_to_delete_sum": 120,
+          "loc_added_sum": 1950,
+          "loc_deleted_sum": 58
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 450,
+          "code_acceptance_activity_count": 364,
+          "loc_suggested_to_add_sum": 1950,
+          "loc_suggested_to_delete_sum": 75,
+          "loc_added_sum": 1267,
+          "loc_deleted_sum": 39
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 168,
+          "code_generation_activity_count": 187,
+          "code_acceptance_activity_count": 104,
+          "loc_suggested_to_add_sum": 600,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 390,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 72,
+          "code_generation_activity_count": 112,
+          "code_acceptance_activity_count": 52,
+          "loc_suggested_to_add_sum": 450,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 292,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "totals_by_language_feature": [
+        {
+          "language": "javascript",
+          "feature": "code_completion",
+          "code_generation_activity_count": 375,
+          "code_acceptance_activity_count": 260,
+          "loc_suggested_to_add_sum": 1350,
+          "loc_suggested_to_delete_sum": 60,
+          "loc_added_sum": 877,
+          "loc_deleted_sum": 39
+        }
+      ],
+      "totals_by_model_feature": [
+        {
+          "model": "auto",
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 450,
+          "code_acceptance_activity_count": 364,
+          "loc_suggested_to_add_sum": 1950,
+          "loc_suggested_to_delete_sum": 75,
+          "loc_added_sum": 1267,
+          "loc_deleted_sum": 39
+        },
+        {
+          "model": "gpt-5.4",
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 168,
+          "code_generation_activity_count": 187,
+          "code_acceptance_activity_count": 104,
+          "loc_suggested_to_add_sum": 600,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 390,
+          "loc_deleted_sum": 0
+        }
+      ]
+    },
+    {
+      "login": "bobmartinez",
+      "user_id": 7,
+      "total_active_days": 11,
+      "user_initiated_interaction_count": 130,
+      "code_generation_activity_count": 420,
+      "code_acceptance_activity_count": 260,
+      "loc_suggested_to_add_sum": 1700,
+      "loc_suggested_to_delete_sum": 68,
+      "loc_added_sum": 1100,
+      "loc_deleted_sum": 33,
+      "totals_by_ide": [
+        {
+          "ide": "jetbrains",
+          "user_initiated_interaction_count": 130,
+          "code_generation_activity_count": 420,
+          "code_acceptance_activity_count": 260,
+          "loc_suggested_to_add_sum": 1700,
+          "loc_suggested_to_delete_sum": 68,
+          "loc_added_sum": 1100,
+          "loc_deleted_sum": 33
+        }
+      ],
+      "totals_by_feature": [
+        {
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 252,
+          "code_acceptance_activity_count": 182,
+          "loc_suggested_to_add_sum": 1105,
+          "loc_suggested_to_delete_sum": 42,
+          "loc_added_sum": 715,
+          "loc_deleted_sum": 22
+        },
+        {
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 91,
+          "code_generation_activity_count": 105,
+          "code_acceptance_activity_count": 52,
+          "loc_suggested_to_add_sum": 340,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 220,
+          "loc_deleted_sum": 0
+        },
+        {
+          "feature": "chat_panel_agent_mode",
+          "user_initiated_interaction_count": 39,
+          "code_generation_activity_count": 63,
+          "code_acceptance_activity_count": 26,
+          "loc_suggested_to_add_sum": 255,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 165,
+          "loc_deleted_sum": 0
+        }
+      ],
+      "totals_by_language_feature": [
+        {
+          "language": "python",
+          "feature": "code_completion",
+          "code_generation_activity_count": 210,
+          "code_acceptance_activity_count": 130,
+          "loc_suggested_to_add_sum": 765,
+          "loc_suggested_to_delete_sum": 34,
+          "loc_added_sum": 495,
+          "loc_deleted_sum": 22
+        }
+      ],
+      "totals_by_model_feature": [
+        {
+          "model": "auto",
+          "feature": "code_completion",
+          "user_initiated_interaction_count": 0,
+          "code_generation_activity_count": 252,
+          "code_acceptance_activity_count": 182,
+          "loc_suggested_to_add_sum": 1105,
+          "loc_suggested_to_delete_sum": 42,
+          "loc_added_sum": 715,
+          "loc_deleted_sum": 22
+        },
+        {
+          "model": "gpt-5.4",
+          "feature": "chat_panel_ask_mode",
+          "user_initiated_interaction_count": 91,
+          "code_generation_activity_count": 105,
+          "code_acceptance_activity_count": 52,
+          "loc_suggested_to_add_sum": 340,
+          "loc_suggested_to_delete_sum": 0,
+          "loc_added_sum": 220,
+          "loc_deleted_sum": 0
+        }
+      ]
     }
   ]
 }

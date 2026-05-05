@@ -4,7 +4,9 @@
     <v-card variant="outlined" class="mx-4 mt-3 mb-2 pa-3" density="compact">
       <div class="d-flex flex-wrap align-start gap-2 text-body-2">
         <div class="mr-3" style="flex: 1; min-width: 250px;">
-          <div class="font-weight-bold text-body-1 mb-1">👤 User Metrics</div>
+          <div class="d-flex align-center gap-2">
+            <div class="font-weight-bold text-body-1 mb-1">👤 User Metrics</div>
+          </div>
           <div class="text-medium-emphasis">
             Per-user Copilot activity breakdown for the reporting period. Shows interactions, code
             completions, acceptance rates, and AI-generated lines of code per developer.
@@ -482,6 +484,11 @@ export default defineComponent({
     queryParams: {
       type: Object as PropType<Record<string, string>>,
       default: () => ({})
+    },
+    /** Email of the logged-in user (unused here; kept for compat). */
+    sessionEmail: {
+      type: String,
+      default: ''
     }
   },
   setup(props) {
@@ -591,8 +598,10 @@ export default defineComponent({
       return ((totalAccepted / totalGenerated) * 100).toFixed(1);
     });
 
+    const orgFilteredUsers = computed(() => props.userMetrics);
+
     const filteredUsers = computed(() => {
-      let result = [...props.userMetrics];
+      let result = [...orgFilteredUsers.value];
 
       if (activityFilter.value === 'active') {
         result = result.filter(u => u.total_active_days >= 7);
@@ -1096,6 +1105,8 @@ export default defineComponent({
       chartTrendLoading,
       chartTrendChartData,
       chartTrendOptions,
+      // org filter
+      orgFilteredUsers,
     };
   },
   data() {

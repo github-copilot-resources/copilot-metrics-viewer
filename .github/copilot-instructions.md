@@ -67,6 +67,15 @@ Always reference these instructions first and fallback to search or bash command
   - Takes 10 seconds to complete
   - Errors are in existing codebase, not blocking for development
 
+### Bug Fix Workflow (TDD)
+When fixing any bug, **always follow this order**:
+1. **Write a failing test first** that reproduces the bug — run `npm test` and confirm the new test fails
+2. **Apply the fix** to the production code
+3. **Run `npm test` again** and confirm the previously failing test now passes and no other tests regressed
+4. Commit both the fix and the test together (or test first in a separate commit)
+
+This ensures every bug has a regression guard before the fix lands.
+
 ### Code Quality
 - **Linting**: `npm run lint`
   - **KNOWN ISSUE**: Currently fails with 43 ESLint errors (mostly @typescript-eslint/no-explicit-any)

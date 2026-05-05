@@ -1,0 +1,91 @@
+{
+  "id": "00000000-0000-0000-0000-000000000001",
+  "displayName": "Monalisa Octocat",
+  "mail": "monalisa@octodemo.com",
+  "userPrincipalName": "monalisa@octodemo.com",
+  "githubLogin": "monalisa",
+  "jobTitle": "VP of Engineering",
+  "department": "Engineering",
+  "officeLocation": "San Francisco",
+  "directReports": [
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "displayName": "Defunkt Jones",
+      "mail": "defunkt@octodemo.com",
+      "userPrincipalName": "defunkt@octodemo.com",
+      "githubLogin": "defunkt",
+      "jobTitle": "Engineering Manager",
+      "department": "Platform Engineering",
+      "officeLocation": "San Francisco",
+      "directReports": [
+        {
+          "id": "00000000-0000-0000-0000-000000000004",
+          "displayName": "Octocat Smith",
+          "mail": "octocat@octodemo.com",
+          "userPrincipalName": "octocat@octodemo.com",
+          "githubLogin": "octocat",
+          "jobTitle": "Senior Software Engineer",
+          "department": "Platform Engineering",
+          "officeLocation": "San Francisco",
+          "directReports": []
+        },
+        {
+          "id": "00000000-0000-0000-0000-000000000005",
+          "displayName": "Octokitten Lee",
+          "mail": "octokitten@octodemo.com",
+          "userPrincipalName": "octokitten@octodemo.com",
+          "githubLogin": "octokitten",
+          "jobTitle": "Software Engineer",
+          "department": "Platform Engineering",
+          "officeLocation": "Remote",
+          "directReports": []
+        },
+        {
+          "id": "00000000-0000-0000-0000-000000000008",
+          "displayName": "Hubot Robot",
+          "mail": "hubot@octodemo.com",
+          "userPrincipalName": "hubot@octodemo.com",
+          "githubLogin": "hubot",
+          "jobTitle": "Software Engineer",
+          "department": "Platform Engineering",
+          "officeLocation": "Remote",
+          "directReports": []
+        }
+      ]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "displayName": "Codertocat Rivera",
+      "mail": "codertocat@octodemo.com",
+      "userPrincipalName": "codertocat@octodemo.com",
+      "githubLogin": "codertocat",
+      "jobTitle": "Engineering Manager",
+      "department": "Product Engineering",
+      "officeLocation": "New York",
+      "directReports": [
+        {
+          "id": "00000000-0000-0000-0000-000000000006",
+          "displayName": "Alice Chen",
+          "mail": "alice.chen@octodemo.com",
+          "userPrincipalName": "alice.chen@octodemo.com",
+          "githubLogin": "alicechen",
+          "jobTitle": "Senior Software Engineer",
+          "department": "Product Engineering",
+          "officeLocation": "New York",
+          "directReports": []
+        },
+        {
+          "id": "00000000-0000-0000-0000-000000000007",
+          "displayName": "Bob Martinez",
+          "mail": "bob.martinez@octodemo.com",
+          "userPrincipalName": "bob.martinez@octodemo.com",
+          "githubLogin": "bobmartinez",
+          "jobTitle": "Software Engineer",
+          "department": "Product Engineering",
+          "officeLocation": "Austin",
+          "directReports": []
+        }
+      ]
+    }
+  ]
+}

@@ -13,16 +13,25 @@
 
 <script lang="ts" setup>
 import { routeParamStr } from '@/utils/routeUtils';
+import { resolveDisplayName } from '#shared/utils/resolveDisplayName';
 
 const config = useRuntimeConfig();
 const version = computed(() => config.public.version);
 const deployInfo = computed(() => config.public.deployInfo);
 const route = useRoute();
-const pageTitle = computed(() => {
-  const base = getDisplayName(config.public);
-  const team = routeParamStr(route.params, 'team');
-  return team ? `${base} | Team : ${team}` : base;
-});
+const isMockMode = computed(() =>
+  config.public.isDataMocked === true || config.public.isDataMocked === 'true' ||
+  route.query.mock === 'true' || route.query.mock === '1'
+);
+const pageTitle = computed(() => resolveDisplayName({
+  urlOrg: routeParamStr(route.params, 'org'),
+  urlEnt: routeParamStr(route.params, 'ent'),
+  isMockMode: isMockMode.value,
+  configOrg: config.public.githubOrg as string,
+  configEnt: config.public.githubEnt as string,
+  configScope: config.public.scope as string,
+  teamName: routeParamStr(route.params, 'team'),
+}));
 useHead({
   title: pageTitle,
   meta: [

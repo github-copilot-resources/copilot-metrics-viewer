@@ -19,12 +19,14 @@ import type {
   ReportIdeTotals,
   ReportFeatureTotals,
   ReportLanguageFeatureTotals,
+  ReportLanguageModelTotals,
   ReportModelFeatureTotals,
   UserIdeTotals,
   UserFeatureTotals,
   UserLanguageFeatureTotals,
   UserModelFeatureTotals,
 } from './github-copilot-usage-api';
+import { COMPLETION_FEATURES } from '../../shared/utils/feature-classification';
 
 /**
  * Build an OrgReport for a team by filtering and aggregating per-user records.
@@ -99,7 +101,7 @@ function aggregateDayRecords(day: string, records: UserDayRecord[]): ReportDayTo
     totals_by_ide: mergeIdeTotals(records.flatMap(r => r.totals_by_ide ?? [])),
     totals_by_feature: mergeFeatureTotals(records.flatMap(r => r.totals_by_feature ?? [])),
     totals_by_language_feature: mergeLanguageFeatureTotals(records.flatMap(r => r.totals_by_language_feature ?? [])),
-    totals_by_language_model: [],
+    totals_by_language_model: buildLanguageModelTotals(records),
     totals_by_model_feature: mergeModelFeatureTotals(records.flatMap(r => r.totals_by_model_feature ?? [])),
   };
 }
@@ -185,4 +187,70 @@ function mergeModelFeatureTotals(items: UserModelFeatureTotals[]): ReportModelFe
     }
   }
   return Array.from(byKey.values());
+}
+
+/**
+ * Approximate totals_by_language_model from per-user language+feature and model+feature data.
+ *
+ * The per-user records don't carry a language×model cross-product, so we distribute
+ * each model's completion activity proportionally across languages based on each
+ * language's share of total completion activity. This is an approximation suited for
+ * visualization (the "Model usage per language" stacked-bar chart).
+ */
+function buildLanguageModelTotals(records: UserDayRecord[]): ReportLanguageModelTotals[] {
+  // Aggregate per-language completion stats across all users for this day
+  const langMap = new Map<string, { gen: number; accept: number; locSug: number; locSugDel: number; locAdd: number; locDel: number }>();
+  for (const r of records) {
+    for (const lf of (r.totals_by_language_feature ?? [])) {
+      if (COMPLETION_FEATURES.includes(lf.feature)) {
+        const e = langMap.get(lf.language) ?? { gen: 0, accept: 0, locSug: 0, locSugDel: 0, locAdd: 0, locDel: 0 };
+        e.gen    += lf.code_generation_activity_count;
+        e.accept += lf.code_acceptance_activity_count;
+        e.locSug    += lf.loc_suggested_to_add_sum;
+        e.locSugDel += lf.loc_suggested_to_delete_sum;
+        e.locAdd    += lf.loc_added_sum;
+        e.locDel    += lf.loc_deleted_sum;
+        langMap.set(lf.language, e);
+      }
+    }
+  }
+  const totalGen = Array.from(langMap.values()).reduce((a, b) => a + b.gen, 0);
+  if (totalGen === 0 || langMap.size === 0) return [];
+
+  // Aggregate per-model completion stats across all users for this day
+  const modelMap = new Map<string, { gen: number; accept: number; locSug: number; locSugDel: number; locAdd: number; locDel: number }>();
+  for (const r of records) {
+    for (const mf of (r.totals_by_model_feature ?? [])) {
+      if (COMPLETION_FEATURES.includes(mf.feature)) {
+        const e = modelMap.get(mf.model) ?? { gen: 0, accept: 0, locSug: 0, locSugDel: 0, locAdd: 0, locDel: 0 };
+        e.gen    += mf.code_generation_activity_count;
+        e.accept += mf.code_acceptance_activity_count;
+        e.locSug    += mf.loc_suggested_to_add_sum;
+        e.locSugDel += mf.loc_suggested_to_delete_sum;
+        e.locAdd    += mf.loc_added_sum;
+        e.locDel    += mf.loc_deleted_sum;
+        modelMap.set(mf.model, e);
+      }
+    }
+  }
+  if (modelMap.size === 0) return [];
+
+  // Distribute each model's totals proportionally across languages
+  const result: ReportLanguageModelTotals[] = [];
+  for (const [model, mt] of modelMap) {
+    for (const [language, lt] of langMap) {
+      const ratio = lt.gen / totalGen;
+      result.push({
+        language,
+        model,
+        code_generation_activity_count: Math.round(mt.gen    * ratio),
+        code_acceptance_activity_count: Math.round(mt.accept * ratio),
+        loc_suggested_to_add_sum:       Math.round(mt.locSug    * ratio),
+        loc_suggested_to_delete_sum:    Math.round(mt.locSugDel * ratio),
+        loc_added_sum:                  Math.round(mt.locAdd    * ratio),
+        loc_deleted_sum:                Math.round(mt.locDel    * ratio),
+      });
+    }
+  }
+  return result;
 }

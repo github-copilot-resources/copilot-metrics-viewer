@@ -1,0 +1,34 @@
+name: Version check
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Check version is not already released
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          echo "package.json version: $VERSION"
+
+          # Pass if the tag has never been published as a GitHub release.
+          # Fail only if this exact version was already released — in that case
+          # the PR must bump the version before merging.
+          if gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "::error::Version $VERSION is already released as $TAG. Run 'npm version patch' (or minor/major) before merging."
+            exit 1
+          else
+            echo "✓ Version $VERSION ($TAG) has not been released yet — OK to merge without bumping."
+          fi

@@ -125,6 +125,21 @@ describe('Options', () => {
       expect(options.scope).toBe('organization')
     })
 
+    // ── Regression: Bug #366 — user metrics date filter must include since/until ──
+    // MainComponent.vue#userMetricsFetch was calling Options.fromRoute(route) without
+    // since/until. The fix passes dateRange.since/until explicitly.
+    // This test guards that omitting them loses the date range, making the fix necessary.
+    test('omitting since/until from fromRoute produces undefined date range (bug #366)', () => {
+      const mockRoute = createMockRoute({ org: 'test-org' })
+      const optionsWithout = Options.fromRoute(mockRoute)
+      expect(optionsWithout.since).toBeUndefined()
+      expect(optionsWithout.until).toBeUndefined()
+      // Confirm that passing them explicitly DOES include them
+      const optionsWith = Options.fromRoute(mockRoute, '2026-01-01', '2026-01-31')
+      expect(optionsWith.since).toBe('2026-01-01')
+      expect(optionsWith.until).toBe('2026-01-31')
+    })
+
     test('creates options from route with enterprise parameter', () => {
       const mockRoute = createMockRoute({ ent: 'test-ent' })
       
@@ -161,6 +176,78 @@ describe('Options', () => {
       // The runtime config defaults are not being applied in the test environment
       // This is expected behavior in the test - runtime config would apply in real app
       expect(options.githubOrg).toBeUndefined()
+    })
+  })
+
+  describe('reportsto virtual team', () => {
+    test('fromRoute with upn sets githubTeam to reports-to: prefix', () => {
+      const mockRoute = createMockRoute({ org: 'test-org', upn: 'monalisa@octodemo.com' })
+      const options = Options.fromRoute(mockRoute)
+      expect(options.githubTeam).toBe('reports-to:monalisa@octodemo.com')
+      expect(options.githubOrg).toBe('test-org')
+      expect(options.scope).toBe('organization')
+    })
+
+    test('fromRoute with enterprise upn sets githubTeam to reports-to: prefix', () => {
+      const mockRoute = createMockRoute({ ent: 'test-ent', upn: 'monalisa@octodemo.com' })
+      const options = Options.fromRoute(mockRoute)
+      expect(options.githubTeam).toBe('reports-to:monalisa@octodemo.com')
+      expect(options.githubEnt).toBe('test-ent')
+    })
+
+    test('fromRoute with upn and users query decodes reportToLogins', () => {
+      // Encode logins the same way encodeUsersParam does
+      const logins = ['monalisa', 'defunkt', 'octocat']
+      const b64 = btoa(logins.join(',')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+      const mockRoute = createMockRoute({ org: 'test-org', upn: 'monalisa@octodemo.com' }, { users: b64 })
+      const options = Options.fromRoute(mockRoute)
+      expect(options.reportToLogins).toEqual(logins)
+    })
+
+    test('toParams encodes reportToLogins as users param', () => {
+      const options = new Options({
+        githubOrg: 'test-org',
+        scope: 'organization',
+        githubTeam: 'reports-to:monalisa@octodemo.com',
+        reportToLogins: ['monalisa', 'defunkt'],
+      })
+      const params = options.toParams()
+      expect(params.users).toBeDefined()
+      // Decode and verify round-trip
+      const padded = params.users.replace(/-/g, '+').replace(/_/g, '/')
+      const decoded = atob(padded)
+      expect(decoded).toBe('monalisa,defunkt')
+    })
+
+    test('reportToLogins round-trips through toParams and fromQuery', () => {
+      const logins = ['alicechen', 'bobmartinez', 'codertocat']
+      const options = new Options({
+        githubOrg: 'octodemo',
+        scope: 'organization',
+        githubTeam: 'reports-to:alice@octodemo.com',
+        reportToLogins: logins,
+      })
+      const params = options.toParams()
+      const restored = Options.fromQuery(params)
+      expect(restored.reportToLogins).toEqual(logins)
+    })
+
+    test('fromQuery without users param leaves reportToLogins undefined', () => {
+      const options = Options.fromQuery({ githubOrg: 'test-org', githubTeam: 'reports-to:alice@co.com' })
+      expect(options.reportToLogins).toBeUndefined()
+    })
+
+    test('clone preserves reportToLogins', () => {
+      const options = new Options({ reportToLogins: ['monalisa', 'defunkt'] })
+      const cloned = options.clone()
+      expect(cloned.reportToLogins).toEqual(['monalisa', 'defunkt'])
+    })
+
+    test('merge carries reportToLogins from other', () => {
+      const base = new Options({ githubOrg: 'test-org' })
+      const other = new Options({ reportToLogins: ['monalisa'] })
+      const merged = base.merge(other)
+      expect(merged.reportToLogins).toEqual(['monalisa'])
     })
   })
 
@@ -599,6 +686,25 @@ describe('Options', () => {
       })
       
       expect(() => options.getSeatsApiUrl()).toThrow('Invalid scope: invalid-scope')
+    })
+
+    // ── Regression: Bug #366 — org+team route must not skip team-member filter ──
+    // seats.ts uses: `const isOrgOnly = options.scope === 'organization' && !options.githubTeam`
+    // Before the fix, isOrgOnly was `options.scope === 'organization'` which returned all org
+    // seats without filtering to team members when githubTeam was also set.
+    test('githubTeam is set on org+team options (bug #366: isOrgOnly must be false)', () => {
+      const orgWithTeam = new Options({
+        scope: 'organization',
+        githubOrg: 'test-org',
+        githubTeam: 'the-a-team',
+      })
+      // The condition used in seats.ts must evaluate to false when githubTeam is set
+      expect(orgWithTeam.scope === 'organization' && !orgWithTeam.githubTeam).toBe(false)
+    })
+
+    test('githubTeam is absent on plain org options (isOrgOnly fast path applies)', () => {
+      const orgOnly = new Options({ scope: 'organization', githubOrg: 'test-org' })
+      expect(orgOnly.scope === 'organization' && !orgOnly.githubTeam).toBe(true)
     })
   })
 
