@@ -1015,8 +1015,12 @@ export default defineComponent({
       } else {
         base = `/orgs/${cfg.public.githubOrg}/reportsto/${encodedUpn}`
       }
-      if (route.query.mock) base += `?mock=${route.query.mock}`
-      return base
+      const query = new URLSearchParams()
+      if (route.query.mock) query.set('mock', route.query.mock as string)
+      if (entraFilterLogins.value.length) query.set('users', encodeUsersParam(entraFilterLogins.value))
+      if (entraFilterLabel.value) query.set('name', entraFilterLabel.value)
+      const qs = query.toString()
+      return qs ? `${base}?${qs}` : base
     }
 
     // Org-level metrics for Entra filter charts
