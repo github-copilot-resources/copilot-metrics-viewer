@@ -1004,11 +1004,17 @@ export default defineComponent({
       const upn = entraFilterUpn.value
       if (!upn) return ''
       const encodedUpn = encodeURIComponent(upn)
-      const org = route.params.org as string | undefined
-      const ent = route.params.ent as string | undefined
-      let base = ent
-        ? `/enterprises/${ent}/reportsto/${encodedUpn}`
-        : `/orgs/${org}/reportsto/${encodedUpn}`
+      const cfg = useRuntimeConfig()
+      let base: string
+      if (scopeType.value === 'enterprise') {
+        if (selectedOrg.value) {
+          base = `/orgs/${selectedOrg.value}/reportsto/${encodedUpn}`
+        } else {
+          base = `/enterprises/${cfg.public.githubEnt}/reportsto/${encodedUpn}`
+        }
+      } else {
+        base = `/orgs/${cfg.public.githubOrg}/reportsto/${encodedUpn}`
+      }
       if (route.query.mock) base += `?mock=${route.query.mock}`
       return base
     }
