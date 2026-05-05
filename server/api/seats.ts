@@ -66,7 +66,7 @@ async function resolveReportsToMembers(options: Options): Promise<TeamMember[]> 
     const node = findNodeInTree(root, upn);
     if (!node) return [];
     return collectNodeAndDescendants(node).map(u => ({
-      login: normalizeUPNtoLogin(u.userPrincipalName),
+      login: u.githubLogin ?? normalizeUPNtoLogin(u.userPrincipalName),
       id: 0,
     }));
   }

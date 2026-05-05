@@ -12,6 +12,8 @@ export interface MockTreeNode {
   department: string | null
   officeLocation: string | null
   directReports: MockTreeNode[]
+  /** Explicit GitHub login for this user. Used to avoid prefix-heuristic matching in mock mode. */
+  githubLogin?: string
 }
 
 /**
@@ -32,10 +34,10 @@ export function findNodeInTree(node: MockTreeNode, upn: string): MockTreeNode | 
 /**
  * Collect all direct and transitive reports (excludes the node itself).
  */
-export function collectDescendants(node: MockTreeNode): Array<{ mail: string | null; userPrincipalName: string }> {
-  const result: Array<{ mail: string | null; userPrincipalName: string }> = []
+export function collectDescendants(node: MockTreeNode): Array<{ mail: string | null; userPrincipalName: string; githubLogin?: string }> {
+  const result: Array<{ mail: string | null; userPrincipalName: string; githubLogin?: string }> = []
   for (const child of node.directReports) {
-    result.push({ mail: child.mail, userPrincipalName: child.userPrincipalName })
+    result.push({ mail: child.mail, userPrincipalName: child.userPrincipalName, githubLogin: child.githubLogin })
     result.push(...collectDescendants(child))
   }
   return result
@@ -45,9 +47,9 @@ export function collectDescendants(node: MockTreeNode): Array<{ mail: string | n
  * Collect the node itself plus all direct and transitive reports.
  * Used when scoping the dashboard to a manager's full org unit.
  */
-export function collectNodeAndDescendants(node: MockTreeNode): Array<{ mail: string | null; userPrincipalName: string }> {
+export function collectNodeAndDescendants(node: MockTreeNode): Array<{ mail: string | null; userPrincipalName: string; githubLogin?: string }> {
   return [
-    { mail: node.mail, userPrincipalName: node.userPrincipalName },
+    { mail: node.mail, userPrincipalName: node.userPrincipalName, githubLogin: node.githubLogin },
     ...collectDescendants(node),
   ]
 }

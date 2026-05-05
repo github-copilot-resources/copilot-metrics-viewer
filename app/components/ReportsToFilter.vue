@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useMsal } from '~/composables/useMsal'
-import { matchEmailsToLogins } from '#shared/utils/org-login-matching'
 import type { OrgSearchResult, OrgReportsResponse } from '#shared/types/org-tree'
 import type { UserTotals } from '#shared/types/org-tree'
 
@@ -37,6 +36,7 @@ const filterCount = ref(0)
 const loadingReports = ref(false)
 const apiError = ref<string | null>(null)
 const signingIn = ref(false)
+const unresolvedCount = ref(0)
 
 async function getHeaders(): Promise<Record<string, string>> {
   const token = await msal.acquireTokenSilent()
@@ -63,20 +63,27 @@ function onSearchInput(q: string) {
   }, 300)
 }
 
+function orgQuery() {
+  return isMockMode.value
+    ? { mock: 'true' }
+    : { githubOrg: config.public.githubOrg as string }
+}
+
 async function onPersonSelect(person: OrgSearchResult | null) {
   apiError.value = null
   filterCount.value = 0
+  unresolvedCount.value = 0
   if (!person) { emit('select', [], '', ''); return }
   loadingReports.value = true
   try {
     const headers = await getHeaders()
     const resp = await $fetch<OrgReportsResponse>('/api/org-reports', {
-      query: { userUpn: person.userPrincipalName, ...(isMockMode.value ? { mock: 'true' } : {}) },
+      query: { userUpn: person.userPrincipalName, ...orgQuery() },
       headers,
     })
     filterCount.value = resp.count
-    const logins = matchEmailsToLogins(resp.members, props.userMetrics)
-    emit('select', logins, person.displayName, person.userPrincipalName)
+    unresolvedCount.value = resp.unresolvedCount
+    emit('select', resp.resolvedLogins, person.displayName, person.userPrincipalName)
   } catch (e: any) {
     apiError.value = e?.data?.message ?? e?.message ?? 'Failed to load reports'
     selectedPerson.value = null
@@ -97,6 +104,7 @@ function clear() {
   searchQuery.value = ''
   searchResults.value = []
   filterCount.value = 0
+  unresolvedCount.value = 0
   apiError.value = null
   emit('select', [], '', '')
 }
@@ -106,10 +114,11 @@ async function resolveUpn(upn: string) {
   loadingReports.value = true
   apiError.value = null
   filterCount.value = 0
+  unresolvedCount.value = 0
   try {
     const headers = await getHeaders()
     const resp = await $fetch<OrgReportsResponse>('/api/org-reports', {
-      query: { userUpn: upn, ...(isMockMode.value ? { mock: 'true' } : {}) },
+      query: { userUpn: upn, ...orgQuery() },
       headers,
     })
     selectedPerson.value = {
@@ -120,8 +129,8 @@ async function resolveUpn(upn: string) {
       jobTitle: resp.rootUser.jobTitle,
     }
     filterCount.value = resp.count
-    const logins = matchEmailsToLogins(resp.members, props.userMetrics)
-    emit('select', logins, resp.rootUser.displayName, upn)
+    unresolvedCount.value = resp.unresolvedCount
+    emit('select', resp.resolvedLogins, resp.rootUser.displayName, upn)
   } catch (e: any) {
     apiError.value = e?.data?.message ?? e?.message ?? 'Failed to load reports'
     emit('select', [], '', '')
@@ -169,18 +178,24 @@ watch(showSearch, (isVisible) => {
     </div>
 
     <!-- Active filter chip (after person is selected and reports loaded) -->
-    <v-chip
-      v-else-if="selectedPerson && !loadingReports"
-      closable
-      color="primary"
-      variant="tonal"
-      size="small"
-      @click:close="clear"
-    >
-      <v-icon start size="small">mdi-account-supervisor-outline</v-icon>
-      Reports to {{ selectedPerson.displayName }}
-      <span v-if="filterCount > 0" class="ml-1 text-caption opacity-80">({{ filterCount }})</span>
-    </v-chip>
+    <div v-else-if="selectedPerson && !loadingReports">
+      <v-chip
+        closable
+        color="primary"
+        variant="tonal"
+        size="small"
+        @click:close="clear"
+      >
+        <v-icon start size="small">mdi-account-supervisor-outline</v-icon>
+        Reports to {{ selectedPerson.displayName }}
+        <span v-if="filterCount > 0" class="ml-1 text-caption opacity-80">({{ filterCount }})</span>
+      </v-chip>
+      <div v-if="unresolvedCount > 0" class="text-caption text-warning mt-1">
+        <v-icon size="x-small" color="warning">mdi-alert-outline</v-icon>
+        {{ unresolvedCount }} member{{ unresolvedCount === 1 ? '' : 's' }} could not be matched to a GitHub login (no SAML identity linked).
+        Dashboard may be incomplete.
+      </div>
+    </div>
 
     <!-- Loading spinner while fetching transitive reports -->
     <div v-else-if="loadingReports" class="d-flex align-center gap-2">

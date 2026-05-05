@@ -39,6 +39,8 @@ export interface OrgSearchResult {
 export interface OrgReportsMember {
   mail: string | null
   userPrincipalName: string
+  /** GitHub login resolved via SAML identity or explicit mapping (present in mock mode). */
+  githubLogin?: string
 }
 
 /** Response shape for /api/org-reports */
@@ -47,4 +49,14 @@ export interface OrgReportsResponse {
   members: OrgReportsMember[]
   count: number
   truncated: boolean
+  /**
+   * GitHub logins matched from Entra members via SAML identity lookup.
+   * May be fewer than `count` if some members have no linked SAML identity.
+   */
+  resolvedLogins: string[]
+  /**
+   * Number of Entra members that could not be matched to a GitHub login.
+   * A non-zero value means the dashboard filter is incomplete.
+   */
+  unresolvedCount: number
 }
