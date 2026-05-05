@@ -170,33 +170,46 @@
         </v-row>
       </v-container>
 
-      <!-- Entra hierarchy header -->
+      <!-- Entra hierarchy card (styled like team summary card) -->
       <v-container v-else-if="entraOnlyMode" fluid class="px-4 pb-0">
-        <v-card elevation="2" class="pa-3 mt-1">
-          <div class="d-flex align-center gap-2">
-            <v-icon color="indigo">mdi-account-supervisor-outline</v-icon>
-            <span class="text-subtitle-1 font-weight-medium">Reports to {{ entraFilterLabel }}</span>
-            <v-spacer />
-            <v-tooltip location="top" :text="permalinkCopied ? 'Copied!' : 'Copy shareable link'">
-              <template #activator="{ props: tip }">
+        <v-row dense>
+          <v-col cols="12" sm="6" md="4" lg="3">
+            <v-card elevation="3" class="pa-3" style="border-left: 4px solid #5c6bc0">
+              <div class="d-flex align-center gap-2 mb-1">
+                <v-icon size="18" color="indigo">mdi-account-supervisor-outline</v-icon>
+                <span class="text-subtitle-2 font-weight-medium">Reports to {{ entraFilterLabel }}</span>
+                <v-spacer />
                 <v-btn
-                  v-bind="tip"
-                  :icon="permalinkCopied ? 'mdi-check' : 'mdi-link-variant'"
-                  size="small"
                   variant="text"
-                  :color="permalinkCopied ? 'success' : undefined"
-                  @click="copyPermalink"
-                />
-              </template>
-            </v-tooltip>
-          </div>
-          <div class="text-caption text-medium-emphasis mt-1">
-            {{ sortedUserMetrics.length }} user{{ sortedUserMetrics.length !== 1 ? 's' : '' }} in reporting hierarchy
-          </div>
-          <v-alert type="info" variant="tonal" density="compact" class="mt-2 text-caption">
-            Charts show organisation-wide metrics. User table is filtered to the selected hierarchy.
-          </v-alert>
-        </v-card>
+                  size="x-small"
+                  icon
+                  title="Clear filter"
+                  @click="onEntraSelect([], '', undefined)"
+                >
+                  <v-icon size="14">mdi-close</v-icon>
+                </v-btn>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Members in hierarchy</span>
+                <span class="font-weight-medium">{{ sortedUserMetrics.length }}</span>
+              </div>
+              <div class="d-flex align-center justify-space-between mt-2">
+                <div class="text-caption text-medium-emphasis">{{ dateRangeDesc }}</div>
+                <v-btn
+                  v-if="getReportsToUrl()"
+                  :to="getReportsToUrl()"
+                  variant="outlined"
+                  size="small"
+                  append-icon="mdi-open-in-new"
+                  :aria-label="`Navigate to full dashboard for ${entraFilterLabel}`"
+                >VIEW</v-btn>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+        <v-alert type="info" variant="tonal" density="compact" class="mt-2 text-caption">
+          Charts show organisation-wide metrics. User table is filtered to the selected hierarchy.
+        </v-alert>
       </v-container>
 
       <!-- KPI Tiles -->
@@ -987,8 +1000,6 @@ export default defineComponent({
     // UPN passed to ReportsToFilter only after allUserMetrics is loaded (so matching works)
     const resolvedInitialUpn = ref('')
 
-    // Permalink helpers
-    const permalinkCopied = ref(false)
     const getReportsToUrl = (): string => {
       const upn = entraFilterUpn.value
       if (!upn) return ''
@@ -1000,16 +1011,6 @@ export default defineComponent({
         : `/orgs/${org}/reportsto/${encodedUpn}`
       if (route.query.mock) base += `?mock=${route.query.mock}`
       return base
-    }
-    async function copyPermalink() {
-      if (!process.client) return
-      const path = getReportsToUrl()
-      if (!path) return
-      try {
-        await navigator.clipboard.writeText(window.location.origin + path)
-        permalinkCopied.value = true
-        setTimeout(() => { permalinkCopied.value = false }, 2000)
-      } catch { /* ignore clipboard errors */ }
     }
 
     // Org-level metrics for Entra filter charts
@@ -1424,8 +1425,6 @@ export default defineComponent({
       onEntraSelect,
       resolvedInitialUpn,
       getReportsToUrl,
-      permalinkCopied,
-      copyPermalink,
       // comparison
       comparisonSummaryCards,
       comparisonModelsData,
