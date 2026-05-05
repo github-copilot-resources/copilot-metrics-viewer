@@ -29,6 +29,16 @@ export default {
             component: () => import('~/pages/index.vue')
         },
         {
+            name: 'org-reportsto',
+            path: '/orgs/:org/reportsto/:upn',
+            component: () => import('~/pages/index.vue')
+        },
+        {
+            name: 'ent-reportsto',
+            path: '/enterprises/:ent/reportsto/:upn',
+            component: () => import('~/pages/index.vue')
+        },
+        {
             name: 'select-org',
             path: '/select-org',
             component: () => import('~/pages/select-org.vue')

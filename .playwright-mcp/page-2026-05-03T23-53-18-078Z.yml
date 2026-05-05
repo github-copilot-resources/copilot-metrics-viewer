@@ -1,0 +1,54 @@
+- generic [active] [ref=e1]:
+  - button [ref=e2] [cursor=pointer]:
+    - generic [ref=e4]: 󱙺
+  - generic [ref=e7]:
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - button [ref=e12] [cursor=pointer]:
+              - generic [ref=e14]: 󰊤
+            - generic [ref=e16]: "Copilot Metrics Viewer | Organization : octodemo"
+            - heading "Using mock data - see README if unintended" [level=2] [ref=e17]
+            - button "Show date range" [ref=e18] [cursor=pointer]:
+              - generic [ref=e20]: 󰃭
+            - button "Switch to dark mode" [ref=e21] [cursor=pointer]:
+              - generic [ref=e23]: 󰖔
+            - text: 󰀉
+            - button "Authentication info" [ref=e24] [cursor=pointer]:
+              - generic [ref=e26]: 󰢏
+          - tablist [ref=e28]:
+            - generic [ref=e30]:
+              - tab "organization" [ref=e31] [cursor=pointer]:
+                - generic [ref=e32]: organization
+              - tab "teams" [ref=e33] [cursor=pointer]:
+                - generic [ref=e34]: teams
+              - tab "languages" [ref=e35] [cursor=pointer]:
+                - generic [ref=e36]: languages
+              - tab "editors" [ref=e37] [cursor=pointer]:
+                - generic [ref=e38]: editors
+              - tab "copilot chat" [ref=e39] [cursor=pointer]:
+                - generic [ref=e40]: copilot chat
+              - tab "agent activity" [ref=e41] [cursor=pointer]:
+                - generic [ref=e42]: agent activity
+              - tab "pull requests" [ref=e43] [cursor=pointer]:
+                - generic [ref=e44]: pull requests
+              - tab "models" [ref=e45] [cursor=pointer]:
+                - generic [ref=e46]: models
+              - tab "seat analysis" [ref=e47] [cursor=pointer]:
+                - generic [ref=e48]: seat analysis
+              - tab "user metrics" [ref=e49] [cursor=pointer]:
+                - generic [ref=e50]: user metrics
+              - tab "api response" [ref=e51] [cursor=pointer]:
+                - generic [ref=e52]: api response
+        - text: 󰄱
+        - generic [ref=e53]:
+          - progressbar [ref=e54]
+          - text: 󰀨
+    - contentinfo [ref=e55]:
+      - generic [ref=e56]:
+        - text: 2026 —
+        - strong [ref=e57]:
+          - link "Copilot Metrics Viewer" [ref=e58] [cursor=pointer]:
+            - /url: https://github.com/github-copilot-resources/copilot-metrics-viewer
+        - text: — 3.7.0

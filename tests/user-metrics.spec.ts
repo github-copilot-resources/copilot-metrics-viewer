@@ -696,4 +696,42 @@ describe('/api/user-metrics handler – team filtering', () => {
     expect(result).toHaveLength(1)
     expect((result as any[])[0].login).toBe('octokitten')
   })
+
+  it('adds zero-filled stubs for team members with no usage data', async () => {
+    // Team has two members: octocat (active in storage) and inactiveuser (not in storage)
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'organization',
+      githubOrg: 'test-org',
+      githubTeam: 'mixed-team',
+    })
+
+    const stored = {
+      reportStartDay: '2026-03-05',
+      reportEndDay: '2026-04-01',
+      userTotals: [SAMPLE_USER_REPORT.user_totals[0]], // only octocat (id:1)
+    }
+    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockFetchAllTeamMembers.mockResolvedValue([
+      { login: 'octocat', id: 1 },       // active — has real usage data
+      { login: 'inactiveuser', id: 99 },  // inactive — no usage data in storage
+    ])
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = (await handler(makeEvent(true))) as any[]
+
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(2)
+
+    const active = result.find(u => u.login === 'octocat')
+    expect(active).toBeDefined()
+    expect(active.total_active_days).toBe(22) // preserved real data
+
+    const inactive = result.find(u => u.login === 'inactiveuser')
+    expect(inactive).toBeDefined()
+    expect(inactive.user_id).toBe(99)
+    expect(inactive.total_active_days).toBe(0)
+    expect(inactive.user_initiated_interaction_count).toBe(0)
+    expect(inactive.code_generation_activity_count).toBe(0)
+    expect(inactive.code_acceptance_activity_count).toBe(0)
+  })
 })

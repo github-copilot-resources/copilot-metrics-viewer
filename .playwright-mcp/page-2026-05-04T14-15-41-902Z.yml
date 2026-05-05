@@ -1,0 +1,147 @@
+- generic [ref=e1]:
+  - button [ref=e2] [cursor=pointer]:
+    - generic [ref=e4]: 󱙺
+  - generic [ref=e7]:
+    - main [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - button [ref=e12] [cursor=pointer]:
+              - generic [ref=e14]: 󰊤
+            - generic [ref=e16]: "Copilot Metrics Viewer | Organization : mocked-org"
+            - heading "Using mock data - see README if unintended" [level=2] [ref=e17]
+            - button "Show date range" [ref=e18] [cursor=pointer]:
+              - generic [ref=e20]: 󰃭
+            - button "Switch to light mode" [ref=e162] [cursor=pointer]:
+              - generic [ref=e23]: 󰖙
+            - text: 󰀉
+            - button "Authentication info" [ref=e24] [cursor=pointer]:
+              - generic [ref=e26]: 󰢏
+          - tablist [ref=e28]:
+            - generic [ref=e30]:
+              - tab "organization" [ref=e31] [cursor=pointer]:
+                - generic [ref=e32]: organization
+              - tab "teams" [selected] [ref=e33] [cursor=pointer]:
+                - generic [ref=e34]: teams
+              - tab "languages" [ref=e35] [cursor=pointer]:
+                - generic [ref=e36]: languages
+              - tab "editors" [ref=e37] [cursor=pointer]:
+                - generic [ref=e38]: editors
+              - tab "copilot chat" [ref=e39] [cursor=pointer]:
+                - generic [ref=e40]: copilot chat
+              - tab "agent activity" [ref=e41] [cursor=pointer]:
+                - generic [ref=e42]: agent activity
+              - tab "pull requests" [ref=e43] [cursor=pointer]:
+                - generic [ref=e44]: pull requests
+              - tab "models" [ref=e45] [cursor=pointer]:
+                - generic [ref=e46]: models
+              - tab "seat analysis" [ref=e47] [cursor=pointer]:
+                - generic [ref=e48]: seat analysis
+              - tab "user metrics" [ref=e49] [cursor=pointer]:
+                - generic [ref=e50]: user metrics
+              - tab "api response" [ref=e51] [cursor=pointer]:
+                - generic [ref=e52]: api response
+        - text: 󰄱
+        - generic [ref=e61]:
+          - text: 󰏌 󰏌 󰏌 󰔴 󰔴 󰔵 󰕪 󰕰 󰊓
+          - generic [ref=e64]:
+            - generic [ref=e67]:
+              - generic [ref=e68]: 🏢 Teams Dashboard
+              - generic [ref=e69]:
+                - text: Compare Copilot usage across teams. Select
+                - strong [ref=e70]: one team
+                - text: for a full deep-dive view with charts and per-user metrics, or
+                - strong [ref=e71]: multiple teams
+                - text: to compare them side by side.
+            - alert [ref=e72]:
+              - generic [ref=e74]: 󰀨
+              - generic [ref=e75]:
+                - strong [ref=e76]: "Performance notice:"
+                - text: Team metrics are computed by fetching enterprise-wide user data and filtering by team membership. Each team selection triggers a full user-metrics download, which may hit GitHub API rate limits with frequent use. For production use, enable
+                - strong [ref=e77]: historical mode
+                - text: (
+                - code [ref=e78]: ENABLE_HISTORICAL_MODE=true
+                - text: ) to cache data in the database and avoid repeated API calls.
+              - button "Close" [ref=e80] [cursor=pointer]:
+                - generic [ref=e82]: 󰅖
+            - generic [ref=e83]:
+              - generic [ref=e85]:
+                - combobox [expanded] [ref=e87]:
+                  - textbox "Search and select teams Search and select teams" [active] [ref=e90]
+                  - text: 󰅙
+                  - button "Close" [ref=e139] [cursor=pointer]: 󰍝
+                  - generic:
+                    - generic:
+                      - generic: Search and select teams
+                  - listbox [ref=e141]:
+                    - generic [ref=e143] [cursor=pointer]:
+                      - generic [ref=e144]: The A Team
+                      - generic [ref=e145]: A team of elite agents
+                    - generic [ref=e147] [cursor=pointer]:
+                      - generic [ref=e148]: Development Team
+                      - generic [ref=e149]: Team responsible for development
+                    - generic [ref=e151] [cursor=pointer]:
+                      - generic [ref=e152]: Frontend Team
+                      - generic [ref=e153]: Team responsible for frontend development
+                    - generic [ref=e155] [cursor=pointer]:
+                      - generic [ref=e156]: Backend Team
+                      - generic [ref=e157]: Team responsible for backend development
+                    - generic [ref=e159] [cursor=pointer]:
+                      - generic [ref=e160]: QA Team
+                      - generic [ref=e161]: Team responsible for quality assurance
+                - alert [ref=e94]:
+                  - generic [ref=e95]: Type to filter · 1 team = deep dive · 2+ teams = comparison
+              - generic [ref=e96]:
+                - generic [ref=e97]: Or filter by reporting hierarchy
+                - combobox [ref=e101]:
+                  - generic [ref=e103]: 󱄭
+                  - generic [ref=e104]:
+                    - generic: "Filter: reports to…"
+                    - 'textbox "Filter: reports to… Filter: reports to…" [ref=e106]'
+                  - text: 󰅙
+                  - button "Open" [ref=e108] [cursor=pointer]: 󰍝
+            - generic [ref=e111]:
+              - generic [ref=e112]: 󰭘
+              - heading "No Team Selected" [level=3] [ref=e113]
+              - paragraph [ref=e114]:
+                - text: Select
+                - strong [ref=e115]: one team
+                - text: for a full dashboard view, or
+                - strong [ref=e116]: multiple teams
+                - text: to compare their metrics side by side.
+              - generic [ref=e117]:
+                - generic [ref=e118]:
+                  - generic [ref=e119]: 󰕮
+                  - paragraph [ref=e120]:
+                    - text: 1 team → Deep Dive
+                    - text: Charts, languages, editors, models, users
+                - generic [ref=e121]:
+                  - generic [ref=e122]: 󰆊
+                  - paragraph [ref=e123]:
+                    - text: 2+ teams → Comparison
+                    - text: Side-by-side metrics comparison
+          - text: 󰀨
+    - contentinfo [ref=e55]:
+      - generic [ref=e56]:
+        - text: 2026 —
+        - strong [ref=e57]:
+          - link "Copilot Metrics Viewer" [ref=e58] [cursor=pointer]:
+            - /url: https://github.com/github-copilot-resources/copilot-metrics-viewer
+        - text: — 3.7.0
+  - generic:
+    - img
+  - generic [ref=e124]:
+    - button "Toggle Nuxt DevTools" [ref=e125] [cursor=pointer]:
+      - img [ref=e126]
+    - generic "Page load time" [ref=e129]:
+      - generic [ref=e130]: "183"
+      - generic [ref=e131]: ms
+    - button "Toggle Component Inspector" [ref=e133] [cursor=pointer]:
+      - img [ref=e134]
+  - generic:
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip
+    - tooltip

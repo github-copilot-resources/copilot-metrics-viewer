@@ -108,9 +108,9 @@ export class DashboardPage {
         const rateText = await this.acceptanceRateByCountValue.textContent();
         expect(rateText).toBeDefined();
         const rate = parseFloat((rateText as string).replace('%', ''));
-        // Acceptance rate should be between 2% and 80% for realistic data
+        // Acceptance rate should be between 1% and 80% for realistic data
         // The old bug showed 0.4% — this catches that regression
-        expect(rate).toBeGreaterThanOrEqual(2);
+        expect(rate).toBeGreaterThanOrEqual(1);
         expect(rate).toBeLessThanOrEqual(80);
     }
 

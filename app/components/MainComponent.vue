@@ -125,6 +125,28 @@
       >Back to {{ orgLabel }}</v-btn>
     </v-alert>
 
+    <!-- Reports-to scope indicator — shown when viewing a /reportsto/:upn URL -->
+    <v-alert
+      v-if="reportsToName && !teamName"
+      variant="flat"
+      icon="mdi-account-supervisor"
+      density="compact"
+      class="ma-2"
+      style="background-color: #2E7D32; color: #FFFFFF;"
+    >
+      All metrics are scoped to reports under <strong>{{ reportsToName }}</strong>.
+      <v-btn
+        v-if="parentUrl"
+        :to="parentUrl"
+        variant="outlined"
+        size="x-small"
+        append-icon="mdi-arrow-right"
+        class="ml-2"
+        style="color: #FFFFFF; border-color: #FFFFFF;"
+        :aria-label="`Return to ${orgLabel} organization view`"
+      >Back to {{ orgLabel }}</v-btn>
+    </v-alert>
+
     <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
       v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
@@ -185,7 +207,7 @@
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" :team-name="teamName" />
-            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" />
+            <TeamsComponent v-if="item === 'teams'" :date-range-description="dateRangeDescription" :date-range="dateRange" :entra-enabled="entraEnabled" :initial-upn="(route.params.upn as string) || ''" />
             <BreakdownComponent
               v-if="item === 'languages'" :metrics="metrics" :breakdown-key="'language'"
               :date-range-description="dateRangeDescription" :report-data="reportData"
@@ -216,6 +238,7 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :date-range-description="dateRangeDescription"
               :user-metrics-history="userMetricsHistory"
               :query-params="seatsQueryParams"
+              :session-email="sessionEmail"
             />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
@@ -271,6 +294,7 @@ import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
 import { routeParamStr } from '@/utils/routeUtils';
+import { resolveDisplayName } from '#shared/utils/resolveDisplayName';
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -316,6 +340,16 @@ export default defineNuxtComponent({
       };
 
       await this.fetchMetrics();
+
+      // Re-fetch user metrics with updated date range
+      const { execute: executeUserMetrics, data: userMetricsData, error: userMetricsError } = this.userMetricsFetch;
+      await executeUserMetrics();
+      if (userMetricsError.value) {
+        console.warn('User metrics fetch failed:', userMetricsError.value);
+      } else {
+        this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
+        this.userMetricsReady = true;
+      }
     },
     async fetchMetrics() {
       if (this.signInRequired || !this.dateRange.since || !this.dateRange.until || this.isLoading) {
@@ -421,7 +455,7 @@ export default defineNuxtComponent({
   data() {
     return {
       tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'api response'],
-      tab: null,
+      tab: null as string | null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
       metricsReady: false,
@@ -462,8 +496,28 @@ export default defineNuxtComponent({
 
     // Filter out hidden tabs based on NUXT_PUBLIC_HIDDEN_TABS environment variable
     this.tabItems = applyHiddenTabs(this.tabItems, this.config.public.hiddenTabs as string);
+
+    // Auto-switch to teams tab when a /reportsto/:upn URL is visited
+    if (this.route?.params?.upn && this.tabItems.includes('teams')) {
+      this.tab = 'teams';
+    }
   },
   async mounted() {
+    // React to client-side navigation between /reportsto/ URLs
+    this.$watch(() => (this.route as ReturnType<typeof useRoute>).params.upn, (newUpn: string | string[] | undefined) => {
+      if (newUpn && this.tabItems.includes('teams')) {
+        this.tab = 'teams';
+      }
+    });
+
+    // Re-run fetchMetrics when ?users= changes (after TeamsComponent resolves logins
+    // and encodes them into the URL — MetricsViewer needs to re-fetch with the new scope).
+    this.$watch(() => (this.route as ReturnType<typeof useRoute>).query.users, () => {
+      if ((this.route as ReturnType<typeof useRoute>).params.upn) {
+        this.fetchMetrics();
+      }
+    });
+
     // Load initial data
     try {
 
@@ -555,23 +609,41 @@ export default defineNuxtComponent({
       route.value.params.team ? 'team' : (config.public.scope as string)
     );
     const teamName = computed(() => routeParamStr(route.value.params, 'team'));
+    const reportsToName = computed<string>(() => {
+      const upn = routeParamStr(route.value.params, 'upn');
+      if (!upn) return '';
+      // Prefer the human-readable label passed as ?name=, fall back to the UPN
+      return (route.value.query.name as string) || upn;
+    });
+    const isMockMode = computed(() =>
+      !!config.public.isDataMocked ||
+      route.value.query.mock === 'true' || route.value.query.mock === '1'
+    );
     const orgLabel = computed(() =>
       routeParamStr(route.value.params, 'org') ||
       routeParamStr(route.value.params, 'ent') ||
-      config.public.githubOrg || config.public.githubEnt || ''
+      (isMockMode.value ? 'octodemo' : (config.public.githubOrg || config.public.githubEnt || ''))
     );
     const parentUrl = computed<string | null>(() => {
       const org = routeParamStr(route.value.params, 'org');
       const ent = routeParamStr(route.value.params, 'ent');
       const team = routeParamStr(route.value.params, 'team');
+      const upn = routeParamStr(route.value.params, 'upn');
       if (org && team) return `/orgs/${org}`;
       if (ent && team) return `/enterprises/${ent}`;
+      if (org && upn) return `/orgs/${org}`;
+      if (ent && upn) return `/enterprises/${ent}`;
       return null;
     });
-    const displayName = computed(() => {
-      const base = getDisplayName(config.public);
-      return teamName.value ? `${base} | Team : ${teamName.value}` : base;
-    });
+    const displayName = computed(() => resolveDisplayName({
+      urlOrg: routeParamStr(route.value.params, 'org'),
+      urlEnt: routeParamStr(route.value.params, 'ent'),
+      isMockMode: isMockMode.value,
+      configOrg: config.public.githubOrg as string,
+      configEnt: config.public.githubEnt as string,
+      configScope: config.public.scope as string,
+      teamName: teamName.value,
+    }));
 
     const signInRequired = computed(() => {
       return isAuthRequired.value && !loggedIn.value;
@@ -599,7 +671,7 @@ export default defineNuxtComponent({
       server: true,
       immediate: false,
       query: computed(() => {
-        const options = Options.fromRoute(route.value);
+        const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
         return options.toParams();
       })
     });
@@ -607,6 +679,17 @@ export default defineNuxtComponent({
     const aiQueryParams = computed(() => {
       const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
       return options.toParams();
+    });
+
+    const entraEnabled = computed(() =>
+      config.public.isDataMocked || !!config.public.entraClientId
+    );
+    const sessionEmail = computed(() => {
+      if (!user.value) return '';
+      // GitHub OAuth stores email separately; Microsoft OAuth stores email as login
+      return (user.value as unknown as Record<string, unknown>).email as string
+        || (user.value.login && user.value.login.includes('@') ? user.value.login : '')
+        || '';
     });
 
     return {
@@ -620,6 +703,7 @@ export default defineNuxtComponent({
       itemName,
       displayName,
       teamName,
+      reportsToName,
       orgLabel,
       parentUrl,
       signInRequired,
@@ -632,6 +716,8 @@ export default defineNuxtComponent({
       seatsCurrentPage,
       seatsQueryParams,
       aiQueryParams,
+      entraEnabled,
+      sessionEmail,
     };
   },
 })

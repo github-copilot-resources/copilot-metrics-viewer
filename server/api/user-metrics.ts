@@ -27,6 +27,12 @@ import mockUsersEnt28Day from '../../public/mock-data/new-api/enterprise-users-2
 /**
  * If the request is for a team scope, resolve team members and filter
  * the user totals to only include team members.
+ *
+ * Team members who have never used Copilot will not appear in the usage
+ * API response. To support accurate adoption calculations (e.g. "6 of 10
+ * members active"), we append zero-filled stubs for those inactive members
+ * so the caller sees the complete team roster.
+ *
  * Returns the original array unchanged for non-team scopes.
  */
 async function filterByTeamIfNeeded(
@@ -42,10 +48,32 @@ async function filterByTeamIfNeeded(
   const memberIds = new Set(teamMembers.map(m => m.id));
   const memberLogins = new Set(teamMembers.map(m => m.login.toLowerCase()));
 
-  return userTotals.filter(u =>
+  // Active users who are in this team
+  const activeInTeam = userTotals.filter(u =>
     (u.user_id && memberIds.has(u.user_id)) ||
     (u.login && memberLogins.has(u.login.toLowerCase()))
   );
+
+  // Zero-filled stubs for team members who have no usage data at all
+  const activeIds = new Set(activeInTeam.map(u => u.user_id).filter(Boolean));
+  const activeLogins = new Set(activeInTeam.map(u => u.login.toLowerCase()));
+
+  const inactiveStubs: UserTotals[] = teamMembers
+    .filter(m => !activeIds.has(m.id) && !activeLogins.has(m.login.toLowerCase()))
+    .map(m => ({
+      login: m.login,
+      user_id: m.id,
+      total_active_days: 0,
+      user_initiated_interaction_count: 0,
+      code_generation_activity_count: 0,
+      code_acceptance_activity_count: 0,
+      loc_suggested_to_add_sum: 0,
+      loc_suggested_to_delete_sum: 0,
+      loc_added_sum: 0,
+      loc_deleted_sum: 0,
+    }));
+
+  return [...activeInTeam, ...inactiveStubs];
 }
 
 export default defineEventHandler(async (event) => {
@@ -60,10 +88,16 @@ export default defineEventHandler(async (event) => {
     // Org mock uses UserDayRecord[] in day_totals → aggregate on the fly.
     // Enterprise mock uses pre-aggregated UserTotals[] in user_totals → return directly.
     const dayRecords = (raw as { day_totals?: UserDayRecord[] }).day_totals;
-    if (dayRecords) {
-      return aggregateUserDayRecords(dayRecords);
+    let userTotals: UserTotals[] = dayRecords
+      ? aggregateUserDayRecords(dayRecords)
+      : ((raw as { user_totals: UserTotals[] }).user_totals ?? []);
+
+    // Apply team filter in mock mode using the same mock membership table as seats
+    if (options.githubTeam) {
+      const members = await filterByTeamIfNeeded(userTotals, options, new Headers());
+      userTotals = members;
     }
-    return (raw as { user_totals: UserTotals[] }).user_totals ?? [];
+    return userTotals;
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────

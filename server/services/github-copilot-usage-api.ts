@@ -28,6 +28,8 @@ export interface MetricsReportRequest {
   scope: 'organization' | 'enterprise';
   identifier: string;
   teamSlug?: string;
+  /** When true, use mock data regardless of the server-wide NUXT_PUBLIC_IS_DATA_MOCKED env var */
+  isMocked?: boolean;
 }
 
 // --- Report Data Types (what the downloaded files contain) ---
@@ -447,7 +449,7 @@ export async function requestDownloadLinks(
   reportType: '1-day' | '28-day' = '28-day',
   day?: string
 ): Promise<DownloadLinksResponse> {
-  if (isMockMode()) {
+  if (isMockMode() || request.isMocked) {
     return mockRequestDownloadLinks(request, reportType, day);
   }
 
@@ -563,7 +565,7 @@ export async function fetchLatestReport(
 ): Promise<OrgReport> {
   // In mock mode, generate a report with dates anchored to today's 28-day window
   // so that seeded DB data always aligns with the dashboard's default date picker.
-  if (isMockMode()) {
+  if (isMockMode() || request.isMocked) {
     const toDate = (d: Date) => d.toISOString().split('T')[0]!;
     const endDay = toDate(new Date());
     const startDay = toDate(new Date(Date.now() - 27 * 24 * 60 * 60 * 1000));
@@ -686,7 +688,7 @@ export async function requestUserDownloadLinks(
   reportType: '1-day' | '28-day' = '28-day',
   day?: string
 ): Promise<DownloadLinksResponse> {
-  if (isMockMode()) {
+  if (isMockMode() || request.isMocked) {
     return mockRequestUserDownloadLinks(request, reportType, day);
   }
 

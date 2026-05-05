@@ -2,7 +2,7 @@
   <div style="position: relative;">
     <!-- Loading overlay while fetching team metrics -->
     <v-overlay
-      :model-value="isLoading"
+      :model-value="isLoading || entraOrgLoading"
       contained
       persistent
       class="align-center justify-center"
@@ -49,9 +49,7 @@
           clearable
           variant="outlined"
           density="compact"
-          :theme="isDark ? 'dark' : 'light'"
           :menu-props="{
-            contentClass: 'orgs-select-menu',
             maxHeight: 360,
             scrim: false,
             offset: 8
@@ -92,9 +90,7 @@
           clearable
           variant="outlined"
           density="compact"
-          :theme="isDark ? 'dark' : 'light'"
           :menu-props="{
-            contentClass: 'teams-select-menu',
             maxHeight: 360,
             scrim: false,
             closeOnContentClick: false,
@@ -114,15 +110,22 @@
         <div class="d-flex align-center gap-4 flex-shrink-0 mt-1 ml-2">
           <v-chip v-if="singleTeamMode" color="primary" size="small" prepend-icon="mdi-view-dashboard">Deep Dive</v-chip>
           <v-chip v-else-if="comparisonMode" color="secondary" size="small" prepend-icon="mdi-compare">Comparison</v-chip>
+          <v-chip v-else-if="entraOnlyMode" color="indigo" size="small" prepend-icon="mdi-account-supervisor-outline">Org Filter</v-chip>
           <v-btn v-if="selectedTeams.length > 0" variant="outlined" size="small" class="ml-2" @click="clearSelection">Clear All</v-btn>
         </div>
       </div>
+
+      <!-- Entra ID manager filter (shown when entraEnabled) -->
+      <div v-if="entraEnabled" class="mt-3 pt-3" style="border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity))">
+        <div class="text-caption text-medium-emphasis mb-2">Or filter by reporting hierarchy</div>
+        <ReportsToFilter :user-metrics="allUserMetrics" :initial-upn="resolvedInitialUpn" @select="onEntraSelect" />
+      </div>
     </v-card>
 
-    <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE -->
-    <div v-if="singleTeamMode">
-      <!-- Team header — same compact card as comparison mode -->
-      <v-container fluid class="px-4 pb-0">
+    <!-- ═══════════════════════════════════════════════ SINGLE TEAM DEEP DIVE + ENTRA FILTER -->
+    <div v-if="singleTeamMode || entraOnlyMode">
+      <!-- Team header — single team mode -->
+      <v-container v-if="singleTeamMode" fluid class="px-4 pb-0">
         <v-row dense>
           <v-col v-for="card in comparisonSummaryCards" :key="card.teamName" cols="12" sm="6" md="4" lg="3">
             <v-card elevation="3" class="pa-3" :style="`border-left: 4px solid ${card.color.border}`">
@@ -141,8 +144,8 @@
                 </v-btn>
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
-                <span>Active Users</span>
-                <span class="font-weight-medium">{{ card.activeUsers }}</span>
+                <span>Active Users (period)</span>
+                <span class="font-weight-medium">{{ singleTeamUserMetrics.length ? `${singleTeamUserMetrics.filter(u => u.total_active_days > 0).length} / ${singleTeamUserMetrics.length}` : card.activeUsers }}</span>
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
                 <span>Acceptance Rate</span>
@@ -165,6 +168,48 @@
             </v-card>
           </v-col>
         </v-row>
+      </v-container>
+
+      <!-- Entra hierarchy card (styled like team summary card) -->
+      <v-container v-else-if="entraOnlyMode" fluid class="px-4 pb-0">
+        <v-row dense>
+          <v-col cols="12" sm="6" md="4" lg="3">
+            <v-card elevation="3" class="pa-3" style="border-left: 4px solid #5c6bc0">
+              <div class="d-flex align-center gap-2 mb-1">
+                <v-icon size="18" color="indigo">mdi-account-supervisor-outline</v-icon>
+                <span class="text-subtitle-2 font-weight-medium">Reports to {{ entraFilterLabel }}</span>
+                <v-spacer />
+                <v-btn
+                  variant="text"
+                  size="x-small"
+                  icon
+                  title="Clear filter"
+                  @click="onEntraSelect([], '', undefined)"
+                >
+                  <v-icon size="14">mdi-close</v-icon>
+                </v-btn>
+              </div>
+              <div class="d-flex justify-space-between text-caption text-medium-emphasis">
+                <span>Members in hierarchy</span>
+                <span class="font-weight-medium">{{ sortedUserMetrics.length }}</span>
+              </div>
+              <div class="d-flex align-center justify-space-between mt-2">
+                <div class="text-caption text-medium-emphasis">{{ dateRangeDesc }}</div>
+                <v-btn
+                  v-if="getReportsToUrl()"
+                  :to="getReportsToUrl()"
+                  variant="outlined"
+                  size="small"
+                  append-icon="mdi-open-in-new"
+                  :aria-label="`Navigate to full dashboard for ${entraFilterLabel}`"
+                >VIEW</v-btn>
+              </div>
+            </v-card>
+          </v-col>
+        </v-row>
+        <v-alert type="info" variant="tonal" density="compact" class="mt-2 text-caption">
+          Charts show organisation-wide metrics. User table is filtered to the selected hierarchy.
+        </v-alert>
       </v-container>
 
       <!-- KPI Tiles -->
@@ -326,7 +371,8 @@
                 <tbody>
                   <tr v-for="user in sortedUserMetrics" :key="user.login">
                     <td>
-                      <span class="font-weight-medium">{{ user.login }}</span>
+                      <span class="font-weight-medium" :class="user.total_active_days === 0 ? 'text-medium-emphasis' : ''">{{ user.login }}</span>
+                      <v-chip v-if="user.total_active_days === 0" size="x-small" variant="tonal" color="warning" class="ml-2">inactive</v-chip>
                     </td>
                     <td class="text-right">{{ user.total_active_days }}</td>
                     <td class="text-right">{{ user.user_initiated_interaction_count.toLocaleString() }}</td>
@@ -489,15 +535,15 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, watch, onMounted, type PropType } from 'vue'
-import { useTheme } from 'vuetify'
 import { Line as LineChart, Bar as BarChart, Doughnut } from 'vue-chartjs'
-import { Options } from '@/model/Options'
+import { Options, encodeUsersParam } from '@/model/Options'
 import type { ChartData, ChartDataset } from 'chart.js'
 import type { MetricsApiResponse } from '@/types/metricsApiResponse';
 import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { ReportDayTotals, UserTotals } from '../../server/services/github-copilot-usage-api';
 import { PALETTE } from '@/utils/chartPlugins'
+import ReportsToFilter from './ReportsToFilter.vue'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -510,6 +556,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
+import { buildReportsToUrl } from '@/utils/routeUtils'
 
 const FEATURE_DISPLAY: Record<string, string> = {
   code_completion: 'Completions',
@@ -574,17 +621,23 @@ const DONUT_COLORS = ['#4BC0C0', '#9966FF', '#FF9F40', '#FF6384', '#36A2EB', '#F
 
 export default defineComponent({
   name: 'TeamsComponent',
-  components: { LineChart, BarChart, Doughnut },
+  components: { LineChart, BarChart, Doughnut, ReportsToFilter },
   props: {
     dateRange: { type: Object as PropType<DateRange>, required: false, default: () => ({}) },
-    dateRangeDescription: { type: String, default: '' }
+    dateRangeDescription: { type: String, default: '' },
+    entraEnabled: { type: Boolean, default: false },
+    initialUpn: { type: String, default: '' }
   },
   setup(props) {
-    const theme = useTheme()
-    const isDark = computed(() => theme.global.current.value.dark)
     const config = useRuntimeConfig()
+    const route = useRoute()
+    const router = useRouter()
     const isHistoricalMode = computed(() =>
       config.public?.enableHistoricalMode === true
+    )
+    const isMockMode = computed(() =>
+      !!config.public.isDataMocked ||
+      route.query.mock === 'true' || route.query.mock === '1'
     )
 
     const availableTeams = ref<Team[]>([])
@@ -716,16 +769,18 @@ export default defineComponent({
 
     // ── Single Team KPIs ──────────────────────────────────────────────────────
     const singleTeamKPIs = computed(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return []
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return []
+      const td = activeViewData.value
 
+      // Unique users active in the period — prefer user-metrics (per-user totals),
+      // fall back to the max daily_active_users across the date range.
       let activeUsers = 0
-      if (td.reportData.length) {
-        const sorted = [...td.reportData].sort((a, b) => a.day.localeCompare(b.day))
-        activeUsers = sorted.at(-1)?.daily_active_users || 0
+      if (singleTeamUserMetrics.value.length > 0) {
+        activeUsers = singleTeamUserMetrics.value.filter(u => u.total_active_days > 0).length
+      } else if (td.reportData.length) {
+        activeUsers = Math.max(...td.reportData.map(d => d.daily_active_users || 0), 0)
       } else if (td.metrics.length) {
-        const sorted = [...td.metrics].sort((a, b) => a.day.localeCompare(b.day))
-        activeUsers = sorted.at(-1)?.total_active_users || 0
+        activeUsers = Math.max(...td.metrics.map(m => m.total_active_users || 0), 0)
       }
 
       let totalGen = 0, totalAcc = 0
@@ -748,17 +803,23 @@ export default defineComponent({
       const topLang = Object.entries(langAgg).sort((a, b) => b[1].suggestions - a[1].suggestions)[0]?.[0] || '—'
 
       return [
-        { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: props.dateRangeDescription, tooltip: 'Daily active users on the latest available day' },
+        { label: 'Active Users', value: activeUsers, color: 'primary', subtitle: props.dateRangeDescription, tooltip: 'Unique users who used Copilot at least once during the period' },
         { label: 'Acceptance Rate', value: `${acceptanceRate}%`, color: 'success', subtitle: 'Completions accepted ÷ generated', tooltip: 'Weighted code acceptance rate (acceptances ÷ generations) over the date range' },
         { label: 'Interactions', value: totalInteractions ? totalInteractions.toLocaleString() : (totalAcc + totalGen).toLocaleString(), color: 'primary', subtitle: 'User-initiated requests', tooltip: 'Total user-initiated Copilot interactions over the date range' },
-        { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' }
+        { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' },
+        ...(singleTeamUserMetrics.value.length > 0 ? (() => {
+          const totalMembers = singleTeamUserMetrics.value.length
+          const activeMembers = singleTeamUserMetrics.value.filter(u => u.total_active_days > 0).length
+          const adoptionPct = Math.round(activeMembers / totalMembers * 100)
+          return [{ label: 'Copilot Adoption', value: `${adoptionPct}%`, color: 'success', subtitle: `${activeMembers} of ${totalMembers} members active`, tooltip: 'Percentage of team members with a Copilot seat who used Copilot at least once in the period' }]
+        })() : []),
       ]
     })
 
     // ── Single Team Time Series ───────────────────────────────────────────────
     const singleTeamAcceptanceRateData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const td = activeViewData.value
       const color = CHART_COLORS[0]!
 
       let days: string[] = []
@@ -785,8 +846,8 @@ export default defineComponent({
     })
 
     const singleTeamActiveUsersData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const td = activeViewData.value
       const color = CHART_COLORS[1]!
 
       let days: string[] = []
@@ -810,8 +871,8 @@ export default defineComponent({
 
     // ── Single Team Language Donut ─────────────────────────────────────────────
     const singleTeamLangDonutData = computed<ChartData<'doughnut', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const agg = aggregateLangStats(perTeamData.value[0])
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const agg = aggregateLangStats(activeViewData.value)
       const sorted = Object.entries(agg).sort((a, b) => b[1].suggestions - a[1].suggestions).slice(0, 10)
       if (!sorted.length) return { labels: [], datasets: [] }
       return {
@@ -825,8 +886,8 @@ export default defineComponent({
     })
 
     const topLanguages = computed(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return []
-      const agg = aggregateLangStats(perTeamData.value[0])
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return []
+      const agg = aggregateLangStats(activeViewData.value)
       return Object.entries(agg)
         .sort((a, b) => b[1].suggestions - a[1].suggestions)
         .slice(0, 15)
@@ -839,8 +900,8 @@ export default defineComponent({
 
     // ── Single Team Editor Bar ─────────────────────────────────────────────────
     const singleTeamEditorBarData = computed<ChartData<'bar', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const agg = aggregateEditorStats(perTeamData.value[0])
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const agg = aggregateEditorStats(activeViewData.value)
       const sorted = Object.entries(agg).sort((a, b) => b[1].interactions - a[1].interactions)
       if (!sorted.length) return { labels: [], datasets: [] }
       return {
@@ -857,8 +918,8 @@ export default defineComponent({
 
     // ── Single Team Models ────────────────────────────────────────────────────
     const singleTeamModelsData = computed<ChartData<'bar', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const td = perTeamData.value[0]
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const td = activeViewData.value
       const modelAgg: Record<string, number> = {}
       td.reportData.forEach(d => {
         d.totals_by_model_feature?.forEach(mf => {
@@ -880,8 +941,8 @@ export default defineComponent({
 
     // ── Model Usage Over Time ─────────────────────────────────────────────────
     const singleTeamModelUsageOverTimeData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const data = perTeamData.value[0].reportData
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const data = activeViewData.value.reportData
       const modelKeys = [...new Set(
         data.flatMap(d => (d.totals_by_model_feature ?? [])
           .filter(mf => (mf.user_initiated_interaction_count ?? 0) > 0)
@@ -903,8 +964,8 @@ export default defineComponent({
 
     // ── Feature Usage Over Time ───────────────────────────────────────────────
     const singleTeamFeatureUsageData = computed<ChartData<'line', number[], string>>(() => {
-      if (!singleTeamMode.value || !perTeamData.value[0]) return { labels: [], datasets: [] }
-      const data = perTeamData.value[0].reportData
+      if ((!singleTeamMode.value && !entraOnlyMode.value) || !activeViewData.value) return { labels: [], datasets: [] }
+      const data = activeViewData.value.reportData
       const featureKeys = [...new Set(
         data.flatMap(d => (d.totals_by_feature ?? [])
           .filter(f => (f.user_initiated_interaction_count ?? 0) > 0)
@@ -932,11 +993,125 @@ export default defineComponent({
     const userMetricsError = ref<string | null>(null)
     const userMetricsLoading = ref(false)
 
-    const sortedUserMetrics = computed(() =>
-      [...singleTeamUserMetrics.value].sort(
-        (a, b) => b.user_initiated_interaction_count - a.user_initiated_interaction_count
+    // ── Entra / Org-hierarchy filter ──────────────────────────────────────────
+    const entraFilterLogins = ref<string[]>([])
+    const entraFilterLabel = ref('')
+    const entraFilterUpn = ref('')
+    const entraFilterActive = computed(() => entraFilterLabel.value !== '')
+    const entraOnlyMode = computed(() => entraFilterActive.value && selectedTeams.value.length === 0)
+
+    // UPN passed to ReportsToFilter only after allUserMetrics is loaded (so matching works)
+    const resolvedInitialUpn = ref('')
+
+    const getReportsToUrl = (): string => {
+      const cfg = useRuntimeConfig()
+      return buildReportsToUrl(
+        entraFilterUpn.value,
+        entraFilterLogins.value,
+        entraFilterLabel.value,
+        scopeType.value,
+        selectedOrg.value ?? '',
+        cfg.public.githubOrg as string,
+        cfg.public.githubEnt as string,
+        route.query.mock as string | undefined,
+        encodeUsersParam,
       )
+    }
+
+    // Org-level metrics for Entra filter charts
+    const entraOrgData = ref<PerTeamData | null>(null)
+    const entraOrgLoading = ref(false)
+
+    const loadEntraOrgMetrics = async () => {
+      if (entraOrgData.value) return
+      entraOrgLoading.value = true
+      try {
+        const route = useRoute()
+        const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+        const response = await $fetch<MetricsApiResponse>('/api/metrics', { params: options.toParams() })
+        entraOrgData.value = {
+          slug: '__entra__',
+          metrics: (response.metrics as Metrics[]) || [],
+          usage: (response.usage as CopilotMetrics[]) || [],
+          reportData: response.reportData || []
+        }
+      } finally {
+        entraOrgLoading.value = false
+      }
+    }
+
+    const activeViewData = computed(() =>
+      entraOnlyMode.value ? entraOrgData.value : (perTeamData.value[0] ?? null)
     )
+
+    // All user metrics (pre-fetched so ReportsToFilter can match email→login)
+    const allUserMetrics = ref<UserTotals[]>([])
+    const entraUserMetricsLoading = ref(false)
+
+    const loadAllUserMetrics = async () => {
+      entraUserMetricsLoading.value = true
+      try {
+        const route = useRoute()
+        const options = Options.fromRoute(route, props.dateRange.since, props.dateRange.until)
+        // Strip the reports-to virtual team filter so we get all org users for
+        // email→login matching. The actual scope filter is reapplied server-side
+        // only after logins are resolved and encoded in ?users=.
+        if (options.githubTeam?.startsWith('reports-to:')) {
+          options.githubTeam = undefined
+          options.reportToLogins = undefined
+        }
+        allUserMetrics.value = await $fetch<UserTotals[]>('/api/user-metrics', { params: options.toParams() }).catch(() => [])
+      } finally {
+        entraUserMetricsLoading.value = false
+      }
+    }
+
+    function onEntraSelect(logins: string[], label: string, upn?: string) {
+      entraFilterLogins.value = logins
+      entraFilterLabel.value = label
+      entraFilterUpn.value = upn ?? ''
+      if (logins.length === 0) {
+        entraOrgData.value = null
+        // If we're on a /reportsto/ URL, navigate back to the base org/enterprise URL
+        if (route.params.upn) {
+          const base = route.params.org
+            ? `/orgs/${route.params.org}`
+            : `/enterprises/${route.params.ent}`
+          const query = route.query.mock ? `?mock=${route.query.mock}` : ''
+          router.replace(base + query)
+        }
+      }
+      if (logins.length > 0) {
+        loadEntraOrgMetrics()
+        // If we're on a /reportsto/ URL, encode logins into the URL so the
+        // entire dashboard (metrics, seats, user-metrics) gets scoped.
+        if (route.params.upn && upn) {
+          const encoded = encodeUsersParam(logins)
+          const currentEncoded = route.query.users as string | undefined
+          if (encoded !== currentEncoded) {
+            const base = route.params.org
+              ? `/orgs/${route.params.org}/reportsto/${upn}`
+              : `/enterprises/${route.params.ent}/reportsto/${upn}`
+            router.replace({
+              path: base,
+              query: {
+                ...(route.query.mock ? { mock: route.query.mock } : {}),
+                users: encoded,
+                name: label,
+              },
+            })
+          }
+        }
+      }
+    }
+
+    const sortedUserMetrics = computed(() => {
+      let source = entraOnlyMode.value ? allUserMetrics.value : singleTeamUserMetrics.value
+      if (entraFilterActive.value) {
+        source = source.filter(u => entraFilterLogins.value.includes(u.login))
+      }
+      return [...source].sort((a, b) => b.user_initiated_interaction_count - a.user_initiated_interaction_count)
+    })
 
     const loadUserMetricsForTeam = async (slug: string) => {
       userMetricsLoading.value = true
@@ -1184,6 +1359,14 @@ export default defineComponent({
       // For enterprise scope, detect Full GHEC and load orgs before teams
       await loadEnterpriseOrgs()
       await loadTeams()
+      // Pre-fetch all user metrics so ReportsToFilter can match Entra UPNs to logins
+      if (props.entraEnabled) {
+        await loadAllUserMetrics()
+        // Signal ReportsToFilter to auto-activate if a UPN was provided via URL
+        if (props.initialUpn) {
+          resolvedInitialUpn.value = props.initialUpn
+        }
+      }
     })
 
     watch(selectedTeams, async () => { await updateChartData() })
@@ -1198,7 +1381,11 @@ export default defineComponent({
       }
     })
 
-    watch(() => props.dateRange, async () => { await updateChartData() }, { deep: true })
+    watch(() => props.dateRange, async () => {
+      entraOrgData.value = null
+      if (entraFilterActive.value) loadEntraOrgMetrics()
+      await updateChartData()
+    }, { deep: true })
 
     return {
       // state
@@ -1230,6 +1417,19 @@ export default defineComponent({
       sortedUserMetrics,
       userMetricsError,
       userMetricsLoading,
+      // Entra org filter
+      entraFilterLogins,
+      entraFilterLabel,
+      entraFilterUpn,
+      entraFilterActive,
+      entraOnlyMode,
+      allUserMetrics,
+      entraUserMetricsLoading,
+      entraOrgData,
+      entraOrgLoading,
+      onEntraSelect,
+      resolvedInitialUpn,
+      getReportsToUrl,
       // comparison
       comparisonSummaryCards,
       comparisonModelsData,
@@ -1246,7 +1446,6 @@ export default defineComponent({
       scopeType,
       clearSelection,
       getTeamDetailUrl,
-      isDark,
       isHistoricalMode,
       dateRangeDesc: props.dateRangeDescription
     }
@@ -1255,37 +1454,6 @@ export default defineComponent({
 </script>
 
 <style scoped>
-:deep(.teams-select-menu) {
-  max-height: 360px;
-  overflow-y: auto;
-  background-color: rgb(var(--v-theme-surface)) !important;
-  color: rgb(var(--v-theme-on-surface)) !important;
-  box-shadow: 0 6px 24px rgba(59, 75, 191, 0.15);
-  border: 1px solid var(--app-accent-weak);
-  z-index: 2000;
-  border-radius: 8px;
-  min-width: unset;
-}
-
-:deep(.teams-select-menu .v-list) {
-  padding: 8px 0;
-  background-color: transparent !important;
-  color: inherit !important;
-}
-
-:deep(.teams-select-menu .v-list-item) {
-  min-height: 40px;
-  color: rgb(var(--v-theme-on-surface)) !important;
-}
-
-:deep(.teams-select-menu .v-list-item-title),
-:deep(.teams-select-menu .v-list-item-subtitle) {
-  color: rgb(var(--v-theme-on-surface)) !important;
-}
-
-:deep(.teams-select-menu .v-checkbox .v-selection-control) {
-  align-items: center;
-}
 
 .lang-rate-table :deep(th) {
   font-size: 0.75rem;

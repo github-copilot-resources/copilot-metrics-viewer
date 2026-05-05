@@ -124,55 +124,35 @@
     background: transparent !important;
   }
 
-  /* Teams dropdown menu: global surface fallback and panel styling */
-  .v-overlay__content.teams-select-menu {
-  background-color: var(--v-theme-surface, #fff) !important;
-  border: 1px solid var(--app-accent-weak);
-    box-shadow: 0 6px 24px rgba(56, 79, 184, 0.15);
-    border-radius: 8px;
-    max-height: 360px;
-    overflow-y: auto;
-    min-width: 320px;
-    z-index: 2000;
-  }
 
-  /* Hover highlight inside teams dropdown aligns with tab/button accent */
-  .v-overlay__content.teams-select-menu .v-list-item:hover {
-    background-color: var(--app-accent-weak) !important;
-  }
-
-  /* Ensure readable black text and remove dark overlay on items */
-  .v-overlay__content.teams-select-menu .v-list-item,
-  .v-overlay__content.teams-select-menu .v-list-item .v-list-item-title,
-  .v-overlay__content.teams-select-menu .v-list-item .v-list-item-subtitle,
-  .v-overlay__content.teams-select-menu .v-list-item .v-icon,
-  .v-overlay__content.teams-select-menu .v-list-item .v-selection-control .v-icon {
-    color: #000 !important;
-  }
-  .v-overlay__content.teams-select-menu .v-list-item .v-list-item__overlay,
-  .v-overlay__content.teams-select-menu .v-list-item--active .v-list-item__overlay {
-    background: transparent !important;
-  }
-  /* Keep selected item highlighted with same light blue as hover */
-  .v-overlay__content.teams-select-menu .v-list-item--active {
-    background-color: var(--app-accent-weak) !important;
-  }
-
-  .v-overlay__content.teams-select-menu .v-list {
-    padding: 8px 0;
-  }
-
-  .v-overlay__content.teams-select-menu .v-list-item {
-    min-height: 40px;
-  }
-
-  /* Chips palette: light primary tint background + black text/icons */
+  /* Chips palette: light primary tint background — text follows theme */
   .v-chip.select-chip,
   .v-chip.selected-team-chip {
     background-color: var(--app-accent-weak) !important;
-    color: #000 !important;
     border-color: var(--app-accent-weak) !important;
     background-image: none !important;
+  }
+  /* In light mode: force black text for contrast on light chip */
+  html.v-theme--light .v-chip.select-chip,
+  html.v-theme--light .v-chip.selected-team-chip {
+    color: #000 !important;
+  }
+  html.v-theme--light .v-chip.select-chip .v-icon,
+  html.v-theme--light .v-chip.selected-team-chip .v-icon,
+  html.v-theme--light .v-chip.select-chip .v-chip__content,
+  html.v-theme--light .v-chip.selected-team-chip .v-chip__content {
+    color: #000 !important;
+  }
+  /* In dark mode: force light text on the tinted chip */
+  html.v-theme--dark .v-chip.select-chip,
+  html.v-theme--dark .v-chip.selected-team-chip {
+    color: #e8e8e8 !important;
+  }
+  html.v-theme--dark .v-chip.select-chip .v-icon,
+  html.v-theme--dark .v-chip.selected-team-chip .v-icon,
+  html.v-theme--dark .v-chip.select-chip .v-chip__content,
+  html.v-theme--dark .v-chip.selected-team-chip .v-chip__content {
+    color: #e8e8e8 !important;
   }
   .v-chip.select-chip .v-chip__overlay,
   .v-chip.selected-team-chip .v-chip__overlay {
@@ -186,17 +166,11 @@
   .v-chip.selected-team-chip:hover .v-chip__overlay {
     background: transparent !important;
   }
-  .v-chip.select-chip .v-icon,
-  .v-chip.selected-team-chip .v-icon,
-  .v-chip.select-chip .v-chip__content,
-  .v-chip.selected-team-chip .v-chip__content {
-    color: #000 !important;
-  }
 
   /* Data table pagination & items-per-page menu styling */
   /* Ensure pagination toolbar inherits surface background and consistent spacing */
   .v-data-table .v-data-table-footer { 
-    background-color: var(--v-theme-surface, #fff) !important;
+    background-color: rgb(var(--v-theme-surface)) !important;
   }
 
   /* Items-per-page activator button */
@@ -204,13 +178,11 @@
     min-width: 90px; 
   }
 
-  /* Dropdown menu for items-per-page (was showing black background entries) */
-  .v-overlay__content .v-list-item[role="option"] { 
-    background: #fff !important; 
-    color: #000 !important; 
-  }
-  .v-overlay__content .v-list-item[role="option"] .v-list-item-title { 
-    color: #000 !important; 
+
+
+  html.v-theme--dark .v-overlay__content .v-list-item[role="option"]:hover,
+  html.v-theme--dark .v-overlay__content .v-list-item[role="option"].v-list-item--active {
+    background: #2a3a6e !important;
   }
   .v-overlay__content .v-list-item[role="option"]:hover { 
     background: var(--app-accent-weak) !important; 

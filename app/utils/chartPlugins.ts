@@ -30,7 +30,7 @@ export const weekendPlugin = {
     ctx.fillStyle = 'rgba(128,128,128,0.10)';
     labels.forEach((label, i) => {
       const d = new Date(label as string);
-      if (d.getDay() === 0 || d.getDay() === 6) {
+      if (d.getUTCDay() === 0 || d.getUTCDay() === 6) {
         const x = xScale.getPixelForValue(i);
         ctx.fillRect(x - bw / 2, chartArea.top, bw, chartArea.bottom - chartArea.top);
       }

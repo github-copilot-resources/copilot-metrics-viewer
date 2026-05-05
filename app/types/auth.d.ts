@@ -6,6 +6,7 @@ declare module '#auth-utils' {
         name: string;
         avatarUrl: string;
         githubId?: number;
+        email?: string;
     }
 
     // interface UserSession {

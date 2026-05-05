@@ -23,6 +23,24 @@ function getGitHubApiBaseUrl(): string {
     return process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
 }
 
+/**
+ * Encode a list of logins as URL-safe base64 (comma-joined, then base64url).
+ */
+export function encodeUsersParam(logins: string[]): string {
+    const joined = logins.join(',')
+    const b64 = typeof btoa !== 'undefined' ? btoa(joined) : Buffer.from(joined).toString('base64')
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+}
+
+/**
+ * Decode a URL-safe base64 users param back to a list of logins.
+ */
+export function decodeUsersParam(b64: string): string[] {
+    const padded = b64.replace(/-/g, '+').replace(/_/g, '/')
+    const decoded = typeof atob !== 'undefined' ? atob(padded) : Buffer.from(padded, 'base64').toString('utf-8')
+    return decoded.split(',').filter(Boolean)
+}
+
 export interface OptionsData {
     since?: string;
     until?: string;
@@ -33,6 +51,8 @@ export interface OptionsData {
     scope?: Scope;
     excludeHolidays?: boolean;
     locale?: string;
+    /** Pre-resolved GitHub logins for a "reports-to" virtual team. */
+    reportToLogins?: string[];
 }
 
 export interface RuntimeConfig {
@@ -72,6 +92,8 @@ export class Options {
     public scope?: Scope;
     public excludeHolidays?: boolean;
     public locale?: string;
+    /** Pre-resolved GitHub logins for a "reports-to" virtual team. */
+    public reportToLogins?: string[];
 
     constructor(data: OptionsData = {}) {
         this.since = data.since;
@@ -83,6 +105,7 @@ export class Options {
         this.scope = data.scope;
         this.excludeHolidays = data.excludeHolidays;
         this.locale = data.locale;
+        this.reportToLogins = data.reportToLogins;
     }
 
     /**
@@ -106,10 +129,22 @@ export class Options {
             options.githubOrg = route.params.org as string;
             options.scope = 'organization';
             if (route.params.team) options.githubTeam = route.params.team as string;
+            // reports-to virtual team: treat as a team-scoped view
+            if (route.params.upn) {
+                options.githubTeam = `reports-to:${route.params.upn as string}`;
+                const usersB64 = route.query.users as string | undefined;
+                if (usersB64) options.reportToLogins = decodeUsersParam(usersB64);
+            }
         } else if (route.params.ent) {
             options.githubEnt = route.params.ent as string;
             options.scope = 'enterprise';
             if (route.params.team) options.githubTeam = route.params.team as string;
+            // reports-to virtual team: treat as a team-scoped view
+            if (route.params.upn) {
+                options.githubTeam = `reports-to:${route.params.upn as string}`;
+                const usersB64 = route.query.users as string | undefined;
+                if (usersB64) options.reportToLogins = decodeUsersParam(usersB64);
+            }
         } else {
             // Use defaults from runtime config
             // Normalize legacy 'team-organization'/'team-enterprise' values to base scope
@@ -123,9 +158,16 @@ export class Options {
             } else {
                 options.scope = 'organization';
             }
-            if (config.public.githubOrg) options.githubOrg = config.public.githubOrg as string;
-            if (config.public.githubEnt) options.githubEnt = config.public.githubEnt as string;
-            if (config.public.githubTeam) options.githubTeam = config.public.githubTeam as string;
+            // In mock mode with no URL-based org/ent, use a fixed mock identity
+            // so the UI never shows a real org name when browsing demo data
+            if (options.isDataMocked) {
+                options.githubOrg = 'octodemo';
+                options.scope = 'organization';
+            } else {
+                if (config.public.githubOrg) options.githubOrg = config.public.githubOrg;
+                if (config.public.githubEnt) options.githubEnt = config.public.githubEnt;
+                if (config.public.githubTeam) options.githubTeam = config.public.githubTeam as string;
+            }
         }
 
         return options;
@@ -159,6 +201,9 @@ export class Options {
             options.excludeHolidays = params.get('excludeHolidays') === 'true';
         }
 
+        const usersB64 = params.get('users');
+        if (usersB64) options.reportToLogins = decodeUsersParam(usersB64);
+
         return options;
     }
 
@@ -186,6 +231,9 @@ export class Options {
             options.excludeHolidays = query.excludeHolidays === 'true';
         }
 
+        const usersB64 = query.users as string | undefined;
+        if (usersB64) options.reportToLogins = decodeUsersParam(usersB64);
+
         return options;
     }
 
@@ -211,6 +259,7 @@ export class Options {
         if (this.scope) params.set('scope', this.scope);
         if (this.excludeHolidays) params.set('excludeHolidays', 'true');
         if (this.locale) params.set('locale', this.locale);
+        if (this.reportToLogins?.length) params.set('users', encodeUsersParam(this.reportToLogins));
 
         return params;
     }
@@ -226,6 +275,7 @@ export class Options {
         if (this.scope) params.scope = this.scope;
         if (this.excludeHolidays) params.excludeHolidays = String(this.excludeHolidays);
         if (this.locale) params.locale = this.locale;
+        if (this.reportToLogins?.length) params.users = encodeUsersParam(this.reportToLogins);
         return params;
     }
 
@@ -244,6 +294,7 @@ export class Options {
         if (this.scope !== undefined) result.scope = this.scope;
         if (this.excludeHolidays !== undefined) result.excludeHolidays = this.excludeHolidays;
         if (this.locale !== undefined) result.locale = this.locale;
+        if (this.reportToLogins !== undefined) result.reportToLogins = this.reportToLogins;
 
         return result;
     }
@@ -268,7 +319,8 @@ export class Options {
             githubTeam: other.githubTeam ?? this.githubTeam,
             scope: other.scope ?? this.scope,
             excludeHolidays: other.excludeHolidays ?? this.excludeHolidays,
-            locale: other.locale ?? this.locale
+            locale: other.locale ?? this.locale,
+            reportToLogins: other.reportToLogins ?? this.reportToLogins
         });
     }
 
