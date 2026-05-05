@@ -36,7 +36,7 @@ jobs:
         tags: sync:test
 
   test:
-    timeout-minutes: 20
+    timeout-minutes: 10
     permissions:
       checks: write
       pull-requests: read
