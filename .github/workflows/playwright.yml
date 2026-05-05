@@ -36,7 +36,7 @@ jobs:
         tags: sync:test
 
   test:
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       checks: write
       pull-requests: read
@@ -51,7 +51,7 @@ jobs:
     - name: Build the app
       run: npm run build
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
     - name: Run Vite tests
       run: CI=true npm test
     - name: Run Playwright tests
