@@ -2,6 +2,12 @@
  * Storage interface definitions for Copilot Metrics Viewer
  */
 
+/** Minimal pool interface satisfied by both pg.Pool and the PGlite adapter. */
+export interface DbPool {
+  query(text: string, values?: unknown[]): Promise<{ rows: any[]; rowCount: number | null }>;
+  end(): Promise<void>;
+}
+
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
 import type { Seat } from '@/model/Seat';
 import type { ReportDayTotals } from '../services/github-copilot-usage-api';

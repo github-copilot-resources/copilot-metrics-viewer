@@ -6,6 +6,7 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "dev:local": "node --env-file=.env --env-file=.env.local ./node_modules/.bin/nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@azure/msal-browser": "^5.9.0",
+    "@electric-sql/pglite": "0.4.5",
     "@nuxt/eslint": "^0.7.4",
     "chart.js": "^4.4.7",
     "date-holidays": "^3.24.4",

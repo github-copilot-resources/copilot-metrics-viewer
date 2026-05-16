@@ -3,30 +3,39 @@
  *
  * Connection string is read from DATABASE_URL env var.
  * Falls back to individual PG* env vars or docker-compose defaults.
+ *
+ * Set PGLITE_DATA_DIR to a local directory path to use PGlite instead
+ * (embedded Postgres, no server required — see pglite-adapter.ts).
  */
 
 import pg from 'pg';
 const { Pool } = pg;
+import { createPglitePool } from './pglite-adapter';
+import type { DbPool } from './types';
 
-let _pool: pg.Pool | null = null;
+let _pool: DbPool | null = null;
 
 /**
  * Get or create the shared connection pool.
  * Safe to call repeatedly — returns the same pool instance.
  */
-export function getPool(): pg.Pool {
+export function getPool(): DbPool {
   if (!_pool) {
-    const connectionString = process.env.DATABASE_URL;
-    if (connectionString) {
-      _pool = new Pool({ connectionString });
+    if (process.env.PGLITE_DATA_DIR) {
+      _pool = createPglitePool(process.env.PGLITE_DATA_DIR);
     } else {
-      _pool = new Pool({
-        host: process.env.PGHOST || 'localhost',
-        port: parseInt(process.env.PGPORT || '5432', 10),
-        database: process.env.PGDATABASE || 'copilot_metrics',
-        user: process.env.PGUSER || 'metrics_user',
-        password: process.env.PGPASSWORD || 'metrics_password',
-      });
+      const connectionString = process.env.DATABASE_URL;
+      if (connectionString) {
+        _pool = new Pool({ connectionString }) as unknown as DbPool;
+      } else {
+        _pool = new Pool({
+          host: process.env.PGHOST || 'localhost',
+          port: parseInt(process.env.PGPORT || '5432', 10),
+          database: process.env.PGDATABASE || 'copilot_metrics',
+          user: process.env.PGUSER || 'metrics_user',
+          password: process.env.PGPASSWORD || 'metrics_password',
+        }) as unknown as DbPool;
+      }
     }
   }
   return _pool;
