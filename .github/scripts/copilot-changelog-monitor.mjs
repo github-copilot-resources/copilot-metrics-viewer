@@ -1,3 +1,6 @@
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 const CHANGELOG_FEED_URL = 'https://github.blog/changelog/feed/';
 const ISSUE_TITLE_PREFIX = 'Copilot metrics changelog update:';
 
@@ -121,7 +124,9 @@ export async function run() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectRun = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
   run().catch((error) => {
     console.error(error);
     process.exit(1);
