@@ -33,17 +33,6 @@ This application computes team metrics by combining Copilot usage report data wi
 - **Direct API mode**: Team-scoped views are available for the latest rolling API window
 - **Historical mode**: Team data covers the full stored history for long-term trend analysis
 
-#### Team-Level API Adoption Analysis
-
-GitHub now provides team-related Copilot report endpoints (for example, `user-teams-1-day`) that map users to teams. They improve team scope resolution in direct API mode, but they are not a complete replacement for all currently-used data.
-
-- **Data completeness**: Team reports provide team membership linkage, while detailed usage breakdowns still come from user usage reports (`users-1-day`). A join is still required to produce the full dashboard metrics.
-- **Feature parity**: Per-user drill-down views still require user-level records, so user reports remain necessary.
-- **Edge cases**: Teams with fewer than five Copilot-seated users can be excluded from team report outputs; a fallback path (GitHub Teams membership API) may still be needed for full coverage.
-- **Performance**: For large organizations, team report downloads can reduce many paginated team-member API calls and improve direct API responsiveness. Historical mode remains best for repeated queries and long date ranges because data is pre-stored.
-
-Recommended direction: use a hybrid approach in direct mode — prefer team report endpoints when available, and keep fallback to the GitHub Teams API for small-team and coverage gaps.
-
 ## Deployment options
 
 Review available [Nuxt Deployment Options](https://nuxt.com/deploy).
