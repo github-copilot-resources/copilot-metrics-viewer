@@ -26,10 +26,10 @@ The application supports two operating modes:
 
 | Mode | Description | Requirements | Team Metrics | Data Retention |
 |------|-------------|--------------|--------------|----------------|
-| **Direct API** | Fetches metrics directly from GitHub's API on each page load | GitHub token only | ❌ Not available | Rolling 28 days |
+| **Direct API** | Fetches metrics directly from GitHub's API on each page load | GitHub token only | ✅ Available (latest window) | Rolling 28 days |
 | **Historical Mode** | Reads from a local PostgreSQL database, synced daily | PostgreSQL + Sync service | ✅ Full history | Unlimited |
 
-**Direct API mode** is the simplest setup — no database required. It returns the latest 28-day rolling window of data from the [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics). Team-scoped views are not available in this mode because team metrics are derived from per-user records stored in the database.
+**Direct API mode** is the simplest setup — no database required. It returns the latest 28-day rolling window of data from the [Copilot Usage Metrics API](https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics). Team-scoped views are supported in this mode and are calculated from GitHub API report data.
 
 **Historical mode** adds a PostgreSQL database and a sync service that downloads metrics daily. This enables:
 - Viewing metrics **beyond the 28-day API window**
@@ -59,7 +59,7 @@ Users can now filter metrics for custom date ranges up to 100 days, with an intu
 Select **one team** for a full deep-dive view with KPI tiles, time-series charts (acceptance rate, active users, feature usage, model usage), language and editor breakdowns, and a per-user activity table. Select **two or more teams** to compare them side by side.
 
 > [!NOTE]
-> GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Team metrics are **derived** by fetching per-user daily metrics from the organization/enterprise endpoint, resolving team membership via the GitHub Teams API, and aggregating per-user data in-memory. This works in both Direct API mode (28-day window) and Historical mode (full history).
+> Team views are available in both modes. In Direct API mode, team metrics are calculated from API report data over the latest rolling window. In Historical mode, the same team view logic can be applied across the full stored history.
 
 **Single team deep dive:**
 <p align="center">
@@ -202,7 +202,7 @@ Organizations can compare metrics across different teams to:
 - Monitor team-specific engagement levels
 
 > [!NOTE]
-> Team metrics are derived from per-user data by resolving GitHub team membership and aggregating. The GitHub Copilot Usage Metrics API does not have dedicated team endpoints — this application computes team views automatically. In Direct API mode, team data covers the latest 28-day window. In Historical mode (with PostgreSQL), full historical team trends are available.
+> Team metrics are computed from Copilot usage report data and team membership data. In Direct API mode, team data covers the latest rolling window. In Historical mode (with PostgreSQL), full historical team trends are available.
 
 ### Model Usage Analytics
 Detailed insights into AI model usage including:

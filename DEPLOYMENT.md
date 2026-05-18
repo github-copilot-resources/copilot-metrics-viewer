@@ -28,14 +28,21 @@ The sync service runs daily (2 AM UTC by default) and downloads the latest Copil
 
 #### How Team Metrics Work
 
-GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Instead, this application **derives team metrics** by:
-1. Downloading per-user daily metrics from the organization/enterprise endpoint
-2. Resolving team membership via the GitHub Teams API
-3. Filtering and aggregating per-user data in-memory for each team
+This application computes team metrics by combining Copilot usage report data with team membership data, then aggregating results for the selected team.
 
-This approach works in **Historical mode** only:
-- **Direct API mode**: Team-scoped views are not available (no per-user data stored to filter)
-- **Historical mode**: Team data covers the full stored history, enabling long-term team trend analysis
+- **Direct API mode**: Team-scoped views are available for the latest rolling API window
+- **Historical mode**: Team data covers the full stored history for long-term trend analysis
+
+#### Team-Level API Adoption Analysis
+
+GitHub now provides team-related Copilot report endpoints (for example, `user-teams-1-day`) that map users to teams. They improve team scope resolution in direct API mode, but they are not a complete replacement for all currently-used data.
+
+- **Data completeness**: Team reports provide team membership linkage, while detailed usage breakdowns still come from user usage reports (`users-1-day`). A join is still required to produce the full dashboard metrics.
+- **Feature parity**: Per-user drill-down views still require user-level records, so user reports remain necessary.
+- **Edge cases**: Teams with fewer than five Copilot-seated users can be excluded from team report outputs; a fallback path (GitHub Teams membership API) may still be needed for full coverage.
+- **Performance**: For large organizations, team report downloads can reduce many paginated team-member API calls and improve direct API responsiveness. Historical mode remains best for repeated queries and long date ranges because data is pre-stored.
+
+Recommended direction: use a hybrid approach in direct mode — prefer team report endpoints when available, and keep fallback to the GitHub Teams API for small-team and coverage gaps.
 
 ## Deployment options
 
@@ -177,7 +184,7 @@ docker compose up web
 ```
 
 > [!NOTE]
-> **Team-scoped views** (e.g., `/orgs/your-org/teams/your-team`) require **Historical mode** with PostgreSQL. Without the database, team metrics cannot be computed because team data is derived by filtering per-user records stored in the database. The Teams Comparison tab is available to browse teams, but individual team drill-down requires Historical mode.
+> **Team-scoped views** (e.g., `/orgs/your-org/teams/your-team`) are available in Direct API mode for the rolling API window. Enable Historical mode with PostgreSQL when you need longer retention and trend history.
 
 ### Running with Historical Mode (database + sync)
 
@@ -653,4 +660,3 @@ NUXT_PUBLIC_ENTRA_TENANT_ID=common
 > If your tenant has a policy requiring admin consent for all app permissions (common in enterprise tenants), a tenant admin must grant consent once via:
 > `https://login.microsoftonline.com/{tenant-id}/adminconsent?client_id={client-id}`
 > After that, all users in the tenant can use the filter without any further prompts.
-
