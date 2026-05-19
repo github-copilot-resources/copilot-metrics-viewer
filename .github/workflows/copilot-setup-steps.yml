@@ -59,12 +59,7 @@ jobs:
       # Run unit tests so the agent can verify logic changes quickly.
       # Uses mocked data — no GitHub token required.
       - name: Run unit tests
-        run: npm test
-        env:
-          NUXT_SESSION_PASSWORD: copilot-agent-setup-session-password-32chars
-          NUXT_PUBLIC_IS_DATA_MOCKED: "true"
-          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/copilot_metrics
-          ENABLE_HISTORICAL_MODE: "true"
+        run: CI=true npm test
 
       # Run Playwright tests (mocked, no DB) for UI / component validation.
       - name: Run Playwright tests (mock mode)
