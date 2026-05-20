@@ -31,6 +31,7 @@ jobs:
           const model = process.env.AI_MODEL || 'gpt-4o';
           const token = process.env.GITHUB_TOKEN;
           const repository = process.env.GITHUB_REPOSITORY;
+          const MAX_MODEL_TOKENS = 1400;
 
           if (!token) throw new Error('Missing required env var: GITHUB_TOKEN');
           if (!repository) throw new Error('Missing required env var: GITHUB_REPOSITORY');
@@ -59,6 +60,21 @@ jobs:
             return response.json();
           };
 
+          const listAllIssueTitles = async () => {
+            const titles = new Set();
+            let page = 1;
+            while (true) {
+              const issues = await githubApi('GET', `/repos/${owner}/${repo}/issues?state=all&per_page=100&page=${page}`);
+              if (!Array.isArray(issues) || issues.length === 0) break;
+              for (const issue of issues) {
+                if (issue?.title) titles.add(issue.title);
+              }
+              if (issues.length < 100) break;
+              page += 1;
+            }
+            return titles;
+          };
+
           const feedResponse = await fetch(CHANGELOG_FEED_URL);
           if (!feedResponse.ok) {
             throw new Error(`Failed to fetch changelog feed (${feedResponse.status})`);
@@ -75,7 +91,7 @@ jobs:
             body: JSON.stringify({
               model,
               temperature: 0,
-              max_tokens: 1400,
+              max_tokens: MAX_MODEL_TOKENS,
               messages: [
                 {
                   role: 'system',
@@ -125,8 +141,7 @@ jobs:
             process.exit(0);
           }
 
-          const existingIssues = await githubApi('GET', `/repos/${owner}/${repo}/issues?state=all&per_page=100`);
-          const existingTitles = new Set(existingIssues.map((issue) => issue.title));
+          const existingTitles = await listAllIssueTitles();
 
           for (const item of items) {
             if (!item?.title || !item?.link || !item?.pubDate) {
