@@ -8,22 +8,155 @@ on:
 permissions:
   contents: read
   issues: write
+  models: read
 
 jobs:
   monitor-changelog:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Check changelog and open issues
+      - name: Analyze changelog with GitHub Models and open issues
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           CHANGELOG_LOOKBACK_DAYS: '7'
-        run: node .github/scripts/copilot-changelog-monitor.mjs
+          CHANGELOG_FEED_URL: 'https://github.blog/changelog/feed/'
+          ISSUE_TITLE_PREFIX: 'Copilot metrics changelog update:'
+          AI_MODEL: 'gpt-4o'
+        run: |
+          node <<'NODE'
+          (async () => {
+          const CHANGELOG_FEED_URL = process.env.CHANGELOG_FEED_URL || 'https://github.blog/changelog/feed/';
+          const ISSUE_TITLE_PREFIX = process.env.ISSUE_TITLE_PREFIX || 'Copilot metrics changelog update:';
+          const lookbackDays = Number.parseInt(process.env.CHANGELOG_LOOKBACK_DAYS ?? '7', 10);
+          const model = process.env.AI_MODEL || 'gpt-4o';
+          const token = process.env.GITHUB_TOKEN;
+          const repository = process.env.GITHUB_REPOSITORY;
+
+          if (!token) throw new Error('Missing required env var: GITHUB_TOKEN');
+          if (!repository) throw new Error('Missing required env var: GITHUB_REPOSITORY');
+          if (!Number.isFinite(lookbackDays) || lookbackDays <= 0) {
+            throw new Error(`Invalid CHANGELOG_LOOKBACK_DAYS value: ${process.env.CHANGELOG_LOOKBACK_DAYS}`);
+          }
+
+          const [owner, repo] = repository.split('/');
+          if (!owner || !repo) throw new Error(`Invalid GITHUB_REPOSITORY value: ${repository}`);
+
+          const githubApi = async (method, path, body) => {
+            const response = await fetch(`https://api.github.com${path}`, {
+              method,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28',
+                'Content-Type': 'application/json',
+              },
+              body: body ? JSON.stringify(body) : undefined,
+            });
+            if (!response.ok) {
+              const text = await response.text();
+              throw new Error(`GitHub API ${method} ${path} failed (${response.status}): ${text}`);
+            }
+            return response.json();
+          };
+
+          const feedResponse = await fetch(CHANGELOG_FEED_URL);
+          if (!feedResponse.ok) {
+            throw new Error(`Failed to fetch changelog feed (${feedResponse.status})`);
+          }
+          const feedXml = await feedResponse.text();
+
+          const nowIso = new Date().toISOString();
+          const modelsResponse = await fetch('https://models.github.ai/inference/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              temperature: 0,
+              max_tokens: 1400,
+              messages: [
+                {
+                  role: 'system',
+                  content: [
+                    'You are classifying GitHub Changelog RSS items for Copilot Metrics Viewer maintainers.',
+                    'Return ONLY strict JSON with shape: {"items":[{"title":"...","link":"...","pubDate":"...","reason":"..."}]}',
+                    'Select only items that are relevant to GitHub Copilot metrics, reporting, seats, usage APIs, team/enterprise/org metrics, or data fields affecting this repository.',
+                    `Include only entries published in the last ${lookbackDays} days relative to ${nowIso}.`,
+                    'If none match, return {"items":[]}.',
+                  ].join(' '),
+                },
+                {
+                  role: 'user',
+                  content: feedXml,
+                },
+              ],
+            }),
+          });
+
+          if (!modelsResponse.ok) {
+            const text = await modelsResponse.text();
+            throw new Error(`GitHub Models API failed (${modelsResponse.status}): ${text}`);
+          }
+
+          const modelsPayload = await modelsResponse.json();
+          const completionText = modelsPayload?.choices?.[0]?.message?.content;
+          if (!completionText || typeof completionText !== 'string') {
+            throw new Error('GitHub Models API returned no text content.');
+          }
+
+          const stripFences = (text) => text
+            .trim()
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/i, '')
+            .replace(/\s*```$/, '');
+
+          let parsed;
+          try {
+            parsed = JSON.parse(stripFences(completionText));
+          } catch (error) {
+            throw new Error(`Failed to parse model output as JSON. Output: ${completionText}`);
+          }
+
+          const items = Array.isArray(parsed?.items) ? parsed.items : [];
+          if (items.length === 0) {
+            console.log('No recent Copilot metrics changelog updates detected by model.');
+            process.exit(0);
+          }
+
+          const existingIssues = await githubApi('GET', `/repos/${owner}/${repo}/issues?state=all&per_page=100`);
+          const existingTitles = new Set(existingIssues.map((issue) => issue.title));
+
+          for (const item of items) {
+            if (!item?.title || !item?.link || !item?.pubDate) {
+              console.log('Skipping invalid item from model output:', JSON.stringify(item));
+              continue;
+            }
+
+            const issueTitle = `${ISSUE_TITLE_PREFIX} ${item.title}`;
+            if (existingTitles.has(issueTitle)) {
+              console.log(`Issue already exists: ${issueTitle}`);
+              continue;
+            }
+
+            const issueBody = [
+              'Automated detection from GitHub Models changelog monitor.',
+              '',
+              `- **Title:** ${item.title}`,
+              `- **Published:** ${item.pubDate}`,
+              `- **Link:** ${item.link}`,
+              `- **Why this may matter:** ${item.reason || 'Model flagged this as relevant to Copilot metrics.'}`,
+              '',
+              'Please review whether this change requires updates in this repository.',
+            ].join('\n');
+
+            await githubApi('POST', `/repos/${owner}/${repo}/issues`, { title: issueTitle, body: issueBody });
+            existingTitles.add(issueTitle);
+            console.log(`Created issue: ${issueTitle}`);
+          }
+          })().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
