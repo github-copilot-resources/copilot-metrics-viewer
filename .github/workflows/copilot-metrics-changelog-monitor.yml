@@ -131,14 +131,14 @@ jobs:
             throw new Error('GitHub Models API returned no text content.');
           }
 
-          const stripFences = (text) => text
+          const stripMarkdownCodeFences = (text) => text
             .trim()
             .replace(/^```(?:json)?\s*/i, '')
             .replace(/\s*```$/, '');
 
           let parsed;
           try {
-            parsed = JSON.parse(stripFences(completionText));
+            parsed = JSON.parse(stripMarkdownCodeFences(completionText));
           } catch (error) {
             throw new Error(`Failed to parse model output as JSON. Output: ${completionText}`);
           }
