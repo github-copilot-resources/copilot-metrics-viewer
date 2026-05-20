@@ -22,6 +22,7 @@ jobs:
           CHANGELOG_FEED_URL: 'https://github.blog/changelog/feed/'
           ISSUE_TITLE_PREFIX: 'Copilot metrics changelog update:'
           AI_MODEL: 'gpt-4o'
+          MODEL_MAX_TOKENS: '4000'
         run: |
           node <<'NODE'
           (async () => {
@@ -31,12 +32,15 @@ jobs:
           const model = process.env.AI_MODEL || 'gpt-4o';
           const token = process.env.GITHUB_TOKEN;
           const repository = process.env.GITHUB_REPOSITORY;
-          const MAX_MODEL_TOKENS = 1400;
+          const maxModelTokens = Number.parseInt(process.env.MODEL_MAX_TOKENS ?? '4000', 10);
 
           if (!token) throw new Error('Missing required env var: GITHUB_TOKEN');
           if (!repository) throw new Error('Missing required env var: GITHUB_REPOSITORY');
           if (!Number.isFinite(lookbackDays) || lookbackDays <= 0) {
             throw new Error(`Invalid CHANGELOG_LOOKBACK_DAYS value: ${process.env.CHANGELOG_LOOKBACK_DAYS}`);
+          }
+          if (!Number.isFinite(maxModelTokens) || maxModelTokens <= 0) {
+            throw new Error(`Invalid MODEL_MAX_TOKENS value: ${process.env.MODEL_MAX_TOKENS}`);
           }
 
           const [owner, repo] = repository.split('/');
@@ -91,7 +95,7 @@ jobs:
             body: JSON.stringify({
               model,
               temperature: 0,
-              max_tokens: MAX_MODEL_TOKENS,
+              max_tokens: maxModelTokens,
               messages: [
                 {
                   role: 'system',
@@ -124,8 +128,7 @@ jobs:
 
           const stripFences = (text) => text
             .trim()
-            .replace(/^```json\s*/i, '')
-            .replace(/^```\s*/i, '')
+            .replace(/^```(?:json)?\s*/i, '')
             .replace(/\s*```$/, '');
 
           let parsed;
@@ -135,7 +138,14 @@ jobs:
             throw new Error(`Failed to parse model output as JSON. Output: ${completionText}`);
           }
 
-          const items = Array.isArray(parsed?.items) ? parsed.items : [];
+          const items = Array.isArray(parsed?.items)
+            ? parsed.items.filter((item) =>
+              item
+              && typeof item.title === 'string'
+              && typeof item.link === 'string'
+              && typeof item.pubDate === 'string'
+            )
+            : [];
           if (items.length === 0) {
             console.log('No recent Copilot metrics changelog updates detected by model.');
             process.exit(0);
