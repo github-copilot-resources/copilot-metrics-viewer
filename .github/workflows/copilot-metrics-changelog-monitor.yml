@@ -33,6 +33,7 @@ jobs:
           const token = process.env.GITHUB_TOKEN;
           const repository = process.env.GITHUB_REPOSITORY;
           const maxModelTokens = Number.parseInt(process.env.MODEL_MAX_TOKENS ?? '4000', 10);
+          const MAX_ISSUE_SCAN_PAGES = 10;
 
           if (!token) throw new Error('Missing required env var: GITHUB_TOKEN');
           if (!repository) throw new Error('Missing required env var: GITHUB_REPOSITORY');
@@ -68,6 +69,10 @@ jobs:
             const titles = new Set();
             let page = 1;
             while (true) {
+              if (page > MAX_ISSUE_SCAN_PAGES) {
+                console.log(`Reached issue scan page limit (${MAX_ISSUE_SCAN_PAGES}); stopping dedupe scan.`);
+                break;
+              }
               const issues = await githubApi('GET', `/repos/${owner}/${repo}/issues?state=all&per_page=100&page=${page}`);
               if (!Array.isArray(issues) || issues.length === 0) break;
               for (const issue of issues) {
@@ -154,11 +159,6 @@ jobs:
           const existingTitles = await listAllIssueTitles();
 
           for (const item of items) {
-            if (!item?.title || !item?.link || !item?.pubDate) {
-              console.log('Skipping invalid item from model output:', JSON.stringify(item));
-              continue;
-            }
-
             const issueTitle = `${ISSUE_TITLE_PREFIX} ${item.title}`;
             if (existingTitles.has(issueTitle)) {
               console.log(`Issue already exists: ${issueTitle}`);
