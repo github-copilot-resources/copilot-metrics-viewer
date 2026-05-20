@@ -57,6 +57,10 @@ function isStorageModeEnabled(): boolean {
          process.env.ENABLE_HISTORICAL_MODE === 'true';
 }
 
+function canUseTeamScopedReport(githubTeam?: string): boolean {
+  return !!githubTeam && !githubTeam.startsWith('reports-to:');
+}
+
 /**
  * Fetch metrics using the new download-based API
  */
@@ -150,6 +154,25 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 
     try {
       if (isTeamScope && options.githubTeam) {
+        // Prefer native team-scoped aggregate report when available, then fall back
+        // to membership-filtered user-day aggregation for small/incomplete mappings.
+        if (canUseTeamScopedReport(options.githubTeam)) {
+          try {
+            const teamReport = await fetchLatestReport(
+              { scope: options.scope!, identifier, teamSlug: options.githubTeam, isMocked: options.isDataMocked },
+              event.context.headers
+            );
+            const teamResult = buildFilteredResult(teamReport, options);
+            if (teamResult.reportData.length > 0) {
+              logger.info(`Historical mode: using team-scoped aggregate report for "${options.githubTeam}"`);
+              return sortMetricsDataResult(teamResult);
+            }
+            logger.info(`Historical mode: empty team-scoped report for "${options.githubTeam}", falling back to user-day aggregation`);
+          } catch (err) {
+            logger.warn(`Historical mode: team-scoped report unavailable for "${options.githubTeam}", falling back`, err);
+          }
+        }
+
         // Team path:
         //   1. Resolve team members server-side (always — ensures current membership)
         //   2. Read per-day per-user records from user_day_metrics DB
@@ -242,6 +265,25 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 
   // Team-scoped direct API path: fetch user-level records, filter by team, aggregate
   if (options.githubTeam) {
+    // Prefer native team-scoped aggregate report when available, then fall back
+    // to membership-filtered user-day aggregation for small/incomplete mappings.
+    if (canUseTeamScopedReport(options.githubTeam)) {
+      try {
+        const teamReport = await fetchLatestReport(
+          { scope: options.scope!, identifier, teamSlug: options.githubTeam, isMocked: options.isDataMocked },
+          event.context.headers
+        );
+        const teamResult = buildFilteredResult(teamReport, options);
+        if (teamResult.reportData.length > 0) {
+          logger.info(`Direct API: using team-scoped aggregate report for "${options.githubTeam}"`);
+          return sortMetricsDataResult(teamResult);
+        }
+        logger.info(`Direct API: empty team-scoped report for "${options.githubTeam}", falling back to user-day aggregation`);
+      } catch (err) {
+        logger.warn(`Direct API: team-scoped report unavailable for "${options.githubTeam}", falling back`, err);
+      }
+    }
+
     logger.info(`Direct API team path: resolving members for team "${options.githubTeam}" in ${identifier}`);
     const teamMembers = await fetchAllTeamMembers(options, event.context.headers);
     if (teamMembers.length === 0) {

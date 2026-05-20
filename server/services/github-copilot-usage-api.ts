@@ -423,19 +423,28 @@ function buildReportUrl(
   const { scope, identifier } = request;
   const base = getGitHubApiBaseUrl();
   const isOrg = scope === 'organization';
+  const params = new URLSearchParams();
+  if (reportType === '1-day' && day) {
+    params.set('day', day);
+  }
+  if (request.teamSlug) {
+    params.set('team_slug', request.teamSlug);
+  }
 
   if (isOrg) {
     const prefix = reportType === '1-day'
       ? `organization-1-day`
       : `organization-28-day/latest`;
     const url = `${base}/orgs/${identifier}/copilot/metrics/reports/${prefix}`;
-    return reportType === '1-day' ? `${url}?day=${day}` : url;
+    const query = params.toString();
+    return query ? `${url}?${query}` : url;
   } else {
     const prefix = reportType === '1-day'
       ? `enterprise-1-day`
       : `enterprise-28-day/latest`;
     const url = `${base}/enterprises/${identifier}/copilot/metrics/reports/${prefix}`;
-    return reportType === '1-day' ? `${url}?day=${day}` : url;
+    const query = params.toString();
+    return query ? `${url}?${query}` : url;
   }
 }
 

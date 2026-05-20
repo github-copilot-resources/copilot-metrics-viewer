@@ -40,6 +40,9 @@ let _mockQuery: Record<string, string> = {};
 
 const mockGetUserDayMetrics = vi.fn();
 const mockSaveUserDayBatch = vi.fn();
+const mockFetchLatestReport = vi.fn();
+const mockFetchRawUserDayRecords = vi.fn();
+const mockAggregateTeamMetrics = vi.fn();
 
 vi.mock('../server/storage/user-day-metrics-storage', () => ({
   getUserDayMetricsByDateRange: (...args: any[]) => mockGetUserDayMetrics(...args),
@@ -51,6 +54,15 @@ const mockFetchAllTeamMembers = vi.fn();
 
 vi.mock('../server/api/seats', () => ({
   fetchAllTeamMembers: (...args: any[]) => mockFetchAllTeamMembers(...args),
+}));
+
+vi.mock('../server/services/github-copilot-usage-api', () => ({
+  fetchLatestReport: (...args: any[]) => mockFetchLatestReport(...args),
+  fetchRawUserDayRecords: (...args: any[]) => mockFetchRawUserDayRecords(...args),
+}));
+
+vi.mock('../server/services/user-metrics-aggregator', () => ({
+  aggregateTeamMetrics: (...args: any[]) => mockAggregateTeamMetrics(...args),
 }));
 
 // Storage metrics mocks (org-level path — not used in team path but must resolve)
@@ -124,6 +136,37 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
       { login: 'octocat', id: 1 },
       { login: 'octokitten', id: 2 },
     ]);
+    mockFetchLatestReport.mockResolvedValue({ day_totals: [] });
+    mockFetchRawUserDayRecords.mockResolvedValue([]);
+    mockAggregateTeamMetrics.mockImplementation((_records: UserDayRecord[], _teamLogins: Set<string>) => ({
+      report_start_day: '2026-03-15',
+      report_end_day: '2026-03-15',
+      organization_id: '100001',
+      enterprise_id: '',
+      created_at: '2026-03-15T00:00:00.000Z',
+      day_totals: [{
+        day: '2026-03-15',
+        organization_id: '100001',
+        enterprise_id: '',
+        daily_active_users: 1,
+        weekly_active_users: 1,
+        monthly_active_users: 1,
+        monthly_active_chat_users: 0,
+        monthly_active_agent_users: 0,
+        user_initiated_interaction_count: 1,
+        code_generation_activity_count: 1,
+        code_acceptance_activity_count: 1,
+        totals_by_ide: [],
+        totals_by_feature: [],
+        totals_by_language_feature: [],
+        totals_by_language_model: [],
+        totals_by_model_feature: [],
+        loc_suggested_to_add_sum: 1,
+        loc_suggested_to_delete_sum: 0,
+        loc_added_sum: 1,
+        loc_deleted_sum: 0,
+      }],
+    }));
   });
 
   afterEach(() => {
@@ -179,5 +222,73 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     expect(result.reportData).toEqual([]);
     // DB should NOT be queried when team is empty
     expect(mockGetUserDayMetrics).not.toHaveBeenCalled();
+  });
+
+  it('in direct mode uses team-scoped aggregate report before fallback path', async () => {
+    process.env.ENABLE_HISTORICAL_MODE = 'false';
+    mockGetUserDayMetrics.mockResolvedValue([]);
+    mockFetchLatestReport.mockResolvedValue({
+      report_start_day: '2026-03-15',
+      report_end_day: '2026-03-15',
+      organization_id: '100001',
+      enterprise_id: '',
+      created_at: '2026-03-15T00:00:00.000Z',
+      day_totals: [{
+        day: '2026-03-15',
+        organization_id: '100001',
+        enterprise_id: '',
+        daily_active_users: 2,
+        weekly_active_users: 2,
+        monthly_active_users: 2,
+        monthly_active_chat_users: 0,
+        monthly_active_agent_users: 0,
+        user_initiated_interaction_count: 2,
+        code_generation_activity_count: 2,
+        code_acceptance_activity_count: 2,
+        totals_by_ide: [],
+        totals_by_feature: [],
+        totals_by_language_feature: [],
+        totals_by_language_model: [],
+        totals_by_model_feature: [],
+        loc_suggested_to_add_sum: 2,
+        loc_suggested_to_delete_sum: 0,
+        loc_added_sum: 2,
+        loc_deleted_sum: 0,
+      }],
+    });
+
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    const result = await getMetricsDataV2(makeEvent(true));
+
+    expect(result.reportData).toHaveLength(1);
+    expect(mockFetchLatestReport).toHaveBeenCalledWith(
+      expect.objectContaining({ teamSlug: 'the-a-team' }),
+      expect.any(Headers),
+    );
+    expect(mockFetchAllTeamMembers).not.toHaveBeenCalled();
+    expect(mockFetchRawUserDayRecords).not.toHaveBeenCalled();
+  });
+
+  it('in direct mode falls back to user-day aggregation when team-scoped report is empty', async () => {
+    process.env.ENABLE_HISTORICAL_MODE = 'false';
+    mockFetchLatestReport.mockResolvedValue({
+      report_start_day: '',
+      report_end_day: '',
+      organization_id: '100001',
+      enterprise_id: '',
+      created_at: '2026-03-15T00:00:00.000Z',
+      day_totals: [],
+    });
+    mockFetchRawUserDayRecords.mockResolvedValue([
+      makeDayRecord('octocat', '2026-03-15'),
+    ]);
+
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    const result = await getMetricsDataV2(makeEvent(true));
+
+    expect(result.reportData).toHaveLength(1);
+    expect(mockFetchAllTeamMembers).toHaveBeenCalled();
+    expect(mockFetchRawUserDayRecords).toHaveBeenCalled();
+    expect(mockAggregateTeamMetrics).toHaveBeenCalled();
   });
 });
