@@ -10,12 +10,18 @@ set -euo pipefail
 
 HOST="${1:-http://localhost:3000}"
 
-# Load scope/org from .env
-if [ -f .env ]; then
-  SCOPE=$(grep -E '^NUXT_PUBLIC_SCOPE=' .env | cut -d= -f2 | tr -d '"' | tr -d "'")
-  GITHUB_ORG=$(grep -E '^NUXT_PUBLIC_GITHUB_ORG=' .env | cut -d= -f2 | tr -d '"' | tr -d "'")
-  GITHUB_ENT=$(grep -E '^NUXT_PUBLIC_GITHUB_ENT=' .env | cut -d= -f2 | tr -d '"' | tr -d "'")
-fi
+# Load .env then .env.local (local overrides base)
+SCOPE="" GITHUB_ORG="" GITHUB_ENT=""
+for envfile in .env .env.local; do
+  if [ -f "$envfile" ]; then
+    val=$(grep -E '^NUXT_PUBLIC_SCOPE=' "$envfile" | tail -1 | cut -d= -f2 | tr -d '"' | tr -d "'" || true)
+    if [ -n "$val" ]; then SCOPE="$val"; fi
+    val=$(grep -E '^NUXT_PUBLIC_GITHUB_ORG=' "$envfile" | tail -1 | cut -d= -f2 | tr -d '"' | tr -d "'" || true)
+    if [ -n "$val" ]; then GITHUB_ORG="$val"; fi
+    val=$(grep -E '^NUXT_PUBLIC_GITHUB_ENT=' "$envfile" | tail -1 | cut -d= -f2 | tr -d '"' | tr -d "'" || true)
+    if [ -n "$val" ]; then GITHUB_ENT="$val"; fi
+  fi
+done
 
 SCOPE="${SCOPE:-organization}"
 GITHUB_ORG="${GITHUB_ORG:-}"
