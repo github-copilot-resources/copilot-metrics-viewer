@@ -3,12 +3,11 @@
  * Runs when ENABLE_HISTORICAL_MODE is enabled or DATABASE_URL is set.
  */
 
-import { initSchema } from '../storage/db';
-
 export default defineNitroPlugin(async () => {
   const isHistorical = process.env.ENABLE_HISTORICAL_MODE === 'true';
   const hasDatabase = !!process.env.DATABASE_URL;
   if (!isHistorical && !hasDatabase) return;
+  const { initSchema } = await import('../storage/db');
 
   const maxRetries = 10;
   const baseDelay = 2000; // 2 seconds

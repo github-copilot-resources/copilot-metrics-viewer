@@ -1,6 +1,6 @@
 {
   "name": "copilot-metrics-viewer",
-  "version": "3.7.1",
+  "version": "3.7.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,7 +22,7 @@
     "chart.js": "^4.4.7",
     "date-holidays": "^3.24.4",
     "eslint": "^9.32.0",
-    "nuxt": "^3.19.0",
+    "nuxt": "^3.21.6",
     "nuxt-auth-utils": "^0.5.7",
     "pg": "^8.19.0",
     "roboto-fontface": "^0.10.0",

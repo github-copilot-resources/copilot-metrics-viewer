@@ -57,8 +57,8 @@ FROM mcr.microsoft.com/playwright:v1.57.0 AS base-playwright
 
 WORKDIR /pw
 
-RUN apt-get update && \
-    (apt-get install -y --no-install-recommends gettext-base || apt-get install -y --no-install-recommends gettext) && \
+RUN apt-get update -o Acquire::Retries=5 -o Acquire::http::Timeout=30 && \
+    (apt-get install -y --no-install-recommends -o Acquire::Retries=5 -o Acquire::http::Timeout=30 gettext-base || apt-get install -y --no-install-recommends -o Acquire::Retries=5 -o Acquire::http::Timeout=30 gettext) && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
