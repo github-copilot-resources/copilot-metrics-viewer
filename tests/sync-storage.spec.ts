@@ -76,6 +76,17 @@ vi.mock('../server/storage/sync-storage', () => ({
   getSyncStatus: vi.fn(async () => null),
 }));
 
+vi.mock('../server/storage/user-day-metrics-storage', () => ({
+  saveUserDayMetricsBatch: vi.fn(async () => {}),
+  hasUserDayMetricsForDate: vi.fn(async () => false),
+}));
+
+vi.mock('../server/storage/seats-storage', () => ({
+  saveSeats: vi.fn(async () => {}),
+  hasSeats: vi.fn(async () => false),
+  getLatestSeats: vi.fn(async () => null),
+}));
+
 // Mock the API to use mock functions
 vi.mock('../server/services/github-copilot-usage-api', async (importOriginal) => {
   const actual = await importOriginal() as any;
