@@ -28,8 +28,24 @@ export default defineEventHandler(async (event) => {
     }
 
     // When OAuth mode is enabled, require a valid user session for all API calls
+    // EXCEPT for /api/admin/sync which supports pass-through authentication
     const requireAuth = config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp || !!config.public.authProviders;
     if (requireAuth) {
+        // Allow /api/admin/sync to bypass session check if it has an Authorization header
+        const authHeader = event.node.req.headers['authorization'];
+        const isAdminSync = url.startsWith('/api/admin/sync');
+        
+        if (isAdminSync && authHeader) {
+            // Pass-through auth: use the provided Authorization header directly
+            event.context.headers = new Headers({
+                'Authorization': authHeader,
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+            });
+            return;
+        }
+        
+        // For all other routes, require a valid user session
         const session = await getUserSession(event).catch(() => null);
         if (!session?.user) {
             throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
