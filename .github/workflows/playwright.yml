@@ -63,12 +63,8 @@ jobs:
       run: npm ci
     - name: Build the app
       run: npm run build
-    - name: Install Playwright system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2 libgbm1
     - name: Install Playwright Browsers
-      run: npx playwright install chromium
+      run: npx playwright install --with-deps
     - name: Run Vite tests
       run: CI=true npm test
     - name: Run Playwright tests
@@ -141,12 +137,8 @@ jobs:
       run: npm ci
     - name: Build the app
       run: npm run build
-    - name: Install Playwright system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libnss3 libatk-bridge2.0-0 libgtk-3-0 libxss1 libasound2 libgbm1
     - name: Install Playwright Browsers
-      run: npx playwright install chromium
+      run: npx playwright install --with-deps chromium
     - name: "Phase 1: Seed DB with mock data"
       run: |
         NUXT_SESSION_PASSWORD=foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo-foo \
