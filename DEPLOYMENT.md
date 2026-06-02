@@ -260,7 +260,7 @@ Kubernetes manifests are provided in the `k8s/` directory:
 ### Prerequisites
 
 - A PostgreSQL database (managed service recommended: AWS RDS, Azure Database for PostgreSQL, Google Cloud SQL)
-- Container images from GHCR:
+- Container images from GHCR (multi-architecture: linux/amd64, linux/arm64):
   - `ghcr.io/github-copilot-resources/copilot-metrics-viewer:latest`
   - `ghcr.io/github-copilot-resources/copilot-metrics-viewer-sync:latest`
 
