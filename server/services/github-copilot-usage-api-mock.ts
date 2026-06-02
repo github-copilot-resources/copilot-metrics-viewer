@@ -104,6 +104,24 @@ export function mockRequestUserDownloadLinks(
 }
 
 /**
+ * Mock implementation of requestUserTeamsDownloadLinks.
+ * Returns a download URL pointing to the static user-teams mock file.
+ *
+ * The mock file deliberately contains only teams with ≥5 mock seats
+ * (the-a-team, dev-team); smaller teams (frontend/backend/qa) are absent so
+ * the fallback path (fetchAllTeamMembers via REST) gets exercised.
+ */
+export function mockRequestUserTeamsDownloadLinks(
+  _request: MetricsReportRequest,
+  day?: string
+): DownloadLinksResponse {
+  return {
+    download_links: [`${getMockBaseUrl()}/mock-data/new-api/organization-user-teams-1-day-report.json`],
+    report_day: day || new Date().toISOString().split('T')[0],
+  };
+}
+
+/**
  * Check if we're in mock mode.
  * Supports both Nitro runtime config and standalone (tsx) environments.
  */

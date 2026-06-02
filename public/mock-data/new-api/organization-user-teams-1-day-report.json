@@ -1,0 +1,15 @@
+[
+  {"user_id":1,"user_login":"monalisa","day":"2026-04-25","organization_id":"100000001","team_id":1001,"slug":"the-a-team"},
+  {"user_id":2,"user_login":"defunkt","day":"2026-04-25","organization_id":"100000001","team_id":1001,"slug":"the-a-team"},
+  {"user_id":4,"user_login":"octocat","day":"2026-04-25","organization_id":"100000001","team_id":1001,"slug":"the-a-team"},
+  {"user_id":5,"user_login":"octokitten","day":"2026-04-25","organization_id":"100000001","team_id":1001,"slug":"the-a-team"},
+  {"user_id":9,"user_login":"newjoiner","day":"2026-04-25","organization_id":"100000001","team_id":1001,"slug":"the-a-team"},
+  {"user_id":2,"user_login":"defunkt","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"},
+  {"user_id":4,"user_login":"octocat","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"},
+  {"user_id":5,"user_login":"octokitten","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"},
+  {"user_id":8,"user_login":"hubot","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"},
+  {"user_id":6,"user_login":"alicechen","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"},
+  {"user_id":7,"user_login":"bobmartinez","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"},
+  {"user_id":9,"user_login":"newjoiner","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"},
+  {"user_id":10,"user_login":"quietdev","day":"2026-04-25","organization_id":"100000001","team_id":1002,"slug":"dev-team"}
+]

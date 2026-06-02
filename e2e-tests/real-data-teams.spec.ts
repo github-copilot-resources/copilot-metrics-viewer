@@ -237,19 +237,29 @@ test.describe('Teams comparison (cody-test-org)', () => {
         await expect(bTeamCard).toBeVisible();
     });
 
-    test('comparison shows correct active user counts', tag, async () => {
-        // the-a-team has 5 members (all active), the-b-team has 2
-        // Verify per-team summary cards show active user stats
-        const aTeamCard = dashboard.page.getByText('The A Team', { exact: true }).first();
-        await expect(aTeamCard).toBeVisible();
+    test('comparison shows distinct active user counts per team', tag, async () => {
+        // the-a-team has 5 members (all active); the-b-team has 2 (karpikpl + cody-carlson)
+        // The bug being guarded against: both team cards used to show identical
+        // org-wide numbers instead of per-team aggregates.
+        const aCard = dashboard.page.locator('.v-card').filter({ hasText: 'The A Team' }).first();
+        const bCard = dashboard.page.locator('.v-card').filter({ hasText: 'The B Team' }).first();
+        await expect(aCard).toBeVisible();
+        await expect(bCard).toBeVisible();
 
-        const bTeamCard = dashboard.page.getByText('The B Team', { exact: true }).first();
-        await expect(bTeamCard).toBeVisible();
+        // Each team card has an "Active Users" stat. After the fix, the two
+        // cards must show DIFFERENT counts (the-a-team has 5 active users,
+        // the-b-team has 2). Before the fix they showed identical org-wide
+        // numbers.
+        const aActiveUsersText = (await aCard.getByText('Active Users', { exact: true })
+            .locator('xpath=ancestor::*[contains(@class, "d-flex") or self::div][1]')
+            .textContent())?.trim() ?? '';
+        const bActiveUsersText = (await bCard.getByText('Active Users', { exact: true })
+            .locator('xpath=ancestor::*[contains(@class, "d-flex") or self::div][1]')
+            .textContent())?.trim() ?? '';
 
-        // Each card shows 'Active Users' label
-        const activeUserLabels = dashboard.page.getByText('Active Users', { exact: true });
-        const count = await activeUserLabels.count();
-        expect(count).toBeGreaterThanOrEqual(2);
+        expect(aActiveUsersText).not.toEqual('');
+        expect(bActiveUsersText).not.toEqual('');
+        expect(aActiveUsersText).not.toEqual(bActiveUsersText);
     });
 
     test('comparison charts are visible', tag, async () => {

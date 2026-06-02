@@ -4,7 +4,7 @@
  * See: https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics
  */
 
-import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, generateMockReport } from './github-copilot-usage-api-mock';
+import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, mockRequestUserTeamsDownloadLinks, generateMockReport } from './github-copilot-usage-api-mock';
 
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
@@ -414,6 +414,14 @@ export function getGitHubApiBaseUrl(): string {
 
 /**
  * Build the report URL for the given scope and report type.
+ *
+ * Note: GitHub's organization-28-day / enterprise-28-day report endpoints
+ * accept only the `org`/`enterprise` path parameter and (for 1-day) a `day`
+ * query param — there is NO `team_slug` query param. The previous version
+ * appended `?team_slug=<slug>` which GitHub silently ignored, causing team
+ * requests to receive org-wide data. Team metrics are now derived via the
+ * separate user-teams-1-day report joined with the per-user usage report;
+ * see fetchLatestUserTeamMemberships().
  */
 function buildReportUrl(
   request: MetricsReportRequest,
@@ -426,9 +434,6 @@ function buildReportUrl(
   const params = new URLSearchParams();
   if (reportType === '1-day' && day) {
     params.set('day', day);
-  }
-  if (request.teamSlug) {
-    params.set('team_slug', request.teamSlug);
   }
 
   if (isOrg) {
@@ -856,6 +861,9 @@ export async function downloadUserDayRecords(downloadUrl: string): Promise<UserD
       const parsed = JSON.parse(trimmed);
       if (Array.isArray(parsed)) {
         records = parsed;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as Record<string, unknown>).day_totals)) {
+        // Mock-file shape: { ..., day_totals: [{user_login, day, ...}, ...] }
+        records = (parsed as Record<string, unknown>).day_totals as unknown[];
       } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as Record<string, unknown>).user_totals)) {
         // Pre-aggregated mock format — no per-day records available
         return [];
@@ -897,5 +905,196 @@ export async function fetchRawUserDayRecords(
   }
 
   const batches = await Promise.all(download_links.map(url => downloadUserDayRecords(url)));
-  return batches.flat();
+  const records = batches.flat();
+
+  // In mock mode the static JSON file has hardcoded dates. The rest of the
+  // app applies a rolling-28-day filter (since/until). To keep mock data
+  // visible in the UI's default window, shift all record days so the file's
+  // last day aligns with today — same approach as generateMockReport()
+  // takes for the org-aggregate mock.
+  if (request.isMocked && records.length > 0) {
+    return shiftRecordsToTodayWindow(records);
+  }
+  return records;
+}
+
+/**
+ * Shift a batch of UserDayRecord by a single fixed offset so that the latest
+ * day in the batch aligns with today (UTC). Preserves relative temporal
+ * patterns. Only used in mock mode.
+ */
+function shiftRecordsToTodayWindow(records: UserDayRecord[]): UserDayRecord[] {
+  if (records.length === 0) return records;
+  let maxMs = -Infinity;
+  for (const r of records) {
+    const t = new Date(r.day).getTime();
+    if (Number.isFinite(t) && t > maxMs) maxMs = t;
+  }
+  if (!Number.isFinite(maxMs)) return records;
+
+  const todayStr = new Date().toISOString().split('T')[0]!;
+  const todayMs = new Date(todayStr).getTime();
+  const offsetMs = todayMs - maxMs;
+  if (offsetMs === 0) return records;
+
+  return records.map(r => {
+    const t = new Date(r.day).getTime();
+    if (!Number.isFinite(t)) return r;
+    const shifted = new Date(t + offsetMs).toISOString().split('T')[0];
+    return shifted ? { ...r, day: shifted } : r;
+  });
+}
+
+// --- User-Teams Membership Report API Functions ---
+//
+// GitHub's May 2026 changelog added team-level Copilot metrics via a new
+// per-user → per-team mapping report:
+//   /orgs/{org}/copilot/metrics/reports/user-teams-1-day?day=YYYY-MM-DD
+//
+// The response is a list of {user_id, user_login, day, organization_id,
+// team_id, slug} records — one row per user-per-team-per-day. Teams with
+// fewer than 5 Copilot-seated members are excluded from the response, so
+// consumers must fall back to a different membership source (e.g. the REST
+// teams API) when a team is absent.
+//
+// See: https://github.blog/changelog/2026-05-14-team-level-copilot-usage-metrics-now-available-via-api/
+
+/** A single row from the user-teams-1-day report. */
+export interface UserTeamMembershipRecord {
+  user_id: number;
+  user_login: string;
+  day: string;
+  organization_id?: string;
+  enterprise_id?: string;
+  team_id?: number;
+  slug: string;
+}
+
+/**
+ * Build the user-teams-1-day report URL.
+ * Currently only the organization-scoped endpoint is exposed by GitHub.
+ */
+function buildUserTeamsReportUrl(request: MetricsReportRequest, day: string): string {
+  const base = getGitHubApiBaseUrl();
+  if (request.scope !== 'organization') {
+    throw new Error(
+      `user-teams-1-day report is only available for organization scope (got ${request.scope})`
+    );
+  }
+  return `${base}/orgs/${request.identifier}/copilot/metrics/reports/user-teams-1-day?day=${day}`;
+}
+
+/**
+ * Request download links for the user-teams-1-day report.
+ */
+export async function requestUserTeamsDownloadLinks(
+  request: MetricsReportRequest,
+  headers: HeadersInit,
+  day: string
+): Promise<DownloadLinksResponse> {
+  if (isMockMode() || request.isMocked) {
+    return mockRequestUserTeamsDownloadLinks(request, day);
+  }
+
+  const url = buildUserTeamsReportUrl(request, day);
+
+  const rawHeaders: Record<string, string> = headers instanceof Headers
+    ? Object.fromEntries(headers.entries())
+    : { ...(headers as Record<string, string>) };
+  delete rawHeaders['x-github-api-version'];
+  rawHeaders['X-GitHub-Api-Version'] = '2026-03-10';
+
+  return _fetch<DownloadLinksResponse>(url, { headers: rawHeaders });
+}
+
+/**
+ * Download and parse a user-teams report file. Handles both NDJSON (real API)
+ * and JSON-array (mock data) shapes.
+ */
+export async function downloadUserTeamRecords(downloadUrl: string): Promise<UserTeamMembershipRecord[]> {
+  const raw = await _fetch<unknown>(downloadUrl, { responseType: 'text' as 'json' });
+
+  let records: unknown[];
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      records = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      const lines = trimmed.split('\n').filter(l => l.trim());
+      records = lines.map(line => JSON.parse(line));
+    }
+  } else if (Array.isArray(raw)) {
+    records = raw;
+  } else {
+    return [];
+  }
+
+  return records.filter((r): r is UserTeamMembershipRecord => {
+    if (!r || typeof r !== 'object') return false;
+    const rec = r as Record<string, unknown>;
+    return typeof rec.user_login === 'string' && typeof rec.slug === 'string';
+  });
+}
+
+/**
+ * Fetch the most recent user→team membership report and return a map keyed by
+ * team slug. Teams with fewer than 5 Copilot-seated members are excluded by
+ * GitHub from this report and will be absent from the returned map; callers
+ * should fall back to a REST teams-API lookup for any team that's missing.
+ *
+ * Returns an empty map if the endpoint is unavailable (e.g. enterprise scope,
+ * the day's report is not yet produced, or the API call fails) — callers
+ * should treat an empty map the same as a missing team and fall back.
+ */
+export async function fetchLatestUserTeamMemberships(
+  request: MetricsReportRequest,
+  headers: HeadersInit
+): Promise<Map<string, Set<string>>> {
+  // Enterprise scope: no user-teams endpoint exists; signal "use fallback" via empty map
+  if (request.scope !== 'organization') {
+    return new Map();
+  }
+
+  // The report is keyed by a single day. Use yesterday (UTC) — most recently
+  // completed full day. If unavailable, fall back through the previous few
+  // days before giving up so we don't fail just because today's report is late.
+  const candidates: string[] = [];
+  const now = Date.now();
+  for (let offset = 1; offset <= 3; offset++) {
+    candidates.push(new Date(now - offset * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!);
+  }
+
+  for (const day of candidates) {
+    try {
+      const { download_links } = await requestUserTeamsDownloadLinks(request, headers, day);
+      if (!download_links || download_links.length === 0) continue;
+
+      const batches = await Promise.all(download_links.map(url => downloadUserTeamRecords(url)));
+      const records = batches.flat();
+      if (records.length === 0) continue;
+
+      const bySlug = new Map<string, Set<string>>();
+      for (const rec of records) {
+        const existing = bySlug.get(rec.slug);
+        if (existing) {
+          existing.add(rec.user_login);
+        } else {
+          bySlug.set(rec.slug, new Set([rec.user_login]));
+        }
+      }
+      return bySlug;
+    } catch (err) {
+      // Try the next candidate day. Only log at the last attempt to avoid noise.
+      if (day === candidates[candidates.length - 1]) {
+        console.warn(
+          `[user-teams-api] failed to fetch user-teams report for ${request.identifier} on ${candidates.join(', ')}:`,
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+  }
+
+  return new Map();
 }

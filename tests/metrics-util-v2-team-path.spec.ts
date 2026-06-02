@@ -42,6 +42,7 @@ const mockGetUserDayMetrics = vi.fn();
 const mockSaveUserDayBatch = vi.fn();
 const mockFetchLatestReport = vi.fn();
 const mockFetchRawUserDayRecords = vi.fn();
+const mockFetchLatestUserTeamMemberships = vi.fn();
 const mockAggregateTeamMetrics = vi.fn();
 
 vi.mock('../server/storage/user-day-metrics-storage', () => ({
@@ -59,6 +60,7 @@ vi.mock('../server/api/seats', () => ({
 vi.mock('../server/services/github-copilot-usage-api', () => ({
   fetchLatestReport: (...args: any[]) => mockFetchLatestReport(...args),
   fetchRawUserDayRecords: (...args: any[]) => mockFetchRawUserDayRecords(...args),
+  fetchLatestUserTeamMemberships: (...args: any[]) => mockFetchLatestUserTeamMemberships(...args),
 }));
 
 vi.mock('../server/services/user-metrics-aggregator', () => ({
@@ -138,6 +140,9 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     ]);
     mockFetchLatestReport.mockResolvedValue({ day_totals: [] });
     mockFetchRawUserDayRecords.mockResolvedValue([]);
+    // Default: user-teams report empty so all tests exercise the REST fallback
+    // (override per-test when verifying the user-teams-report path)
+    mockFetchLatestUserTeamMemberships.mockResolvedValue(new Map());
     mockAggregateTeamMetrics.mockImplementation((_records: UserDayRecord[], _teamLogins: Set<string>) => ({
       report_start_day: '2026-03-15',
       report_end_day: '2026-03-15',
@@ -224,61 +229,44 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     expect(mockGetUserDayMetrics).not.toHaveBeenCalled();
   });
 
-  it('in direct mode uses team-scoped aggregate report before fallback path', async () => {
+  it('in direct mode uses user-teams-report membership when team is present in the report', async () => {
     process.env.ENABLE_HISTORICAL_MODE = 'false';
-    mockGetUserDayMetrics.mockResolvedValue([]);
-    mockFetchLatestReport.mockResolvedValue({
-      report_start_day: '2026-03-15',
-      report_end_day: '2026-03-15',
-      organization_id: '100001',
-      enterprise_id: '',
-      created_at: '2026-03-15T00:00:00.000Z',
-      day_totals: [{
-        day: '2026-03-15',
-        organization_id: '100001',
-        enterprise_id: '',
-        daily_active_users: 2,
-        weekly_active_users: 2,
-        monthly_active_users: 2,
-        monthly_active_chat_users: 0,
-        monthly_active_agent_users: 0,
-        user_initiated_interaction_count: 2,
-        code_generation_activity_count: 2,
-        code_acceptance_activity_count: 2,
-        totals_by_ide: [],
-        totals_by_feature: [],
-        totals_by_language_feature: [],
-        totals_by_language_model: [],
-        totals_by_model_feature: [],
-        loc_suggested_to_add_sum: 2,
-        loc_suggested_to_delete_sum: 0,
-        loc_added_sum: 2,
-        loc_deleted_sum: 0,
-      }],
-    });
+    // User-teams report returns membership for the-a-team
+    mockFetchLatestUserTeamMemberships.mockResolvedValue(new Map([
+      ['the-a-team', new Set(['monalisa', 'defunkt', 'octocat', 'octokitten', 'newjoiner'])],
+    ]));
+    mockFetchRawUserDayRecords.mockResolvedValue([
+      makeDayRecord('monalisa', '2026-03-15'),
+      makeDayRecord('defunkt', '2026-03-15'),
+    ]);
 
     const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
     const result = await getMetricsDataV2(makeEvent(true));
 
     expect(result.reportData).toHaveLength(1);
-    expect(mockFetchLatestReport).toHaveBeenCalledWith(
-      expect.objectContaining({ teamSlug: 'the-a-team' }),
-      expect.any(Headers),
-    );
+    // Membership came from the user-teams report → REST teams API must NOT be called
     expect(mockFetchAllTeamMembers).not.toHaveBeenCalled();
-    expect(mockFetchRawUserDayRecords).not.toHaveBeenCalled();
+    expect(mockFetchLatestUserTeamMemberships).toHaveBeenCalled();
+    expect(mockFetchRawUserDayRecords).toHaveBeenCalled();
+    // aggregateTeamMetrics receives the report-derived logins
+    expect(mockAggregateTeamMetrics).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Set),
+    );
+    const [, loginsArg] = mockAggregateTeamMetrics.mock.calls[0]!;
+    expect(loginsArg).toEqual(new Set(['monalisa', 'defunkt', 'octocat', 'octokitten', 'newjoiner']));
   });
 
-  it('in direct mode falls back to user-day aggregation when team-scoped report is empty', async () => {
+  it('in direct mode falls back to REST teams API when team is absent from user-teams report', async () => {
     process.env.ENABLE_HISTORICAL_MODE = 'false';
-    mockFetchLatestReport.mockResolvedValue({
-      report_start_day: '',
-      report_end_day: '',
-      organization_id: '100001',
-      enterprise_id: '',
-      created_at: '2026-03-15T00:00:00.000Z',
-      day_totals: [],
-    });
+    // User-teams report only knows about a different team — current team is absent
+    mockFetchLatestUserTeamMemberships.mockResolvedValue(new Map([
+      ['dev-team', new Set(['somebody-else'])],
+    ]));
+    mockFetchAllTeamMembers.mockResolvedValue([
+      { login: 'octocat', id: 1 },
+      { login: 'octokitten', id: 2 },
+    ]);
     mockFetchRawUserDayRecords.mockResolvedValue([
       makeDayRecord('octocat', '2026-03-15'),
     ]);
@@ -287,8 +275,59 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     const result = await getMetricsDataV2(makeEvent(true));
 
     expect(result.reportData).toHaveLength(1);
+    // Fallback path: REST teams API must be called
+    expect(mockFetchLatestUserTeamMemberships).toHaveBeenCalled();
     expect(mockFetchAllTeamMembers).toHaveBeenCalled();
     expect(mockFetchRawUserDayRecords).toHaveBeenCalled();
-    expect(mockAggregateTeamMetrics).toHaveBeenCalled();
+    const [, loginsArg] = mockAggregateTeamMetrics.mock.calls[0]!;
+    expect(loginsArg).toEqual(new Set(['octocat', 'octokitten']));
+  });
+
+  it('falls back to REST when user-teams report lookup throws', async () => {
+    process.env.ENABLE_HISTORICAL_MODE = 'false';
+    mockFetchLatestUserTeamMemberships.mockRejectedValue(new Error('upstream 500'));
+    mockFetchAllTeamMembers.mockResolvedValue([{ login: 'octocat', id: 1 }]);
+    mockFetchRawUserDayRecords.mockResolvedValue([makeDayRecord('octocat', '2026-03-15')]);
+
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    const result = await getMetricsDataV2(makeEvent(true));
+
+    expect(result.reportData).toHaveLength(1);
+    expect(mockFetchAllTeamMembers).toHaveBeenCalled();
+  });
+
+  it('skips user-teams report for reports-to virtual teams', async () => {
+    process.env.ENABLE_HISTORICAL_MODE = 'false';
+    _mockQuery = { ...(_mockQuery as any), githubTeam: 'reports-to:manager@example.com' };
+    mockFetchAllTeamMembers.mockResolvedValue([
+      { login: 'reportee1', id: 100 },
+      { login: 'reportee2', id: 101 },
+    ]);
+    mockFetchRawUserDayRecords.mockResolvedValue([makeDayRecord('reportee1', '2026-03-15')]);
+
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    await getMetricsDataV2(makeEvent(true));
+
+    expect(mockFetchLatestUserTeamMemberships).not.toHaveBeenCalled();
+    expect(mockFetchAllTeamMembers).toHaveBeenCalled();
+  });
+
+  it('skips user-teams report for enterprise scope (endpoint is org-only)', async () => {
+    process.env.ENABLE_HISTORICAL_MODE = 'false';
+    _mockQuery = {
+      scope: 'enterprise',
+      githubEnt: 'test-ent',
+      githubTeam: 'some-ent-team',
+      since: '2026-03-01',
+      until: '2026-03-28',
+    };
+    mockFetchAllTeamMembers.mockResolvedValue([{ login: 'octocat', id: 1 }]);
+    mockFetchRawUserDayRecords.mockResolvedValue([makeDayRecord('octocat', '2026-03-15')]);
+
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    await getMetricsDataV2(makeEvent(true));
+
+    expect(mockFetchLatestUserTeamMemberships).not.toHaveBeenCalled();
+    expect(mockFetchAllTeamMembers).toHaveBeenCalled();
   });
 });

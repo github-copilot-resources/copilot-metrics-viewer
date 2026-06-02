@@ -18,7 +18,7 @@ import { filterHolidaysFromMetrics } from '@/utils/dateUtils';
 import { getMetricsData as getLegacyMetricsData } from './metrics-util';
 import { getMetricsByDateRange, getReportDataByDateRange, saveMetrics } from '../../server/storage/metrics-storage';
 import { getUserDayMetricsByDateRange, saveUserDayMetricsBatch } from '../../server/storage/user-day-metrics-storage';
-import { fetchLatestReport, fetchRawUserDayRecords, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
+import { fetchLatestReport, fetchRawUserDayRecords, fetchLatestUserTeamMemberships, type MetricsReportRequest } from '../../server/services/github-copilot-usage-api';
 import {
   sortCopilotMetricsByDate,
   sortReportDayTotalsByDay,
@@ -57,8 +57,62 @@ function isStorageModeEnabled(): boolean {
          process.env.ENABLE_HISTORICAL_MODE === 'true';
 }
 
-function canUseTeamScopedReport(githubTeam?: string): boolean {
-  return !!githubTeam && !githubTeam.startsWith('reports-to:');
+/**
+ * Resolve the set of GitHub logins belonging to a team.
+ *
+ * Strategy (per GitHub's May 2026 changelog):
+ *   1. For `reports-to:` virtual teams, defer to fetchAllTeamMembers
+ *      (resolved from pre-decoded logins or the mock Entra tree).
+ *   2. For real org teams: try the new user-teams-1-day report first —
+ *      it's the GitHub-recommended source of truth. Teams with fewer than
+ *      5 Copilot-seated members are excluded from that report.
+ *   3. When the team is absent from the user-teams report (small team,
+ *      enterprise scope, or report unavailable), fall back to the REST
+ *      teams API via fetchAllTeamMembers.
+ *
+ * @returns The set of team-member logins, and a label indicating the source
+ *          used (for logging).
+ */
+async function resolveTeamMemberLogins(
+  options: Options,
+  headers: Headers
+): Promise<{ logins: Set<string>; source: 'user-teams-report' | 'rest-teams-api' | 'reports-to' }> {
+  if (!options.githubTeam) {
+    return { logins: new Set(), source: 'rest-teams-api' };
+  }
+
+  // reports-to virtual teams: only fetchAllTeamMembers knows how to resolve these
+  if (options.githubTeam.startsWith('reports-to:')) {
+    const members = await fetchAllTeamMembers(options, headers);
+    return { logins: new Set(members.map(m => m.login)), source: 'reports-to' };
+  }
+
+  // Try the new user-teams report (organization scope only, ≥5-seat teams only)
+  if (options.scope === 'organization') {
+    const orgIdentifier = options.githubOrg || options.githubEnt || '';
+    const request: MetricsReportRequest = {
+      scope: 'organization',
+      identifier: orgIdentifier,
+      isMocked: options.isDataMocked,
+    };
+    try {
+      const teamMap = await fetchLatestUserTeamMemberships(request, headers);
+      const fromReport = teamMap.get(options.githubTeam);
+      if (fromReport && fromReport.size > 0) {
+        return { logins: fromReport, source: 'user-teams-report' };
+      }
+    } catch (err) {
+      console.warn(
+        `[metrics-util-v2] user-teams report lookup failed for "${options.githubTeam}", falling back to REST teams API:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+  }
+
+  // Fallback: REST teams API (works for both org and enterprise, and for
+  // small teams that GitHub excludes from the user-teams report)
+  const members = await fetchAllTeamMembers(options, headers);
+  return { logins: new Set(members.map(m => m.login)), source: 'rest-teams-api' };
 }
 
 /**
@@ -130,10 +184,26 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
       const metrics = await getLegacyMetricsData(event);
       return sortMetricsDataResult({ metrics, reportData: [] });
     }
-    // Default: exercise full new-API mock pipeline
-    logger.info('Using mocked data mode (new API format via HTTP download)');
-    const identifier = options.githubOrg || options.githubEnt || 'mock-org';
+
     const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
+    const identifier = options.githubOrg || options.githubEnt || 'mock-org';
+
+    // Team scope in mock mode: resolve members → load user-day records → aggregate
+    if (options.githubTeam) {
+      logger.info(`Using mocked data mode — team path for "${options.githubTeam}"`);
+      const { logins, source } = await resolveTeamMemberLogins(options, new Headers());
+      if (logins.size === 0) {
+        return { metrics: [], reportData: [] };
+      }
+      logger.info(`Team membership for "${options.githubTeam}" resolved via ${source} (${logins.size} users)`);
+      const request: MetricsReportRequest = { scope, identifier, isMocked: true };
+      const userDayRecords = await fetchRawUserDayRecords(request, new Headers());
+      const report = aggregateTeamMetrics(userDayRecords, logins);
+      return sortMetricsDataResult(buildFilteredResult(report, options));
+    }
+
+    // Org / Enterprise scope: serve the aggregate mock report directly
+    logger.info('Using mocked data mode (new API format via HTTP download)');
     const report = await fetchLatestReport({ scope, identifier, isMocked: true }, new Headers());
     const metrics = transformReportToMetrics(report);
     return sortMetricsDataResult({ metrics, reportData: report.day_totals });
@@ -154,35 +224,16 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
 
     try {
       if (isTeamScope && options.githubTeam) {
-        // Prefer native team-scoped aggregate report when available, then fall back
-        // to membership-filtered user-day aggregation for small/incomplete mappings.
-        if (canUseTeamScopedReport(options.githubTeam)) {
-          try {
-            const teamReport = await fetchLatestReport(
-              { scope: options.scope!, identifier, teamSlug: options.githubTeam, isMocked: options.isDataMocked },
-              event.context.headers
-            );
-            const teamResult = buildFilteredResult(teamReport, options);
-            if (teamResult.reportData.length > 0) {
-              logger.info(`Historical mode: using team-scoped aggregate report for "${options.githubTeam}"`);
-              return sortMetricsDataResult(teamResult);
-            }
-            logger.info(`Historical mode: empty team-scoped report for "${options.githubTeam}", falling back to user-day aggregation`);
-          } catch (err) {
-            logger.warn(`Historical mode: team-scoped report unavailable for "${options.githubTeam}", falling back`, err);
-          }
-        }
-
         // Team path:
-        //   1. Resolve team members server-side (always — ensures current membership)
+        //   1. Resolve team members via the user-teams report (with REST fallback)
         //   2. Read per-day per-user records from user_day_metrics DB
         //   3. Aggregate in-memory for the team
         //   4. Fall back to live API only when DB has no data yet
-        const teamMembers = await fetchAllTeamMembers(options, event.context.headers);
-        if (teamMembers.length === 0) {
+        const { logins: teamLogins, source } = await resolveTeamMemberLogins(options, event.context.headers);
+        if (teamLogins.size === 0) {
           return { metrics: [], reportData: [] };
         }
-        const teamLogins = new Set(teamMembers.map(m => m.login));
+        logger.info(`Historical mode: team "${options.githubTeam}" membership resolved via ${source} (${teamLogins.size} users)`);
 
         const request: MetricsReportRequest = { scope: options.scope!, identifier, isMocked: options.isDataMocked };
         const userDayRecords = await getUserDayMetricsByDateRange(options.scope!, identifier, startDate, endDate);
@@ -263,38 +314,19 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     });
   }
 
-  // Team-scoped direct API path: fetch user-level records, filter by team, aggregate
+  // Team-scoped direct API path: resolve members → fetch user-day records → aggregate
   if (options.githubTeam) {
-    // Prefer native team-scoped aggregate report when available, then fall back
-    // to membership-filtered user-day aggregation for small/incomplete mappings.
-    if (canUseTeamScopedReport(options.githubTeam)) {
-      try {
-        const teamReport = await fetchLatestReport(
-          { scope: options.scope!, identifier, teamSlug: options.githubTeam, isMocked: options.isDataMocked },
-          event.context.headers
-        );
-        const teamResult = buildFilteredResult(teamReport, options);
-        if (teamResult.reportData.length > 0) {
-          logger.info(`Direct API: using team-scoped aggregate report for "${options.githubTeam}"`);
-          return sortMetricsDataResult(teamResult);
-        }
-        logger.info(`Direct API: empty team-scoped report for "${options.githubTeam}", falling back to user-day aggregation`);
-      } catch (err) {
-        logger.warn(`Direct API: team-scoped report unavailable for "${options.githubTeam}", falling back`, err);
-      }
-    }
-
     logger.info(`Direct API team path: resolving members for team "${options.githubTeam}" in ${identifier}`);
-    const teamMembers = await fetchAllTeamMembers(options, event.context.headers);
-    if (teamMembers.length === 0) {
+    const { logins: teamLogins, source } = await resolveTeamMemberLogins(options, event.context.headers);
+    if (teamLogins.size === 0) {
       logger.info('No team members found — returning empty metrics');
       return { metrics: [], reportData: [] };
     }
-    const teamLogins = new Set(teamMembers.map(m => m.login));
+    logger.info(`Direct API: team "${options.githubTeam}" membership resolved via ${source} (${teamLogins.size} users)`);
 
     const request: MetricsReportRequest = { scope: options.scope!, identifier, isMocked: options.isDataMocked };
     const userDayRecords = await fetchRawUserDayRecords(request, event.context.headers);
-    logger.info(`Aggregating team metrics from ${userDayRecords.length} user-day records (${teamMembers.length} team members)`);
+    logger.info(`Aggregating team metrics from ${userDayRecords.length} user-day records (${teamLogins.size} team members)`);
     const report = aggregateTeamMetrics(userDayRecords, teamLogins);
     return buildFilteredResult(report, options);
   }
