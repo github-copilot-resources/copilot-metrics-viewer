@@ -37,7 +37,7 @@
     "@mdi/font": "^7.4.47",
     "@nuxt/fonts": "^0.13.0",
     "@nuxt/test-utils": "^4.0.3",
-    "@playwright/test": "1.57.0",
+    "@playwright/test": "^1.60.0",
     "@types/pg": "^8.18.0",
     "@types/webfontloader": "^1.6.38",
     "@vue/test-utils": "^2.4.6",
