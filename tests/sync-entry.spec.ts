@@ -15,6 +15,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { MockInstance } from 'vitest';
 
 // ── Mocks (hoisted by Vitest before imports) ─────────────────────────────────
 
@@ -203,14 +204,13 @@ describe('sync-entry: happy path', () => {
 });
 
 describe('sync-entry: missing env vars', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let exitSpy: ReturnType<typeof vi.spyOn<any, any>>;
+  let exitSpy: MockInstance<typeof process.exit>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     // Replace process.exit with a no-op spy so the test process doesn't actually exit.
     // The spy records that exit was called; we check the exit code via the argument.
-    exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as () => never);
+    exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as typeof process.exit);
   });
 
   afterEach(() => {
