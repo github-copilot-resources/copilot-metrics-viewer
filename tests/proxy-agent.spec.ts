@@ -16,7 +16,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockSetGlobalDispatcher = vi.fn();
 const mockProxyAgentInstance = { uri: '' };
-const MockProxyAgent = vi.fn((opts: { uri: string }) => {
+const MockProxyAgent = vi.fn(function MockProxyAgent(opts: { uri: string }) {
   mockProxyAgentInstance.uri = opts.uri;
   return mockProxyAgentInstance;
 });

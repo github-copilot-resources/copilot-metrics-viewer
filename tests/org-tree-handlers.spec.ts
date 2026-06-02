@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ── vi.hoisted: runs at hoist-time so it's available inside vi.mock factories ─
@@ -15,6 +16,14 @@ vi.mock('#app/nuxt', async (importOriginal) => {
   }
 })
 
+const graphServiceMocks = vi.hoisted(() => ({
+  searchUsersWithToken: vi.fn(),
+  getUserWithToken: vi.fn(),
+  getTransitiveReportsWithToken: vi.fn(),
+}))
+
+vi.mock('../server/services/microsoft-graph-service', () => graphServiceMocks)
+
 // ── Stub h3 globals that server handlers expect ────────────────────────────────
 ;(globalThis as any).defineEventHandler = (handler: any) => handler
 ;(globalThis as any).getQuery = (event: any) => event._query ?? {}
@@ -28,11 +37,6 @@ function setConfig(isDataMocked: boolean) {
 async function loadSearchHandler(isDataMocked: boolean) {
   setConfig(isDataMocked)
   vi.resetModules()
-  vi.mock('../server/services/microsoft-graph-service', () => ({
-    searchUsersWithToken: vi.fn(),
-    getUserWithToken: vi.fn(),
-    getTransitiveReportsWithToken: vi.fn(),
-  }))
   const mod = await import('../server/api/org-search')
   return (mod as any).default
 }
@@ -40,11 +44,6 @@ async function loadSearchHandler(isDataMocked: boolean) {
 async function loadReportsHandler(isDataMocked: boolean) {
   setConfig(isDataMocked)
   vi.resetModules()
-  vi.mock('../server/services/microsoft-graph-service', () => ({
-    searchUsersWithToken: vi.fn(),
-    getUserWithToken: vi.fn(),
-    getTransitiveReportsWithToken: vi.fn(),
-  }))
   const mod = await import('../server/api/org-reports')
   return (mod as any).default
 }
