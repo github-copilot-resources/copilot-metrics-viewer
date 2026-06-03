@@ -2,6 +2,17 @@ import { authenticateAndGetGitHubHeaders } from '../modules/authentication';
 
 type Scope = 'org' | 'ent';
 
+/**
+ * Returns true if the URL targets the admin sync endpoint (`/api/admin/sync`)
+ * and is therefore allowed to bypass the OAuth session check when an
+ * `Authorization` header is present. The match is intentionally exact for the
+ * path so neighbouring admin routes (e.g. `/api/admin/sync-status`,
+ * `/api/admin/syncxyz`) are NOT bypassed.
+ */
+export function isAdminSyncBypassRoute(url: string): boolean {
+    return url === '/api/admin/sync' || url.startsWith('/api/admin/sync?');
+}
+
 export default defineEventHandler(async (event) => {
 
     // get runtime config
@@ -31,9 +42,12 @@ export default defineEventHandler(async (event) => {
     // EXCEPT for /api/admin/sync which supports pass-through authentication
     const requireAuth = config.public.requireAuth || config.public.usingGithubAuth || config.public.isPublicApp || !!config.public.authProviders;
     if (requireAuth) {
-        // Allow /api/admin/sync to bypass session check if it has an Authorization header
+        // Allow /api/admin/sync to bypass session check if it has an Authorization header.
+        // The match is intentionally tight: `/api/admin/sync` exactly, or with a query
+        // string. Anything else under `/api/admin/sync*` (e.g. `/api/admin/sync-status`)
+        // is NOT bypassed and continues to require a valid user session.
         const authHeader = event.node.req.headers['authorization'];
-        const isAdminSync = url.startsWith('/api/admin/sync');
+        const isAdminSync = isAdminSyncBypassRoute(url);
         
         if (isAdminSync && authHeader) {
             // Pass-through auth: use the provided Authorization header directly

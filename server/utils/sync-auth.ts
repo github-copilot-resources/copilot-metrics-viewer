@@ -6,6 +6,14 @@
 import { createPrivateKey, createSign } from 'node:crypto';
 import { listAppInstallations } from '../modules/github-app-auth';
 
+// ofetch fallback for standalone (non-Nitro) environments.
+// In Nitro the global `$fetch` is provided automatically, but this module is
+// also loaded by `server/sync-entry.ts` which runs as plain Node via tsx and
+// therefore does not have `$fetch` defined. Falling back to the underlying
+// `ofetch` package keeps a single call-site that works in both contexts.
+import { $fetch as _ofetch } from 'ofetch';
+const _fetch: typeof _ofetch = typeof $fetch !== 'undefined' ? ($fetch as typeof _ofetch) : _ofetch;
+
 /**
  * Build a short-lived JWT for GitHub App API calls.
  */
@@ -59,7 +67,7 @@ async function getGitHubAppTokenForSync(appId: string, privateKey: string, targe
   const jwt = buildAppJwt(appId, privateKey);
   const apiBaseUrl = process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
   
-  const response = await $fetch<{ token: string; expires_at: string }>(
+  const response = await _fetch<{ token: string; expires_at: string }>(
     `${apiBaseUrl}/app/installations/${installation.id}/access_tokens`,
     {
       method: 'POST',

@@ -305,7 +305,7 @@ When running in Historical mode, the web app exposes a manual sync endpoint for 
 
 **Authentication:** The endpoint supports three authentication modes:
 1. **Server credentials** — If the app is configured with `NUXT_GITHUB_TOKEN` (PAT) or `NUXT_GITHUB_APP_ID` + `NUXT_GITHUB_APP_PRIVATE_KEY` (GitHub App), the Authorization header is optional (the server uses its own credentials).
-2. **Pass-through auth** — Even when OAuth/external auth is enabled, you can pass a GitHub token directly via the `Authorization: ******` header, bypassing the user session requirement.
+2. **Pass-through auth** — Even when OAuth/external auth is enabled, you can pass a GitHub token directly via the `Authorization: Bearer <github-token>` header (a classic PAT may also be sent as `Authorization: token <github-token>`), bypassing the user session requirement.
 3. **User session** — When logged in via OAuth, the endpoint uses the authenticated user's GitHub access token automatically.
 
 > **Note:** The GitHub Copilot Metrics API provides historical data well beyond the 28-day rolling window. The 1-day endpoint supports dates going back many months, so `sync-date`, `sync-range`, and `sync-gaps` can all backfill historical data. The 28-day limit only applies to `sync-last-28` (which uses the bulk download endpoint).
