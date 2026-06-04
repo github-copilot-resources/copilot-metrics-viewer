@@ -6,7 +6,7 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
-    "dev:local": "node --env-file=.env --env-file=.env.local ./node_modules/.bin/nuxt dev",
+    "dev:local": "node --env-file=.env --env-file=.env.local ./node_modules/nuxt/bin/nuxt.mjs dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
