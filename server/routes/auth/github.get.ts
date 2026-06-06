@@ -32,7 +32,7 @@ export default defineOAuthGitHubEventHandler({
     // If a default org/ent is pinned via env var, go straight to the home page.
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
     if (defaultOrg) {
-      return sendRedirect(event, '/')
+      return sendRedirect(event, getAppBaseURL(event))
     }
 
     // Public app: enumerate this user's accessible installations using the fresh token.
@@ -60,7 +60,7 @@ export default defineOAuthGitHubEventHandler({
 
         // Single org: skip the picker, go straight to the dashboard.
         if (organizations.length === 1) {
-          return sendRedirect(event, `/orgs/${organizations[0]!.login}`)
+          return sendRedirect(event, appURL(`/orgs/${organizations[0]!.login}`, event))
         }
       } catch (err) {
         console.error('Error fetching installations:', err)
@@ -68,11 +68,11 @@ export default defineOAuthGitHubEventHandler({
       }
     }
 
-    return sendRedirect(event, '/select-org')
+    return sendRedirect(event, appURL('/select-org', event))
   },
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {
     console.error('GitHub OAuth error:', error)
-    return sendRedirect(event, '/')
+    return sendRedirect(event, getAppBaseURL(event))
   },
 })

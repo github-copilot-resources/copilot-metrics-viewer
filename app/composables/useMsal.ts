@@ -57,6 +57,8 @@ export function useMsal(): MsalState | MsalUnconfigured {
     error: import('vue').Ref<string | null>
   }
 
+  const msalBaseURL = useAppBaseURL()
+
   const isSignedIn = computed(() => activeAccount.value !== null)
 
   async function signIn(): Promise<boolean> {
@@ -64,7 +66,7 @@ export function useMsal(): MsalState | MsalUnconfigured {
     try {
       const result = await instance.loginPopup({
         scopes: SCOPES,
-        redirectUri: `${window.location.origin}/api/msal/callback`,
+        redirectUri: `${window.location.origin}${msalBaseURL}api/msal/callback`,
       })
       activeAccount.value = result.account
       return true
@@ -101,7 +103,7 @@ export function useMsal(): MsalState | MsalUnconfigured {
 
   async function signOut(): Promise<void> {
     if (!activeAccount.value) return
-    await instance.logoutPopup({ account: activeAccount.value, postLogoutRedirectUri: `${window.location.origin}/api/msal/callback` }).catch(() => null)
+    await instance.logoutPopup({ account: activeAccount.value, postLogoutRedirectUri: `${window.location.origin}${msalBaseURL}api/msal/callback` }).catch(() => null)
     activeAccount.value = null
     error.value = null
   }
