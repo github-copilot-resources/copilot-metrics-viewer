@@ -9,7 +9,9 @@
  *   - NUXT_PUBLIC_SCOPE: organization or enterprise
  *   - NUXT_PUBLIC_GITHUB_ORG: GitHub organization slug
  *   - NUXT_PUBLIC_GITHUB_ENT: GitHub enterprise slug
- *   - NUXT_GITHUB_TOKEN: GitHub personal access token
+ *   - NUXT_GITHUB_TOKEN: GitHub personal access token (alternative to GitHub App)
+ *   - NUXT_GITHUB_APP_ID: GitHub App ID (alternative to PAT)
+ *   - NUXT_GITHUB_APP_PRIVATE_KEY: GitHub App private key (alternative to PAT)
  *   - NUXT_GITHUB_API_BASE_URL: Optional API base URL override for GHE.com (e.g. https://api.SUBDOMAIN.ghe.com)
  *   - SYNC_DAYS_BACK: Number of days to sync (default: 28, uses bulk download)
  *   - DATABASE_URL: PostgreSQL connection string (or use PG* env vars)
@@ -24,6 +26,7 @@ initializeProxyAgent(true /* exitOnError */);
 import { syncBulk } from './services/sync-service';
 import { initSchema } from './storage/db';
 import { closePool } from './storage/db';
+import { getSyncAuthHeaders } from './utils/sync-auth';
 
 export async function runSync() {
   const logger = console;
@@ -35,14 +38,7 @@ export async function runSync() {
     : rawScope) as 'organization' | 'enterprise';
   const githubOrg = process.env.NUXT_PUBLIC_GITHUB_ORG;
   const githubEnt = process.env.NUXT_PUBLIC_GITHUB_ENT;
-  const githubToken = process.env.NUXT_GITHUB_TOKEN;
   const daysBack = parseInt(process.env.SYNC_DAYS_BACK || '28', 10);
-
-  if (!githubToken) {
-    logger.error('NUXT_GITHUB_TOKEN environment variable is required');
-    process.exit(1);
-    return; // guard: allows tests to mock process.exit without continuing
-  }
 
   const identifier = githubOrg || githubEnt || '';
   if (!identifier) {
@@ -51,11 +47,15 @@ export async function runSync() {
     return; // guard: allows tests to mock process.exit without continuing
   }
 
-  const headers = {
-    'Authorization': `Bearer ${githubToken}`,
-    'Accept': 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28'
-  };
+  // Get authentication headers (supports both PAT and GitHub App)
+  let headers: Headers;
+  try {
+    headers = await getSyncAuthHeaders(logger, identifier);
+  } catch (error) {
+    logger.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+    return; // guard: allows tests to mock process.exit without continuing
+  }
 
   try {
     // Initialize database schema

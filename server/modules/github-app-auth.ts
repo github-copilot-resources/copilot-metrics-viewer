@@ -1,6 +1,14 @@
 import { createPrivateKey, createSign } from 'node:crypto'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
+// ofetch fallback for standalone (non-Nitro) environments.
+// In Nitro the global `$fetch` is provided automatically, but this module is
+// also loaded by `server/sync-entry.ts` (via sync-auth.ts) which runs as plain
+// Node via tsx and therefore does not have `$fetch` defined. Falling back to
+// the underlying `ofetch` package keeps a single call-site that works in both.
+import { $fetch as _ofetch } from 'ofetch'
+const _fetch: typeof _ofetch = typeof $fetch !== 'undefined' ? ($fetch as typeof _ofetch) : _ofetch
+
 const TOKEN_EXPIRY_BUFFER_SECONDS = 300 // refresh 5 min before expiry
 const INSTALLATIONS_CACHE_TTL_SECONDS = 300 // re-list installations every 5 min
 
@@ -87,7 +95,7 @@ export async function listAppInstallations(appId: string, privateKey: string): P
       let page = 1
 
       while (true) {
-        const page_items = await $fetch<Array<{ id: number; account: { login: string; type: string } }>>(
+        const page_items = await _fetch<Array<{ id: number; account: { login: string; type: string } }>>(
           `${getGitHubApiBaseUrl()}/app/installations?per_page=100&page=${page}`,
           {
             headers: {
@@ -118,7 +126,7 @@ export async function listAppInstallations(appId: string, privateKey: string): P
 // ── Installation token ─────────────────────────────────────────────────────────
 
 async function fetchInstallationToken(jwt: string, installationId: number): Promise<{ token: string; expiresAt: number }> {
-  const response = await $fetch<{ token: string; expires_at: string }>(
+  const response = await _fetch<{ token: string; expires_at: string }>(
     `${getGitHubApiBaseUrl()}/app/installations/${installationId}/access_tokens`,
     {
       method: 'POST',

@@ -5,12 +5,13 @@
  *   - Can be imported without crashing (catches import-chain breakage like
  *     the original ERR_MODULE_NOT_FOUND from static mock JSON imports)
  *   - Calls syncBulk with the correct scope/identifier from env vars
- *   - Handles missing NUXT_GITHUB_TOKEN gracefully (exits with code 1)
+ *   - Handles missing authentication credentials gracefully (exits with code 1)
  *   - Handles missing org/enterprise identifier gracefully (exits with code 1)
  *   - Calls initSchema and closePool on the database connection
  *   - Sets exitCode=1 when syncBulk throws
+ *   - Supports both PAT and GitHub App authentication
  *
- * All external dependencies (proxy-agent, sync-service, db) are mocked so
+ * All external dependencies (proxy-agent, sync-service, db, sync-auth) are mocked so
  * these tests run without a real GitHub token or PostgreSQL database.
  */
 
@@ -26,6 +27,7 @@ const {
   mockSyncBulk,
   mockInitSchema,
   mockClosePool,
+  mockGetSyncAuthHeaders,
 } = vi.hoisted(() => ({
   mockInitializeProxyAgent: vi.fn().mockReturnValue(null),
   mockSyncBulk: vi.fn().mockResolvedValue({
@@ -37,6 +39,11 @@ const {
   }),
   mockInitSchema: vi.fn().mockResolvedValue(undefined),
   mockClosePool: vi.fn().mockResolvedValue(undefined),
+  mockGetSyncAuthHeaders: vi.fn().mockResolvedValue(new Headers({
+    'Authorization': '******',
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  })),
 }));
 
 vi.mock('../server/utils/proxy-agent', () => ({
@@ -52,6 +59,10 @@ vi.mock('../server/storage/db', () => ({
   closePool: mockClosePool,
 }));
 
+vi.mock('../server/utils/sync-auth', () => ({
+  getSyncAuthHeaders: mockGetSyncAuthHeaders,
+}));
+
 // Import runSync after mocks are registered
 import { runSync } from '../server/sync-entry';
 
@@ -60,6 +71,8 @@ import { runSync } from '../server/sync-entry';
 /** The set of env vars managed by these tests. */
 const MANAGED_VARS = [
   'NUXT_GITHUB_TOKEN',
+  'NUXT_GITHUB_APP_ID',
+  'NUXT_GITHUB_APP_PRIVATE_KEY',
   'NUXT_PUBLIC_GITHUB_ORG',
   'NUXT_PUBLIC_GITHUB_ENT',
   'NUXT_PUBLIC_SCOPE',
@@ -134,6 +147,11 @@ describe('sync-entry: happy path', () => {
       skippedDays: 0,
       errors: [],
     });
+    mockGetSyncAuthHeaders.mockResolvedValue(new Headers({
+      'Authorization': '******',
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }));
   });
 
   it('calls initSchema before syncing', withEnv(BASE_ENV, async () => {
@@ -180,10 +198,12 @@ describe('sync-entry: happy path', () => {
     expect(scope).toBe('enterprise');
   }));
 
-  it('passes Authorization header containing the GitHub token to syncBulk', withEnv(BASE_ENV, async () => {
+  it('calls getSyncAuthHeaders with logger and identifier', withEnv(BASE_ENV, async () => {
     await runSync();
-    const [_scope, _identifier, headers] = mockSyncBulk.mock.calls[0] as [string, string, Record<string, string>];
-    expect(headers['Authorization']).toContain('test-token-abc');
+    expect(mockGetSyncAuthHeaders).toHaveBeenCalledOnce();
+    const [logger, identifier] = mockGetSyncAuthHeaders.mock.calls[0]!;
+    expect(logger).toBe(console);
+    expect(identifier).toBe('test-org');
   }));
 
   it('always calls closePool in the finally block', withEnv(BASE_ENV, async () => {
@@ -217,10 +237,12 @@ describe('sync-entry: missing env vars', () => {
     exitSpy.mockRestore();
   });
 
-  it('exits with code 1 when NUXT_GITHUB_TOKEN is not set', withEnv({
+  it('exits with code 1 when neither PAT nor GitHub App credentials are set', withEnv({
     NUXT_PUBLIC_GITHUB_ORG: 'test-org',
     NUXT_PUBLIC_SCOPE: 'organization',
   }, async () => {
+    // Mock getSyncAuthHeaders to throw an error when no auth is available
+    mockGetSyncAuthHeaders.mockRejectedValue(new Error('Authentication required'));
     await runSync();
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(mockSyncBulk).not.toHaveBeenCalled();
@@ -239,6 +261,11 @@ describe('sync-entry: missing env vars', () => {
 describe('sync-entry: syncBulk failure', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetSyncAuthHeaders.mockResolvedValue(new Headers({
+      'Authorization': '******',
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }));
   });
 
   it('sets process.exitCode=1 when syncBulk throws', withEnv(BASE_ENV, async () => {
