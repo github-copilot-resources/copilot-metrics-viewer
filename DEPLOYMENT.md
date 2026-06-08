@@ -200,6 +200,8 @@ docker compose run --rm sync
 
 The sync service downloads all available historical data on first run. Subsequent runs (or the daily schedule) only sync the latest day.
 
+> **Alternative:** Instead of `NUXT_GITHUB_TOKEN`, you can use GitHub App authentication with `NUXT_GITHUB_APP_ID` and `NUXT_GITHUB_APP_PRIVATE_KEY`. This is recommended when using OAuth/external auth providers (Google, Microsoft, Auth0, Keycloak) since it decouples API access from individual user accounts.
+
 ### Enterprise Scope
 
 ```bash
@@ -299,7 +301,12 @@ These endpoints respond in ~200ms without making external API calls and do not r
 
 ### Admin Sync API
 
-When running in Historical mode, the web app exposes a manual sync endpoint for backfilling or repairing data. If the app is configured with `NUXT_GITHUB_TOKEN`, the Authorization header is optional (the server uses its own token).
+When running in Historical mode, the web app exposes a manual sync endpoint for backfilling or repairing data. 
+
+**Authentication:** The endpoint supports three authentication modes:
+1. **Server credentials** — If the app is configured with `NUXT_GITHUB_TOKEN` (PAT) or `NUXT_GITHUB_APP_ID` + `NUXT_GITHUB_APP_PRIVATE_KEY` (GitHub App), the Authorization header is optional (the server uses its own credentials).
+2. **Pass-through auth** — Even when OAuth/external auth is enabled, you can pass a GitHub token directly via the `Authorization: Bearer <github-token>` header (a classic PAT may also be sent as `Authorization: token <github-token>`), bypassing the user session requirement.
+3. **User session** — When logged in via OAuth, the endpoint uses the authenticated user's GitHub access token automatically.
 
 > **Note:** The GitHub Copilot Metrics API provides historical data well beyond the 28-day rolling window. The 1-day endpoint supports dates going back many months, so `sync-date`, `sync-range`, and `sync-gaps` can all backfill historical data. The 28-day limit only applies to `sync-last-28` (which uses the bulk download endpoint).
 
