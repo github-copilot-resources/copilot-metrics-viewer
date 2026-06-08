@@ -75,3 +75,43 @@ describe('GitHub middleware authentication guard', () => {
     expect(event.context.headers).toBeInstanceOf(Headers)
   })
 })
+
+describe('GitHub middleware admin/sync bypass predicate', () => {
+  // These tests exercise the URL-matching helper in isolation. They guard
+  // against the original prefix bug where `url.startsWith('/api/admin/sync')`
+  // also matched `/api/admin/sync-status` and any future `/api/admin/sync*`
+  // route, which would allow a caller with any GitHub token to bypass the
+  // OAuth session check on admin endpoints.
+  let isAdminSyncBypassRoute: (url: string) => boolean
+
+  beforeEach(async () => {
+    const mw = await import('../server/middleware/github')
+    isAdminSyncBypassRoute = mw.isAdminSyncBypassRoute
+  })
+
+  it('matches the exact /api/admin/sync path', () => {
+    expect(isAdminSyncBypassRoute('/api/admin/sync')).toBe(true)
+  })
+
+  it('matches /api/admin/sync with a query string', () => {
+    expect(isAdminSyncBypassRoute('/api/admin/sync?action=sync-date&githubOrg=foo')).toBe(true)
+  })
+
+  it('does NOT match /api/admin/sync-status (would expose admin data)', () => {
+    expect(isAdminSyncBypassRoute('/api/admin/sync-status')).toBe(false)
+  })
+
+  it('does NOT match a hypothetical /api/admin/syncxyz route', () => {
+    expect(isAdminSyncBypassRoute('/api/admin/syncxyz')).toBe(false)
+  })
+
+  it('does NOT match an /api/admin/sync/ subpath', () => {
+    expect(isAdminSyncBypassRoute('/api/admin/sync/foo')).toBe(false)
+  })
+
+  it('does NOT match unrelated paths', () => {
+    expect(isAdminSyncBypassRoute('/api/metrics')).toBe(false)
+    expect(isAdminSyncBypassRoute('/api/admin')).toBe(false)
+    expect(isAdminSyncBypassRoute('')).toBe(false)
+  })
+})
