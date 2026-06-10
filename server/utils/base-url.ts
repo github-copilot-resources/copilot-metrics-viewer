@@ -11,7 +11,7 @@
  *   return sendRedirect(event, appURL('/select-org', event)) // → /copilot-metrics-viewer/select-org
  */
 
-import { normalizeBaseURL, joinBaseURL } from '../../shared/utils/base-url'
+import { normalizeBaseURL, joinBaseURL } from '#shared/utils/base-url'
 
 /**
  * Returns the application base URL path, always with a trailing slash.

@@ -1,4 +1,4 @@
-import { normalizeBaseURL } from '../../shared/utils/base-url'
+import { normalizeBaseURL } from '#shared/utils/base-url'
 
 /**
  * Returns the application base URL, always ending with a trailing slash.
