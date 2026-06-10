@@ -1,42 +1,17 @@
 /**
- * Utilities for building app-root-relative URLs that respect the
- * NUXT_APP_BASE_URL environment variable (set when the app is deployed
- * under a sub-path such as /copilot-metrics-viewer/).
+ * Nitro-aware wrappers around the pure helpers in `shared/utils/base-url.ts`.
+ *
+ * These read the application base URL from the Nuxt runtime config and are
+ * intended for use inside Nitro server handlers (OAuth callbacks, redirects,
+ * etc.). The pure helpers `normalizeBaseURL` and `joinBaseURL` live in
+ * `shared/utils/base-url.ts` and are auto-imported via Nuxt's shared layer.
  *
  * Usage in Nitro server handlers:
  *   return sendRedirect(event, appURL('/', event))           // → /copilot-metrics-viewer/
  *   return sendRedirect(event, appURL('/select-org', event)) // → /copilot-metrics-viewer/select-org
  */
 
-/**
- * Normalizes a base URL path to always end with a trailing slash.
- * This is a pure function, usable in both server and client contexts.
- *
- * Examples:
- *   normalizeBaseURL('/')                   → '/'
- *   normalizeBaseURL('/copilot-metrics-viewer')  → '/copilot-metrics-viewer/'
- *   normalizeBaseURL('/copilot-metrics-viewer/') → '/copilot-metrics-viewer/'
- */
-export function normalizeBaseURL(base: string): string {
-  if (!base) return '/'
-  return base.endsWith('/') ? base : base + '/'
-}
-
-/**
- * Prepends a base URL to the given path, avoiding double slashes.
- * This is a pure function, usable in both server and client contexts.
- *
- * Examples (base = '/copilot-metrics-viewer/'):
- *   joinBaseURL('/copilot-metrics-viewer/', '/')           → '/copilot-metrics-viewer/'
- *   joinBaseURL('/copilot-metrics-viewer/', '/select-org') → '/copilot-metrics-viewer/select-org'
- *   joinBaseURL('/copilot-metrics-viewer/', '')            → '/copilot-metrics-viewer/'
- */
-export function joinBaseURL(base: string, path: string): string {
-  const normalizedBase = normalizeBaseURL(base)
-  const cleanPath = path.replace(/^\/+/, '')
-  if (!cleanPath) return normalizedBase
-  return `${normalizedBase}${cleanPath}`
-}
+import { normalizeBaseURL, joinBaseURL } from '../../shared/utils/base-url'
 
 /**
  * Returns the application base URL path, always with a trailing slash.

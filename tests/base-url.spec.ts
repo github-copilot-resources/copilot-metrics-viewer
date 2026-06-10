@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeBaseURL, joinBaseURL } from '../server/utils/base-url'
+import { normalizeBaseURL, joinBaseURL } from '../shared/utils/base-url'
 
 describe('normalizeBaseURL', () => {
   it('returns "/" for an empty string', () => {

@@ -1,3 +1,5 @@
+import { normalizeBaseURL } from '../../shared/utils/base-url'
+
 /**
  * Returns the application base URL, always ending with a trailing slash.
  * Reads from the Nuxt runtime config's app.baseURL which can be set via
@@ -9,7 +11,5 @@
  *   NUXT_APP_BASE_URL=/sub           → '/sub/'
  */
 export function useAppBaseURL(): string {
-  const config = useRuntimeConfig()
-  const base = config.app.baseURL || '/'
-  return base.endsWith('/') ? base : base + '/'
+  return normalizeBaseURL(useRuntimeConfig().app.baseURL)
 }

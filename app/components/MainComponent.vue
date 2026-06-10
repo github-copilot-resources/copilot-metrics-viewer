@@ -702,6 +702,7 @@ export default defineNuxtComponent({
       isAuthRequired,
       showAuthInfoDialog,
       activeProviders,
+      appBaseURL,
       mockedDataMessage,
       itemName,
       displayName,
