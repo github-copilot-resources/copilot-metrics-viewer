@@ -708,6 +708,33 @@ describe('Options', () => {
     })
   })
 
+  describe('getBillingCreditsApiUrl', () => {
+    test('generates correct URL for organization scope', () => {
+      const options = new Options({ scope: 'organization', githubOrg: 'test-org' })
+      expect(options.getBillingCreditsApiUrl()).toBe('https://api.github.com/organizations/test-org/settings/billing/ai_credit/usage')
+    })
+
+    test('generates correct URL for enterprise scope', () => {
+      const options = new Options({ scope: 'enterprise', githubEnt: 'test-ent' })
+      expect(options.getBillingCreditsApiUrl()).toBe('https://api.github.com/enterprises/test-ent/settings/billing/ai_credit/usage')
+    })
+
+    test('throws error for organization scope without githubOrg', () => {
+      const options = new Options({ scope: 'organization' })
+      expect(() => options.getBillingCreditsApiUrl()).toThrow('GitHub organization must be set for organization scope')
+    })
+
+    test('throws error for enterprise scope without githubEnt', () => {
+      const options = new Options({ scope: 'enterprise' })
+      expect(() => options.getBillingCreditsApiUrl()).toThrow('GitHub enterprise must be set for enterprise scope')
+    })
+
+    test('throws error for invalid scope', () => {
+      const options = new Options({ scope: 'invalid-scope' as Scope })
+      expect(() => options.getBillingCreditsApiUrl()).toThrow('Invalid scope: invalid-scope')
+    })
+  })
+
   describe('getTeamMembersApiUrl', () => {
     test('generates correct URL for organization scope', () => {
       const options = new Options({
@@ -833,6 +860,16 @@ describe('Options', () => {
     test('getTeamsApiUrl uses custom base URL for enterprise scope', () => {
       const options = new Options({ scope: 'enterprise', githubEnt: 'my-ent' })
       expect(options.getTeamsApiUrl()).toBe(`${GHE_BASE}/enterprises/my-ent/teams`)
+    })
+
+    test('getBillingCreditsApiUrl uses custom base URL for organization scope', () => {
+      const options = new Options({ scope: 'organization', githubOrg: 'my-org' })
+      expect(options.getBillingCreditsApiUrl()).toBe(`${GHE_BASE}/organizations/my-org/settings/billing/ai_credit/usage`)
+    })
+
+    test('getBillingCreditsApiUrl uses custom base URL for enterprise scope', () => {
+      const options = new Options({ scope: 'enterprise', githubEnt: 'my-ent' })
+      expect(options.getBillingCreditsApiUrl()).toBe(`${GHE_BASE}/enterprises/my-ent/settings/billing/ai_credit/usage`)
     })
 
     test('getTeamMembersApiUrl uses custom base URL for organization scope', () => {
