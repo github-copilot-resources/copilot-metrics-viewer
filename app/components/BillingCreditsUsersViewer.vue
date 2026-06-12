@@ -271,7 +271,7 @@ export default defineComponent({
     );
 
     const topUser = computed(() =>
-      users.value.length ? users.value[0].login : '—'
+      users.value.length ? (users.value[0]?.login ?? '—') : '—'
     );
 
     const chartUsers = computed(() =>
@@ -313,6 +313,8 @@ export default defineComponent({
           error.value = `403 Forbidden — your token does not have "Administration" read permission on this organization, which is required for per-user billing data.`;
         } else if (statusCode === 404) {
           error.value = `404 Not Found — billing data is not available for this organization or time period. Ensure your organization is on the enhanced billing platform.`;
+        } else if (statusCode === 400) {
+          error.value = `400 Bad Request from GitHub — typically this means the organization is not enrolled in the enhanced billing platform, or the token lacks "Administration" read permission. Details: ${statusMsg}`;
         } else {
           error.value = statusMsg || 'Failed to load per-user billing data';
         }

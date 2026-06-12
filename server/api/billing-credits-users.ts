@@ -166,27 +166,42 @@ export default defineEventHandler(async (event): Promise<BillingCreditsUsersResp
     })
   );
 
-  // Propagate 403 so the frontend can show a permissions error
+  // Propagate GitHub errors (403/400/etc) so the frontend can show a useful message.
+  // Prefer the first non-200 with a real GitHub error body so we surface the actual reason.
   for (const result of results) {
     if (result.status === 'rejected') {
-      const err = result.reason as { statusCode?: number };
-      if (err?.statusCode === 403) {
+      const err = result.reason as {
+        statusCode?: number;
+        data?: { message?: string };
+        message?: string;
+      };
+      const status = err?.statusCode;
+      // 404 on a single user is expected (user has no credits) — don't propagate those.
+      if (status && status !== 404) {
+        const ghMessage = err.data?.message || err.message || String(result.reason);
         throw createError({
-          statusCode: 403,
-          statusMessage: 'Forbidden — token lacks "Administration" read permission required for billing data',
+          statusCode: status,
+          statusMessage: `GitHub API error (${status}): ${ghMessage}`,
+          data: err.data,
         });
       }
     }
   }
 
+  type FulfilledUserResult = PromiseFulfilledResult<{
+    login: string;
+    items: BillingUsageItem[];
+    timePeriod: { year?: number; month?: number; day?: number } | undefined;
+  }>;
+
   const users: UserBillingEntry[] = results
-    .filter((r): r is PromiseFulfilledResult<{ login: string; items: BillingUsageItem[]; timePeriod?: { year?: number; month?: number; day?: number } }> => r.status === 'fulfilled')
+    .filter((r): r is FulfilledUserResult => r.status === 'fulfilled')
     .map(r => aggregateItems(r.value.login, r.value.items))
     .filter(u => u.netAmount > 0 || u.grossAmount > 0)
     .sort((a, b) => b.netAmount - a.netAmount);
 
   const firstTimePeriod = results
-    .find((r): r is PromiseFulfilledResult<{ login: string; items: BillingUsageItem[]; timePeriod?: { year?: number; month?: number; day?: number } }> => r.status === 'fulfilled' && Boolean(r.value.timePeriod))
+    .find((r): r is FulfilledUserResult => r.status === 'fulfilled' && Boolean(r.value.timePeriod))
     ?.value.timePeriod ?? {};
 
   return {

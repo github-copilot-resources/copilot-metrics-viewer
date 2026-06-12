@@ -102,12 +102,17 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     return response;
   } catch (error: unknown) {
     logger.error('Error fetching billing credits:', error);
-    const status = typeof error === 'object' && error && 'statusCode' in error
-      ? (error as { statusCode?: number }).statusCode
-      : 500;
+    const err = (typeof error === 'object' && error) ? error as {
+      statusCode?: number;
+      data?: { message?: string };
+      message?: string;
+    } : {};
+    const status = err.statusCode || 500;
+    const ghMessage = err.data?.message || err.message || String(error);
     throw createError({
-      statusCode: status || 500,
-      statusMessage: 'Error fetching billing credits. Error: ' + String(error)
+      statusCode: status,
+      statusMessage: `GitHub API error (${status}): ${ghMessage}`,
+      data: err.data,
     });
   }
 });
