@@ -15,10 +15,10 @@ export default defineOAuthAuth0EventHandler({
 
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
-    return sendRedirect(event, defaultOrg ? '/' : '/select-org')
+    return sendRedirect(event, defaultOrg ? getAppBaseURL(event) : appURL('/select-org', event))
   },
   onError(event, error) {
     console.error('Auth0 OAuth error:', error)
-    return sendRedirect(event, '/')
+    return sendRedirect(event, getAppBaseURL(event))
   }
 })

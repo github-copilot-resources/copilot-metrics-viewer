@@ -390,6 +390,7 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated email domains allowed, e.g. `company.com` | Optional |
 | `NUXT_PUBLIC_ENTRA_CLIENT_ID` | App registration client ID for MSAL manager filter | Entra filter |
 | `NUXT_PUBLIC_ENTRA_TENANT_ID` | Tenant ID for MSAL (default: `common` for multi-tenant) | Entra filter |
+| `NUXT_APP_BASE_URL` | Base URL path for sub-path deployments, e.g. `/copilot-metrics-viewer/` | Sub-path proxy |
 
 ## Authentication
 
@@ -660,4 +661,48 @@ NUXT_PUBLIC_ENTRA_TENANT_ID=common
 > If your tenant has a policy requiring admin consent for all app permissions (common in enterprise tenants), a tenant admin must grant consent once via:
 > `https://login.microsoftonline.com/{tenant-id}/adminconsent?client_id={client-id}`
 > After that, all users in the tenant can use the filter without any further prompts.
+
+## Sub-path Deployment (Reverse Proxy)
+
+If you deploy the app under a URL sub-path (e.g., `https://your-host/copilot-metrics-viewer`), set the `NUXT_APP_BASE_URL` environment variable so the app generates correct links and redirects.
+
+```bash
+NUXT_APP_BASE_URL=/copilot-metrics-viewer/
+```
+
+> [!IMPORTANT]
+> The trailing slash is required.
+
+When `NUXT_APP_BASE_URL` is set:
+- Sign-in links point to `<base>/auth/<provider>` instead of `/auth/<provider>`
+- Post-authentication redirects go to the correct sub-path
+- MSAL popup redirect URIs include the sub-path (update Azure App Registration accordingly)
+
+### Reverse Proxy Configuration
+
+Your reverse proxy must strip the sub-path prefix before forwarding requests to the Nitro server. Set `NUXT_APP_BASE_URL` on the container so the app generates correct absolute links for auth redirects and sign-in buttons.
+
+**Nginx example** — the trailing slash on `proxy_pass` causes Nginx to rewrite `/copilot-metrics-viewer/foo` → `/foo` before forwarding to the server:
+```nginx
+location /copilot-metrics-viewer/ {
+    proxy_pass http://localhost:3000/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+**Azure Application Gateway** (path-based routing): Configure the backend HTTP settings with a URL rewrite rule that removes the `/copilot-metrics-viewer/` prefix before forwarding to the container. Set `NUXT_APP_BASE_URL=/copilot-metrics-viewer/` on the container so the app generates correct absolute links.
+
+### OAuth Redirect URIs for Sub-path Deployments
+
+When using OAuth providers, update your redirect URIs to include the sub-path:
+
+| Provider | Redirect URI |
+|----------|-------------|
+| GitHub | `https://your-host/copilot-metrics-viewer/auth/github` |
+| Google | `https://your-host/copilot-metrics-viewer/auth/google` |
+| Microsoft | `https://your-host/copilot-metrics-viewer/auth/microsoft` |
+| Auth0 | `https://your-host/copilot-metrics-viewer/auth/auth0` |
+| Keycloak | `https://your-host/copilot-metrics-viewer/auth/keycloak` |
+| MSAL popup | `https://your-host/copilot-metrics-viewer/api/msal/callback` |
 

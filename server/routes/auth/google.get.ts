@@ -16,13 +16,13 @@ export default defineOAuthGoogleEventHandler({
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
     if (!defaultOrg) {
-      return sendRedirect(event, '/select-org')
+      return sendRedirect(event, appURL('/select-org', event))
     }
 
-    return sendRedirect(event, '/')
+    return sendRedirect(event, getAppBaseURL(event))
   },
   onError(event, error) {
     console.error('Google OAuth error:', error)
-    return sendRedirect(event, '/')
+    return sendRedirect(event, getAppBaseURL(event))
   }
 })
