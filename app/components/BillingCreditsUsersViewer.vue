@@ -271,7 +271,7 @@ export default defineComponent({
     );
 
     const topUser = computed(() =>
-      users.value.length ? users.value[0]!.login : '—'
+      users.value.length ? users.value[0].login : '—'
     );
 
     const chartUsers = computed(() =>
@@ -334,7 +334,7 @@ export default defineComponent({
           datasets: [{
             label: 'Net Cost ($)',
             data: chartUsers.value.map(u => u.netAmount),
-            backgroundColor: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length] || CHART_COLORS[0]!),
+            backgroundColor: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length] || CHART_COLORS[0]),
             borderWidth: 1,
           }]
         },
