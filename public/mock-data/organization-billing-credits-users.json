@@ -1,0 +1,86 @@
+{
+  "timePeriod": { "year": 2025, "month": 6 },
+  "organization": "octodemo",
+  "users": [
+    {
+      "login": "monalisa",
+      "grossAmount": 42.50,
+      "discountAmount": 4.25,
+      "netAmount": 38.25,
+      "topModel": "gpt-4.1",
+      "itemCount": 3
+    },
+    {
+      "login": "defunkt",
+      "grossAmount": 38.00,
+      "discountAmount": 3.80,
+      "netAmount": 34.20,
+      "topModel": "claude-sonnet-4.5",
+      "itemCount": 4
+    },
+    {
+      "login": "octocat",
+      "grossAmount": 31.50,
+      "discountAmount": 0.00,
+      "netAmount": 31.50,
+      "topModel": "gpt-4o",
+      "itemCount": 2
+    },
+    {
+      "login": "alicechen",
+      "grossAmount": 28.00,
+      "discountAmount": 2.80,
+      "netAmount": 25.20,
+      "topModel": "gpt-4.1",
+      "itemCount": 3
+    },
+    {
+      "login": "bobmartinez",
+      "grossAmount": 22.00,
+      "discountAmount": 0.00,
+      "netAmount": 22.00,
+      "topModel": "o3-mini",
+      "itemCount": 2
+    },
+    {
+      "login": "codertocat",
+      "grossAmount": 19.50,
+      "discountAmount": 1.95,
+      "netAmount": 17.55,
+      "topModel": "gpt-4.1",
+      "itemCount": 2
+    },
+    {
+      "login": "hubot",
+      "grossAmount": 15.00,
+      "discountAmount": 0.00,
+      "netAmount": 15.00,
+      "topModel": "claude-opus-4.5",
+      "itemCount": 1
+    },
+    {
+      "login": "octokitten",
+      "grossAmount": 12.00,
+      "discountAmount": 0.00,
+      "netAmount": 12.00,
+      "topModel": "gemini-2.0-flash",
+      "itemCount": 1
+    },
+    {
+      "login": "newjoiner",
+      "grossAmount": 5.50,
+      "discountAmount": 0.00,
+      "netAmount": 5.50,
+      "topModel": "gpt-4.1",
+      "itemCount": 1
+    },
+    {
+      "login": "quietdev",
+      "grossAmount": 2.00,
+      "discountAmount": 0.00,
+      "netAmount": 2.00,
+      "topModel": "gpt-4.1",
+      "itemCount": 1
+    }
+  ]
+}

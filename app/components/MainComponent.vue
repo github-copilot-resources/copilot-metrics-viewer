@@ -244,6 +244,10 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               v-if="item === 'billing'"
               :query-params="seatsQueryParams"
             />
+            <BillingCreditsUsersViewer
+              v-if="item === 'billing'"
+              :query-params="seatsQueryParams"
+            />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
@@ -294,6 +298,7 @@ import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
 import BillingCreditsViewer from './BillingCreditsViewer.vue'
+import BillingCreditsUsersViewer from './BillingCreditsUsersViewer.vue'
 import AiChatPanel from './AiChatPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -316,6 +321,7 @@ export default defineNuxtComponent({
     DateRangeSelector,
     UserMetricsViewer,
     BillingCreditsViewer,
+    BillingCreditsUsersViewer,
     AiChatPanel
   },
   methods: {

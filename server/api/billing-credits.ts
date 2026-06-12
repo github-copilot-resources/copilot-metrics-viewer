@@ -81,6 +81,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   if (query.year) forwardParams.year = String(query.year);
   if (query.month) forwardParams.month = String(query.month);
   if (query.day) forwardParams.day = String(query.day);
+  if (query.user) forwardParams.user = String(query.user);
   if (query.model) forwardParams.model = String(query.model);
   if (query.product) forwardParams.product = String(query.product);
 

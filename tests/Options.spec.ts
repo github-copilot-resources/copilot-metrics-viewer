@@ -735,6 +735,28 @@ describe('Options', () => {
     })
   })
 
+  describe('getBillingCreditsUserApiUrl', () => {
+    test('returns same URL as getBillingCreditsApiUrl for organization scope', () => {
+      const options = new Options({ scope: 'organization', githubOrg: 'test-org' })
+      expect(options.getBillingCreditsUserApiUrl()).toBe(options.getBillingCreditsApiUrl())
+    })
+
+    test('returns same URL as getBillingCreditsApiUrl for enterprise scope', () => {
+      const options = new Options({ scope: 'enterprise', githubEnt: 'test-ent' })
+      expect(options.getBillingCreditsUserApiUrl()).toBe(options.getBillingCreditsApiUrl())
+    })
+
+    test('throws error for organization scope without githubOrg', () => {
+      const options = new Options({ scope: 'organization' })
+      expect(() => options.getBillingCreditsUserApiUrl()).toThrow('GitHub organization must be set for organization scope')
+    })
+
+    test('throws error for invalid scope', () => {
+      const options = new Options({ scope: 'invalid-scope' as Scope })
+      expect(() => options.getBillingCreditsUserApiUrl()).toThrow('Invalid scope: invalid-scope')
+    })
+  })
+
   describe('getTeamMembersApiUrl', () => {
     test('generates correct URL for organization scope', () => {
       const options = new Options({
