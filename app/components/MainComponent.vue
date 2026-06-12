@@ -185,7 +185,7 @@
             <NuxtLink
               v-for="provider in activeProviders"
               :key="provider.id"
-              :to="`/auth/${provider.id}`"
+              :to="`${appBaseURL}auth/${provider.id}`"
               external
               class="github-login-button"
             >
@@ -587,6 +587,9 @@ export default defineNuxtComponent({
     const showLogoutButton = computed(() => isAuthRequired.value && loggedIn.value);
     const showAuthInfoDialog = ref(false);
 
+    // Base URL for auth provider links — respects NUXT_APP_BASE_URL for sub-path deployments
+    const appBaseURL = useAppBaseURL();
+
     const PROVIDER_META: Record<string, { label: string; icon: string }> = {
       github: { label: 'GitHub', icon: 'mdi-github' },
       google: { label: 'Google', icon: 'mdi-google' },
@@ -706,6 +709,7 @@ export default defineNuxtComponent({
       isAuthRequired,
       showAuthInfoDialog,
       activeProviders,
+      appBaseURL,
       mockedDataMessage,
       itemName,
       displayName,
