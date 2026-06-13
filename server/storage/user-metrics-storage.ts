@@ -86,10 +86,10 @@ export async function getUserMetricsByDateRange(
   if (rows.length === 0) return null;
 
   const records: UserDayRecord[] = rows.map(r => r.data);
-  const sortedDays = records.map(r => r.day).sort();
+  const sortedDays = records.map(r => r.day).filter(Boolean).sort();
   return {
-    reportStartDay: since ?? sortedDays[0]!,
-    reportEndDay: until ?? sortedDays[sortedDays.length - 1]!,
+    reportStartDay: since ?? sortedDays[0] ?? '',
+    reportEndDay: until ?? sortedDays[sortedDays.length - 1] ?? '',
     userTotals: aggregateUserDayRecords(records),
   };
 }

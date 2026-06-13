@@ -77,6 +77,16 @@ async function filterByTeamIfNeeded(
   return [...activeInTeam, ...inactiveStubs];
 }
 
+/** Filter per-day user records to those falling within the optional date range. */
+function filterDaysByDateRange(records: UserDayRecord[], since?: string, until?: string): UserDayRecord[] {
+  if (!since && !until) return records;
+  return records.filter(r => {
+    if (since && r.day < since) return false;
+    if (until && r.day > until) return false;
+    return true;
+  });
+}
+
 export default defineEventHandler(async (event) => {
   const logger = console;
   const query = getQuery(event);
@@ -88,14 +98,10 @@ export default defineEventHandler(async (event) => {
     const raw = isOrg ? mockUsersOrg28Day : mockUsersEnt28Day;
     // Org mock uses UserDayRecord[] in day_totals → aggregate on the fly.
     // Enterprise mock uses pre-aggregated UserTotals[] in user_totals → return directly.
-    let dayRecords = (raw as { day_totals?: UserDayRecord[] }).day_totals;
-    if (dayRecords && (options.since || options.until)) {
-      dayRecords = dayRecords.filter(r => {
-        if (options.since && r.day < options.since) return false;
-        if (options.until && r.day > options.until) return false;
-        return true;
-      });
-    }
+    const rawDayRecords = (raw as { day_totals?: UserDayRecord[] }).day_totals;
+    const dayRecords = rawDayRecords
+      ? filterDaysByDateRange(rawDayRecords, options.since, options.until)
+      : undefined;
     let userTotals: UserTotals[] = dayRecords
       ? aggregateUserDayRecords(dayRecords)
       : ((raw as { user_totals: UserTotals[] }).user_totals ?? []);
@@ -168,12 +174,9 @@ export default defineEventHandler(async (event) => {
         { scope, identifier, teamSlug: options.githubTeam },
         event.context.headers
       );
-      const filteredDays = dayRecords.filter(r => {
-        if (options.since && r.day < options.since) return false;
-        if (options.until && r.day > options.until) return false;
-        return true;
-      });
-      userTotals = aggregateUserDayRecords(filteredDays);
+      userTotals = aggregateUserDayRecords(
+        filterDaysByDateRange(dayRecords, options.since, options.until)
+      );
     } else {
       // No date range: use pre-aggregated report
       const report = await fetchLatestUserReport(
