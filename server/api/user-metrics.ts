@@ -77,7 +77,10 @@ async function filterByTeamIfNeeded(
   return [...activeInTeam, ...inactiveStubs];
 }
 
-/** Filter per-day user records to those falling within the optional date range. */
+/** Filter per-day user records to those falling within the optional date range.
+ * Dates must be ISO 8601 YYYY-MM-DD strings; lexicographic comparison is
+ * equivalent to chronological order for this format.
+ */
 function filterDaysByDateRange(records: UserDayRecord[], since?: string, until?: string): UserDayRecord[] {
   if (!since && !until) return records;
   return records.filter(r => {

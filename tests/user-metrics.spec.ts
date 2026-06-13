@@ -454,7 +454,7 @@ vi.mock('../server/storage/user-metrics-storage', () => ({
 /** Build a minimal H3-style event with/without an Authorization header. */
 function makeEvent(withAuth: boolean): any {
   const headers = new Headers()
-  if (withAuth) headers.set('Authorization', '******')
+  if (withAuth) headers.set('Authorization', 'Bearer test-token')
   return { context: { headers }, node: { req: { url: '/api/user-metrics' } } }
 }
 
