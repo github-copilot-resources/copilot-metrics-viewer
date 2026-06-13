@@ -51,6 +51,50 @@ function calcAcceptanceRate(generated: number, accepted: number): number {
 const LATEST_WINDOW_DAYS = 28;
 
 /**
+ * Get user metrics for a specific date range by aggregating per-day records.
+ * When no date range is provided, falls back to the latest 28-day window.
+ */
+export async function getUserMetricsByDateRange(
+  scope: string,
+  scopeIdentifier: string,
+  since?: string,
+  until?: string
+): Promise<{ reportStartDay: string; reportEndDay: string; userTotals: UserTotals[] } | null> {
+  if (!since && !until) {
+    return getLatestUserMetrics(scope, scopeIdentifier);
+  }
+
+  const pool = getPool();
+  const normalizedScope = baseScope(scope);
+
+  const conditions: string[] = ['scope = $1', 'identifier = $2'];
+  const values: unknown[] = [normalizedScope, scopeIdentifier];
+
+  if (since) {
+    values.push(since);
+    conditions.push(`metrics_date >= $${values.length}`);
+  }
+  if (until) {
+    values.push(until);
+    conditions.push(`metrics_date <= $${values.length}`);
+  }
+
+  const { rows } = await pool.query(
+    `SELECT data FROM user_day_metrics WHERE ${conditions.join(' AND ')}`,
+    values
+  );
+  if (rows.length === 0) return null;
+
+  const records: UserDayRecord[] = rows.map(r => r.data);
+  const sortedDays = records.map(r => r.day).filter(Boolean).sort();
+  return {
+    reportStartDay: since ?? sortedDays[0] ?? '',
+    reportEndDay: until ?? sortedDays[sortedDays.length - 1] ?? '',
+    userTotals: aggregateUserDayRecords(records),
+  };
+}
+
+/**
  * Get the latest user metrics by aggregating all records in the most recent
  * 28-day window stored in user_day_metrics.
  */

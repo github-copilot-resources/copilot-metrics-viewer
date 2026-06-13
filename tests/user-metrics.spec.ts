@@ -442,10 +442,11 @@ describe('User report payload field names match real GitHub API', () => {
 ;(globalThis as any).getQuery = (_event: any) => ({ scope: 'organization', githubOrg: 'test-org' })
 
 // Storage mock — individual functions are re-configured per test via vi.fn().
-const mockGetLatestUserMetrics = vi.fn()
+const mockGetUserMetricsByDateRange = vi.fn()
 
 vi.mock('../server/storage/user-metrics-storage', () => ({
-  getLatestUserMetrics: (...args: any[]) => mockGetLatestUserMetrics(...args),
+  getUserMetricsByDateRange: (...args: any[]) => mockGetUserMetricsByDateRange(...args),
+  getLatestUserMetrics: vi.fn(),
   getUserMetricsHistory: vi.fn(async () => []),
   getUserTimeSeries: vi.fn(async () => []),
 }))
@@ -480,24 +481,51 @@ describe('/api/user-metrics handler – historical mode fallback', () => {
       reportEndDay: '2026-04-01',
       userTotals: [SAMPLE_USER_REPORT.user_totals[0]],
     }
-    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockGetUserMetricsByDateRange.mockResolvedValue(stored)
 
     const { default: handler } = await import('../server/api/user-metrics')
     const result = await handler(makeEvent(false))
 
     expect(result).toEqual(stored.userTotals)
-    expect(mockGetLatestUserMetrics).toHaveBeenCalledWith('organization', 'test-org')
+    expect(mockGetUserMetricsByDateRange).toHaveBeenCalledWith('organization', 'test-org', undefined, undefined)
+  })
+
+  it('passes since/until params to storage when date range is specified', async () => {
+    const stored = {
+      reportStartDay: '2026-06-01',
+      reportEndDay: '2026-06-12',
+      userTotals: [SAMPLE_USER_REPORT.user_totals[0]],
+    }
+    mockGetUserMetricsByDateRange.mockResolvedValue(stored)
+
+    const ORIGINAL_GET_QUERY = (globalThis as any).getQuery
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'organization',
+      githubOrg: 'test-org',
+      since: '2026-06-01',
+      until: '2026-06-12',
+    })
+
+    try {
+      const { default: handler } = await import('../server/api/user-metrics')
+      const result = await handler(makeEvent(false))
+
+      expect(result).toEqual(stored.userTotals)
+      expect(mockGetUserMetricsByDateRange).toHaveBeenCalledWith('organization', 'test-org', '2026-06-01', '2026-06-12')
+    } finally {
+      ;(globalThis as any).getQuery = ORIGINAL_GET_QUERY
+    }
   })
 
   it('throws 503 when DB fails and no Authorization header is present', async () => {
-    mockGetLatestUserMetrics.mockRejectedValue(new Error('SASL: client password must be a string'))
+    mockGetUserMetricsByDateRange.mockRejectedValue(new Error('SASL: client password must be a string'))
 
     const { default: handler } = await import('../server/api/user-metrics')
     await expect(handler(makeEvent(false))).rejects.toMatchObject({ statusCode: 503 })
   })
 
   it('falls back to live API when DB fails but Authorization header is present', async () => {
-    mockGetLatestUserMetrics.mockRejectedValue(new Error('SASL: client password must be a string'))
+    mockGetUserMetricsByDateRange.mockRejectedValue(new Error('SASL: client password must be a string'))
 
     // fetchLatestUserReport is mocked at the top of this file to return SAMPLE_USER_REPORT.
     const { default: handler } = await import('../server/api/user-metrics')
@@ -605,7 +633,7 @@ describe('/api/user-metrics handler – team filtering', () => {
       reportEndDay: '2026-04-01',
       userTotals: SAMPLE_USER_REPORT.user_totals, // octocat (id:1) + octokitten (id:2)
     }
-    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockGetUserMetricsByDateRange.mockResolvedValue(stored)
 
     // Team has only octocat (id:1)
     mockFetchAllTeamMembers.mockResolvedValue([{ login: 'octocat', id: 1 }])
@@ -630,7 +658,7 @@ describe('/api/user-metrics handler – team filtering', () => {
       reportEndDay: '2026-04-01',
       userTotals: SAMPLE_USER_REPORT.user_totals,
     }
-    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockGetUserMetricsByDateRange.mockResolvedValue(stored)
 
     const { default: handler } = await import('../server/api/user-metrics')
     const result = await handler(makeEvent(false))
@@ -663,7 +691,7 @@ describe('/api/user-metrics handler – team filtering', () => {
       reportEndDay: '2026-04-01',
       userTotals: SAMPLE_USER_REPORT.user_totals,
     }
-    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockGetUserMetricsByDateRange.mockResolvedValue(stored)
     mockFetchAllTeamMembers.mockResolvedValue([])
 
     const { default: handler } = await import('../server/api/user-metrics')
@@ -685,7 +713,7 @@ describe('/api/user-metrics handler – team filtering', () => {
       reportEndDay: '2026-04-01',
       userTotals: SAMPLE_USER_REPORT.user_totals,
     }
-    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockGetUserMetricsByDateRange.mockResolvedValue(stored)
     // Team member has uppercase login but matching user_id
     mockFetchAllTeamMembers.mockResolvedValue([{ login: 'OCTOKITTEN', id: 2 }])
 
@@ -710,7 +738,7 @@ describe('/api/user-metrics handler – team filtering', () => {
       reportEndDay: '2026-04-01',
       userTotals: [SAMPLE_USER_REPORT.user_totals[0]], // only octocat (id:1)
     }
-    mockGetLatestUserMetrics.mockResolvedValue(stored)
+    mockGetUserMetricsByDateRange.mockResolvedValue(stored)
     mockFetchAllTeamMembers.mockResolvedValue([
       { login: 'octocat', id: 1 },       // active — has real usage data
       { login: 'inactiveuser', id: 99 },  // inactive — no usage data in storage

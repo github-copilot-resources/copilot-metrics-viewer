@@ -14,10 +14,11 @@ import { Options } from '@/model/Options';
 import {
   aggregateUserDayRecords,
   fetchLatestUserReport,
+  fetchRawUserDayRecords,
   type UserDayRecord,
   type UserTotals
 } from '../services/github-copilot-usage-api';
-import { getLatestUserMetrics } from '../storage/user-metrics-storage';
+import { getUserMetricsByDateRange } from '../storage/user-metrics-storage';
 import { fetchAllTeamMembers } from './seats';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
@@ -76,6 +77,19 @@ async function filterByTeamIfNeeded(
   return [...activeInTeam, ...inactiveStubs];
 }
 
+/** Filter per-day user records to those falling within the optional date range.
+ * Dates must be ISO 8601 YYYY-MM-DD strings; lexicographic comparison is
+ * equivalent to chronological order for this format.
+ */
+function filterDaysByDateRange(records: UserDayRecord[], since?: string, until?: string): UserDayRecord[] {
+  if (!since && !until) return records;
+  return records.filter(r => {
+    if (since && r.day < since) return false;
+    if (until && r.day > until) return false;
+    return true;
+  });
+}
+
 export default defineEventHandler(async (event) => {
   const logger = console;
   const query = getQuery(event);
@@ -87,7 +101,10 @@ export default defineEventHandler(async (event) => {
     const raw = isOrg ? mockUsersOrg28Day : mockUsersEnt28Day;
     // Org mock uses UserDayRecord[] in day_totals → aggregate on the fly.
     // Enterprise mock uses pre-aggregated UserTotals[] in user_totals → return directly.
-    const dayRecords = (raw as { day_totals?: UserDayRecord[] }).day_totals;
+    const rawDayRecords = (raw as { day_totals?: UserDayRecord[] }).day_totals;
+    const dayRecords = rawDayRecords
+      ? filterDaysByDateRange(rawDayRecords, options.since, options.until)
+      : undefined;
     let userTotals: UserTotals[] = dayRecords
       ? aggregateUserDayRecords(dayRecords)
       : ((raw as { user_totals: UserTotals[] }).user_totals ?? []);
@@ -115,7 +132,7 @@ export default defineEventHandler(async (event) => {
     try {
       const scope = options.scope || 'organization';
       const identifier = options.githubOrg || options.githubEnt || '';
-      const stored = await getLatestUserMetrics(scope, identifier);
+      const stored = await getUserMetricsByDateRange(scope, identifier, options.since, options.until);
       if (stored) {
         const filtered = await filterByTeamIfNeeded(stored.userTotals, options, event.context.headers);
         logger.info(`Returning ${filtered.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay})`);
@@ -152,12 +169,26 @@ export default defineEventHandler(async (event) => {
 
     logger.info(`Fetching user metrics for ${scope}:${identifier}`);
 
-    const report = await fetchLatestUserReport(
-      { scope, identifier, teamSlug: options.githubTeam },
-      event.context.headers
-    );
+    let userTotals: UserTotals[];
 
-    const userTotals = report.user_totals ?? [];
+    if (options.since || options.until) {
+      // Date range specified: fetch per-day records so we can filter accurately
+      const dayRecords = await fetchRawUserDayRecords(
+        { scope, identifier, teamSlug: options.githubTeam },
+        event.context.headers
+      );
+      userTotals = aggregateUserDayRecords(
+        filterDaysByDateRange(dayRecords, options.since, options.until)
+      );
+    } else {
+      // No date range: use pre-aggregated report
+      const report = await fetchLatestUserReport(
+        { scope, identifier, teamSlug: options.githubTeam },
+        event.context.headers
+      );
+      userTotals = report.user_totals ?? [];
+    }
+
     const filtered = await filterByTeamIfNeeded(userTotals, options, event.context.headers);
     logger.info(`Returned ${filtered.length} user records for ${scope}:${identifier} (${userTotals.length} before team filter)`);
     return filtered;
