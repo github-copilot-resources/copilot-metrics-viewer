@@ -1,0 +1,97 @@
+{
+  "timePeriod": { "year": 2025, "month": 6 },
+  "organization": "octodemo",
+  "usageItems": [
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "gpt-4.1",
+      "unitType": "credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 4200,
+      "grossAmount": 42.0,
+      "discountQuantity": 420,
+      "discountAmount": 4.2,
+      "netQuantity": 3780,
+      "netAmount": 37.8
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "claude-sonnet-4.5",
+      "unitType": "credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 3100,
+      "grossAmount": 31.0,
+      "discountQuantity": 310,
+      "discountAmount": 3.1,
+      "netQuantity": 2790,
+      "netAmount": 27.9
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "gpt-4o",
+      "unitType": "credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 2500,
+      "grossAmount": 25.0,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 2500,
+      "netAmount": 25.0
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "o3-mini",
+      "unitType": "credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 1800,
+      "grossAmount": 18.0,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 1800,
+      "netAmount": 18.0
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "gemini-2.0-flash",
+      "unitType": "credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 950,
+      "grossAmount": 9.5,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 950,
+      "netAmount": 9.5
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot Premium Request",
+      "model": "claude-opus-4.5",
+      "unitType": "requests",
+      "pricePerUnit": 0.04,
+      "grossQuantity": 600,
+      "grossAmount": 24.0,
+      "discountQuantity": 60,
+      "discountAmount": 2.4,
+      "netQuantity": 540,
+      "netAmount": 21.6
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot Premium Request",
+      "model": "gpt-4.5",
+      "unitType": "requests",
+      "pricePerUnit": 0.04,
+      "grossQuantity": 450,
+      "grossAmount": 18.0,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 450,
+      "netAmount": 18.0
+    }
+  ]
+}

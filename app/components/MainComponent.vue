@@ -203,7 +203,7 @@
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady && !signInRequired" indeterminate color="indigo" />
-      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
+      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors')) || tab === 'billing'" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" :team-name="teamName" />
@@ -240,13 +240,21 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :query-params="seatsQueryParams"
               :session-email="sessionEmail"
             />
+            <BillingCreditsViewer
+              v-if="item === 'billing'"
+              :query-params="seatsQueryParams"
+            />
+            <BillingCreditsUsersViewer
+              v-if="item === 'billing'"
+              :query-params="seatsQueryParams"
+            />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
         <v-alert
-          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
+          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics' && tab !== 'billing') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
           density="compact" text="No data available to display" title="No data" type="warning" />
       </v-window>
 
@@ -289,6 +297,8 @@ import AgentActivityViewer from './AgentActivityViewer.vue'
 import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
+import BillingCreditsViewer from './BillingCreditsViewer.vue'
+import BillingCreditsUsersViewer from './BillingCreditsUsersViewer.vue'
 import AiChatPanel from './AiChatPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
@@ -310,6 +320,8 @@ export default defineNuxtComponent({
     PullRequestViewer,
     DateRangeSelector,
     UserMetricsViewer,
+    BillingCreditsViewer,
+    BillingCreditsUsersViewer,
     AiChatPanel
   },
   methods: {
@@ -455,7 +467,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'billing', 'api response'],
       tab: null as string | null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,

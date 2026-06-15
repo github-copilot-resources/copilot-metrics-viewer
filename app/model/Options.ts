@@ -484,6 +484,45 @@ export class Options {
     }
 
     /**
+     * Get the Billing AI Credit Usage API URL based on scope and configuration.
+     * Organization scope: /organizations/{org}/settings/billing/ai_credit/usage
+     * Enterprise scope:   /enterprises/{enterprise}/settings/billing/ai_credit/usage
+     */
+    getBillingCreditsApiUrl(): string {
+        const baseUrl = getGitHubApiBaseUrl();
+
+        switch (this.scope) {
+            case 'organization':
+                if (!this.githubOrg) {
+                    throw new Error('GitHub organization must be set for organization scope');
+                }
+                return `${baseUrl}/organizations/${this.githubOrg}/settings/billing/ai_credit/usage`;
+
+            case 'enterprise':
+                if (!this.githubEnt) {
+                    throw new Error('GitHub enterprise must be set for enterprise scope');
+                }
+                return `${baseUrl}/enterprises/${this.githubEnt}/settings/billing/ai_credit/usage`;
+
+            default:
+                throw new Error(`Invalid scope: ${this.scope}`);
+        }
+    }
+
+    /**
+     * Get the per-user Billing AI Credit Usage API URL.
+     * Returns the org/enterprise billing URL — per-user data is retrieved
+     * by passing the ?user=<login> query parameter to this URL.
+     * Organization scope: /organizations/{org}/settings/billing/ai_credit/usage
+     * Enterprise scope:   /enterprises/{enterprise}/settings/billing/ai_credit/usage
+     */
+    getBillingCreditsUserApiUrl(): string {
+        // Reuses the same endpoint as getBillingCreditsApiUrl; filtering by user
+        // is done server-side by appending ?user=<login> to the request.
+        return this.getBillingCreditsApiUrl();
+    }
+
+    /**
      * Get the mock data path for per-user metrics based on scope
      */
     getUserMetricsMockDataPath(): string {
