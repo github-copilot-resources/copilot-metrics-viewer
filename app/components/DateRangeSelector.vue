@@ -44,8 +44,8 @@
           Last 28 Days
         </v-btn>
         <v-btn
-          color="primary"
-          variant="flat"
+          color="success"
+          variant="outlined"
           size="default"
           :loading="loading"
           @click="applyDateRange"
