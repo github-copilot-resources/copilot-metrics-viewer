@@ -151,6 +151,8 @@
     <DateRangeSelector 
       v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
       :loading="isLoading"
+      :min-date="dataRange?.earliest"
+      :max-date="dataRange?.latest"
       @date-range-changed="handleDateRangeChange" />
 
     <!-- Organization info for seats tab -->
@@ -680,6 +682,28 @@ export default defineNuxtComponent({
       })
     });
 
+    /** Available data range for the current scope — used to clamp the date picker. */
+    const dataRange = ref<{ earliest: string; latest: string; mode: string } | null>(null);
+    const fetchDataRange = async () => {
+      try {
+        const options = Options.fromRoute(route.value);
+        const params = options.toParams();
+        // Only forward identity params (no since/until)
+        const { since: _s, until: _u, ...identity } = params;
+        const qs = new URLSearchParams(identity).toString();
+        dataRange.value = await $fetch<{ earliest: string; latest: string; mode: string }>(
+          `/api/data-range${qs ? '?' + qs : ''}`
+        );
+      } catch (err) {
+        console.warn('Failed to fetch /api/data-range, falling back to client defaults:', err);
+        dataRange.value = null;
+      }
+    };
+    if (!signInRequired.value) {
+      // Fire & forget — DateRangeSelector handles the late-arriving bounds via watch.
+      fetchDataRange();
+    }
+
     const aiQueryParams = computed(() => {
       const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
       return options.toParams();
@@ -723,6 +747,7 @@ export default defineNuxtComponent({
       aiQueryParams,
       entraEnabled,
       sessionEmail,
+      dataRange,
     };
   },
 })
