@@ -13,6 +13,15 @@
         <v-icon>{{ showDateRange ? 'mdi-calendar-check' : 'mdi-calendar' }}</v-icon>
       </v-btn>
 
+      <v-btn
+        v-if="!signInRequired"
+        icon
+        title="Admin panel"
+        @click="showAdminPanel = true"
+      >
+        <v-icon>mdi-shield-crown</v-icon>
+      </v-btn>
+
       <v-btn icon :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
@@ -155,6 +164,11 @@
       :max-date="dataRange?.latest"
       @date-range-changed="handleDateRangeChange" />
 
+    <!-- Admin panel dialog -->
+    <AdminPanel
+      v-model="showAdminPanel"
+      :query-params="adminQueryParams" />
+
     <!-- Organization info for seats tab -->
     <div v-if="tab === 'seat analysis'" class="organization-info">
       <v-card flat class="pa-3 mb-2">
@@ -292,6 +306,7 @@ import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
 import AiChatPanel from './AiChatPanel.vue'
+import AdminPanel from './AdminPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
@@ -312,7 +327,8 @@ export default defineNuxtComponent({
     PullRequestViewer,
     DateRangeSelector,
     UserMetricsViewer,
-    AiChatPanel
+    AiChatPanel,
+    AdminPanel
   },
   methods: {
     logout() {
@@ -478,6 +494,7 @@ export default defineNuxtComponent({
       apiError: undefined as string | undefined,
       showMigrationBanner: false,
       showDateRange: false,
+      showAdminPanel: false,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
@@ -720,6 +737,15 @@ export default defineNuxtComponent({
         || '';
     });
 
+    /** Identity-only params (scope/org/ent/team) used by the admin panel. */
+    const adminQueryParams = computed<Record<string, string>>(() => {
+      const options = Options.fromRoute(route.value);
+      const p = options.toParams();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { since: _s, until: _u, ...identity } = p;
+      return identity;
+    });
+
     return {
       isDark,
       toggleTheme,
@@ -748,6 +774,7 @@ export default defineNuxtComponent({
       entraEnabled,
       sessionEmail,
       dataRange,
+      adminQueryParams,
     };
   },
 })

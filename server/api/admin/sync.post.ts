@@ -4,6 +4,7 @@
  */
 
 import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk } from '../../services/sync-service';
+import { getFailedSyncsForScope } from '../../storage/sync-storage';
 import { Options } from '@/model/Options';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 
@@ -137,6 +138,38 @@ export default defineEventHandler(async (event) => {
         return {
           action: 'sync-last-28',
           ...bulkResult
+        };
+      }
+
+      case 'retry-failed': {
+        // Re-attempt every sync_status row in 'failed' state for this scope.
+        const identifier = options.githubOrg || options.githubEnt || 'unknown';
+        const failed = await getFailedSyncsForScope(options.scope!, identifier, options.githubTeam);
+
+        if (failed.length === 0) {
+          return { action: 'retry-failed', retried: 0, successCount: 0, failureCount: 0, results: [] };
+        }
+
+        logger.info(`Retrying ${failed.length} failed sync(s) for ${options.scope}:${identifier}`);
+        const results = [];
+        for (const entry of failed) {
+          const r = await syncMetricsForDate({
+            scope: options.scope!,
+            identifier,
+            date: entry.metricsDate,
+            teamSlug: options.githubTeam,
+            headers,
+          });
+          results.push(r);
+        }
+
+        const successCount = results.filter(r => r.success).length;
+        return {
+          action: 'retry-failed',
+          retried: failed.length,
+          successCount,
+          failureCount: failed.length - successCount,
+          results,
         };
       }
 

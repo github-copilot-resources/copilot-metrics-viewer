@@ -144,6 +144,42 @@ export async function getFailedSyncs(): Promise<SyncStatus[]> {
   return rows.map(rowToSyncStatus);
 }
 
+/**
+ * Get pending syncs scoped to a specific scope/identifier (and optional team).
+ */
+export async function getPendingSyncsForScope(
+  scope: string,
+  scopeIdentifier: string,
+  teamSlug?: string
+): Promise<SyncStatus[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT * FROM sync_status
+     WHERE status = 'pending' AND scope = $1 AND identifier = $2 AND team_slug = $3
+     ORDER BY created_at DESC`,
+    [scope, scopeIdentifier, teamSlug || '']
+  );
+  return rows.map(rowToSyncStatus);
+}
+
+/**
+ * Get failed syncs scoped to a specific scope/identifier (and optional team).
+ */
+export async function getFailedSyncsForScope(
+  scope: string,
+  scopeIdentifier: string,
+  teamSlug?: string
+): Promise<SyncStatus[]> {
+  const pool = getPool();
+  const { rows } = await pool.query(
+    `SELECT * FROM sync_status
+     WHERE status = 'failed' AND scope = $1 AND identifier = $2 AND team_slug = $3
+     ORDER BY created_at DESC`,
+    [scope, scopeIdentifier, teamSlug || '']
+  );
+  return rows.map(rowToSyncStatus);
+}
+
 // Map DB row to SyncStatus interface
 function rowToSyncStatus(row: Record<string, unknown>): SyncStatus {
   return {
