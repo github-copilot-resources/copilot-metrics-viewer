@@ -121,15 +121,16 @@ export default defineEventHandler(async (event): Promise<OverviewResponse> => {
     recentFailures: [],
   };
 
-  if (mode !== 'historical') {
+  if (!db.connected || !identifier) {
     return response;
   }
 
-  // Historical mode: enrich with DB-derived data.
+  // Enrich with DB-derived data whenever the DB is reachable, regardless of
+  // mode label: writes happen in any mode that uses the sync pipeline.
   try {
     response.dataRange = await dataRangeFromDb(scope, identifier);
 
-    if (response.dataRange.earliest && response.dataRange.latest && identifier) {
+    if (response.dataRange.earliest && response.dataRange.latest) {
       const stats = await getSyncStats(
         scope,
         identifier,
@@ -145,20 +146,18 @@ export default defineEventHandler(async (event): Promise<OverviewResponse> => {
       };
     }
 
-    if (identifier) {
-      const [pending, failed] = await Promise.all([
-        getPendingSyncsForScope(scope, identifier, teamSlug),
-        getFailedSyncsForScope(scope, identifier, teamSlug),
-      ]);
-      response.pendingCount = pending.length;
-      response.failedCount = failed.length;
-      response.recentFailures = failed.slice(0, 10).map(f => ({
-        metricsDate: f.metricsDate,
-        errorMessage: f.errorMessage,
-        attemptCount: f.attemptCount,
-        lastAttemptAt: f.lastAttemptAt,
-      }));
-    }
+    const [pending, failed] = await Promise.all([
+      getPendingSyncsForScope(scope, identifier, teamSlug),
+      getFailedSyncsForScope(scope, identifier, teamSlug),
+    ]);
+    response.pendingCount = pending.length;
+    response.failedCount = failed.length;
+    response.recentFailures = failed.slice(0, 10).map(f => ({
+      metricsDate: f.metricsDate,
+      errorMessage: f.errorMessage,
+      attemptCount: f.attemptCount,
+      lastAttemptAt: f.lastAttemptAt,
+    }));
   } catch (err) {
     console.warn('[admin/overview] Enrichment failed:', err);
   }

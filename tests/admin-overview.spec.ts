@@ -85,17 +85,26 @@ describe('/api/admin/overview', () => {
     expect(mockGetSyncStats).not.toHaveBeenCalled()
   })
 
-  it('live mode: probes DB but skips DB-backed enrichment', async () => {
+  it('live mode with DB connected: enriches (writes happen regardless of mode label)', async () => {
+    // 1st query: SELECT 1 (probe)
     mockPoolQuery.mockResolvedValueOnce({ rows: [{ '?column?': 1 }] })
+    // 2nd query: data range
+    mockPoolQuery.mockResolvedValueOnce({
+      rows: [{ earliest: '2026-04-01', latest: '2026-06-15' }],
+    })
+    mockGetSyncStats.mockResolvedValueOnce({
+      totalDays: 76, syncedDays: 70, missingDays: 6, missingDates: [],
+    })
+    mockGetPendingSyncsForScope.mockResolvedValueOnce([])
+    mockGetFailedSyncsForScope.mockResolvedValueOnce([])
 
     const { default: handler } = await import('../server/api/admin/overview.get')
     const result = await handler(makeEvent())
 
     expect(result.mode).toBe('live')
     expect(result.db.connected).toBe(true)
-    expect(typeof result.db.latencyMs).toBe('number')
-    expect(result.dataRange).toEqual({ earliest: null, latest: null })
-    expect(mockGetSyncStats).not.toHaveBeenCalled()
+    expect(result.dataRange).toEqual({ earliest: '2026-04-01', latest: '2026-06-15' })
+    expect(result.syncStats.syncedDays).toBe(70)
   })
 
   it('historical mode: enriches with data range, sync stats and failures', async () => {
