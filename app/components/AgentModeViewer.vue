@@ -454,7 +454,8 @@ export default defineComponent({
                     const params = options.toParams();
                     const queryString = new URLSearchParams(params).toString();
                     const apiUrl = queryString ? `/api/github-stats?${queryString}` : '/api/github-stats';
-                    const response = await $fetch(apiUrl) as GitHubStats;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const response = await ($fetch as any)(apiUrl) as GitHubStats;
                     stats.value = { ...defaultStats, ...response };
                     lastMetricsHash.value = currentHash;
                     lastDateRange.value = currentDateRange;

@@ -393,7 +393,8 @@ export default defineNuxtComponent({
         const queryString = new URLSearchParams(params).toString();
         const apiUrl = queryString ? `/api/metrics?${queryString}` : '/api/metrics';
 
-        const response = await $fetch(apiUrl) as MetricsApiResponse;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const response = await ($fetch as any)(apiUrl) as MetricsApiResponse;
 
         this.metrics = response.metrics || [];
         this.originalMetrics = response.usage || [];

@@ -298,7 +298,8 @@ export default defineEventHandler(async (event) => {
     let firstResponse: { seats: unknown[]; total_seats: number };
     logger.info(`Fetching GitHub page ${ghPageStart} of seats for org scope (UI page ${uiPage})`);
     try {
-      firstResponse = await $fetch(apiUrl, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      firstResponse = await ($fetch as any)(apiUrl, {
         headers: event.context.headers,
         params: { per_page: GITHUB_PER_PAGE, page: ghPageStart }
       }) as { seats: unknown[]; total_seats: number };
@@ -317,7 +318,7 @@ export default defineEventHandler(async (event) => {
     let fetched: Seat[] = firstResponse.seats.map((item: unknown) => new Seat(item));
 
     for (let p = ghPageStart + 1; p <= safeGhPageEnd; p++) {
-      const resp = await $fetch(apiUrl, {
+      const resp = await ($fetch as any)(apiUrl, {
         headers: event.context.headers,
         params: { per_page: GITHUB_PER_PAGE, page: p }
       }) as { seats: unknown[]; total_seats: number };
@@ -341,7 +342,7 @@ export default defineEventHandler(async (event) => {
   let firstResponse: { seats: unknown[]; total_seats: number };
   logger.info(`Fetching 1st page of seats data from ${apiUrl}`);
   try {
-    firstResponse = await $fetch(apiUrl, {
+    firstResponse = await ($fetch as any)(apiUrl, {
       headers: event.context.headers,
       params: { per_page: GITHUB_PER_PAGE, page: 1 }
     }) as { seats: unknown[]; total_seats: number };
@@ -356,7 +357,7 @@ export default defineEventHandler(async (event) => {
   const totalGhPages = Math.ceil(firstResponse.total_seats / GITHUB_PER_PAGE);
 
   for (let p = 2; p <= totalGhPages; p++) {
-    const resp = await $fetch(apiUrl, {
+    const resp = await ($fetch as any)(apiUrl, {
       headers: event.context.headers,
       params: { per_page: GITHUB_PER_PAGE, page: p }
     }) as { seats: unknown[]; total_seats: number };

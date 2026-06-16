@@ -29,7 +29,8 @@ if (typeof globalThis.$fetch === 'function') {
         if (isGitHub(str)) {
             return Promise.reject(new Error(`Blocked external GitHub API call during tests via $fetch: ${str}`));
         }
-        return original$fetch(url as never, opts as never);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (original$fetch as any)(url, opts);
     }) as typeof globalThis.$fetch;
     // Preserve special properties if present
     (wrapped as unknown as { raw?: unknown }).raw = (original$fetch as unknown as { raw?: () => unknown }).raw?.bind(original$fetch);
