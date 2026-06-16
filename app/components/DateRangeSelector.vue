@@ -45,6 +45,7 @@
         </v-btn>
         <v-btn
           color="primary"
+          variant="flat"
           size="default"
           :loading="loading"
           @click="applyDateRange"
@@ -110,15 +111,12 @@ function parseDate(dateString: string): Date {
 }
 
 /**
- * Compute the default window. When both availability bounds are known
- * (historical/DB-backed mode), default to the full available range so users
- * see all the data they've accumulated. Otherwise fall back to the last
- * DEFAULT_WINDOW_DAYS ending at maxDate (or yesterday).
+ * Compute the default window: last 28 days ending at maxDate (or yesterday).
+ * The picker's min/max bounds expose the broader available range, but the
+ * dashboard always opens on the recent 28-day window so charts aren't dragged
+ * down by months of historical data on first load.
  */
 function computeDefaultRange(): { from: string; to: string } {
-  if (props.minDate && props.maxDate) {
-    return { from: props.minDate, to: props.maxDate }
-  }
   const now = new Date()
   // Default "latest" is yesterday because the GH metrics API has ~1-day lag.
   const fallbackLatest = new Date(now.getTime() - 24 * 60 * 60 * 1000)
@@ -175,16 +173,7 @@ function updateDateRange() {
 }
 
 function resetToDefault() {
-  // The "Last 28 Days" button always applies the 28-day window ending at
-  // maxDate (or yesterday) — ignoring the full-range default used on mount.
-  const now = new Date()
-  const fallbackLatest = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-  const latest = props.maxDate ? parseDate(props.maxDate) : fallbackLatest
-  const earliestCandidate = new Date(latest.getTime() - (DEFAULT_WINDOW_DAYS - 1) * 24 * 60 * 60 * 1000)
-  const min = props.minDate ? parseDate(props.minDate) : earliestCandidate
-  const earliest = earliestCandidate < min ? min : earliestCandidate
-  fromDate.value = formatDate(earliest)
-  toDate.value = formatDate(latest)
+  applyDefaults()
 }
 
 /** Clamp a YYYY-MM-DD value into [minDate, maxDate]. */
