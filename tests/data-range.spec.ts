@@ -63,7 +63,10 @@ describe('/api/data-range handler', () => {
     expect(mockPoolQuery).not.toHaveBeenCalled()
   })
 
-  it('live mode: returns 28-day window ending yesterday', async () => {
+  it('live mode: falls back to 28-day window when DB has no data', async () => {
+    // DB is now always probed; simulate empty DB to land in live mode.
+    mockPoolQuery.mockResolvedValue({ rows: [{ earliest: null, latest: null }] })
+
     const { default: handler } = await import('../server/api/data-range')
     const result = await handler(makeEvent() as any)
 
@@ -73,7 +76,17 @@ describe('/api/data-range handler', () => {
     const earliest = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
     expect(result.latest).toBe(yesterday)
     expect(result.earliest).toBe(earliest)
-    expect(mockPoolQuery).not.toHaveBeenCalled()
+  })
+
+  it('returns DB-derived range when storage has data (no env flag required)', async () => {
+    mockPoolQuery.mockResolvedValue({
+      rows: [{ earliest: '2026-01-15', latest: '2026-06-14' }],
+    })
+
+    const { default: handler } = await import('../server/api/data-range')
+    const result = await handler(makeEvent() as any)
+
+    expect(result).toEqual({ earliest: '2026-01-15', latest: '2026-06-14', mode: 'historical' })
   })
 
   it('historical mode: returns DB-derived earliest/latest', async () => {

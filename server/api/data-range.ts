@@ -114,14 +114,15 @@ export default defineEventHandler(async (event): Promise<DataRange> => {
     return { ...mockRange(scope), mode: 'mock' };
   }
 
-  if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
-    try {
-      const stored = await historicalRange(scope, identifier);
-      if (stored) return { ...stored, mode: 'historical' };
-      logger.info('[data-range] No stored data yet, falling back to live window');
-    } catch (err) {
-      logger.warn('[data-range] Storage lookup failed, falling back to live window:', err);
-    }
+  // Whenever the DB is reachable and has data for this scope, use it.
+  // We don't gate this on ENABLE_HISTORICAL_MODE — writes happen via the
+  // sync pipeline regardless of the mode label.
+  try {
+    const stored = await historicalRange(scope, identifier);
+    if (stored) return { ...stored, mode: 'historical' };
+    logger.info('[data-range] No stored data yet, falling back to live window');
+  } catch (err) {
+    logger.warn('[data-range] Storage lookup failed, falling back to live window:', err);
   }
 
   return { ...liveWindow(), mode: 'live' };
