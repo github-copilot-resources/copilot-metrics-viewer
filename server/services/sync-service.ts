@@ -256,27 +256,55 @@ export async function syncMetricsForDateRange(
 ): Promise<SyncResult[]> {
   const logger = console;
 
-  // Use bulk download (28-day) and filter to requested range
+  // Cap end at the latest available date — GH metrics has a 1-day lag.
+  const latestAvailable = getLatestAvailableMetricsDate();
+  const effectiveEnd = endDate > latestAvailable ? latestAvailable : endDate;
+  if (startDate > effectiveEnd) {
+    logger.info(`No syncable dates in range ${startDate}..${endDate} (latest available: ${latestAvailable})`);
+    return [];
+  }
+
+  // First, pull the 28-day bulk download — efficient for recent dates.
   const request: MetricsReportRequest = { scope, identifier, teamSlug };
   const report = await fetchLatestReport(request, headers);
+  const reportDates = new Set(report.day_totals.map(d => d.day));
+
+  // Enumerate every day in the requested range and decide per-day strategy.
+  const allDates: string[] = [];
+  const cur = new Date(startDate);
+  const end = new Date(effectiveEnd);
+  while (cur <= end) {
+    allDates.push(cur.toISOString().split('T')[0]!);
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
 
   const results: SyncResult[] = [];
-  for (const dayData of report.day_totals) {
-    if (dayData.day < startDate || dayData.day > endDate) continue;
 
+  // Bulk-fill in-window dates from the 28-day report.
+  for (const dayData of report.day_totals) {
+    if (dayData.day < startDate || dayData.day > effectiveEnd) continue;
     try {
       const exists = await hasMetrics(scope, identifier, dayData.day, teamSlug);
       if (exists) {
         results.push({ success: true, date: dayData.day, metricsCount: 1 });
         continue;
       }
-
       await saveDayData(scope, identifier, dayData, teamSlug);
       results.push({ success: true, date: dayData.day, metricsCount: 1 });
-      logger.info(`Saved metrics for ${dayData.day}`);
+      logger.info(`Saved metrics for ${dayData.day} (bulk)`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       results.push({ success: false, date: dayData.day, error: msg, metricsCount: 0 });
+    }
+  }
+
+  // Fall back to the 1-day endpoint for out-of-window dates.
+  const outOfWindow = allDates.filter(d => !reportDates.has(d));
+  if (outOfWindow.length > 0) {
+    logger.info(`${outOfWindow.length} date(s) outside 28-day window — fetching via 1-day endpoint...`);
+    for (const date of outOfWindow) {
+      const dayResult = await syncMetricsForDate({ scope, identifier, date, teamSlug, headers });
+      results.push(dayResult);
     }
   }
 
