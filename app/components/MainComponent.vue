@@ -167,7 +167,8 @@
     <!-- Admin panel dialog -->
     <AdminPanel
       v-model="showAdminPanel"
-      :query-params="adminQueryParams" />
+      :query-params="adminQueryParams"
+      @synced="onAdminSynced" />
 
     <!-- Organization info for seats tab -->
     <div v-if="tab === 'seat analysis'" class="organization-info">
@@ -336,6 +337,16 @@ export default defineNuxtComponent({
       this.metrics = [];
       this.seats = [];
       clear();
+    },
+    async onAdminSynced() {
+      // Re-fetch data range bounds, then reload metrics for the current range.
+      await this.fetchDataRange();
+      await this.fetchMetrics();
+      if (this.signInRequired) return;
+      const { execute: executeUserMetrics, data: userMetricsData } = this.userMetricsFetch;
+      await executeUserMetrics();
+      this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
+      this.userMetricsReady = true;
     },
     getDisplayTabName(itemName: string): string {
       return itemName;
@@ -776,6 +787,7 @@ export default defineNuxtComponent({
       sessionEmail,
       dataRange,
       adminQueryParams,
+      fetchDataRange,
     };
   },
 })

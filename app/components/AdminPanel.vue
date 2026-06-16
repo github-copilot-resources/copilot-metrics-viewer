@@ -297,7 +297,10 @@ interface Overview {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ (e: 'update:modelValue', v: boolean): void }>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', v: boolean): void
+  (e: 'synced'): void
+}>()
 
 const isOpen = computed({
   get: () => props.modelValue,
@@ -373,6 +376,7 @@ async function runAction(action: string, extra?: Record<string, string>) {
     })
     actionResult.value = { success: true, message: summarizeResult(result) }
     await refresh()
+    emit('synced')
   } catch (err) {
     actionResult.value = { success: false, message: `${action} failed: ${describeError(err)}` }
   } finally {
@@ -396,6 +400,7 @@ async function retryOne(date: string) {
       message: ok ? `Re-synced ${date}` : `Retry failed for ${date}: ${result.result?.error || 'unknown error'}`,
     }
     await refresh()
+    if (ok) emit('synced')
   } catch (err) {
     actionResult.value = { success: false, message: `Retry failed for ${date}: ${describeError(err)}` }
   } finally {
