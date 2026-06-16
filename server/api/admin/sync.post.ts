@@ -4,7 +4,7 @@
  */
 
 import { syncMetricsForDate, syncMetricsForDateRange, syncGaps, syncBulk } from '../../services/sync-service';
-import { getFailedSyncsForScope } from '../../storage/sync-storage';
+import { clearFailedSyncsForScope, getFailedSyncsForScope } from '../../storage/sync-storage';
 import { Options } from '@/model/Options';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 
@@ -171,6 +171,17 @@ export default defineEventHandler(async (event) => {
           failureCount: failed.length - successCount,
           results,
         };
+      }
+
+      case 'clear-failed': {
+        const scope = options.scope === 'enterprise' ? 'enterprise' : 'organization';
+        const identifier = options.githubOrg || options.githubEnt;
+        if (!identifier) {
+          throw createError({ statusCode: 400, statusMessage: 'organization or enterprise identifier required' });
+        }
+        const removed = await clearFailedSyncsForScope(scope, identifier, options.githubTeam);
+        logger.info(`Cleared ${removed} failed sync row(s) for ${scope}:${identifier}`);
+        return { action: 'clear-failed', removed };
       }
 
       default:

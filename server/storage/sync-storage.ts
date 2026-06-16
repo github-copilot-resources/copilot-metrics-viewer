@@ -180,6 +180,25 @@ export async function getFailedSyncsForScope(
   return rows.map(rowToSyncStatus);
 }
 
+/**
+ * Delete failed sync rows for a specific scope/identifier (and optional team).
+ * Returns the count of rows removed. Use to clear stale failures (e.g. a date
+ * that's no longer expected to have data).
+ */
+export async function clearFailedSyncsForScope(
+  scope: string,
+  scopeIdentifier: string,
+  teamSlug?: string
+): Promise<number> {
+  const pool = getPool();
+  const { rowCount } = await pool.query(
+    `DELETE FROM sync_status
+     WHERE status = 'failed' AND scope = $1 AND identifier = $2 AND team_slug = $3`,
+    [scope, scopeIdentifier, teamSlug || '']
+  );
+  return rowCount || 0;
+}
+
 // Map DB row to SyncStatus interface
 function rowToSyncStatus(row: Record<string, unknown>): SyncStatus {
   return {

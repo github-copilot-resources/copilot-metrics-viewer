@@ -49,6 +49,18 @@ export interface BulkSyncResult {
 }
 
 /**
+ * Latest UTC date for which the GitHub Copilot metrics API is expected to
+ * have data. The API has a ~1-day lag — data for "today" is not yet available
+ * and a 1-day fetch will return an empty/error response. We treat anything
+ * after this date as "no data yet" rather than a sync failure.
+ */
+export function getLatestAvailableMetricsDate(now: Date = new Date()): string {
+  const yesterday = new Date(now);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  return yesterday.toISOString().slice(0, 10);
+}
+
+/**
  * Save a single day's report data to storage.
  * Stores both the transformed CopilotMetrics and the raw ReportDayTotals.
  */
@@ -174,6 +186,16 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
   const { scope, identifier, date, teamSlug, headers } = request;
   const logger = console;
 
+  // Skip dates the API doesn't cover yet (today/future). Surfacing this as a
+  // skipped success avoids polluting the failure queue with the cryptic
+  // "Cannot destructure property 'download_links' of '(intermediate value)'"
+  // error that the GH endpoint returns for not-yet-available days.
+  const latestAvailable = getLatestAvailableMetricsDate();
+  if (date > latestAvailable) {
+    logger.info(`Skipping ${date} — not yet available from GitHub (latest available: ${latestAvailable})`);
+    return { success: true, date, metricsCount: 0 };
+  }
+
   try {
     // Check if already synced
     const exists = await hasMetrics(scope, identifier, date, teamSlug);
@@ -273,11 +295,13 @@ export async function detectGaps(
 ): Promise<string[]> {
   const start = new Date(startDate);
   const end = new Date(endDate);
+  const latestAvailable = getLatestAvailableMetricsDate();
   const missingDates: string[] = [];
 
   const current = new Date(start);
   while (current <= end) {
     const dateStr = current.toISOString().split('T')[0]!;
+    if (dateStr > latestAvailable) break;
     const exists = await hasMetrics(scope, identifier, dateStr, teamSlug);
     if (!exists) {
       missingDates.push(dateStr);

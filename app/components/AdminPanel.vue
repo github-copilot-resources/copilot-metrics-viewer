@@ -5,8 +5,8 @@
         <v-icon color="primary">mdi-shield-crown</v-icon>
         Admin Panel
         <v-spacer />
-        <v-btn icon variant="text" size="small" :loading="loading" title="Refresh" @click="refresh">
-          <v-icon>mdi-refresh</v-icon>
+        <v-btn icon variant="text" size="small" title="Close" @click="isOpen = false">
+          <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
 
@@ -88,7 +88,7 @@
             </v-list-item-subtitle>
           </v-list-item>
 
-          <v-list-item v-if="overview && overview.mode === 'historical'">
+          <v-list-item v-if="overview && overview.db.connected">
             <template #prepend>
               <v-icon :color="overview.failedCount ? 'error' : 'medium-emphasis'">mdi-alert-circle</v-icon>
             </template>
@@ -98,6 +98,18 @@
             </v-list-item-subtitle>
           </v-list-item>
         </v-list>
+
+        <div class="d-flex justify-end mt-1">
+          <v-btn
+            size="small"
+            variant="tonal"
+            prepend-icon="mdi-refresh"
+            :loading="loading"
+            @click="refresh"
+          >
+            Refresh status
+          </v-btn>
+        </div>
 
         <v-divider class="my-3" />
 
@@ -204,6 +216,18 @@
             >
               Retry all
             </v-btn>
+            <v-btn
+              size="small"
+              variant="text"
+              color="error"
+              prepend-icon="mdi-delete-outline"
+              class="ml-2"
+              :loading="busyAction === 'clear-failed'"
+              :disabled="!!busyAction"
+              @click="runAction('clear-failed')"
+            >
+              Clear all
+            </v-btn>
           </div>
           <v-table density="compact">
             <thead>
@@ -217,7 +241,7 @@
             <tbody>
               <tr v-for="f in overview.recentFailures" :key="f.metricsDate">
                 <td><code>{{ f.metricsDate }}</code></td>
-                <td class="text-truncate" style="max-width: 320px;" :title="f.errorMessage">{{ f.errorMessage || '—' }}</td>
+                <td style="max-width: 480px; white-space: pre-wrap; word-break: break-word;">{{ f.errorMessage || '—' }}</td>
                 <td>{{ f.attemptCount }}</td>
                 <td>
                   <v-btn
@@ -398,6 +422,9 @@ function summarizeResult(result: Record<string, unknown>): string {
   }
   if (a === 'retry-failed') {
     return `Retried ${result.retried} failed sync(s): ${result.successCount} ok, ${result.failureCount} still failing`
+  }
+  if (a === 'clear-failed') {
+    return `Cleared ${result.removed ?? 0} failed sync row(s)`
   }
   return `Action ${a} completed`
 }
