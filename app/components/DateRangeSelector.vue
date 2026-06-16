@@ -31,6 +31,7 @@
           v-model="excludeHolidays"
           label="Exclude holidays from metrics"
           density="compact"
+          @update:model-value="applyDateRange"
         />
       </v-col>
       <v-col cols="6" sm="4" class="d-flex align-center justify-start" style="padding-bottom: 35px;">
