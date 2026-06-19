@@ -1,6 +1,6 @@
 {
   "name": "copilot-metrics-viewer",
-  "version": "3.9.0",
+  "version": "3.9.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,11 +22,11 @@
     "chart.js": "^4.4.7",
     "date-holidays": "^3.24.4",
     "eslint": "^9.32.0",
-    "nuxt": "^3.21.6",
+    "nuxt": "^3.21.7",
     "nuxt-auth-utils": "^0.5.7",
     "pg": "^8.19.0",
     "roboto-fontface": "^0.10.0",
-    "undici": ">=7.24.4",
+    "undici": ">=7.28.0",
     "unstorage": "^1.17.4",
     "vue": "latest",
     "vue-chartjs": "^5.3.2",
