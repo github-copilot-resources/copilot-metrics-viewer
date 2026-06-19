@@ -123,7 +123,8 @@ export async function getMetricsData(event: H3Event<EventHandlerRequest>): Promi
   logger.info(`Fetching metrics data from ${apiUrl}`);
 
   try {
-  const response = await $fetch(apiUrl, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await ($fetch as any)(apiUrl, {
       headers: event.context.headers
     }) as unknown[];
 

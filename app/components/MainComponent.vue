@@ -13,6 +13,15 @@
         <v-icon>{{ showDateRange ? 'mdi-calendar-check' : 'mdi-calendar' }}</v-icon>
       </v-btn>
 
+      <v-btn
+        v-if="!signInRequired"
+        icon
+        title="Admin panel"
+        @click="showAdminPanel = true"
+      >
+        <v-icon>mdi-shield-crown</v-icon>
+      </v-btn>
+
       <v-btn icon :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
@@ -151,7 +160,15 @@
     <DateRangeSelector 
       v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
       :loading="isLoading"
+      :min-date="dataRange?.earliest"
+      :max-date="dataRange?.latest"
       @date-range-changed="handleDateRangeChange" />
+
+    <!-- Admin panel dialog -->
+    <AdminPanel
+      v-model="showAdminPanel"
+      :query-params="adminQueryParams"
+      @synced="onAdminSynced" />
 
     <!-- Organization info for seats tab -->
     <div v-if="tab === 'seat analysis'" class="organization-info">
@@ -290,6 +307,7 @@ import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
 import AiChatPanel from './AiChatPanel.vue'
+import AdminPanel from './AdminPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
 import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
@@ -310,7 +328,8 @@ export default defineNuxtComponent({
     PullRequestViewer,
     DateRangeSelector,
     UserMetricsViewer,
-    AiChatPanel
+    AiChatPanel,
+    AdminPanel
   },
   methods: {
     logout() {
@@ -318,6 +337,16 @@ export default defineNuxtComponent({
       this.metrics = [];
       this.seats = [];
       clear();
+    },
+    async onAdminSynced() {
+      // Re-fetch data range bounds, then reload metrics for the current range.
+      await this.fetchDataRange();
+      await this.fetchMetrics();
+      if (this.signInRequired) return;
+      const { execute: executeUserMetrics, data: userMetricsData } = this.userMetricsFetch;
+      await executeUserMetrics();
+      this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
+      this.userMetricsReady = true;
     },
     getDisplayTabName(itemName: string): string {
       return itemName;
@@ -375,7 +404,8 @@ export default defineNuxtComponent({
         const queryString = new URLSearchParams(params).toString();
         const apiUrl = queryString ? `/api/metrics?${queryString}` : '/api/metrics';
 
-        const response = await $fetch(apiUrl) as MetricsApiResponse;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const response = await ($fetch as any)(apiUrl) as MetricsApiResponse;
 
         this.metrics = response.metrics || [];
         this.originalMetrics = response.usage || [];
@@ -476,6 +506,7 @@ export default defineNuxtComponent({
       apiError: undefined as string | undefined,
       showMigrationBanner: false,
       showDateRange: false,
+      showAdminPanel: false,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
@@ -680,6 +711,28 @@ export default defineNuxtComponent({
       })
     });
 
+    /** Available data range for the current scope — used to clamp the date picker. */
+    const dataRange = ref<{ earliest: string; latest: string; mode: string } | null>(null);
+    const fetchDataRange = async () => {
+      try {
+        const options = Options.fromRoute(route.value);
+        const params = options.toParams();
+        // Only forward identity params (no since/until)
+        const { since: _s, until: _u, ...identity } = params;
+        const qs = new URLSearchParams(identity).toString();
+        dataRange.value = await $fetch<{ earliest: string; latest: string; mode: string }>(
+          `/api/data-range${qs ? '?' + qs : ''}`
+        );
+      } catch (err) {
+        console.warn('Failed to fetch /api/data-range, falling back to client defaults:', err);
+        dataRange.value = null;
+      }
+    };
+    if (!signInRequired.value) {
+      // Fire & forget — DateRangeSelector handles the late-arriving bounds via watch.
+      fetchDataRange();
+    }
+
     const aiQueryParams = computed(() => {
       const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
       return options.toParams();
@@ -694,6 +747,15 @@ export default defineNuxtComponent({
       return (user.value as unknown as Record<string, unknown>).email as string
         || (user.value.login && user.value.login.includes('@') ? user.value.login : '')
         || '';
+    });
+
+    /** Identity-only params (scope/org/ent/team) used by the admin panel. */
+    const adminQueryParams = computed<Record<string, string>>(() => {
+      const options = Options.fromRoute(route.value);
+      const p = options.toParams();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { since: _s, until: _u, ...identity } = p;
+      return identity;
     });
 
     return {
@@ -723,6 +785,9 @@ export default defineNuxtComponent({
       aiQueryParams,
       entraEnabled,
       sessionEmail,
+      dataRange,
+      adminQueryParams,
+      fetchDataRange,
     };
   },
 })
