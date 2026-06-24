@@ -172,6 +172,13 @@ export interface UserDayRecord {
   loc_suggested_to_delete_sum: number;
   loc_added_sum: number;
   loc_deleted_sum: number;
+  /**
+   * AI credits consumed by this user on this day. Added by GitHub on
+   * 2026-06-19 to the users-1-day / users-28-day Copilot metrics reports.
+   * Optional because it is absent on older reports and on enterprises that
+   * have not yet enabled premium request billing.
+   */
+  ai_credits_used?: number;
   used_agent?: boolean;
   used_chat?: boolean;
   used_cli?: boolean;
@@ -251,6 +258,13 @@ export interface UserTotals {
   /** Total lines of code accepted (added) */
   loc_added_sum: number;
   loc_deleted_sum: number;
+  /**
+   * Sum of AI credits consumed by this user across the period. Optional —
+   * populated only when GitHub returns `ai_credits_used` on the underlying
+   * day records (rolled out 2026-06-19). Undefined means "data not
+   * available" rather than zero.
+   */
+  ai_credits_used?: number;
   /** Breakdown by IDE */
   totals_by_ide?: UserIdeTotals[];
   /** Breakdown by feature */
@@ -326,6 +340,8 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
     loc_suggested_to_delete_sum: number;
     loc_added_sum: number;
     loc_deleted_sum: number;
+    /** undefined until we see at least one day with the field; then a number */
+    ai_credits_used: number | undefined;
     totals_by_ide: UserIdeTotals[];
     totals_by_feature: UserFeatureTotals[];
     totals_by_language_feature: UserLanguageFeatureTotals[];
@@ -346,6 +362,7 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
         loc_suggested_to_delete_sum: 0,
         loc_added_sum: 0,
         loc_deleted_sum: 0,
+        ai_credits_used: undefined,
         totals_by_ide: [],
         totals_by_feature: [],
         totals_by_language_feature: [],
@@ -362,6 +379,13 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
     agg.loc_suggested_to_delete_sum += rec.loc_suggested_to_delete_sum || 0;
     agg.loc_added_sum += rec.loc_added_sum || 0;
     agg.loc_deleted_sum += rec.loc_deleted_sum || 0;
+
+    // Only initialise ai_credits_used when the API actually returned it on
+    // at least one day record, so callers can distinguish "no data" from
+    // "explicit zero".
+    if (typeof rec.ai_credits_used === 'number') {
+      agg.ai_credits_used = (agg.ai_credits_used ?? 0) + rec.ai_credits_used;
+    }
 
     agg.totals_by_ide = mergeBreakdown(
       agg.totals_by_ide, rec.totals_by_ide,
@@ -395,6 +419,7 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
       loc_suggested_to_delete_sum: agg.loc_suggested_to_delete_sum,
       loc_added_sum: agg.loc_added_sum,
       loc_deleted_sum: agg.loc_deleted_sum,
+      ai_credits_used: agg.ai_credits_used,
       totals_by_ide: agg.totals_by_ide,
       totals_by_feature: agg.totals_by_feature,
       totals_by_language_feature: agg.totals_by_language_feature,

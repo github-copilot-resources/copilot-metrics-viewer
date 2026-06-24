@@ -122,6 +122,9 @@ export default defineNuxtConfig({
     // Server-only authorization config (NUXT_AUTHORIZED_USERS, NUXT_AUTHORIZED_EMAIL_DOMAINS)
     authorizedUsers: '',
     authorizedEmailDomains: '',
+    // Server-only admin allowlist for the per-user billing breakdown tab
+    // (NUXT_USAGE_ADMINS). Closed-by-default: empty list = nobody is admin.
+    usageAdmins: '',
     public: {
       isDataMocked: false,  // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
