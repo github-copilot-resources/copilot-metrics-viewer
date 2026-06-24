@@ -106,12 +106,20 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   logger.info(`Fetching billing credits from ${apiUrl}`);
 
   try {
+    // Build headers explicitly — DO NOT spread event.context.headers, because
+    // $fetch concatenates duplicate header values (the middleware sets
+    // X-GitHub-Api-Version: 2022-11-28; spreading + overriding produces
+    // "2022-11-28, 2026-03-10" which GitHub rejects with 400 Bad Request).
+    // The billing API requires the newer 2026-03-10 version.
+    const auth = event.context.headers.get('Authorization') || '';
+    const ghHeaders = new Headers({
+      Authorization: auth,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2026-03-10',
+    });
+
     const response = await $fetch<BillingCreditsResponse>(urlWithParams, {
-      headers: {
-        ...Object.fromEntries(event.context.headers.entries()),
-        'X-GitHub-Api-Version': '2026-03-10',
-        Accept: 'application/vnd.github+json',
-      },
+      headers: ghHeaders,
     });
     return response;
   } catch (error: unknown) {
