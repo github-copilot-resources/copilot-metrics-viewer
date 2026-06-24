@@ -48,8 +48,8 @@ describe('aggregateUserDayRecords — ai_credits_used', () => {
     ]);
 
     expect(result).toHaveLength(1);
-    expect(result[0].login).toBe('alice');
-    expect(result[0].ai_credits_used).toBe(7);
+    expect(result[0]?.login).toBe('alice');
+    expect(result[0]?.ai_credits_used).toBe(7);
   });
 
   it('leaves ai_credits_used undefined when no day record provides it', () => {
@@ -59,7 +59,7 @@ describe('aggregateUserDayRecords — ai_credits_used', () => {
     ]);
 
     expect(result).toHaveLength(1);
-    expect(result[0].ai_credits_used).toBeUndefined();
+    expect(result[0]?.ai_credits_used).toBeUndefined();
   });
 
   it('treats explicit zero as data (sum of zeros is 0, not undefined)', () => {
@@ -68,7 +68,7 @@ describe('aggregateUserDayRecords — ai_credits_used', () => {
       dayRecord('carol', '2026-06-21', 0),
     ]);
 
-    expect(result[0].ai_credits_used).toBe(0);
+    expect(result[0]?.ai_credits_used).toBe(0);
   });
 
   it('sums only the days that include the field (older + newer mix)', () => {
@@ -78,7 +78,7 @@ describe('aggregateUserDayRecords — ai_credits_used', () => {
       dayRecord('dave', '2026-06-20', 0.75),
     ]);
 
-    expect(result[0].ai_credits_used).toBe(2);
+    expect(result[0]?.ai_credits_used).toBe(2);
   });
 
   it('aggregates ai_credits_used per user independently', () => {
