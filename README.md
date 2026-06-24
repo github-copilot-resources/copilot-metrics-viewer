@@ -108,7 +108,7 @@ Visible to every authenticated user when any auth provider is configured (`NUXT_
 ### Billing (admin)
 Aggregate AI credit billing breakdown by model, SKU, cost center, and repository — pulled from the GitHub Billing API (`/organizations/{org}/settings/billing/ai_credit/usage` and `/enterprises/{ent}/settings/billing/ai_credit/usage`).
 
-Closed-by-default tab gated by the `NUXT_USAGE_ADMINS` allowlist (see env-var docs below). The tab is hidden unless `/api/auth/usage-admin` confirms the current session is on the allowlist. Per-user attribution is **not** exposed on this tab — use the AI Credits column on the User Metrics tab instead. (GitHub's billing API rejects `?user=` filters on enterprise-owned orgs, so the per-user data has to come from the metrics endpoint.)
+Open-by-default tab: visible whenever `NUXT_USAGE_ADMINS` is empty (anyone with dashboard access can see it). Setting `NUXT_USAGE_ADMINS=login1,email@host,…` restricts it to the listed admins. Per-user attribution is **not** exposed on this tab — use the AI Credits column on the User Metrics tab instead. (GitHub's billing API rejects `?user=` filters on enterprise-owned orgs, so the per-user data has to come from the metrics endpoint.)
 
 ### Models Tab
 View model usage analytics including model adoption over time, chat model distribution, and usage per chat mode (Ask, Agent, Edit, Inline).
@@ -355,11 +355,17 @@ NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 
 #### NUXT_USAGE_ADMINS
 
-Comma-separated allowlist of logins or email addresses that can see the **Billing tab** (per-model / per-SKU AI credit breakdown). Unlike `NUXT_AUTHORIZED_USERS`, this allowlist is **closed-by-default** — empty value means *no admins*, so the tab is never shown.
+Comma-separated allowlist of logins or email addresses that can see the **Billing tab** (aggregate AI-credit breakdown by SKU/model/cost-center/repo). Mirrors `NUXT_AUTHORIZED_USERS` semantics — **open-by-default**: when this variable is empty, anyone who can already use the dashboard can also see the Billing tab. Set it to lock the tab to a specific admin set.
 
 ```
+# Open (default) — everyone on the dashboard can see Billing
+NUXT_USAGE_ADMINS=
+
+# Restricted — only the listed logins/emails see Billing
 NUXT_USAGE_ADMINS=alice,bob@company.com
 ```
+
+The Billing endpoint returns *aggregate* data only (no per-user attribution); the gate exists so deployments that share a dashboard with non-admin viewers can still hide cost figures.
 
 Backend requirement: the credential used by the server (PAT or GitHub App) must also be able to read the billing API. See the auth-mode matrix below.
 

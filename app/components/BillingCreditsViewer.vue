@@ -5,8 +5,9 @@
         <div class="mr-3" style="flex: 1; min-width: 250px;">
           <div class="font-weight-bold text-body-1 mb-1">💳 AI Credit Billing</div>
           <div class="text-medium-emphasis">
-            Breakdown of premium-request spend by model and SKU, sourced from the GitHub Billing
-            API. Admin-only — gated by the <code>NUXT_USAGE_ADMINS</code> allowlist.
+            Aggregate breakdown of premium-request spend by model and SKU,
+            sourced from the GitHub Billing API. Visible to every dashboard
+            user by default; restrict via <code>NUXT_USAGE_ADMINS</code>.
           </div>
           <div class="text-caption text-medium-emphasis mt-1">
             Per-user attribution is available on the <strong>User Metrics</strong> tab via the

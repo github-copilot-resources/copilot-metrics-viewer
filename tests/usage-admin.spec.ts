@@ -12,20 +12,24 @@ import { describe, it, expect } from 'vitest';
 import { isUsageAdmin } from '../server/utils/usage-admin';
 
 describe('isUsageAdmin', () => {
-  describe('closed-by-default', () => {
-    it('returns false when allowlist is empty', () => {
-      expect(isUsageAdmin({ login: 'alice' }, '')).toBe(false);
+  describe('open-by-default when allowlist is empty', () => {
+    it('returns true when allowlist is empty', () => {
+      expect(isUsageAdmin({ login: 'alice' }, '')).toBe(true);
     });
 
-    it('returns false when allowlist is whitespace only', () => {
-      expect(isUsageAdmin({ login: 'alice' }, '   ')).toBe(false);
+    it('returns true when allowlist is whitespace only', () => {
+      expect(isUsageAdmin({ login: 'alice' }, '   ')).toBe(true);
     });
 
-    it('returns false when allowlist is comma-only', () => {
-      expect(isUsageAdmin({ login: 'alice' }, ',,,')).toBe(false);
+    it('returns true when allowlist is comma-only', () => {
+      expect(isUsageAdmin({ login: 'alice' }, ',,,')).toBe(true);
     });
 
-    it('returns false when identity has no login or email', () => {
+    it('returns true even when identity has no login or email (matches open mode)', () => {
+      expect(isUsageAdmin({}, '')).toBe(true);
+    });
+
+    it('returns false when allowlist is set but identity has no login or email', () => {
       expect(isUsageAdmin({}, 'alice,bob')).toBe(false);
     });
   });
