@@ -23,9 +23,16 @@
 
         <v-alert v-else-if="error" type="error" density="compact" class="ma-3">
           {{ error.statusMessage || error.message || 'Failed to load billing data' }}
-          <div v-if="errorIsForbidden" class="mt-1 text-caption">
+          <div v-if="errorReason === 'usage-admin'" class="mt-1 text-caption">
             Your account is not in <code>NUXT_USAGE_ADMINS</code> — ask the deployment owner to
             add your GitHub login or email.
+          </div>
+          <div v-else-if="errorReason === 'github-pat-scope'" class="mt-1 text-caption">
+            The server-side token does not have permission to call the GitHub Billing API.
+            Use a classic PAT with <code>manage_billing:copilot</code> (for organization scope)
+            or <code>manage_billing:enterprise</code> (for enterprise scope), or grant the
+            GitHub App <em>Administration: Read</em> / <em>Enterprise billing: Read</em>.
+            Fine-grained PATs are not supported by these endpoints.
           </div>
         </v-alert>
 
@@ -97,9 +104,18 @@ export default defineComponent({
       items.value.reduce((s, i) => s + (i.netAmount || 0), 0)
     );
 
-    const errorIsForbidden = computed(() => {
-      const status = (error.value as { statusCode?: number } | null)?.statusCode;
-      return status === 403;
+    // Distinguish "our admin gate" 403 from "GitHub billing API" 403, since the
+    // remediation steps are very different.
+    const errorReason = computed<'usage-admin' | 'github-pat-scope' | 'other' | null>(() => {
+      const err = error.value as { statusCode?: number; statusMessage?: string; data?: { message?: string } } | null;
+      if (!err || err.statusCode !== 403) return null;
+      const msg = (err.statusMessage || '') + ' ' + (err.data?.message || '');
+      // Our /api/billing-credits gate uses the literal message
+      //   "Forbidden: your account is not on the NUXT_USAGE_ADMINS allowlist."
+      if (msg.includes('NUXT_USAGE_ADMINS')) return 'usage-admin';
+      // GitHub-side rejections we know how to advise on
+      if (/personal access token|administration|manage_billing|insufficient/i.test(msg)) return 'github-pat-scope';
+      return 'other';
     });
 
     const headers = [
@@ -115,7 +131,7 @@ export default defineComponent({
     return {
       data, pending, error, items,
       totalGrossQty, totalGrossAmount, totalNetAmount,
-      errorIsForbidden, headers,
+      errorReason, headers,
     };
   },
 });
