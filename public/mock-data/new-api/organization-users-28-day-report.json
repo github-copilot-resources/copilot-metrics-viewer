@@ -174,7 +174,8 @@
       "loc_added_sum": 0,
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.1
     },
     {
       "report_start_day": "2026-03-29",
@@ -325,7 +326,8 @@
       "loc_added_sum": 2359,
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.84
     },
     {
       "report_start_day": "2026-03-29",
@@ -522,7 +524,8 @@
       "loc_added_sum": 0,
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": true,
-      "used_copilot_cloud_agent": true
+      "used_copilot_cloud_agent": true,
+      "ai_credits_used": 2.28
     },
     {
       "report_start_day": "2026-03-29",
@@ -652,7 +655,8 @@
       "loc_added_sum": 1,
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.02
     },
     {
       "report_start_day": "2026-03-29",
@@ -743,7 +747,8 @@
       "loc_deleted_sum": 0,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.81
     },
     {
       "report_start_day": "2026-03-29",
@@ -783,7 +788,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.55
     },
     {
       "report_start_day": "2026-03-29",
@@ -823,7 +829,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.7
     },
     {
       "report_start_day": "2026-03-29",
@@ -1066,7 +1073,8 @@
       "loc_deleted_sum": 11,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.82
     },
     {
       "report_start_day": "2026-03-29",
@@ -1208,7 +1216,8 @@
       "loc_deleted_sum": 261,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 4.24
     },
     {
       "report_start_day": "2026-03-29",
@@ -1248,7 +1257,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.11
     },
     {
       "report_start_day": "2026-03-29",
@@ -1485,7 +1495,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.77
     },
     {
       "report_start_day": "2026-03-29",
@@ -1607,7 +1618,8 @@
       "loc_deleted_sum": 0,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 4.83
     },
     {
       "report_start_day": "2026-03-29",
@@ -1647,7 +1659,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.69
     },
     {
       "report_start_day": "2026-03-29",
@@ -1752,7 +1765,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.29
     },
     {
       "report_start_day": "2026-03-29",
@@ -1792,7 +1806,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.11
     },
     {
       "report_start_day": "2026-03-29",
@@ -1872,7 +1887,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.45
     },
     {
       "report_start_day": "2026-03-29",
@@ -1912,7 +1928,8 @@
         }
       },
       "used_copilot_coding_agent": true,
-      "used_copilot_cloud_agent": true
+      "used_copilot_cloud_agent": true,
+      "ai_credits_used": 1.6
     },
     {
       "report_start_day": "2026-03-29",
@@ -2112,7 +2129,8 @@
       "loc_deleted_sum": 0,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 6.67
     },
     {
       "report_start_day": "2026-03-29",
@@ -2356,7 +2374,8 @@
       "loc_deleted_sum": 2,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.82
     },
     {
       "report_start_day": "2026-03-29",
@@ -2396,7 +2415,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.96
     },
     {
       "report_start_day": "2026-03-29",
@@ -2880,7 +2900,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.32
     },
     {
       "report_start_day": "2026-03-29",
@@ -2920,7 +2941,8 @@
         }
       },
       "used_copilot_coding_agent": true,
-      "used_copilot_cloud_agent": true
+      "used_copilot_cloud_agent": true,
+      "ai_credits_used": 0.7
     },
     {
       "report_start_day": "2026-03-29",
@@ -3062,7 +3084,8 @@
       "loc_deleted_sum": 240,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.54
     },
     {
       "report_start_day": "2026-03-29",
@@ -3234,7 +3257,8 @@
       "loc_deleted_sum": 8,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 4.34
     },
     {
       "report_start_day": "2026-03-29",
@@ -3421,7 +3445,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.03
     },
     {
       "report_start_day": "2026-03-29",
@@ -3856,7 +3881,8 @@
       "loc_deleted_sum": 84,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 6.01
     },
     {
       "report_start_day": "2026-03-29",
@@ -4065,7 +4091,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.96
     },
     {
       "report_start_day": "2026-03-29",
@@ -4207,7 +4234,8 @@
       "loc_deleted_sum": 42,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.89
     },
     {
       "report_start_day": "2026-03-29",
@@ -4377,7 +4405,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.61
     },
     {
       "report_start_day": "2026-03-29",
@@ -4554,7 +4583,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 5.46
     },
     {
       "report_start_day": "2026-03-29",
@@ -5258,7 +5288,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.13
     },
     {
       "report_start_day": "2026-03-29",
@@ -5681,7 +5712,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.59
     },
     {
       "report_start_day": "2026-03-29",
@@ -5890,7 +5922,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.39
     },
     {
       "report_start_day": "2026-03-29",
@@ -6373,7 +6406,8 @@
       "loc_deleted_sum": 414,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.62
     },
     {
       "report_start_day": "2026-03-29",
@@ -6642,7 +6676,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 5.82
     },
     {
       "report_start_day": "2026-03-29",
@@ -6839,7 +6874,8 @@
         }
       },
       "used_copilot_coding_agent": true,
-      "used_copilot_cloud_agent": true
+      "used_copilot_cloud_agent": true,
+      "ai_credits_used": 1.03
     },
     {
       "report_start_day": "2026-03-29",
@@ -6961,7 +6997,8 @@
       "loc_deleted_sum": 99,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.43
     },
     {
       "report_start_day": "2026-03-29",
@@ -7318,7 +7355,8 @@
       "loc_deleted_sum": 350,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.34
     },
     {
       "report_start_day": "2026-03-29",
@@ -7823,7 +7861,8 @@
         }
       },
       "used_copilot_coding_agent": true,
-      "used_copilot_cloud_agent": true
+      "used_copilot_cloud_agent": true,
+      "ai_credits_used": 0.94
     },
     {
       "report_start_day": "2026-03-29",
@@ -8244,7 +8283,8 @@
       "loc_deleted_sum": 134,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.36
     },
     {
       "report_start_day": "2026-03-29",
@@ -8573,7 +8613,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.8
     },
     {
       "report_start_day": "2026-03-29",
@@ -8811,7 +8852,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.08
     },
     {
       "report_start_day": "2026-03-29",
@@ -8977,7 +9019,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.94
     },
     {
       "report_start_day": "2026-03-29",
@@ -9321,7 +9364,8 @@
       "loc_deleted_sum": 662,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 4.98
     },
     {
       "report_start_day": "2026-03-29",
@@ -9580,7 +9624,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 6.11
     },
     {
       "report_start_day": "2026-03-29",
@@ -9750,7 +9795,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.91
     },
     {
       "report_start_day": "2026-03-29",
@@ -9937,7 +9983,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.93
     },
     {
       "report_start_day": "2026-03-29",
@@ -10022,7 +10069,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.78
     },
     {
       "report_start_day": "2026-03-29",
@@ -10225,7 +10273,8 @@
       "loc_deleted_sum": 29,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.74
     },
     {
       "report_start_day": "2026-03-29",
@@ -10596,7 +10645,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 6.02
     },
     {
       "report_start_day": "2026-03-29",
@@ -10990,7 +11040,8 @@
       "loc_deleted_sum": 603,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.25
     },
     {
       "report_start_day": "2026-03-29",
@@ -11172,7 +11223,8 @@
       "loc_deleted_sum": 439,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 4.65
     },
     {
       "report_start_day": "2026-03-29",
@@ -11741,7 +11793,8 @@
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
       "used_copilot_code_review_active": true,
-      "used_copilot_code_review_passive": false
+      "used_copilot_code_review_passive": false,
+      "ai_credits_used": 1.78
     },
     {
       "report_start_day": "2026-03-29",
@@ -11863,7 +11916,8 @@
       "loc_deleted_sum": 170,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.21
     },
     {
       "report_start_day": "2026-03-29",
@@ -12411,7 +12465,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.06
     },
     {
       "report_start_day": "2026-03-29",
@@ -12496,7 +12551,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.75
     },
     {
       "report_start_day": "2026-03-29",
@@ -12900,7 +12956,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.35
     },
     {
       "report_start_day": "2026-03-29",
@@ -13823,7 +13880,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.16
     },
     {
       "report_start_day": "2026-03-29",
@@ -14175,7 +14233,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.68
     },
     {
       "report_start_day": "2026-03-29",
@@ -14260,7 +14319,8 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.02
     },
     {
       "report_start_day": "2026-03-29",
@@ -14418,7 +14478,8 @@
       "loc_added_sum": 843,
       "loc_deleted_sum": 25,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 5.08
     },
     {
       "report_start_day": "2026-03-29",
@@ -14497,7 +14558,8 @@
       "loc_added_sum": 1394,
       "loc_deleted_sum": 41,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.61
     },
     {
       "report_start_day": "2026-03-29",
@@ -14655,7 +14717,8 @@
       "loc_added_sum": 934,
       "loc_deleted_sum": 28,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.23
     },
     {
       "report_start_day": "2026-03-29",
@@ -14734,7 +14797,8 @@
       "loc_added_sum": 676,
       "loc_deleted_sum": 20,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 6.86
     },
     {
       "report_start_day": "2026-03-29",
@@ -14813,7 +14877,8 @@
       "loc_added_sum": 2179,
       "loc_deleted_sum": 65,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.93
     },
     {
       "report_start_day": "2026-03-29",
@@ -14971,7 +15036,8 @@
       "loc_added_sum": 1241,
       "loc_deleted_sum": 37,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 4.82
     },
     {
       "report_start_day": "2026-03-29",
@@ -15050,7 +15116,8 @@
       "loc_added_sum": 1156,
       "loc_deleted_sum": 34,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.6
     },
     {
       "report_start_day": "2026-03-29",
@@ -15129,7 +15196,8 @@
       "loc_added_sum": 1044,
       "loc_deleted_sum": 31,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 4.12
     },
     {
       "report_start_day": "2026-03-29",
@@ -15208,7 +15276,8 @@
       "loc_added_sum": 1078,
       "loc_deleted_sum": 32,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.36
     },
     {
       "report_start_day": "2026-03-29",
@@ -15287,7 +15356,8 @@
       "loc_added_sum": 2628,
       "loc_deleted_sum": 78,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 2.25
     },
     {
       "report_start_day": "2026-03-29",
@@ -15366,7 +15436,8 @@
       "loc_added_sum": 1019,
       "loc_deleted_sum": 30,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.35
     },
     {
       "report_start_day": "2026-03-29",
@@ -15603,7 +15674,8 @@
       "loc_added_sum": 2181,
       "loc_deleted_sum": 65,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.42
     },
     {
       "report_start_day": "2026-03-29",
@@ -15682,7 +15754,8 @@
       "loc_added_sum": 1163,
       "loc_deleted_sum": 34,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 3.25
     },
     {
       "report_start_day": "2026-03-29",
@@ -15761,7 +15834,8 @@
       "loc_added_sum": 952,
       "loc_deleted_sum": 28,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.19
     },
     {
       "report_start_day": "2026-03-29",
@@ -15840,7 +15914,8 @@
       "loc_added_sum": 1470,
       "loc_deleted_sum": 44,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.72
     },
     {
       "report_start_day": "2026-03-29",
@@ -16077,7 +16152,8 @@
       "loc_added_sum": 856,
       "loc_deleted_sum": 25,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.35
     },
     {
       "report_start_day": "2026-03-29",
@@ -16156,7 +16232,8 @@
       "loc_added_sum": 618,
       "loc_deleted_sum": 18,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.67
     },
     {
       "report_start_day": "2026-03-29",
@@ -16235,7 +16312,8 @@
       "loc_added_sum": 2539,
       "loc_deleted_sum": 76,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.98
     },
     {
       "report_start_day": "2026-03-29",
@@ -16314,7 +16392,8 @@
       "loc_added_sum": 2809,
       "loc_deleted_sum": 84,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.23
     },
     {
       "report_start_day": "2026-03-29",
@@ -16393,7 +16472,8 @@
       "loc_added_sum": 844,
       "loc_deleted_sum": 25,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.65
     },
     {
       "report_start_day": "2026-03-29",
@@ -16472,7 +16552,8 @@
       "loc_added_sum": 1050,
       "loc_deleted_sum": 31,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 1.11
     },
     {
       "report_start_day": "2026-03-29",
@@ -16551,7 +16632,8 @@
       "loc_added_sum": 476,
       "loc_deleted_sum": 14,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_credits_used": 0.44
     }
   ]
 }

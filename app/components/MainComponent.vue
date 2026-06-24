@@ -158,7 +158,7 @@
 
     <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
-      v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
+      v-show="showDateRange && tab !== 'seat analysis' && tab !== 'billing' && !signInRequired" 
       :loading="isLoading"
       :min-date="dataRange?.earliest"
       :max-date="dataRange?.latest"
@@ -220,7 +220,7 @@
 
     <div v-show="!apiError">
       <v-progress-linear v-show="!metricsReady && !signInRequired" indeterminate color="indigo" />
-      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
+      <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || tab === 'my usage' || tab === 'billing' || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
             <MetricsViewer v-if="item === getDisplayTabName(itemName)" :metrics="metrics" :report-data="reportData" :date-range-description="dateRangeDescription" :team-name="teamName" />
@@ -257,13 +257,22 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :query-params="seatsQueryParams"
               :session-email="sessionEmail"
             />
+            <MyUsageViewer
+              v-if="item === 'my usage'"
+              :date-range-description="dateRangeDescription"
+              :query-params="seatsQueryParams"
+            />
+            <BillingCreditsViewer
+              v-if="item === 'billing'"
+              :query-params="seatsQueryParams"
+            />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
           </v-card>
         </v-window-item>
         <v-alert
-          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
+          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics' && tab !== 'my usage' && tab !== 'billing') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
           density="compact" text="No data available to display" title="No data" type="warning" />
       </v-window>
 
@@ -306,6 +315,8 @@ import AgentActivityViewer from './AgentActivityViewer.vue'
 import PullRequestViewer from './PullRequestViewer.vue'
 import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
+import MyUsageViewer from './MyUsageViewer.vue'
+import BillingCreditsViewer from './BillingCreditsViewer.vue'
 import AiChatPanel from './AiChatPanel.vue'
 import AdminPanel from './AdminPanel.vue'
 import { Options } from '@/model/Options';
@@ -328,6 +339,8 @@ export default defineNuxtComponent({
     PullRequestViewer,
     DateRangeSelector,
     UserMetricsViewer,
+    MyUsageViewer,
+    BillingCreditsViewer,
     AiChatPanel,
     AdminPanel
   },
@@ -485,7 +498,7 @@ export default defineNuxtComponent({
 
   data() {
     return {
-      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'api response'],
+      tabItems: ['languages', 'editors', 'copilot chat', 'agent activity', 'pull requests', 'models', 'seat analysis', 'user metrics', 'my usage', 'billing', 'api response'],
       tab: null as string | null,
       dateRangeDescription: 'Over the last 28 days',
       isLoading: false,
@@ -522,7 +535,21 @@ export default defineNuxtComponent({
     if (this.itemName === 'organization' || this.itemName === 'enterprise') {
       this.tabItems.splice(1, 0, 'teams'); // Insert after the first tab
     }
-    
+
+    // "My Usage" requires a logged-in user (server filters by session.user.login),
+    // so hide it when authentication is not configured.
+    const authRequired = this.config.public.requireAuth
+      || this.config.public.usingGithubAuth
+      || this.config.public.isPublicApp
+      || !!this.config.public.authProviders;
+    if (!authRequired) {
+      this.tabItems = this.tabItems.filter(t => t !== 'my usage');
+    }
+
+    // "Billing" tab is admin-only; hidden by default until the /api/auth/usage-admin
+    // probe confirms the current session is on the NUXT_USAGE_ADMINS allowlist.
+    this.tabItems = this.tabItems.filter(t => t !== 'billing');
+
     // Auto-hide teams tab when historical mode is disabled (team metrics require DB)
     this.tabItems = applyHistoricalModeFilter(this.tabItems, this.config.public.enableHistoricalMode as boolean | string);
 
@@ -535,6 +562,21 @@ export default defineNuxtComponent({
     }
   },
   async mounted() {
+    // Probe the admin gate. The endpoint never throws — returns {isUsageAdmin:false}
+    // when no session is present or the user isn't on the allowlist.
+    try {
+      const probe = await $fetch<{ isUsageAdmin: boolean }>('/api/auth/usage-admin');
+      if (probe?.isUsageAdmin && !this.tabItems.includes('billing')) {
+        // Insert just before 'api response' (or at the end if that tab is hidden)
+        const apiIdx = this.tabItems.indexOf('api response');
+        if (apiIdx >= 0) this.tabItems.splice(apiIdx, 0, 'billing');
+        else this.tabItems.push('billing');
+        // Re-apply hidden-tabs filter so NUXT_PUBLIC_HIDDEN_TABS still wins
+        this.tabItems = applyHiddenTabs(this.tabItems, (this.config!.public.hiddenTabs as string));
+      }
+    } catch {
+      // Probe failures are non-fatal — just leave Billing hidden.
+    }
     // React to client-side navigation between /reportsto/ URLs
     this.$watch(() => (this.route as ReturnType<typeof useRoute>).params.upn, (newUpn: string | string[] | undefined) => {
       if (newUpn && this.tabItems.includes('teams')) {

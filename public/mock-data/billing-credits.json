@@ -1,0 +1,71 @@
+{
+  "timePeriod": { "year": 2026, "month": 6 },
+  "organization": "mocked-org",
+  "usageItems": [
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "Auto: Claude Sonnet 4.6",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 1269.32,
+      "grossAmount": 12.69,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 1269.32,
+      "netAmount": 12.69
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "Auto: GPT-5.3-Codex",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 5250.92,
+      "grossAmount": 52.51,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 5250.92,
+      "netAmount": 52.51
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "Auto: Claude Haiku 4.5",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 1260.05,
+      "grossAmount": 12.6,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 1260.05,
+      "netAmount": 12.6
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "Auto: GPT-5.4",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 796.41,
+      "grossAmount": 7.96,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 796.41,
+      "netAmount": 7.96
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits",
+      "model": "Auto: GPT-5.4 mini",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 318.47,
+      "grossAmount": 3.18,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 318.47,
+      "netAmount": 3.18
+    }
+  ]
+}

@@ -94,9 +94,22 @@ View individual user-level Copilot usage metrics including code completions, cha
 
 In **Historical mode** (with PostgreSQL), the User Metrics tab also displays per-user time-series history charts, allowing you to track individual adoption trends over time.
 
+The per-user table includes an **AI Credits** column showing each user's premium-request spend (sourced from the `ai_credits_used` field that GitHub added to the `users-28-day` Copilot metrics report on 2026-06-19). The column shows `—` when GitHub hasn't reported credits for the period (e.g., older mock data or enterprises that haven't enabled premium-request billing).
+
 <p align="center">
   <img width="800" alt="Per-User Metrics" src="./images/user-metrics.png">
 </p>
+
+### My Usage Tab
+Personal dashboard for the currently-authenticated user. Shows your own active days, interactions, accepted lines, AI credits used, top IDE, and top model — filtered server-side by `session.user.login` so you can never see another user's data from this tab.
+
+Visible to every authenticated user when any auth provider is configured (`NUXT_PUBLIC_AUTH_PROVIDERS`). Hidden when the app is running in PAT-only / no-auth mode, because there is no session user to filter by.
+
+### Billing (admin)
+Aggregate AI credit billing breakdown by model, SKU, cost center, and repository — pulled from the GitHub Billing API (`/organizations/{org}/settings/billing/ai_credit/usage` and `/enterprises/{ent}/settings/billing/ai_credit/usage`).
+
+Closed-by-default tab gated by the `NUXT_USAGE_ADMINS` allowlist (see env-var docs below). The tab is hidden unless `/api/auth/usage-admin` confirms the current session is on the allowlist. Per-user attribution is **not** exposed on this tab — use the AI Credits column on the User Metrics tab instead. (GitHub's billing API rejects `?user=` filters on enterprise-owned orgs, so the per-user data has to come from the metrics endpoint.)
+
 ### Models Tab
 View model usage analytics including model adoption over time, chat model distribution, and usage per chat mode (Ask, Agent, Edit, Inline).
 
@@ -269,6 +282,8 @@ NUXT_PUBLIC_IS_DATA_MOCKED=false
 
 Specifies the GitHub Personal Access Token utilized for API requests. Generate this token with the following permissions: _Read access to members_, _organization copilot metrics_, and _organization copilot seat management_.
 
+If you want to enable the optional **Billing tab** (admin-only AI credit breakdown by model/SKU/cost-center), also add the **`manage_billing:copilot`** classic scope. Without it the metrics tabs all still work — only the Billing tab returns 403.
+
 > [!IMPORTANT]
 > **v3.0 Migration:** The new Copilot Usage Metrics API requires **Read access to members, organization copilot metrics, and organization copilot seat management** permissions. Without this, the new API endpoints will return 400/403 errors. See [GitHub App Registration](DEPLOYMENT.md#github-app-registration) for setup details.
 
@@ -337,6 +352,27 @@ Comma-separated list of email domains allowed to sign in. When empty (default), 
 ```
 NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 ```
+
+#### NUXT_USAGE_ADMINS
+
+Comma-separated allowlist of logins or email addresses that can see the **Billing tab** (per-model / per-SKU AI credit breakdown). Unlike `NUXT_AUTHORIZED_USERS`, this allowlist is **closed-by-default** — empty value means *no admins*, so the tab is never shown.
+
+```
+NUXT_USAGE_ADMINS=alice,bob@company.com
+```
+
+Backend requirement: the credential used by the server (PAT or GitHub App) must also be able to read the billing API. See the auth-mode matrix below.
+
+##### Auth-mode matrix for Billing & My Usage tabs
+
+| Feature | Mock | GitHub App (no PAT) | PAT (`NUXT_GITHUB_TOKEN`) | OAuth-only fallback |
+|---|---|---|---|---|
+| My Usage tab (uses `users-28-day`) | ✅ fixtures | ✅ if App has *Copilot Business: Read* | ✅ | ⚠️ only if the user has org-admin |
+| User Metrics tab `ai_credits_used` column | ✅ fixtures | ✅ | ✅ | ⚠️ admin-only |
+| Billing tab (org `/ai_credit/usage`) | ✅ fixtures | ⚠️ App needs *Administration: Read* | ✅ with `admin:org` or `manage_billing:copilot` | ⚠️ admin-only |
+| Billing tab (enterprise `/ai_credit/usage`) | ✅ fixtures | ⚠️ App needs *Enterprise billing: Read* | ✅ classic PAT w/ `manage_billing:copilot` | ⚠️ admin-only |
+
+The Billing tab visibility is determined by `NUXT_USAGE_ADMINS` — but even on the allowlist, an admin will only see data if the *server-side* credential has the right scope/permission. If GitHub returns 403, the tab surfaces the message inline so it's clear which side needs adjustment.
 
 #### OAuth provider variables
 

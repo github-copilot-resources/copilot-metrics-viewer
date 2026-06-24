@@ -257,6 +257,12 @@
                 <span v-else class="text-disabled">0</span>
               </td>
               <td class="text-center">
+                <span v-if="typeof item.ai_credits_used === 'number'" class="font-weight-medium text-cyan-darken-2">
+                  {{ item.ai_credits_used.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                </span>
+                <span v-else class="text-disabled" title="ai_credits_used is not yet reported by GitHub for this period">—</span>
+              </td>
+              <td class="text-center">
                 <v-btn
                   v-if="showTrendButtons"
                   icon
@@ -890,6 +896,7 @@ export default defineComponent({
         { title: 'Chat',           key: 'uses_chat',                        sortable: true  },
         { title: 'Agent',          key: 'uses_agent',                       sortable: true  },
         { title: 'Agent LOC',      key: 'agent_loc',                        sortable: true  },
+        { title: 'AI Credits',     key: 'ai_credits_used',                  sortable: true  },
       );
       if (showTrendButtons.value) {
         cols.push({ title: 'Trend', key: 'trend', sortable: false });
