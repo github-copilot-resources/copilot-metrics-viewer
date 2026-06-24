@@ -16,8 +16,20 @@
  */
 
 import { isUsageAdminForEvent } from '../../utils/usage-admin'
+import { Options } from '@/model/Options'
 
 export default defineEventHandler(async (event) => {
+  // Mock mode: surface the Billing tab in local dev / Playwright runs so the
+  // feature is discoverable without configuring NUXT_USAGE_ADMINS + OAuth.
+  // We check both the runtime config (env: NUXT_PUBLIC_IS_DATA_MOCKED) and the
+  // query param (used by Options.fromRoute when ?mock=true is in the URL).
+  const config = useRuntimeConfig(event)
+  const envMocked = config.public?.isDataMocked === true
+    || String(config.public?.isDataMocked) === 'true'
+  const options = Options.fromQuery(getQuery(event))
+  if (envMocked || options.isDataMocked) {
+    return { isUsageAdmin: true }
+  }
   const isUsageAdmin = await isUsageAdminForEvent(event)
   return { isUsageAdmin }
 })

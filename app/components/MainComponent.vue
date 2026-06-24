@@ -537,12 +537,16 @@ export default defineNuxtComponent({
     }
 
     // "My Usage" requires a logged-in user (server filters by session.user.login),
-    // so hide it when authentication is not configured.
+    // so hide it when authentication is not configured — unless we're in mock
+    // mode, where the server falls back to a fixture user so the tab is
+    // discoverable during local dev / Playwright runs.
+    const isMocked = this.config.public.isDataMocked === true
+      || String(this.config.public.isDataMocked) === 'true';
     const authRequired = this.config.public.requireAuth
       || this.config.public.usingGithubAuth
       || this.config.public.isPublicApp
       || !!this.config.public.authProviders;
-    if (!authRequired) {
+    if (!authRequired && !isMocked) {
       this.tabItems = this.tabItems.filter(t => t !== 'my usage');
     }
 

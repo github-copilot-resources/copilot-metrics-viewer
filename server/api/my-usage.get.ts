@@ -67,13 +67,22 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
   // ── Identity: session is the ONLY trusted source for the user filter ──────
   const session = await getUserSession(event).catch(() => null);
   const sessionUser = session?.user as { login?: string; email?: string } | undefined;
-  if (!sessionUser?.login) {
+
+  // Mock mode: fall back to a fixture user (octocat) so the My Usage tab is
+  // exercisable without OAuth in local dev / Playwright runs. The /api/auth/
+  // usage-admin probe and /api/billing-credits mirror this bypass.
+  let myLogin = sessionUser?.login;
+  let myEmail = sessionUser?.email;
+  if (!myLogin && options.isDataMocked) {
+    myLogin = 'octocat';
+    myEmail = undefined;
+  }
+  if (!myLogin) {
     throw createError({ statusCode: 401, statusMessage: 'No session — sign in to view My Usage' });
   }
-  const myLogin = sessionUser.login;
 
   const responseShell = {
-    user: { login: myLogin, email: sessionUser.email },
+    user: { login: myLogin, email: myEmail },
   };
 
   // ── Mock mode ──────────────────────────────────────────────────────────────
