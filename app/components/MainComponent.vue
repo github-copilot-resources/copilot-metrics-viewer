@@ -568,11 +568,14 @@ export default defineNuxtComponent({
     }
   },
   async mounted() {
-    // Probe the admin gate. The endpoint never throws — returns {isUsageAdmin:false}
-    // when no session is present or the user isn't on the allowlist.
+    // Probe the admin gate AND billing-token-configured flag. The endpoint never
+    // throws — returns {isUsageAdmin:false} when no session is present or the user
+    // isn't on the allowlist, and {billingEnabled:false} when the deployment has
+    // not configured NUXT_GITHUB_BILLING_TOKEN. The Billing tab requires both.
     try {
-      const probe = await $fetch<{ isUsageAdmin: boolean }>('/api/auth/usage-admin');
-      if (probe?.isUsageAdmin && !this.tabItems.includes('billing')) {
+      const probe = await $fetch<{ isUsageAdmin: boolean; billingEnabled?: boolean }>('/api/auth/usage-admin');
+      const shouldShowBilling = !!probe?.isUsageAdmin && probe?.billingEnabled !== false;
+      if (shouldShowBilling && !this.tabItems.includes('billing')) {
         // Insert just before 'api response' (or at the end if that tab is hidden)
         const apiIdx = this.tabItems.indexOf('api response');
         if (apiIdx >= 0) this.tabItems.splice(apiIdx, 0, 'billing');

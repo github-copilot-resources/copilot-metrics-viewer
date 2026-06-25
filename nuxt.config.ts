@@ -81,6 +81,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     githubToken: '',
+    githubBillingToken: '',     // NUXT_GITHUB_BILLING_TOKEN — dedicated classic PAT for billing endpoints (manage_billing:enterprise + SSO-authorized). Absent → Billing tab is hidden.
+    billingEnterprise: '',      // NUXT_BILLING_ENTERPRISE — enterprise slug to query for billing (overrides dashboard scope; needed when an org's billing is consolidated at an enterprise).
     githubApiBaseUrl: '',       // NUXT_GITHUB_API_BASE_URL — override for GHE.com (e.g. https://api.SUBDOMAIN.ghe.com)
     aiToken: '',  // Dedicated token for GitHub Models API (NUXT_AI_TOKEN). Falls back to githubToken.
     aiModel: 'gpt-4o',  // Model for AI chat (NUXT_AI_MODEL)

@@ -6,26 +6,33 @@
  *   - /enterprises/{ent}/settings/billing/ai_credit/usage
  *
  * Returns the aggregate breakdown by SKU/model/cost-center/repo that GitHub
- * provides natively. We deliberately do NOT support the `?user=` filter — it
- * 403s on enterprise-owned orgs. Per-user data lives on the users-28-day
- * metrics report via the new `ai_credits_used` field (see /api/my-usage).
+ * provides natively.
+ *
+ * URL selection (in priority order):
+ *   1. NUXT_BILLING_ENTERPRISE set → always /enterprises/{slug}/... (escape
+ *      hatch for org-scoped dashboards whose org is enterprise-owned).
+ *   2. Otherwise → derived from dashboard scope (org or ent).
+ *
+ * Token selection:
+ *   - Uses NUXT_GITHUB_BILLING_TOKEN (dedicated classic PAT with
+ *     `manage_billing:enterprise` / `manage_billing:copilot` and SSO-authorized
+ *     for the target org/enterprise). Falls back to NUXT_GITHUB_TOKEN for
+ *     backwards compatibility with existing deployments that only set the
+ *     primary token.
+ *   - GitHub Apps cannot get billing permissions today; fine-grained PATs
+ *     don't fully cover billing. Hence the separate classic-PAT-only env var.
  *
  * Auth:
  *   - 401 if no session (caught by middleware)
  *   - 403 if the session user is not in NUXT_USAGE_ADMINS
+ *   - 503 if no billing token is configured
  *
- * Required GitHub credential scope/permission:
- *   - Classic PAT: `manage_billing:copilot` (works for both org and ent)
- *   - GitHub App: Organization → Administration: Read (for org scope)
- *                 or Enterprise billing: Read (for enterprise scope)
- *   - Token requirement is enforced by GitHub returning 403 — we surface the
- *     message as-is to make troubleshooting easier.
- *
- * Forwarded query params: year, month, day, model, product, cost_center_id
+ * Forwarded query params: year, month, day, model, product, cost_center_id, user
  */
 
 import { Options } from '@/model/Options';
 import { requireUsageAdmin } from '../utils/usage-admin';
+import { buildBillingApiUrl } from '../utils/billing-url';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockBilling from '../../public/mock-data/billing-credits.json';
 
@@ -44,19 +51,31 @@ export interface BillingUsageItem {
   costCenterId?: string;
   costCenterName?: string;
   repositoryName?: string;
+  user?: string;
 }
 
 export interface BillingCreditsResponse {
   timePeriod: { year?: number; month?: number; day?: number };
   organization?: string;
   enterprise?: string;
+  user?: string;
   usageItems: BillingUsageItem[];
 }
+
+/**
+ * Build the billing API URL, honoring the NUXT_BILLING_ENTERPRISE override.
+ *
+ * Implementation lives in server/utils/billing-url.ts so it can be unit-tested
+ * without Nuxt's auto-imported runtime helpers. Re-exported here for callers
+ * that already import from this file.
+ */
+export { buildBillingApiUrl } from '../utils/billing-url';
 
 export default defineEventHandler(async (event): Promise<BillingCreditsResponse> => {
   const logger = console;
   const query = getQuery(event);
   const options = Options.fromQuery(query);
+  const config = useRuntimeConfig(event);
 
   // ── Admin gate ─────────────────────────────────────────────────────────────
   // In mock mode, skip the admin check so the fixture-driven E2E tests can
@@ -70,29 +89,38 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     return mockBilling as BillingCreditsResponse;
   }
 
-  // ── Auth check ─────────────────────────────────────────────────────────────
-  if (!event.context.headers?.has('Authorization')) {
+  // ── Token selection ────────────────────────────────────────────────────────
+  const billingToken = ((config.githubBillingToken as string | undefined) || '').trim()
+    || ((config.githubToken as string | undefined) || '').trim();
+  if (!billingToken) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'No GitHub credential configured — set NUXT_GITHUB_TOKEN or NUXT_GITHUB_APP_ID + NUXT_GITHUB_APP_PRIVATE_KEY',
+      statusMessage: 'No billing credential configured — set NUXT_GITHUB_BILLING_TOKEN (classic PAT with manage_billing:enterprise scope; SSO-authorized).',
     });
   }
 
-  const identifier = options.githubOrg || options.githubEnt || '';
-  if (!identifier) {
-    throw createError({ statusCode: 400, statusMessage: 'GitHub organization or enterprise must be configured' });
-  }
+  // ── URL selection ──────────────────────────────────────────────────────────
+  const billingEnterprise = ((config.billingEnterprise as string | undefined) || '').trim();
+  const baseUrl = (config.githubApiBaseUrl as string | undefined) || 'https://api.github.com';
 
   let apiUrl: string;
   try {
-    apiUrl = options.getBillingCreditsApiUrl();
+    apiUrl = buildBillingApiUrl({
+      baseUrl,
+      scope: options.scope,
+      githubOrg: options.githubOrg,
+      githubEnt: options.githubEnt,
+      billingEnterprise,
+    });
   } catch (err) {
-    throw createError({ statusCode: 400, statusMessage: String(err) });
+    throw createError({ statusCode: 400, statusMessage: String(err instanceof Error ? err.message : err) });
   }
 
-  // Forward only the safe, documented filter params — never `user`.
+  // Forward documented filter params. The `user` filter is supported on the
+  // enterprise endpoint (verified 2026-06+) — we forward it when present so
+  // callers (e.g. /api/my-usage) can request per-user breakdowns.
   const forwardParams: Record<string, string> = {};
-  for (const key of ['year', 'month', 'day', 'model', 'product', 'cost_center_id']) {
+  for (const key of ['year', 'month', 'day', 'model', 'product', 'cost_center_id', 'user']) {
     const v = query[key];
     if (v !== undefined && v !== null && v !== '') {
       forwardParams[key] = String(v);
@@ -103,17 +131,15 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     ? `${apiUrl}?${new URLSearchParams(forwardParams).toString()}`
     : apiUrl;
 
-  logger.info(`Fetching billing credits from ${apiUrl}`);
+  logger.info(`Fetching billing credits from ${apiUrl}${billingEnterprise ? ' (NUXT_BILLING_ENTERPRISE override)' : ''}`);
 
   try {
-    // Build headers explicitly — DO NOT spread event.context.headers, because
-    // $fetch concatenates duplicate header values (the middleware sets
-    // X-GitHub-Api-Version: 2022-11-28; spreading + overriding produces
-    // "2022-11-28, 2026-03-10" which GitHub rejects with 400 Bad Request).
-    // The billing API requires the newer 2026-03-10 version.
-    const auth = event.context.headers.get('Authorization') || '';
+    // Build headers explicitly — the billing API requires X-GitHub-Api-Version
+    // 2026-03-10. (We're NOT going through authenticateAndGetGitHubHeaders so
+    // there's no risk of header concatenation; this also keeps the billing
+    // token isolated from the rest of the request pipeline.)
     const ghHeaders = new Headers({
-      Authorization: auth,
+      Authorization: `token ${billingToken}`,
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2026-03-10',
     });
@@ -131,9 +157,19 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     } : {};
     const status = err.statusCode || 500;
     const ghMessage = err.data?.message || err.message || String(error);
+
+    // Sharpen the 404 message — the most common cause is that the org is
+    // enterprise-owned and the caller didn't set NUXT_BILLING_ENTERPRISE.
+    let statusMessage = `GitHub billing API error (${status}): ${ghMessage}`;
+    if (status === 404 && !billingEnterprise && options.scope === 'organization') {
+      statusMessage = `GitHub returned 404 for /organizations/${options.githubOrg}/settings/billing/ai_credit/usage. ` +
+        `If this org's billing is consolidated at an enterprise (very common), set ` +
+        `NUXT_BILLING_ENTERPRISE=<enterprise-slug> on the deployment to query the enterprise billing endpoint instead.`;
+    }
+
     throw createError({
       statusCode: status,
-      statusMessage: `GitHub billing API error (${status}): ${ghMessage}`,
+      statusMessage,
       data: err.data,
     });
   }
