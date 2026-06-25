@@ -133,6 +133,67 @@
             </v-col>
           </v-row>
 
+          <!-- Per-user AI credit spend, sourced from the enterprise billing
+               endpoint with `?user=<self>`. Only the user's own data is ever
+               fetched — never another user's. Falls back to a small inline
+               warning when the billing call fails (e.g. SSO not authorized). -->
+          <v-row v-if="data.spend || data.spendWarning" dense class="px-3 mt-2">
+            <v-col cols="12">
+              <v-card v-if="data.spend" variant="outlined" class="border-cyan">
+                <v-card-title class="text-subtitle-1 d-flex align-center">
+                  <v-icon size="small" class="mr-1" color="cyan-darken-2">mdi-cash-multiple</v-icon>
+                  Your AI credit spend
+                  <span class="text-caption text-medium-emphasis ml-2">
+                    {{ spendPeriodLabel }}<template v-if="data.spend.enterprise"> · enterprise {{ data.spend.enterprise }}</template>
+                  </span>
+                </v-card-title>
+                <v-card-text>
+                  <v-row dense>
+                    <v-col cols="12" sm="4">
+                      <div class="text-caption">Total spend</div>
+                      <div class="text-h4 font-weight-bold text-cyan-darken-2">
+                        {{ data.spend.totalAmount.toLocaleString(undefined, { style: 'currency', currency: 'USD' }) }}
+                      </div>
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <div class="text-caption">Credits billed</div>
+                      <div class="text-h5">
+                        {{ data.spend.totalQuantity.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                      </div>
+                    </v-col>
+                    <v-col cols="12" sm="4">
+                      <div class="text-caption">Models billed</div>
+                      <div class="text-h5">{{ data.spend.byModel.length }}</div>
+                    </v-col>
+                  </v-row>
+                  <v-table v-if="data.spend.byModel.length > 0" density="compact" class="mt-3">
+                    <thead>
+                      <tr>
+                        <th class="text-left">Model</th>
+                        <th class="text-right">Credits</th>
+                        <th class="text-right">Spend</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="m in data.spend.byModel" :key="m.model">
+                        <td>{{ m.model }}</td>
+                        <td class="text-right">{{ m.quantity.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}</td>
+                        <td class="text-right">{{ m.amount.toLocaleString(undefined, { style: 'currency', currency: 'USD' }) }}</td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </v-card-text>
+              </v-card>
+              <v-alert v-else-if="data.spendWarning" type="warning" variant="tonal" density="compact" class="mb-0">
+                Couldn't load your AI credit spend: {{ data.spendWarning }}
+                <div class="text-caption mt-1">
+                  Check that <code>NUXT_GITHUB_BILLING_TOKEN</code> is a classic PAT with
+                  <code>manage_billing:enterprise</code> and is SSO-authorized for the target enterprise.
+                </div>
+              </v-alert>
+            </v-col>
+          </v-row>
+
           <v-row v-if="topIde || topModel" dense class="px-3 mt-2">
             <v-col v-if="topIde" cols="12" md="6">
               <v-card variant="outlined">
@@ -217,12 +278,22 @@ import type { UserTotals, UserDayRecord } from '../../server/services/github-cop
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+interface MyUsageSpend {
+  totalAmount: number;
+  totalQuantity: number;
+  byModel: { model: string; amount: number; quantity: number }[];
+  timePeriod?: { year?: number; month?: number; day?: number };
+  enterprise?: string;
+}
+
 interface MyUsageResponse {
   user: { login: string; email?: string };
   totals: UserTotals | null;
   dayRecords: UserDayRecord[];
   reportStartDay?: string;
   reportEndDay?: string;
+  spend?: MyUsageSpend;
+  spendWarning?: string;
 }
 
 export default defineComponent({
@@ -259,6 +330,16 @@ export default defineComponent({
       if (!cli) return null;
       if (!cli.session_count && !cli.request_count && !cli.prompt_count) return null;
       return cli;
+    });
+
+    const spendPeriodLabel = computed(() => {
+      const tp = data.value?.spend?.timePeriod;
+      if (!tp) return 'Current billing period';
+      const parts: string[] = [];
+      if (tp.year) parts.push(String(tp.year));
+      if (tp.month) parts.push(String(tp.month).padStart(2, '0'));
+      if (tp.day) parts.push(String(tp.day).padStart(2, '0'));
+      return parts.length ? parts.join('-') : 'Current billing period';
     });
 
     const topModel = computed(() => {
@@ -326,7 +407,7 @@ export default defineComponent({
     }));
 
     return {
-      data, pending, error, initials, topIde, topModel, cliTotals,
+      data, pending, error, initials, topIde, topModel, cliTotals, spendPeriodLabel,
       aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,
     };
   },
