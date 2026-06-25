@@ -399,9 +399,6 @@ Comma-separated allowlist of logins or email addresses that can see the **Billin
 # Open — everyone on the dashboard can see Billing
 NUXT_USAGE_ADMINS=
 
-# Also open, but explicit (clearer intent in env files / Compose / Helm)
-NUXT_USAGE_ADMINS=*
-
 # Restricted — only the listed logins/emails see Billing
 NUXT_USAGE_ADMINS=alice,bob@company.com
 ```

@@ -390,7 +390,7 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `NUXT_OAUTH_KEYCLOAK_REALM` | Keycloak realm name | Keycloak OAuth |
 | `NUXT_AUTHORIZED_USERS` | Comma-separated logins/emails allowed to log in (any provider) | Optional |
 | `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated email domains allowed, e.g. `company.com` | Optional |
-| `NUXT_USAGE_ADMINS` | Comma-separated logins/emails allowed to see the admin **Billing** tab. Empty list (or `*`) = anyone with dashboard access can see Billing. Set explicit logins/emails to restrict. Also required: `NUXT_GITHUB_BILLING_TOKEN`. | Optional |
+| `NUXT_USAGE_ADMINS` | Comma-separated logins/emails allowed to see the admin **Billing** tab. Empty list = anyone with dashboard access can see Billing. Set to restrict. Also required: `NUXT_GITHUB_BILLING_TOKEN`. | Optional |
 | `NUXT_PUBLIC_ENTRA_CLIENT_ID` | App registration client ID for MSAL manager filter | Entra filter |
 | `NUXT_PUBLIC_ENTRA_TENANT_ID` | Tenant ID for MSAL (default: `common` for multi-tenant) | Entra filter |
 | `NUXT_APP_BASE_URL` | Base URL path for sub-path deployments, e.g. `/copilot-metrics-viewer/` | Sub-path proxy |
