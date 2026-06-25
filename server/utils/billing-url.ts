@@ -7,7 +7,7 @@
 
 export interface BuildBillingApiUrlOptions {
   baseUrl: string;
-  scope: string;
+  scope: string | undefined;
   githubOrg?: string;
   githubEnt?: string;
   billingEnterprise?: string;

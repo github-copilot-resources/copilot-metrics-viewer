@@ -1022,7 +1022,7 @@ export default defineComponent({
       return {
         labels,
         datasets: [{
-          data: [buckets['1'], buckets['2'], buckets['3'], buckets['4'], buckets['Unknown']],
+          data: [buckets['1'] || 0, buckets['2'] || 0, buckets['3'] || 0, buckets['4'] || 0, buckets['Unknown'] || 0],
           backgroundColor: PHASE_COLORS,
           borderWidth: 1,
         }],

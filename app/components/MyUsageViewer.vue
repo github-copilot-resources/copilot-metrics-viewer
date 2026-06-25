@@ -370,7 +370,7 @@ export default defineComponent({
           {
             label: 'AI credits used',
             data: pts.map(p => p.value),
-            backgroundColor: PALETTE?.[0] ?? '#3f51b5',
+            backgroundColor: PALETTE?.[0]?.bg ?? '#3f51b5',
             borderRadius: 4,
           },
         ],
