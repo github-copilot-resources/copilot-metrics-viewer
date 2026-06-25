@@ -167,6 +167,18 @@
             </div>
           </v-card>
         </v-col>
+
+        <!-- Top users by active days — most consistent Copilot users. Fills the
+             slot next to AI Adoption Phase Mix. -->
+        <v-col v-if="hasActiveUsers" cols="12" :md="chartColumns === '2' ? 5 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Top Users by Active Days</div>
+            <div class="text-caption text-medium-emphasis mb-3">Who's using Copilot most consistently in this period</div>
+            <div style="height:280px">
+              <Bar :data="topActiveUsersChartData" :options="topActiveUsersOptions" />
+            </div>
+          </v-card>
+        </v-col>
       </v-row>
     </v-container>
 
@@ -1033,6 +1045,50 @@ export default defineComponent({
       props.userMetrics.some(u => !!u.ai_adoption_phase)
     );
 
+    // Top users by active days — how often is each developer actually showing
+    // up to Copilot. Fills the slot next to AI Adoption Phase Mix.
+    const topActiveUsersChartData = computed(() => {
+      const top10 = [...props.userMetrics]
+        .filter(u => (u.total_active_days || 0) > 0)
+        .sort((a, b) => (b.total_active_days || 0) - (a.total_active_days || 0))
+        .slice(0, 10);
+      return {
+        labels: top10.map(u => u.login),
+        datasets: [
+          {
+            label: 'Active days',
+            data: top10.map(u => u.total_active_days || 0),
+            backgroundColor: 'rgba(76, 175, 80, 0.75)',
+            borderColor: 'rgb(76, 175, 80)',
+            borderRadius: 4,
+          },
+        ],
+      };
+    });
+
+    const topActiveUsersOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx: { parsed: { x: number } }) =>
+              `${ctx.parsed.x} active day${ctx.parsed.x === 1 ? '' : 's'}`,
+          },
+        },
+      },
+      scales: {
+        x: { beginAtZero: true, title: { display: true, text: 'Active days' } },
+        y: { ticks: { font: { size: 11 } } },
+      },
+    };
+
+    const hasActiveUsers = computed(() =>
+      props.userMetrics.some(u => (u.total_active_days || 0) > 0)
+    );
+
     const distributionOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -1162,6 +1218,9 @@ export default defineComponent({
       distributionChartData,
       adoptionPhaseChartData,
       hasAdoptionPhaseData,
+      topActiveUsersChartData,
+      topActiveUsersOptions,
+      hasActiveUsers,
       distributionOptions,
       // trend dialog
       showTrendButtons,

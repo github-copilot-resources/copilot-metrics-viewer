@@ -176,4 +176,12 @@ test.describe('User Metrics tab', () => {
             userMetrics.page.getByText('AI Adoption Phase Mix', { exact: true })
         ).toBeVisible();
     });
+
+    test('user metrics renders Top Users by Active Days chart', tag, async () => {
+        // Fills the slot next to AI Adoption Phase Mix so the row isn't half-empty.
+        const userMetrics = await dashboard.gotoUserMetricsTab();
+        await expect(
+            userMetrics.page.getByText('Top Users by Active Days', { exact: true })
+        ).toBeVisible();
+    });
 });
