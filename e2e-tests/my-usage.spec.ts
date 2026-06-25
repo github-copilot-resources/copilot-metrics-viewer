@@ -66,7 +66,7 @@ test.describe('My Usage tab', () => {
     test('my usage tab renders adoption phase chip on Active Days card', tag, async () => {
         // PR feat/my-usage: the mock fixture has ai_adoption_phase populated
         // for octocat, so the chip should be rendered next to "Active days".
-        // It carries the phase number ("Phase 1: Onboarded" style label).
+        // It carries the phase label returned by GitHub (e.g. "Phase 1").
         await dashboard.gotoMyUsageTab();
         const chip = dashboard.page.locator('.v-chip').filter({ hasText: /Phase \d/ }).first();
         await expect(chip).toBeVisible();

@@ -247,15 +247,19 @@ export interface UserCliTotals {
 }
 
 /**
- * AI adoption phase per the GitHub Copilot maturity model. Reported per user
- * per day on user-level reports; the same user may move between phases over
- * the reporting window, so we keep the most recent value when aggregating.
+ * AI adoption phase reported per user per day on user-level reports. The same
+ * user may move between phases over the reporting window, so we keep the most
+ * recent value when aggregating.
  *
- * Phase numbers documented by GitHub:
- *   1 — Onboarded: has a seat
- *   2 — Active: regular Copilot usage
- *   3 — Engaged: chat + completions
- *   4 — Advanced: uses agents
+ * GitHub documents the possible `phase` values as `No Cohort` (the default,
+ * `phase_number: 0`), `Phase 1`, `Phase 2`, and `Phase 3`. The docs do not
+ * publish the activity criteria GitHub uses to assign each phase — only the
+ * labels and an associated numeric ordering. New phases may appear as the
+ * model evolves (the `version` field records the classifier version), so
+ * downstream code should treat the set of phases as open-ended and render
+ * whatever `phase` strings the API returns.
+ *
+ * See: https://docs.github.com/en/copilot/reference/copilot-usage-metrics/copilot-usage-metrics
  */
 export interface AiAdoptionPhase {
   phase_number: number;

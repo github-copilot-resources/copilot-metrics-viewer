@@ -52,6 +52,18 @@
               <li><strong>Copilot CLI</strong> — tracked only as an org-level aggregate; no per-user breakdown.</li>
               <li><strong>GitHub.com Copilot</strong> (PR summaries, issue chat) — partially appears under Chat features but detailed stats are aggregate-only.</li>
             </ul>
+            <h4 class="mb-2">🎯 AI adoption phases</h4>
+            <ul class="ml-4 mb-3">
+              <li>GitHub assigns each user an <strong>AI adoption phase</strong> each day, returned on every user row as <code>ai_adoption_phase</code> with a <code>phase</code> label, a <code>phase_number</code>, and a classifier <code>version</code>.</li>
+              <li>The documented label values are <strong>No Cohort</strong> (the default, <code>phase_number: 0</code>), <strong>Phase 1</strong>, <strong>Phase 2</strong>, and <strong>Phase 3</strong>. Higher phase numbers correspond to deeper Copilot adoption.</li>
+              <li>GitHub does <em>not</em> publish the specific activity thresholds it uses to place a user into each phase — only the labels themselves. New phases may appear as the classifier evolves.</li>
+              <li>See the
+                <a
+                  href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics/copilot-usage-metrics"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Copilot usage metrics reference</a> for the authoritative field definitions.</li>
+            </ul>
             <h4 class="mb-2">💡 Tips</h4>
             <ul class="ml-4 mb-2">
               <li>A low acceptance rate doesn't mean low value — Chat/Agent users get significant value without inline completions.</li>
@@ -159,8 +171,11 @@
           <v-card variant="outlined" class="pa-4">
             <div class="text-subtitle-1 font-weight-medium mb-1">AI Adoption Phase Mix</div>
             <div class="text-caption text-medium-emphasis mb-3">
-              Most recent <code>ai_adoption_phase.phase_number</code> per user.
-              GitHub's Copilot maturity model: 1 Onboarded → 2 Active → 3 Engaged → 4 Advanced.
+              Most recent <code>ai_adoption_phase</code> per user. GitHub groups
+              users into phases (<code>No Cohort</code>, <code>Phase 1</code>,
+              <code>Phase 2</code>, <code>Phase 3</code>); higher numbers mean
+              deeper adoption. GitHub does not publish the activity thresholds
+              for each phase.
             </div>
             <div style="height:280px">
               <Doughnut :data="adoptionPhaseChartData" :options="distributionOptions" />
@@ -815,13 +830,16 @@ export default defineComponent({
     }
 
     function adoptionPhaseColor(phaseNumber: number): string {
-      // Map GitHub's documented phase numbers to a green→blue→purple progression
-      // so the chip color carries semantic meaning at a glance.
+      // Map GitHub's phase_number to a grey → green → blue → purple progression
+      // so the chip color carries ordering at a glance. GitHub documents
+      // phase_number 0 as "No Cohort" (default) and Phase 1..3 as increasing
+      // adoption; we extend the palette for any future phases the API returns.
       switch (phaseNumber) {
-        case 1: return 'grey';        // Onboarded
-        case 2: return 'blue';        // Active
-        case 3: return 'indigo';      // Engaged
-        case 4: return 'deep-purple'; // Advanced
+        case 0: return 'grey';        // No Cohort
+        case 1: return 'teal';        // Phase 1
+        case 2: return 'blue';        // Phase 2
+        case 3: return 'indigo';      // Phase 3
+        case 4: return 'deep-purple'; // Phase 4 (future-proof)
         default: return 'grey';
       }
     }
@@ -1014,30 +1032,45 @@ export default defineComponent({
     // 'Unknown' bucket for users whose latest day had no ai_adoption_phase
     // (e.g. inactive users, or days predating the field rollout).
     const adoptionPhaseChartData = computed(() => {
-      const buckets: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, 'Unknown': 0 };
+      // Bucket users by ai_adoption_phase. We trust whatever `phase` string
+      // GitHub returns (No Cohort, Phase 1..N) rather than hard-coding our own
+      // labels — the docs only commit to "No Cohort" (phase_number 0) and
+      // Phase 1..3 today, but new phases may be added as the classifier evolves.
+      const buckets = new Map<number, { phase: string; count: number }>();
+      let unknown = 0;
       for (const u of props.userMetrics) {
-        const n = u.ai_adoption_phase?.phase_number;
-        if (typeof n === 'number' && n >= 1 && n <= 4) {
-          buckets[String(n)] = (buckets[String(n)] || 0) + 1;
+        const p = u.ai_adoption_phase;
+        const n = p?.phase_number;
+        const label = p?.phase;
+        if (typeof n === 'number' && label) {
+          const existing = buckets.get(n);
+          if (existing) existing.count += 1;
+          else buckets.set(n, { phase: label, count: 1 });
         } else {
-          buckets['Unknown'] = (buckets['Unknown'] || 0) + 1;
+          unknown += 1;
         }
       }
-      const labels = [
-        `Phase 1: Onboarded — ${buckets['1']}`,
-        `Phase 2: Active — ${buckets['2']}`,
-        `Phase 3: Engaged — ${buckets['3']}`,
-        `Phase 4: Advanced — ${buckets['4']}`,
-        `Unknown — ${buckets['Unknown']}`,
-      ];
-      const PHASE_COLORS = ['#9E9E9E', '#2196F3', '#3F51B5', '#673AB7', '#CFD8DC'];
+      const ordered = [...buckets.entries()].sort(([a], [b]) => a - b);
+      // Palette ordered to match adoptionPhaseColor() ordering for visual
+      // consistency between the chip color and the doughnut slice color.
+      const PHASE_HEX: Record<number, string> = {
+        0: '#9E9E9E', // grey — No Cohort
+        1: '#009688', // teal — Phase 1
+        2: '#2196F3', // blue — Phase 2
+        3: '#3F51B5', // indigo — Phase 3
+        4: '#673AB7', // deep-purple — Phase 4 (future-proof)
+      };
+      const labels = ordered.map(([, v]) => `${v.phase} — ${v.count}`);
+      const data = ordered.map(([, v]) => v.count);
+      const backgroundColor = ordered.map(([n]) => PHASE_HEX[n] ?? '#90A4AE');
+      if (unknown > 0) {
+        labels.push(`Unknown — ${unknown}`);
+        data.push(unknown);
+        backgroundColor.push('#CFD8DC');
+      }
       return {
         labels,
-        datasets: [{
-          data: [buckets['1'] || 0, buckets['2'] || 0, buckets['3'] || 0, buckets['4'] || 0, buckets['Unknown'] || 0],
-          backgroundColor: PHASE_COLORS,
-          borderWidth: 1,
-        }],
+        datasets: [{ data, backgroundColor, borderWidth: 1 }],
       };
     });
 
