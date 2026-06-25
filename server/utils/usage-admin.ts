@@ -51,6 +51,13 @@ export function isUsageAdmin(
     return false
   }
 
+  // Explicit "*" sentinel — grants access to any AUTHENTICATED user.
+  // Same semantics as leaving the variable unset, but auditable in config
+  // (clearer intent than a blank value in Compose/Helm/env files).
+  if (allowed.includes('*')) {
+    return true
+  }
+
   return allowed.some(entry =>
     (login !== undefined && entry === login) ||
     (email !== undefined && entry === email)

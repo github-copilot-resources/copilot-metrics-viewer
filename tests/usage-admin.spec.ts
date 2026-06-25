@@ -87,4 +87,23 @@ describe('isUsageAdmin', () => {
       ).toBe(false);
     });
   });
+
+  describe('"*" wildcard sentinel', () => {
+    it('returns true for any authenticated user when allowlist is just "*"', () => {
+      expect(isUsageAdmin({ login: 'alice' }, '*')).toBe(true);
+      expect(isUsageAdmin({ email: 'bob@corp.com' }, '*')).toBe(true);
+    });
+
+    it('returns true when "*" is mixed with other entries', () => {
+      expect(isUsageAdmin({ login: 'unknown' }, 'alice,*,bob')).toBe(true);
+    });
+
+    it('still returns false for "*" when identity has no login or email', () => {
+      expect(isUsageAdmin({}, '*')).toBe(false);
+    });
+
+    it('does NOT treat partial-wildcards like "ali*" as patterns', () => {
+      expect(isUsageAdmin({ login: 'alice' }, 'ali*')).toBe(false);
+    });
+  });
 });
