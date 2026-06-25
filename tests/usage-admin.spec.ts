@@ -98,8 +98,8 @@ describe('isUsageAdmin', () => {
       expect(isUsageAdmin({ login: 'unknown' }, 'alice,*,bob')).toBe(true);
     });
 
-    it('still returns false for "*" when identity has no login or email', () => {
-      expect(isUsageAdmin({}, '*')).toBe(false);
+    it('returns true for "*" even when identity has no login or email (matches unset semantics)', () => {
+      expect(isUsageAdmin({}, '*')).toBe(true);
     });
 
     it('does NOT treat partial-wildcards like "ali*" as patterns', () => {

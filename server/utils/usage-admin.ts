@@ -45,17 +45,16 @@ export function isUsageAdmin(
     return true
   }
 
+  // Explicit "*" sentinel — equivalent to unset (open mode). Honored before
+  // the identity check so it works for sessionless / PAT-mode callers too.
+  if (allowed.includes('*')) {
+    return true
+  }
+
   const login = identity.login?.toLowerCase()
   const email = identity.email?.toLowerCase()
   if (!login && !email) {
     return false
-  }
-
-  // Explicit "*" sentinel — grants access to any AUTHENTICATED user.
-  // Same semantics as leaving the variable unset, but auditable in config
-  // (clearer intent than a blank value in Compose/Helm/env files).
-  if (allowed.includes('*')) {
-    return true
   }
 
   return allowed.some(entry =>
@@ -84,8 +83,17 @@ export async function isUsageAdminForEvent(
     return true
   }
   // A "list" with only delimiters is also treated as open.
-  const parsed = allowlist.split(',').map(s => s.trim()).filter(Boolean)
+  const parsed = allowlist.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
   if (parsed.length === 0) {
+    return true
+  }
+
+  // Explicit "*" sentinel — equivalent to "unset" (open mode). Honored
+  // BEFORE the session check so PAT-mode deployments (no OAuth, no session)
+  // still see the Billing tab. The whole dashboard's outer auth perimeter
+  // (NUXT_AUTHORIZED_USERS, OAuth providers, etc.) is the gate that matters
+  // when "*" is configured.
+  if (parsed.includes('*')) {
     return true
   }
 
