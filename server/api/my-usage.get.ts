@@ -30,6 +30,7 @@ import {
   type UserTotals,
 } from '../services/github-copilot-usage-api';
 import { buildBillingApiUrl } from '../utils/billing-url';
+import { aggregateBillingSpend, type BillingUsageItem } from '../utils/billing-spend-aggregator';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -243,24 +244,9 @@ async function fetchSelfSpend(
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2026-03-10',
     });
-    interface BillingItem { model: string; netAmount: number; netQuantity: number }
-    interface BillingResp { timePeriod?: { year?: number; month?: number; day?: number }; enterprise?: string; usageItems: BillingItem[] }
+    interface BillingResp { timePeriod?: { year?: number; month?: number; day?: number }; enterprise?: string; usageItems: BillingUsageItem[] }
     const resp = await $fetch<BillingResp>(url, { headers });
-    const items = resp.usageItems || [];
-
-    const byModelMap = new Map<string, { amount: number; quantity: number }>();
-    let totalAmount = 0;
-    let totalQuantity = 0;
-    for (const it of items) {
-      totalAmount += it.netAmount || 0;
-      totalQuantity += it.netQuantity || 0;
-      const prev = byModelMap.get(it.model) || { amount: 0, quantity: 0 };
-      prev.amount += it.netAmount || 0;
-      prev.quantity += it.netQuantity || 0;
-      byModelMap.set(it.model, prev);
-    }
-    const byModel = Array.from(byModelMap, ([model, v]) => ({ model, amount: v.amount, quantity: v.quantity }))
-      .sort((a, b) => b.amount - a.amount);
+    const { totalAmount, totalQuantity, byModel } = aggregateBillingSpend(resp.usageItems);
 
     return {
       data: {
