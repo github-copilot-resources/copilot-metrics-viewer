@@ -452,9 +452,11 @@ export default defineNuxtComponent({
           case 500:
             this.apiError = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
             break;
-          case 403:
-            this.apiError = `403 Forbidden — your account does not have permission to access Copilot metrics for this organization. You need the "Copilot metrics access" role (typically org owner or billing manager).`;
+          case 403: {
+            const ghMessage = (error as any)?.data?.message || error.message || '';
+            this.apiError = `403 Forbidden from GitHub: ${ghMessage}. Common causes: (1) classic PAT missing 'read:org' scope (required for seats and per-user metrics), (2) fine-grained PAT not supported for this endpoint, (3) account lacks org owner / billing manager / Copilot admin role, or (4) PAT not SSO-authorized for this org.`;
             break;
+          }
           default:
             this.apiError = `${error.statusCode} Error: ${error.message}`;
             break;
