@@ -362,7 +362,9 @@ curl -X POST http://localhost:3000/api/admin/sync \
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `NUXT_GITHUB_TOKEN` | GitHub PAT with Copilot metrics permission | Yes (PAT mode) |
+| `NUXT_GITHUB_TOKEN` | GitHub PAT (fine-grained or classic) or fallback for billing — metrics endpoints | Yes (PAT mode) |
+| `NUXT_GITHUB_BILLING_TOKEN` | **Classic** PAT with `manage_billing:enterprise`, SSO-authorized for the target enterprise. Required for the Billing tab and the My Usage "Your AI credit spend" card. When unset, those features are hidden. | Optional |
+| `NUXT_BILLING_ENTERPRISE` | Enterprise slug. When set, billing calls always go to `/enterprises/{slug}/...` regardless of dashboard scope. Required for org-scoped dashboards whose org is enterprise-owned (otherwise billing returns 404). | Optional |
 | `NUXT_PUBLIC_SCOPE` | `organization` or `enterprise` (legacy `team-organization`/`team-enterprise` have been removed; existing values are auto-normalized) | Yes |
 | `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
 | `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise scope |
@@ -388,7 +390,7 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `NUXT_OAUTH_KEYCLOAK_REALM` | Keycloak realm name | Keycloak OAuth |
 | `NUXT_AUTHORIZED_USERS` | Comma-separated logins/emails allowed to log in (any provider) | Optional |
 | `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated email domains allowed, e.g. `company.com` | Optional |
-| `NUXT_USAGE_ADMINS` | Comma-separated logins/emails allowed to see the admin **Billing** tab. Open-by-default (empty = anyone with dashboard access can see Billing). Set to restrict. | Optional |
+| `NUXT_USAGE_ADMINS` | Comma-separated logins/emails allowed to see the admin **Billing** tab. Empty list = anyone with dashboard access can see Billing. Set to restrict. Also required: `NUXT_GITHUB_BILLING_TOKEN`. | Optional |
 | `NUXT_PUBLIC_ENTRA_CLIENT_ID` | App registration client ID for MSAL manager filter | Entra filter |
 | `NUXT_PUBLIC_ENTRA_TENANT_ID` | Tenant ID for MSAL (default: `common` for multi-tenant) | Entra filter |
 | `NUXT_APP_BASE_URL` | Base URL path for sub-path deployments, e.g. `/copilot-metrics-viewer/` | Sub-path proxy |
@@ -409,6 +411,15 @@ The PAT must have the following scopes:
 - `read:org` — read organization membership
 - `copilot` — read Copilot usage
 - `manage_billing:copilot` — read seat management (optional)
+
+For the **Billing tab** and **per-user AI credit spend on My Usage**, set a *separate* classic PAT:
+
+```bash
+NUXT_GITHUB_BILLING_TOKEN=ghp_classic_pat_with_manage_billing_enterprise
+NUXT_BILLING_ENTERPRISE=my-enterprise-slug   # required when an org is enterprise-owned
+```
+
+Billing endpoints require a classic PAT with `manage_billing:enterprise` (or `manage_billing:copilot`) and SSO authorization for the target enterprise. Fine-grained PATs and GitHub Apps cannot read billing today, which is why `NUXT_GITHUB_BILLING_TOKEN` is separate from `NUXT_GITHUB_TOKEN` — your metrics calls can keep using a GitHub App while only billing uses the classic PAT.
 
 In PAT mode the toolbar shows a shield icon (🛡) that explains available OAuth options when clicked.
 
