@@ -107,6 +107,38 @@
               </v-card>
             </v-col>
           </v-row>
+
+          <!-- Daily AI credits chart (only shown when dayRecords are loaded, i.e. when a
+               date range is selected — the default 28-day pre-aggregated report does not
+               include per-day breakdowns) -->
+          <v-row v-if="aiCreditsChartData" dense class="px-3 mt-2">
+            <v-col cols="12">
+              <v-card variant="outlined">
+                <v-card-title class="text-subtitle-1">
+                  Daily AI credit usage
+                  <span class="text-caption text-medium-emphasis ml-2">
+                    ({{ aiCreditsTotalLabel }} total over {{ aiCreditsDayCount }} active day{{ aiCreditsDayCount === 1 ? '' : 's' }})
+                  </span>
+                </v-card-title>
+                <v-card-text>
+                  <div style="height: 240px">
+                    <Bar :data="aiCreditsChartData" :options="aiCreditsChartOptions" />
+                  </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    Source: <code>ai_credits_used</code> on the users-1-day report
+                    (populated by GitHub since 2026-06-19).
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+          <v-row v-else-if="data.dayRecords && data.dayRecords.length === 0" dense class="px-3 mt-2">
+            <v-col cols="12">
+              <v-alert type="info" variant="tonal" density="compact">
+                Pick a date range above to see the day-by-day AI credit usage breakdown.
+              </v-alert>
+            </v-col>
+          </v-row>
         </template>
       </v-container>
     </v-main>
@@ -115,7 +147,20 @@
 
 <script lang="ts">
 import { defineComponent, computed } from 'vue';
+import { Bar } from 'vue-chartjs';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { PALETTE } from '@/utils/chartPlugins';
 import type { UserTotals, UserDayRecord } from '../../server/services/github-copilot-usage-api';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface MyUsageResponse {
   user: { login: string; email?: string };
@@ -127,6 +172,7 @@ interface MyUsageResponse {
 
 export default defineComponent({
   name: 'MyUsageViewer',
+  components: { Bar },
   props: {
     dateRangeDescription: { type: String, default: '' },
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
@@ -159,7 +205,66 @@ export default defineComponent({
       )[0];
     });
 
-    return { data, pending, error, initials, topIde, topModel };
+    // Per-day ai_credits_used chart — only renders when GitHub returned the field
+    // for at least one day. Pre-2026-06-19 days won't have it, and even after that
+    // a user may have spent 0 credits (premium-request overage only).
+    const aiCreditsDayPoints = computed(() => {
+      const days = data.value?.dayRecords ?? [];
+      const points = days
+        .map(r => ({ day: r.day, value: typeof r.ai_credits_used === 'number' ? r.ai_credits_used : null }))
+        .filter(p => p.value !== null) as { day: string; value: number }[];
+      return points.sort((a, b) => a.day.localeCompare(b.day));
+    });
+
+    const aiCreditsChartData = computed(() => {
+      const pts = aiCreditsDayPoints.value;
+      if (pts.length === 0) return null;
+      return {
+        labels: pts.map(p => p.day),
+        datasets: [
+          {
+            label: 'AI credits used',
+            data: pts.map(p => p.value),
+            backgroundColor: PALETTE?.[0] ?? '#3f51b5',
+            borderRadius: 4,
+          },
+        ],
+      };
+    });
+
+    const aiCreditsTotalLabel = computed(() => {
+      const sum = aiCreditsDayPoints.value.reduce((s, p) => s + p.value, 0);
+      return sum.toLocaleString(undefined, { maximumFractionDigits: 2 });
+    });
+
+    const aiCreditsDayCount = computed(() =>
+      aiCreditsDayPoints.value.filter(p => p.value > 0).length
+    );
+
+    const aiCreditsChartOptions = computed(() => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx: { parsed: { y: number } }) =>
+              `${ctx.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 })} credits`,
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'AI credits' },
+        },
+      },
+    }));
+
+    return {
+      data, pending, error, initials, topIde, topModel,
+      aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,
+    };
   },
 });
 </script>
