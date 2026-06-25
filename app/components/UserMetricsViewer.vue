@@ -151,6 +151,22 @@
             </div>
           </v-card>
         </v-col>
+
+        <!-- AI adoption-phase mix — only rendered when at least one user has
+             an ai_adoption_phase value (older deployments / unsupported scopes
+             return nothing). -->
+        <v-col v-if="hasAdoptionPhaseData" cols="12" :md="chartColumns === '2' ? 7 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">AI Adoption Phase Mix</div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              Most recent <code>ai_adoption_phase.phase_number</code> per user.
+              GitHub's Copilot maturity model: 1 Onboarded → 2 Active → 3 Engaged → 4 Advanced.
+            </div>
+            <div style="height:280px">
+              <Doughnut :data="adoptionPhaseChartData" :options="distributionOptions" />
+            </div>
+          </v-card>
+        </v-col>
       </v-row>
     </v-container>
 
@@ -982,6 +998,41 @@ export default defineComponent({
       };
     });
 
+    // Adoption-phase mix doughnut — counts users per phase_number, with an
+    // 'Unknown' bucket for users whose latest day had no ai_adoption_phase
+    // (e.g. inactive users, or days predating the field rollout).
+    const adoptionPhaseChartData = computed(() => {
+      const buckets: Record<string, number> = { '1': 0, '2': 0, '3': 0, '4': 0, 'Unknown': 0 };
+      for (const u of props.userMetrics) {
+        const n = u.ai_adoption_phase?.phase_number;
+        if (typeof n === 'number' && n >= 1 && n <= 4) {
+          buckets[String(n)] = (buckets[String(n)] || 0) + 1;
+        } else {
+          buckets['Unknown'] = (buckets['Unknown'] || 0) + 1;
+        }
+      }
+      const labels = [
+        `Phase 1: Onboarded — ${buckets['1']}`,
+        `Phase 2: Active — ${buckets['2']}`,
+        `Phase 3: Engaged — ${buckets['3']}`,
+        `Phase 4: Advanced — ${buckets['4']}`,
+        `Unknown — ${buckets['Unknown']}`,
+      ];
+      const PHASE_COLORS = ['#9E9E9E', '#2196F3', '#3F51B5', '#673AB7', '#CFD8DC'];
+      return {
+        labels,
+        datasets: [{
+          data: [buckets['1'], buckets['2'], buckets['3'], buckets['4'], buckets['Unknown']],
+          backgroundColor: PHASE_COLORS,
+          borderWidth: 1,
+        }],
+      };
+    });
+
+    const hasAdoptionPhaseData = computed(() =>
+      props.userMetrics.some(u => !!u.ai_adoption_phase)
+    );
+
     const distributionOptions = {
       responsive: true,
       maintainAspectRatio: false,
@@ -1109,6 +1160,8 @@ export default defineComponent({
       topUsersChartData,
       topUsersOptions,
       distributionChartData,
+      adoptionPhaseChartData,
+      hasAdoptionPhaseData,
       distributionOptions,
       // trend dialog
       showTrendButtons,
