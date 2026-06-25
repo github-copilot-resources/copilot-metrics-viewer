@@ -805,17 +805,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 20,
-        "request_count": 396,
-        "prompt_count": 14,
+        "session_count": 3,
+        "request_count": 10,
+        "prompt_count": 10,
         "token_usage": {
-          "output_tokens_sum": 979378,
-          "prompt_tokens_sum": 34368578,
-          "avg_tokens_per_request": 89262.52
+          "prompt_tokens_sum": 1404,
+          "output_tokens_sum": 3837,
+          "avg_tokens_per_request": 524.1
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-01T23:12:24.900Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-01T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -1294,17 +1294,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 16,
-        "request_count": 31,
-        "prompt_count": 0,
+        "session_count": 6,
+        "request_count": 12,
+        "prompt_count": 12,
         "token_usage": {
-          "output_tokens_sum": 648285,
-          "prompt_tokens_sum": 638854,
-          "avg_tokens_per_request": 41520.61
+          "prompt_tokens_sum": 3028,
+          "output_tokens_sum": 1371,
+          "avg_tokens_per_request": 366.58
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-02T23:30:32.867Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-02T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -1711,17 +1711,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 30,
-        "request_count": 677,
-        "prompt_count": 15,
+        "session_count": 5,
+        "request_count": 10,
+        "prompt_count": 10,
         "token_usage": {
-          "output_tokens_sum": 1530682,
-          "prompt_tokens_sum": 51902718,
-          "avg_tokens_per_request": 78926.74
+          "prompt_tokens_sum": 6743,
+          "output_tokens_sum": 3833,
+          "avg_tokens_per_request": 1057.6
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-03T23:21:15.208Z",
-          "cli_version": "1.0.17"
+          "sampled_at": "2026-04-03T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -1868,17 +1868,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 25,
-        "request_count": 81,
+        "session_count": 1,
+        "request_count": 1,
         "prompt_count": 1,
         "token_usage": {
-          "output_tokens_sum": 1001050,
-          "prompt_tokens_sum": 4787202,
-          "avg_tokens_per_request": 71459.9
+          "prompt_tokens_sum": 6037,
+          "output_tokens_sum": 2528,
+          "avg_tokens_per_request": 8565.0
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-04T23:06:55.183Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-04T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -1960,17 +1960,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 15,
-        "request_count": 29,
-        "prompt_count": 0,
+        "session_count": 2,
+        "request_count": 10,
+        "prompt_count": 10,
         "token_usage": {
-          "output_tokens_sum": 597272,
-          "prompt_tokens_sum": 588323,
-          "avg_tokens_per_request": 40882.59
+          "prompt_tokens_sum": 1967,
+          "output_tokens_sum": 1695,
+          "avg_tokens_per_request": 366.2
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-05T23:15:38.583Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-05T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -2006,17 +2006,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 16,
-        "request_count": 506,
-        "prompt_count": 31,
+        "session_count": 5,
+        "request_count": 17,
+        "prompt_count": 17,
         "token_usage": {
-          "output_tokens_sum": 803093,
-          "prompt_tokens_sum": 87523246,
-          "avg_tokens_per_request": 174557.98
+          "prompt_tokens_sum": 6131,
+          "output_tokens_sum": 908,
+          "avg_tokens_per_request": 414.06
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-06T23:11:55.734Z",
-          "cli_version": "1.0.19-0"
+          "sampled_at": "2026-04-06T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": true,
@@ -2514,17 +2514,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 27,
-        "request_count": 570,
-        "prompt_count": 31,
+        "session_count": 6,
+        "request_count": 40,
+        "prompt_count": 40,
         "token_usage": {
-          "output_tokens_sum": 936942,
-          "prompt_tokens_sum": 37645869,
-          "avg_tokens_per_request": 67689.14
+          "prompt_tokens_sum": 7065,
+          "output_tokens_sum": 3461,
+          "avg_tokens_per_request": 263.15
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-07T23:51:20.842Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-07T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -3050,17 +3050,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 18,
-        "request_count": 730,
-        "prompt_count": 53,
+        "session_count": 4,
+        "request_count": 22,
+        "prompt_count": 22,
         "token_usage": {
-          "output_tokens_sum": 769496,
-          "prompt_tokens_sum": 66688308,
-          "avg_tokens_per_request": 92407.95
+          "prompt_tokens_sum": 4636,
+          "output_tokens_sum": 1702,
+          "avg_tokens_per_request": 288.09
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-08T22:27:56.098Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-08T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": true,
@@ -3569,17 +3569,17 @@
       "loc_deleted_sum": 153,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 20,
-        "request_count": 86,
-        "prompt_count": 7,
+        "session_count": 1,
+        "request_count": 3,
+        "prompt_count": 3,
         "token_usage": {
-          "output_tokens_sum": 779109,
-          "prompt_tokens_sum": 6311925,
-          "avg_tokens_per_request": 82453.88
+          "prompt_tokens_sum": 3478,
+          "output_tokens_sum": 4115,
+          "avg_tokens_per_request": 2531.0
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-09T23:54:05.750Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-09T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -4231,17 +4231,17 @@
       "loc_deleted_sum": 475,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 21,
-        "request_count": 743,
-        "prompt_count": 30,
+        "session_count": 3,
+        "request_count": 11,
+        "prompt_count": 11,
         "token_usage": {
-          "output_tokens_sum": 942564,
-          "prompt_tokens_sum": 66417772,
-          "avg_tokens_per_request": 90659.94
+          "prompt_tokens_sum": 6919,
+          "output_tokens_sum": 2531,
+          "avg_tokens_per_request": 859.09
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-10T22:07:42.468Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-10T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -4470,17 +4470,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 19,
-        "request_count": 35,
-        "prompt_count": 0,
+        "session_count": 3,
+        "request_count": 6,
+        "prompt_count": 6,
         "token_usage": {
-          "output_tokens_sum": 721287,
-          "prompt_tokens_sum": 710084,
-          "avg_tokens_per_request": 40896.31
+          "prompt_tokens_sum": 2473,
+          "output_tokens_sum": 1681,
+          "avg_tokens_per_request": 692.33
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-11T23:32:13.994Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-11T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -4561,17 +4561,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 13,
-        "request_count": 26,
-        "prompt_count": 0,
+        "session_count": 1,
+        "request_count": 6,
+        "prompt_count": 6,
         "token_usage": {
-          "output_tokens_sum": 552567,
-          "prompt_tokens_sum": 543825,
-          "avg_tokens_per_request": 42168.92
+          "prompt_tokens_sum": 1959,
+          "output_tokens_sum": 2356,
+          "avg_tokens_per_request": 719.17
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-12T23:25:33.932Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-12T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -4989,17 +4989,17 @@
       "loc_deleted_sum": 595,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 23,
-        "request_count": 557,
-        "prompt_count": 32,
+        "session_count": 5,
+        "request_count": 21,
+        "prompt_count": 21,
         "token_usage": {
-          "output_tokens_sum": 871169,
-          "prompt_tokens_sum": 48811676,
-          "avg_tokens_per_request": 89197.21
+          "prompt_tokens_sum": 8142,
+          "output_tokens_sum": 2208,
+          "avg_tokens_per_request": 492.86
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-13T23:52:44.596Z",
-          "cli_version": "1.0.23"
+          "sampled_at": "2026-04-13T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -6104,17 +6104,17 @@
       "loc_deleted_sum": 438,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 23,
-        "request_count": 1219,
-        "prompt_count": 54,
+        "session_count": 6,
+        "request_count": 35,
+        "prompt_count": 35,
         "token_usage": {
-          "output_tokens_sum": 1187260,
-          "prompt_tokens_sum": 103142915,
-          "avg_tokens_per_request": 85586.69
+          "prompt_tokens_sum": 7811,
+          "output_tokens_sum": 977,
+          "avg_tokens_per_request": 251.09
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-14T22:59:46.544Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-14T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -7077,17 +7077,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 18,
-        "request_count": 73,
-        "prompt_count": 16,
+        "session_count": 4,
+        "request_count": 6,
+        "prompt_count": 6,
         "token_usage": {
-          "output_tokens_sum": 590081,
-          "prompt_tokens_sum": 4827076,
-          "avg_tokens_per_request": 74207.63
+          "prompt_tokens_sum": 5592,
+          "output_tokens_sum": 1311,
+          "avg_tokens_per_request": 1150.5
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-15T19:50:05.200Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-15T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": true,
@@ -8085,17 +8085,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 21,
-        "request_count": 41,
-        "prompt_count": 1,
+        "session_count": 6,
+        "request_count": 45,
+        "prompt_count": 45,
         "token_usage": {
-          "output_tokens_sum": 812073,
-          "prompt_tokens_sum": 844921,
-          "avg_tokens_per_request": 40414.49
+          "prompt_tokens_sum": 5722,
+          "output_tokens_sum": 2000,
+          "avg_tokens_per_request": 171.6
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-16T23:58:10.377Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-16T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": true,
@@ -9097,17 +9097,17 @@
       "loc_deleted_sum": 27,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 22,
-        "request_count": 191,
+        "session_count": 5,
+        "request_count": 17,
         "prompt_count": 17,
         "token_usage": {
-          "output_tokens_sum": 778495,
-          "prompt_tokens_sum": 20559214,
-          "avg_tokens_per_request": 111715.75
+          "prompt_tokens_sum": 8453,
+          "output_tokens_sum": 2281,
+          "avg_tokens_per_request": 631.41
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-17T23:51:13.514Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-17T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -9975,17 +9975,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 14,
-        "request_count": 26,
-        "prompt_count": 0,
+        "session_count": 1,
+        "request_count": 4,
+        "prompt_count": 4,
         "token_usage": {
-          "output_tokens_sum": 526619,
-          "prompt_tokens_sum": 517156,
-          "avg_tokens_per_request": 40145.19
+          "prompt_tokens_sum": 6971,
+          "output_tokens_sum": 1084,
+          "avg_tokens_per_request": 2013.75
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-18T23:48:23.911Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-18T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -10350,17 +10350,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 15,
-        "request_count": 30,
-        "prompt_count": 0,
+        "session_count": 1,
+        "request_count": 4,
+        "prompt_count": 4,
         "token_usage": {
-          "output_tokens_sum": 608042,
-          "prompt_tokens_sum": 597889,
-          "avg_tokens_per_request": 40197.7
+          "prompt_tokens_sum": 7532,
+          "output_tokens_sum": 1985,
+          "avg_tokens_per_request": 2379.25
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-19T22:17:31.463Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-19T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -11131,17 +11131,17 @@
       "loc_deleted_sum": 82,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 12,
-        "request_count": 606,
-        "prompt_count": 38,
+        "session_count": 4,
+        "request_count": 12,
+        "prompt_count": 12,
         "token_usage": {
-          "output_tokens_sum": 767289,
-          "prompt_tokens_sum": 77115087,
-          "avg_tokens_per_request": 128518.77
+          "prompt_tokens_sum": 8298,
+          "output_tokens_sum": 1213,
+          "avg_tokens_per_request": 792.58
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-20T23:58:02.051Z",
-          "cli_version": "1.0.33-0"
+          "sampled_at": "2026-04-20T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -12109,17 +12109,17 @@
       "loc_deleted_sum": 144,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 19,
-        "request_count": 443,
-        "prompt_count": 24,
+        "session_count": 3,
+        "request_count": 8,
+        "prompt_count": 8,
         "token_usage": {
-          "output_tokens_sum": 992800,
-          "prompt_tokens_sum": 59398918,
-          "avg_tokens_per_request": 136324.42
+          "prompt_tokens_sum": 4914,
+          "output_tokens_sum": 3403,
+          "avg_tokens_per_request": 1039.62
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-21T22:39:30.639Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-21T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -12799,17 +12799,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 17,
-        "request_count": 38,
-        "prompt_count": 2,
+        "session_count": 2,
+        "request_count": 12,
+        "prompt_count": 12,
         "token_usage": {
-          "output_tokens_sum": 538973,
-          "prompt_tokens_sum": 1238001,
-          "avg_tokens_per_request": 46762.47
+          "prompt_tokens_sum": 4232,
+          "output_tokens_sum": 2255,
+          "avg_tokens_per_request": 540.58
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-22T23:45:28.417Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-22T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -13391,17 +13391,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 15,
-        "request_count": 29,
-        "prompt_count": 0,
+        "session_count": 6,
+        "request_count": 47,
+        "prompt_count": 47,
         "token_usage": {
-          "output_tokens_sum": 518415,
-          "prompt_tokens_sum": 509183,
-          "avg_tokens_per_request": 35434.41
+          "prompt_tokens_sum": 3387,
+          "output_tokens_sum": 3674,
+          "avg_tokens_per_request": 150.23
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-23T22:21:08.852Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-23T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -14349,17 +14349,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 14,
-        "request_count": 30,
-        "prompt_count": 3,
+        "session_count": 6,
+        "request_count": 16,
+        "prompt_count": 16,
         "token_usage": {
-          "output_tokens_sum": 550523,
-          "prompt_tokens_sum": 797955,
-          "avg_tokens_per_request": 44949.27
+          "prompt_tokens_sum": 1784,
+          "output_tokens_sum": 3295,
+          "avg_tokens_per_request": 317.44
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-24T23:52:36.178Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-24T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,
@@ -14708,17 +14708,17 @@
       "loc_deleted_sum": 0,
       "used_cli": true,
       "totals_by_cli": {
-        "session_count": 16,
-        "request_count": 31,
-        "prompt_count": 0,
+        "session_count": 2,
+        "request_count": 4,
+        "prompt_count": 4,
         "token_usage": {
-          "output_tokens_sum": 626901,
-          "prompt_tokens_sum": 616618,
-          "avg_tokens_per_request": 40113.52
+          "prompt_tokens_sum": 5575,
+          "output_tokens_sum": 3786,
+          "avg_tokens_per_request": 2340.25
         },
         "last_known_cli_version": {
-          "sampled_at": "2026-04-25T23:53:03.807Z",
-          "cli_version": "0.0.411"
+          "sampled_at": "2026-04-25T12:00:00Z",
+          "cli_version": "1.0.64-1"
         }
       },
       "used_copilot_coding_agent": false,

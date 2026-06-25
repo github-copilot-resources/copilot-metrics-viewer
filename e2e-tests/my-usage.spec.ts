@@ -93,4 +93,22 @@ test.describe('My Usage tab', () => {
         await expect(spendCard).toContainText('Credits billed');
         await expect(spendCard.locator('tbody tr').first()).toBeVisible();
     });
+
+    test('my usage tab renders daily AI credit spend chart', tag, async () => {
+        // Daily $ spend chart derives from ai_credits_used × price-per-credit
+        // for each day record. Mock mode always populates dayRecords for octocat.
+        await dashboard.gotoMyUsageTab();
+        const card = dashboard.page.locator('.v-card').filter({ hasText: 'Daily AI credit spend' }).first();
+        await expect(card).toBeVisible();
+        await expect(card.locator('canvas')).toBeVisible();
+    });
+
+    test('my usage tab renders daily CLI token usage chart', tag, async () => {
+        // Daily CLI tokens chart sums totals_by_cli.token_usage per day.
+        // Mock fixture seeds this field for octocat day records.
+        await dashboard.gotoMyUsageTab();
+        const card = dashboard.page.locator('.v-card').filter({ hasText: 'Daily CLI token usage' }).first();
+        await expect(card).toBeVisible();
+        await expect(card.locator('canvas')).toBeVisible();
+    });
 });

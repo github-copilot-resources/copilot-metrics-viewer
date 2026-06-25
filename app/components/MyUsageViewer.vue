@@ -255,6 +255,52 @@
               </v-alert>
             </v-col>
           </v-row>
+
+          <!-- Daily $ spend (credits × price) -->
+          <v-row v-if="dailySpendChartData" dense class="px-3 mt-2">
+            <v-col cols="12">
+              <v-card variant="outlined">
+                <v-card-title class="text-subtitle-1">
+                  Daily AI credit spend
+                  <span class="text-caption text-medium-emphasis ml-2">
+                    ({{ dailySpendTotalLabel }} total)
+                  </span>
+                </v-card-title>
+                <v-card-text>
+                  <div style="height: 240px">
+                    <Bar :data="dailySpendChartData" :options="dailySpendChartOptions" />
+                  </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    Derived as <code>ai_credits_used × price-per-credit</code>. Price taken from your
+                    billing spend response when available, otherwise the GitHub list price ($0.01/credit).
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+
+          <!-- Daily CLI token usage (stacked: prompt + output) -->
+          <v-row v-if="dailyTokensChartData" dense class="px-3 mt-2">
+            <v-col cols="12">
+              <v-card variant="outlined">
+                <v-card-title class="text-subtitle-1">
+                  Daily CLI token usage
+                  <span class="text-caption text-medium-emphasis ml-2">
+                    ({{ dailyTokensTotalLabel }} tokens total)
+                  </span>
+                </v-card-title>
+                <v-card-text>
+                  <div style="height: 260px">
+                    <Bar :data="dailyTokensChartData" :options="dailyTokensChartOptions" />
+                  </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    Source: <code>totals_by_cli.token_usage</code> on the users-1-day report.
+                    Only CLI tokens are exposed per-day today — IDE token usage is not broken down by day.
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
         </template>
       </v-container>
     </v-main>
@@ -361,6 +407,123 @@ export default defineComponent({
       return points.sort((a, b) => a.day.localeCompare(b.day));
     });
 
+    // Effective $ per credit, derived from the billing spend response when available.
+    // Falls back to the GitHub list price of $0.01/credit which matches every row
+    // we've seen on the AI credit SKU.
+    const pricePerCredit = computed(() => {
+      const sp = data.value?.spend;
+      if (sp && sp.totalQuantity > 0 && sp.totalAmount > 0) {
+        return sp.totalAmount / sp.totalQuantity;
+      }
+      return 0.01;
+    });
+
+    // Daily $ spend = ai_credits_used × price-per-credit, per day.
+    const dailySpendChartData = computed(() => {
+      const pts = aiCreditsDayPoints.value;
+      if (pts.length === 0) return null;
+      const ppc = pricePerCredit.value;
+      return {
+        labels: pts.map(p => p.day),
+        datasets: [
+          {
+            label: 'AI credit spend (USD)',
+            data: pts.map(p => +(p.value * ppc).toFixed(4)),
+            backgroundColor: PALETTE?.[1]?.bg ?? '#00897b',
+            borderRadius: 4,
+          },
+        ],
+      };
+    });
+
+    const dailySpendTotalLabel = computed(() => {
+      const ppc = pricePerCredit.value;
+      const sum = aiCreditsDayPoints.value.reduce((s, p) => s + p.value * ppc, 0);
+      return sum.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+    });
+
+    const dailySpendChartOptions = computed(() => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx: { parsed: { y: number } }) =>
+              ctx.parsed.y.toLocaleString(undefined, { style: 'currency', currency: 'USD' }),
+          },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'USD' },
+        },
+      },
+    }));
+
+    // Daily CLI token usage — sums prompt + output tokens from totals_by_cli per day.
+    // Only renders when at least one day has token_usage populated (CLI is the only
+    // surface where GitHub exposes per-day token counts today).
+    const dailyTokenPoints = computed(() => {
+      const days = data.value?.dayRecords ?? [];
+      const points = days
+        .map(r => {
+          const tu = r.totals_by_cli?.token_usage;
+          if (!tu) return { day: r.day, prompt: null as number | null, output: null as number | null };
+          return { day: r.day, prompt: tu.prompt_tokens_sum, output: tu.output_tokens_sum };
+        })
+        .filter(p => p.prompt !== null || p.output !== null) as { day: string; prompt: number; output: number }[];
+      return points.sort((a, b) => a.day.localeCompare(b.day));
+    });
+
+    const dailyTokensChartData = computed(() => {
+      const pts = dailyTokenPoints.value;
+      if (pts.length === 0) return null;
+      return {
+        labels: pts.map(p => p.day),
+        datasets: [
+          {
+            label: 'Prompt tokens',
+            data: pts.map(p => p.prompt),
+            backgroundColor: PALETTE?.[2]?.bg ?? '#7e57c2',
+            borderRadius: 4,
+            stack: 'tokens',
+          },
+          {
+            label: 'Output tokens',
+            data: pts.map(p => p.output),
+            backgroundColor: PALETTE?.[3]?.bg ?? '#ef6c00',
+            borderRadius: 4,
+            stack: 'tokens',
+          },
+        ],
+      };
+    });
+
+    const dailyTokensTotalLabel = computed(() => {
+      const sum = dailyTokenPoints.value.reduce((s, p) => s + p.prompt + p.output, 0);
+      return sum.toLocaleString();
+    });
+
+    const dailyTokensChartOptions = computed(() => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top' as const },
+        tooltip: {
+          callbacks: {
+            label: (ctx: { dataset: { label?: string }; parsed: { y: number } }) =>
+              `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}`,
+          },
+        },
+      },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Tokens' } },
+      },
+    }));
+
     const aiCreditsChartData = computed(() => {
       const pts = aiCreditsDayPoints.value;
       if (pts.length === 0) return null;
@@ -409,6 +572,8 @@ export default defineComponent({
     return {
       data, pending, error, initials, topIde, topModel, cliTotals, spendPeriodLabel,
       aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,
+      dailySpendChartData, dailySpendChartOptions, dailySpendTotalLabel,
+      dailyTokensChartData, dailyTokensChartOptions, dailyTokensTotalLabel,
     };
   },
 });
