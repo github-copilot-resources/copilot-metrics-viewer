@@ -238,6 +238,45 @@
       "discountAmount": 14.3698143,
       "netQuantity": 0.0,
       "netAmount": 0.0
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits Overage",
+      "model": "claude-sonnet-4.5",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 412.5,
+      "grossAmount": 4.125,
+      "discountQuantity": 0.0,
+      "discountAmount": 0.0,
+      "netQuantity": 412.5,
+      "netAmount": 4.125
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits Overage",
+      "model": "gpt-5.3-codex",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 287.3,
+      "grossAmount": 2.873,
+      "discountQuantity": 0.0,
+      "discountAmount": 0.0,
+      "netQuantity": 287.3,
+      "netAmount": 2.873
+    },
+    {
+      "product": "Copilot",
+      "sku": "Copilot AI Credits Overage",
+      "model": "claude-haiku-4.5",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 156.8,
+      "grossAmount": 1.568,
+      "discountQuantity": 0.0,
+      "discountAmount": 0.0,
+      "netQuantity": 156.8,
+      "netAmount": 1.568
     }
   ]
 }
