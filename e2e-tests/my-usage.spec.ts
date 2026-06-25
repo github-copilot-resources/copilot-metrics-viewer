@@ -86,20 +86,21 @@ test.describe('My Usage tab', () => {
         // the spend card is exercisable without a live billing token.
         // See server/api/my-usage.get.ts mock branch.
         await dashboard.gotoMyUsageTab();
-        const spendCard = dashboard.page.locator('.v-card').filter({ hasText: 'Your AI credit spend' }).first();
-        await expect(spendCard).toBeVisible();
-        // Total spend, credits billed, and at least one per-model row should render.
-        await expect(spendCard).toContainText('Total spend');
-        await expect(spendCard).toContainText('Credits billed');
-        await expect(spendCard.locator('tbody tr').first()).toBeVisible();
+        const title = dashboard.page.locator('.v-card-title').filter({ hasText: 'Your AI credit spend' }).first();
+        await expect(title).toBeVisible();
+        const card = title.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
+        await expect(card).toContainText('Total spend');
+        await expect(card).toContainText('Credits billed');
+        await expect(card.locator('tbody tr').first()).toBeVisible();
     });
 
     test('my usage tab renders daily AI credit spend chart', tag, async () => {
         // Daily $ spend chart derives from ai_credits_used × price-per-credit
         // for each day record. Mock mode always populates dayRecords for octocat.
         await dashboard.gotoMyUsageTab();
-        const card = dashboard.page.locator('.v-card').filter({ hasText: 'Daily AI credit spend' }).first();
-        await expect(card).toBeVisible();
+        const title = dashboard.page.locator('.v-card-title').filter({ hasText: 'Daily AI credit spend' }).first();
+        await expect(title).toBeVisible();
+        const card = title.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
         await expect(card.locator('canvas')).toBeVisible();
     });
 
@@ -107,8 +108,9 @@ test.describe('My Usage tab', () => {
         // Daily CLI tokens chart sums totals_by_cli.token_usage per day.
         // Mock fixture seeds this field for octocat day records.
         await dashboard.gotoMyUsageTab();
-        const card = dashboard.page.locator('.v-card').filter({ hasText: 'Daily CLI token usage' }).first();
-        await expect(card).toBeVisible();
+        const title = dashboard.page.locator('.v-card-title').filter({ hasText: 'Daily CLI token usage' }).first();
+        await expect(title).toBeVisible();
+        const card = title.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
         await expect(card.locator('canvas')).toBeVisible();
     });
 });

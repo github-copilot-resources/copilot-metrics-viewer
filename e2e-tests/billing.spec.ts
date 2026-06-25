@@ -63,7 +63,8 @@ test.describe('Billing tab', () => {
         await dashboard.gotoBillingTab();
         // The mock fixture uses the GitHub Billing API field names — v-data-table
         // generates column headers by titleising the field keys.
-        await expect(dashboard.page.getByRole('columnheader', { name: 'Model' })).toBeVisible();
+        // Use exact:true to avoid matching "Models" (per-user breakdown column).
+        await expect(dashboard.page.getByRole('columnheader', { name: 'Model', exact: true })).toBeVisible();
         await expect(dashboard.page.getByRole('columnheader', { name: 'Product' })).toBeVisible();
     });
 
@@ -84,5 +85,20 @@ test.describe('Billing tab', () => {
         }
         // Silence the unused locator warning — assert nothing on `bar` directly.
         expect(bar).toBeTruthy();
+    });
+
+    test('billing tab renders per-user breakdown table and top spenders chart', tag, async () => {
+        // Mock billing fixture includes `user` attribution on >half of usage items
+        // so the per-user section should render. See public/mock-data/billing-credits.json.
+        await dashboard.gotoBillingTab();
+        const perUserTitle = dashboard.page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }).first();
+        await expect(perUserTitle).toBeVisible();
+        const perUserCard = perUserTitle.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
+        await expect(perUserCard.locator('tbody tr').first()).toBeVisible();
+
+        const topTitle = dashboard.page.locator('.v-card-title').filter({ hasText: 'Top spenders by net cost' }).first();
+        await expect(topTitle).toBeVisible();
+        const topCard = topTitle.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
+        await expect(topCard.locator('canvas')).toBeVisible();
     });
 });
