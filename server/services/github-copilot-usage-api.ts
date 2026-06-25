@@ -187,6 +187,13 @@ export interface UserDayRecord {
   totals_by_language_feature?: UserLanguageFeatureTotals[];
   totals_by_language_model?: ReportLanguageModelTotals[];
   totals_by_model_feature?: UserModelFeatureTotals[];
+  /**
+   * Per-user CLI usage stats including token_usage and last_known_cli_version.
+   * Object (not array) because the GitHub CLI has a single binary identity.
+   */
+  totals_by_cli?: UserCliTotals;
+  /** AI adoption phase observed on this day. */
+  ai_adoption_phase?: AiAdoptionPhase;
 }
 
 /** Per-user IDE usage totals */
@@ -199,6 +206,61 @@ export interface UserIdeTotals {
   loc_suggested_to_delete_sum: number;
   loc_added_sum: number;
   loc_deleted_sum: number;
+  /** Most recently observed editor plugin (e.g. github copilot extension) version */
+  last_known_plugin_version?: LastKnownPluginVersion;
+  /** Most recently observed editor (IDE) version */
+  last_known_ide_version?: LastKnownIdeVersion;
+}
+
+export interface LastKnownPluginVersion {
+  sampled_at: string;
+  plugin: string;
+  plugin_version: string;
+}
+
+export interface LastKnownIdeVersion {
+  sampled_at: string;
+  ide_version: string;
+}
+
+export interface LastKnownCliVersion {
+  sampled_at: string;
+  cli_version: string;
+}
+
+/**
+ * Per-user CLI usage totals. Unlike totals_by_ide (an array, one entry per
+ * editor), totals_by_cli is a SINGLE object per user-day — the GitHub CLI has
+ * exactly one binary identity. Contains token usage (the most authoritative
+ * per-user token signal GitHub exposes) and the last observed CLI version.
+ */
+export interface UserCliTotals {
+  session_count: number;
+  request_count: number;
+  prompt_count: number;
+  token_usage?: {
+    output_tokens_sum: number;
+    prompt_tokens_sum: number;
+    avg_tokens_per_request: number;
+  };
+  last_known_cli_version?: LastKnownCliVersion;
+}
+
+/**
+ * AI adoption phase per the GitHub Copilot maturity model. Reported per user
+ * per day on user-level reports; the same user may move between phases over
+ * the reporting window, so we keep the most recent value when aggregating.
+ *
+ * Phase numbers documented by GitHub:
+ *   1 — Onboarded: has a seat
+ *   2 — Active: regular Copilot usage
+ *   3 — Engaged: chat + completions
+ *   4 — Advanced: uses agents
+ */
+export interface AiAdoptionPhase {
+  phase_number: number;
+  phase: string;
+  version: string;
 }
 
 /** Per-user feature usage totals */
@@ -273,6 +335,17 @@ export interface UserTotals {
   totals_by_language_feature?: UserLanguageFeatureTotals[];
   /** Breakdown by model + feature */
   totals_by_model_feature?: UserModelFeatureTotals[];
+  /**
+   * Aggregated CLI usage including total tokens. Optional — only present when
+   * the user used the GitHub CLI at least once in the period.
+   */
+  totals_by_cli?: UserCliTotals;
+  /**
+   * Most recent AI adoption phase observed for this user in the reporting
+   * window. Phase can change day-to-day; we surface the latest value so it
+   * reflects the user's current state.
+   */
+  ai_adoption_phase?: AiAdoptionPhase;
 }
 
 /** A user-level usage metrics report covering a date range */
@@ -326,6 +399,40 @@ const METRIC_FIELDS = [
 const METRIC_FIELDS_NO_INTERACTION = METRIC_FIELDS.filter(f => f !== 'user_initiated_interaction_count');
 
 /**
+ * Specialised IDE-breakdown merger that ALSO preserves last_known_plugin_version
+ * and last_known_ide_version, picking the most recent (by sampled_at) when
+ * combining records. Falls back to the generic mergeBreakdown for the numeric
+ * fields.
+ */
+function mergeIdeBreakdown(
+  existing: UserIdeTotals[],
+  incoming: UserIdeTotals[] | undefined
+): UserIdeTotals[] {
+  const merged = mergeBreakdown(existing, incoming, (i) => i.ide, METRIC_FIELDS);
+  // Now walk incoming again to keep the latest version objects (mergeBreakdown's
+  // generic field-summing path overwrites version fields when entries collide).
+  const byIde = new Map<string, UserIdeTotals>();
+  for (const item of merged) byIde.set(item.ide, item);
+  for (const item of incoming ?? []) {
+    const cur = byIde.get(item.ide);
+    if (!cur) continue;
+    if (item.last_known_plugin_version) {
+      const prev = cur.last_known_plugin_version;
+      if (!prev || (item.last_known_plugin_version.sampled_at || '') > (prev.sampled_at || '')) {
+        cur.last_known_plugin_version = item.last_known_plugin_version;
+      }
+    }
+    if (item.last_known_ide_version) {
+      const prev = cur.last_known_ide_version;
+      if (!prev || (item.last_known_ide_version.sampled_at || '') > (prev.sampled_at || '')) {
+        cur.last_known_ide_version = item.last_known_ide_version;
+      }
+    }
+  }
+  return merged;
+}
+
+/**
  * Aggregate an array of per-user-per-day records (from the real GitHub API)
  * into per-user totals matching the UserTotals interface.
  */
@@ -346,6 +453,11 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
     totals_by_feature: UserFeatureTotals[];
     totals_by_language_feature: UserLanguageFeatureTotals[];
     totals_by_model_feature: UserModelFeatureTotals[];
+    /** Summed CLI totals across days; undefined until we see CLI data */
+    cli: UserCliTotals | undefined;
+    /** Track latest day we saw for adoption phase (string compare is safe for ISO dates) */
+    latestPhaseDay: string;
+    ai_adoption_phase: AiAdoptionPhase | undefined;
   }>();
 
   for (const rec of records) {
@@ -367,6 +479,9 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
         totals_by_feature: [],
         totals_by_language_feature: [],
         totals_by_model_feature: [],
+        cli: undefined,
+        latestPhaseDay: '',
+        ai_adoption_phase: undefined,
       };
       byUser.set(login, agg);
     }
@@ -387,10 +502,43 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
       agg.ai_credits_used = (agg.ai_credits_used ?? 0) + rec.ai_credits_used;
     }
 
-    agg.totals_by_ide = mergeBreakdown(
-      agg.totals_by_ide, rec.totals_by_ide,
-      (i) => i.ide, METRIC_FIELDS
-    );
+    // Adoption phase: pick the most recent day's value (phase can change over
+    // the window — surface the user's current state, not the oldest).
+    if (rec.ai_adoption_phase && rec.day >= agg.latestPhaseDay) {
+      agg.latestPhaseDay = rec.day;
+      agg.ai_adoption_phase = rec.ai_adoption_phase;
+    }
+
+    // CLI: sum session/request/prompt counts and token usage. For
+    // last_known_cli_version pick the entry with the latest sampled_at.
+    if (rec.totals_by_cli) {
+      const src = rec.totals_by_cli;
+      if (!agg.cli) {
+        agg.cli = {
+          session_count: 0,
+          request_count: 0,
+          prompt_count: 0,
+        };
+      }
+      agg.cli.session_count += src.session_count || 0;
+      agg.cli.request_count += src.request_count || 0;
+      agg.cli.prompt_count += src.prompt_count || 0;
+      if (src.token_usage) {
+        if (!agg.cli.token_usage) {
+          agg.cli.token_usage = { output_tokens_sum: 0, prompt_tokens_sum: 0, avg_tokens_per_request: 0 };
+        }
+        agg.cli.token_usage.output_tokens_sum += src.token_usage.output_tokens_sum || 0;
+        agg.cli.token_usage.prompt_tokens_sum += src.token_usage.prompt_tokens_sum || 0;
+      }
+      if (src.last_known_cli_version) {
+        const cur = agg.cli.last_known_cli_version;
+        if (!cur || (src.last_known_cli_version.sampled_at || '') > (cur.sampled_at || '')) {
+          agg.cli.last_known_cli_version = src.last_known_cli_version;
+        }
+      }
+    }
+
+    agg.totals_by_ide = mergeIdeBreakdown(agg.totals_by_ide, rec.totals_by_ide);
     agg.totals_by_feature = mergeBreakdown(
       agg.totals_by_feature, rec.totals_by_feature,
       (f) => f.feature, METRIC_FIELDS
@@ -408,6 +556,11 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
 
   const result: UserTotals[] = [];
   for (const [login, agg] of byUser) {
+    // Compute final avg tokens per request from summed totals.
+    if (agg.cli?.token_usage && agg.cli.request_count > 0) {
+      agg.cli.token_usage.avg_tokens_per_request =
+        (agg.cli.token_usage.prompt_tokens_sum + agg.cli.token_usage.output_tokens_sum) / agg.cli.request_count;
+    }
     result.push({
       login,
       user_id: agg.user_id,
@@ -424,6 +577,8 @@ export function aggregateUserDayRecords(records: UserDayRecord[]): UserTotals[] 
       totals_by_feature: agg.totals_by_feature,
       totals_by_language_feature: agg.totals_by_language_feature,
       totals_by_model_feature: agg.totals_by_model_feature,
+      totals_by_cli: agg.cli,
+      ai_adoption_phase: agg.ai_adoption_phase,
     });
   }
 

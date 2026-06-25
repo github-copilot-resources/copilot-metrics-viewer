@@ -47,6 +47,11 @@
                 <v-card-text>
                   <div class="text-caption">Active days</div>
                   <div class="text-h4 font-weight-bold">{{ data.totals.total_active_days }}</div>
+                  <div v-if="data.totals.ai_adoption_phase" class="text-caption mt-1">
+                    <v-chip size="x-small" color="indigo" variant="outlined" :title="`AI adoption phase ${data.totals.ai_adoption_phase.phase_number} (${data.totals.ai_adoption_phase.version})`">
+                      {{ data.totals.ai_adoption_phase.phase }}
+                    </v-chip>
+                  </div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -87,6 +92,47 @@
             </v-col>
           </v-row>
 
+          <!-- GitHub CLI usage (tokens, sessions, version). Only shown when the
+               user actually used the CLI in the reporting period. -->
+          <v-row v-if="cliTotals" dense class="px-3 mt-2">
+            <v-col cols="12">
+              <v-card variant="outlined">
+                <v-card-title class="text-subtitle-1 d-flex align-center">
+                  <v-icon size="small" class="mr-1">mdi-console</v-icon>
+                  GitHub CLI usage
+                  <v-chip v-if="cliTotals.last_known_cli_version" size="x-small" variant="outlined" class="ml-2"
+                          :title="`Sampled ${cliTotals.last_known_cli_version.sampled_at}`">
+                    v{{ cliTotals.last_known_cli_version.cli_version }}
+                  </v-chip>
+                </v-card-title>
+                <v-card-text>
+                  <v-row dense>
+                    <v-col cols="6" md="3">
+                      <div class="text-caption">Sessions</div>
+                      <div class="text-h6">{{ cliTotals.session_count.toLocaleString() }}</div>
+                    </v-col>
+                    <v-col cols="6" md="3">
+                      <div class="text-caption">Requests</div>
+                      <div class="text-h6">{{ cliTotals.request_count.toLocaleString() }}</div>
+                    </v-col>
+                    <v-col v-if="cliTotals.token_usage" cols="6" md="3">
+                      <div class="text-caption">Prompt tokens</div>
+                      <div class="text-h6">{{ cliTotals.token_usage.prompt_tokens_sum.toLocaleString() }}</div>
+                    </v-col>
+                    <v-col v-if="cliTotals.token_usage" cols="6" md="3">
+                      <div class="text-caption">Output tokens</div>
+                      <div class="text-h6">{{ cliTotals.token_usage.output_tokens_sum.toLocaleString() }}</div>
+                    </v-col>
+                  </v-row>
+                  <div v-if="cliTotals.token_usage" class="text-caption text-medium-emphasis mt-2">
+                    Avg {{ Math.round(cliTotals.token_usage.avg_tokens_per_request).toLocaleString() }} tokens/request
+                    ({{ cliTotals.prompt_count.toLocaleString() }} CLI prompts).
+                  </div>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+
           <v-row v-if="topIde || topModel" dense class="px-3 mt-2">
             <v-col v-if="topIde" cols="12" md="6">
               <v-card variant="outlined">
@@ -94,6 +140,15 @@
                 <v-card-text>
                   <strong>{{ topIde.ide }}</strong> —
                   {{ topIde.user_initiated_interaction_count.toLocaleString() }} interactions
+                  <div v-if="topIde.last_known_ide_version || topIde.last_known_plugin_version" class="text-caption text-medium-emphasis mt-1">
+                    <span v-if="topIde.last_known_ide_version" :title="`Sampled ${topIde.last_known_ide_version.sampled_at}`">
+                      IDE v{{ topIde.last_known_ide_version.ide_version }}
+                    </span>
+                    <span v-if="topIde.last_known_ide_version && topIde.last_known_plugin_version"> · </span>
+                    <span v-if="topIde.last_known_plugin_version" :title="`Sampled ${topIde.last_known_plugin_version.sampled_at}`">
+                      {{ topIde.last_known_plugin_version.plugin }} v{{ topIde.last_known_plugin_version.plugin_version }}
+                    </span>
+                  </div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -197,6 +252,15 @@ export default defineComponent({
       )[0];
     });
 
+    const cliTotals = computed(() => {
+      const cli = data.value?.totals?.totals_by_cli;
+      // Treat presence of any activity as "show the card"; a totally empty cli
+      // object means the API returned it but user did nothing.
+      if (!cli) return null;
+      if (!cli.session_count && !cli.request_count && !cli.prompt_count) return null;
+      return cli;
+    });
+
     const topModel = computed(() => {
       const models = data.value?.totals?.totals_by_model_feature;
       if (!models || models.length === 0) return null;
@@ -262,7 +326,7 @@ export default defineComponent({
     }));
 
     return {
-      data, pending, error, initials, topIde, topModel,
+      data, pending, error, initials, topIde, topModel, cliTotals,
       aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,
     };
   },

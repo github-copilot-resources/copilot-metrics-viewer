@@ -175,7 +175,12 @@
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.1
+      "ai_credits_used": 1.1,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -327,7 +332,12 @@
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.84
+      "ai_credits_used": 2.84,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -499,7 +509,13 @@
       "loc_added_sum": 36,
       "loc_deleted_sum": 20,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 7.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -525,7 +541,12 @@
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": true,
       "used_copilot_cloud_agent": true,
-      "ai_credits_used": 2.28
+      "ai_credits_used": 2.28,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -656,7 +677,12 @@
       "loc_deleted_sum": 0,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.02
+      "ai_credits_used": 2.02,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -748,7 +774,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.81
+      "ai_credits_used": 2.81,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -789,7 +820,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.55
+      "ai_credits_used": 0.55,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -830,7 +866,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.7
+      "ai_credits_used": 2.7,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1074,7 +1115,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.82
+      "ai_credits_used": 2.82,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1217,7 +1263,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 4.24
+      "ai_credits_used": 4.24,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1258,7 +1309,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.11
+      "ai_credits_used": 2.11,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1496,7 +1552,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.77
+      "ai_credits_used": 1.77,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1619,7 +1680,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 4.83
+      "ai_credits_used": 4.83,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1660,7 +1726,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.69
+      "ai_credits_used": 0.69,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1766,7 +1837,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.29
+      "ai_credits_used": 3.29,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1807,7 +1883,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.11
+      "ai_credits_used": 2.11,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1847,7 +1928,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      },
+      "ai_credits_used": 42.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -1888,7 +1975,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.45
+      "ai_credits_used": 2.45,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -1929,7 +2021,12 @@
       },
       "used_copilot_coding_agent": true,
       "used_copilot_cloud_agent": true,
-      "ai_credits_used": 1.6
+      "ai_credits_used": 1.6,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -2061,7 +2158,13 @@
       "loc_deleted_sum": 4,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      },
+      "ai_credits_used": 50.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -2130,7 +2233,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 6.67
+      "ai_credits_used": 6.67,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -2375,7 +2483,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.82
+      "ai_credits_used": 3.82,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -2416,7 +2529,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.96
+      "ai_credits_used": 0.96,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -2901,7 +3019,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.32
+      "ai_credits_used": 1.32,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -2942,7 +3065,12 @@
       },
       "used_copilot_coding_agent": true,
       "used_copilot_cloud_agent": true,
-      "ai_credits_used": 0.7
+      "ai_credits_used": 0.7,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -3085,7 +3213,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.54
+      "ai_credits_used": 3.54,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -3258,7 +3391,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 4.34
+      "ai_credits_used": 4.34,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -3446,7 +3584,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.03
+      "ai_credits_used": 1.03,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -3588,7 +3731,13 @@
       "loc_deleted_sum": 204,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      },
+      "ai_credits_used": 72.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -3882,7 +4031,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 6.01
+      "ai_credits_used": 6.01,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -4092,7 +4246,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.96
+      "ai_credits_used": 1.96,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -4235,7 +4394,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.89
+      "ai_credits_used": 1.89,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -4320,7 +4484,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 82.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -4406,7 +4576,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.61
+      "ai_credits_used": 1.61,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -4584,7 +4759,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 5.46
+      "ai_credits_used": 5.46,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -4823,7 +5003,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 90.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -5289,7 +5475,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.13
+      "ai_credits_used": 1.13,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -5713,7 +5904,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.59
+      "ai_credits_used": 2.59,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -5923,7 +6119,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.39
+      "ai_credits_used": 2.39,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -6008,7 +6209,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 100.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -6407,7 +6614,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.62
+      "ai_credits_used": 3.62,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -6677,7 +6889,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 5.82
+      "ai_credits_used": 5.82,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -6875,7 +7092,12 @@
       },
       "used_copilot_coding_agent": true,
       "used_copilot_cloud_agent": true,
-      "ai_credits_used": 1.03
+      "ai_credits_used": 1.03,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -6998,7 +7220,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.43
+      "ai_credits_used": 2.43,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -7356,7 +7583,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.34
+      "ai_credits_used": 3.34,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -7704,7 +7936,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 115.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -7862,7 +8100,12 @@
       },
       "used_copilot_coding_agent": true,
       "used_copilot_cloud_agent": true,
-      "ai_credits_used": 0.94
+      "ai_credits_used": 0.94,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -7967,7 +8210,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 120.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -8284,7 +8533,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.36
+      "ai_credits_used": 1.36,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -8614,7 +8868,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.8
+      "ai_credits_used": 1.8,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -8853,7 +9112,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.08
+      "ai_credits_used": 2.08,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -9020,7 +9284,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.94
+      "ai_credits_used": 0.94,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -9365,7 +9634,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 4.98
+      "ai_credits_used": 4.98,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -9625,7 +9899,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 6.11
+      "ai_credits_used": 6.11,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -9710,7 +9989,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 137.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -9796,7 +10081,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.91
+      "ai_credits_used": 2.91,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -9984,7 +10274,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.93
+      "ai_credits_used": 3.93,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -10070,7 +10365,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.78
+      "ai_credits_used": 1.78,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -10274,7 +10574,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.74
+      "ai_credits_used": 2.74,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -10646,7 +10951,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 6.02
+      "ai_credits_used": 6.02,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -10835,7 +11145,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 152.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -11041,7 +11357,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.25
+      "ai_credits_used": 2.25,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -11224,7 +11545,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 4.65
+      "ai_credits_used": 4.65,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -11512,7 +11838,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 160.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -11794,7 +12126,12 @@
       "used_copilot_cloud_agent": false,
       "used_copilot_code_review_active": true,
       "used_copilot_code_review_passive": false,
-      "ai_credits_used": 1.78
+      "ai_credits_used": 1.78,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -11917,7 +12254,12 @@
       "used_cli": false,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.21
+      "ai_credits_used": 1.21,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -12308,7 +12650,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 167.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -12466,7 +12814,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.06
+      "ai_credits_used": 2.06,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -12552,7 +12905,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.75
+      "ai_credits_used": 0.75,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -12957,7 +13315,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.35
+      "ai_credits_used": 1.35,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -13042,7 +13405,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      },
+      "ai_credits_used": 177.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -13219,7 +13588,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 180.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -13478,7 +13853,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 182.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -13881,7 +14262,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.16
+      "ai_credits_used": 2.16,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -13977,7 +14363,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 187.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -14108,7 +14500,13 @@
       "loc_deleted_sum": 0,
       "used_cli": false,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 190.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -14234,7 +14632,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.68
+      "ai_credits_used": 3.68,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -14320,7 +14723,12 @@
       },
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.02
+      "ai_credits_used": 2.02,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -14342,7 +14750,16 @@
           "loc_suggested_to_add_sum": 1134,
           "loc_suggested_to_delete_sum": 56,
           "loc_added_sum": 742,
-          "loc_deleted_sum": 22
+          "loc_deleted_sum": 22,
+          "last_known_ide_version": {
+            "sampled_at": "2026-03-29T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-03-29T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14399,7 +14816,13 @@
       "loc_added_sum": 742,
       "loc_deleted_sum": 22,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 197.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -14421,7 +14844,16 @@
           "loc_suggested_to_add_sum": 1140,
           "loc_suggested_to_delete_sum": 57,
           "loc_added_sum": 843,
-          "loc_deleted_sum": 25
+          "loc_deleted_sum": 25,
+          "last_known_ide_version": {
+            "sampled_at": "2026-03-30T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-03-30T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14479,7 +14911,12 @@
       "loc_deleted_sum": 25,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 5.08
+      "ai_credits_used": 5.08,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -14501,7 +14938,16 @@
           "loc_suggested_to_add_sum": 2368,
           "loc_suggested_to_delete_sum": 118,
           "loc_added_sum": 1394,
-          "loc_deleted_sum": 41
+          "loc_deleted_sum": 41,
+          "last_known_ide_version": {
+            "sampled_at": "2026-03-31T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-03-31T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14559,7 +15005,12 @@
       "loc_deleted_sum": 41,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.61
+      "ai_credits_used": 3.61,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -14581,7 +15032,16 @@
           "loc_suggested_to_add_sum": 1804,
           "loc_suggested_to_delete_sum": 90,
           "loc_added_sum": 1035,
-          "loc_deleted_sum": 31
+          "loc_deleted_sum": 31,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-01T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-01T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14638,7 +15098,13 @@
       "loc_added_sum": 1035,
       "loc_deleted_sum": 31,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 205.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -14660,7 +15126,16 @@
           "loc_suggested_to_add_sum": 1276,
           "loc_suggested_to_delete_sum": 63,
           "loc_added_sum": 934,
-          "loc_deleted_sum": 28
+          "loc_deleted_sum": 28,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-02T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-02T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14718,7 +15193,12 @@
       "loc_deleted_sum": 28,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.23
+      "ai_credits_used": 3.23,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -14740,7 +15220,16 @@
           "loc_suggested_to_add_sum": 1188,
           "loc_suggested_to_delete_sum": 59,
           "loc_added_sum": 676,
-          "loc_deleted_sum": 20
+          "loc_deleted_sum": 20,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-05T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-05T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14798,7 +15287,12 @@
       "loc_deleted_sum": 20,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 6.86
+      "ai_credits_used": 6.86,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -14820,7 +15314,16 @@
           "loc_suggested_to_add_sum": 3139,
           "loc_suggested_to_delete_sum": 156,
           "loc_added_sum": 2179,
-          "loc_deleted_sum": 65
+          "loc_deleted_sum": 65,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-06T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-06T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14878,7 +15381,12 @@
       "loc_deleted_sum": 65,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.93
+      "ai_credits_used": 3.93,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -14900,7 +15408,16 @@
           "loc_suggested_to_add_sum": 816,
           "loc_suggested_to_delete_sum": 40,
           "loc_added_sum": 606,
-          "loc_deleted_sum": 18
+          "loc_deleted_sum": 18,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-10T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-10T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -14957,7 +15474,13 @@
       "loc_added_sum": 606,
       "loc_deleted_sum": 18,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      },
+      "ai_credits_used": 215.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -14979,7 +15502,16 @@
           "loc_suggested_to_add_sum": 1924,
           "loc_suggested_to_delete_sum": 96,
           "loc_added_sum": 1241,
-          "loc_deleted_sum": 37
+          "loc_deleted_sum": 37,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-11T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-11T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15037,7 +15569,12 @@
       "loc_deleted_sum": 37,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 4.82
+      "ai_credits_used": 4.82,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15059,7 +15596,16 @@
           "loc_suggested_to_add_sum": 1800,
           "loc_suggested_to_delete_sum": 90,
           "loc_added_sum": 1156,
-          "loc_deleted_sum": 34
+          "loc_deleted_sum": 34,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-13T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-13T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15117,7 +15663,12 @@
       "loc_deleted_sum": 34,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.6
+      "ai_credits_used": 2.6,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15139,7 +15690,16 @@
           "loc_suggested_to_add_sum": 1488,
           "loc_suggested_to_delete_sum": 74,
           "loc_added_sum": 1044,
-          "loc_deleted_sum": 31
+          "loc_deleted_sum": 31,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-15T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-15T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15197,7 +15757,12 @@
       "loc_deleted_sum": 31,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 4.12
+      "ai_credits_used": 4.12,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15219,7 +15784,16 @@
           "loc_suggested_to_add_sum": 1620,
           "loc_suggested_to_delete_sum": 81,
           "loc_added_sum": 1078,
-          "loc_deleted_sum": 32
+          "loc_deleted_sum": 32,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-17T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-17T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15277,7 +15851,12 @@
       "loc_deleted_sum": 32,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.36
+      "ai_credits_used": 3.36,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15299,7 +15878,16 @@
           "loc_suggested_to_add_sum": 4345,
           "loc_suggested_to_delete_sum": 217,
           "loc_added_sum": 2628,
-          "loc_deleted_sum": 78
+          "loc_deleted_sum": 78,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-18T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-18T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15357,7 +15945,12 @@
       "loc_deleted_sum": 78,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 2.25
+      "ai_credits_used": 2.25,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15379,7 +15972,16 @@
           "loc_suggested_to_add_sum": 1679,
           "loc_suggested_to_delete_sum": 83,
           "loc_added_sum": 1019,
-          "loc_deleted_sum": 30
+          "loc_deleted_sum": 30,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-20T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-20T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15437,7 +16039,12 @@
       "loc_deleted_sum": 30,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.35
+      "ai_credits_used": 3.35,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15459,7 +16066,16 @@
           "loc_suggested_to_add_sum": 2627,
           "loc_suggested_to_delete_sum": 131,
           "loc_added_sum": 1488,
-          "loc_deleted_sum": 44
+          "loc_deleted_sum": 44,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-21T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-21T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15516,7 +16132,13 @@
       "loc_added_sum": 1488,
       "loc_deleted_sum": 44,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 232.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -15538,7 +16160,16 @@
           "loc_suggested_to_add_sum": 2508,
           "loc_suggested_to_delete_sum": 125,
           "loc_added_sum": 1790,
-          "loc_deleted_sum": 53
+          "loc_deleted_sum": 53,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-22T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-22T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15595,7 +16226,13 @@
       "loc_added_sum": 1790,
       "loc_deleted_sum": 53,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 235.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -15617,7 +16254,16 @@
           "loc_suggested_to_add_sum": 3724,
           "loc_suggested_to_delete_sum": 186,
           "loc_added_sum": 2181,
-          "loc_deleted_sum": 65
+          "loc_deleted_sum": 65,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-23T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-23T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15675,7 +16321,12 @@
       "loc_deleted_sum": 65,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.42
+      "ai_credits_used": 3.42,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15697,7 +16348,16 @@
           "loc_suggested_to_add_sum": 1890,
           "loc_suggested_to_delete_sum": 94,
           "loc_added_sum": 1163,
-          "loc_deleted_sum": 34
+          "loc_deleted_sum": 34,
+          "last_known_ide_version": {
+            "sampled_at": "2026-04-24T12:00:00.000Z",
+            "ide_version": "1.126.0"
+          },
+          "last_known_plugin_version": {
+            "sampled_at": "2026-04-24T12:00:00.000Z",
+            "plugin": "copilot-chat",
+            "plugin_version": "0.54.0"
+          }
         }
       ],
       "totals_by_feature": [
@@ -15755,7 +16415,12 @@
       "loc_deleted_sum": 34,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 3.25
+      "ai_credits_used": 3.25,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15835,7 +16500,12 @@
       "loc_deleted_sum": 28,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.19
+      "ai_credits_used": 1.19,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15915,7 +16585,12 @@
       "loc_deleted_sum": 44,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.72
+      "ai_credits_used": 0.72,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -15994,7 +16669,13 @@
       "loc_added_sum": 1458,
       "loc_deleted_sum": 43,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      },
+      "ai_credits_used": 247.5
     },
     {
       "report_start_day": "2026-03-29",
@@ -16073,7 +16754,13 @@
       "loc_added_sum": 1611,
       "loc_deleted_sum": 48,
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 250.0
     },
     {
       "report_start_day": "2026-03-29",
@@ -16153,7 +16840,12 @@
       "loc_deleted_sum": 25,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.35
+      "ai_credits_used": 0.35,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -16233,7 +16925,12 @@
       "loc_deleted_sum": 18,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.67
+      "ai_credits_used": 0.67,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -16313,7 +17010,12 @@
       "loc_deleted_sum": 76,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.98
+      "ai_credits_used": 0.98,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -16393,7 +17095,12 @@
       "loc_deleted_sum": 84,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.23
+      "ai_credits_used": 1.23,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -16473,7 +17180,12 @@
       "loc_deleted_sum": 25,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.65
+      "ai_credits_used": 0.65,
+      "ai_adoption_phase": {
+        "phase_number": 4,
+        "phase": "Phase 4",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -16553,7 +17265,12 @@
       "loc_deleted_sum": 31,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 1.11
+      "ai_credits_used": 1.11,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      }
     },
     {
       "report_start_day": "2026-03-29",
@@ -16633,7 +17350,12 @@
       "loc_deleted_sum": 14,
       "used_copilot_coding_agent": false,
       "used_copilot_cloud_agent": false,
-      "ai_credits_used": 0.44
+      "ai_credits_used": 0.44,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      }
     }
   ]
 }

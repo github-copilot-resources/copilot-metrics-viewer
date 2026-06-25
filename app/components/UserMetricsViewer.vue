@@ -263,6 +263,16 @@
                 <span v-else class="text-disabled" title="ai_credits_used is not yet reported by GitHub for this period">—</span>
               </td>
               <td class="text-center">
+                <v-chip v-if="item.ai_adoption_phase"
+                  size="x-small"
+                  variant="outlined"
+                  :color="adoptionPhaseColor(item.ai_adoption_phase.phase_number)"
+                  :title="`${item.ai_adoption_phase.phase} (${item.ai_adoption_phase.version})`">
+                  {{ item.ai_adoption_phase.phase_number }}
+                </v-chip>
+                <span v-else class="text-disabled" title="GitHub did not report an AI adoption phase for this user">—</span>
+              </td>
+              <td class="text-center">
                 <v-btn
                   v-if="showTrendButtons"
                   icon
@@ -776,6 +786,18 @@ export default defineComponent({
       return 'error';
     }
 
+    function adoptionPhaseColor(phaseNumber: number): string {
+      // Map GitHub's documented phase numbers to a green→blue→purple progression
+      // so the chip color carries semantic meaning at a glance.
+      switch (phaseNumber) {
+        case 1: return 'grey';        // Onboarded
+        case 2: return 'blue';        // Active
+        case 3: return 'indigo';      // Engaged
+        case 4: return 'deep-purple'; // Advanced
+        default: return 'grey';
+      }
+    }
+
     function getTopIde(user: UserTotals): string {
       if (!user.totals_by_ide || user.totals_by_ide.length === 0) return '—';
       const top = user.totals_by_ide.reduce((a, b) =>
@@ -897,6 +919,7 @@ export default defineComponent({
         { title: 'Agent',          key: 'uses_agent',                       sortable: true  },
         { title: 'Agent LOC',      key: 'agent_loc',                        sortable: true  },
         { title: 'AI Credits',     key: 'ai_credits_used',                  sortable: true  },
+        { title: 'Phase',          key: 'ai_adoption_phase',                sortable: true  },
       );
       if (showTrendButtons.value) {
         cols.push({ title: 'Trend', key: 'trend', sortable: false });
@@ -1070,6 +1093,7 @@ export default defineComponent({
       getActivityColor,
       getTopIde,
       getTopLanguage,
+      adoptionPhaseColor,
       usesChat,
       usesAgent,
       getChatInteractions,
