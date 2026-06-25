@@ -1,22 +1,29 @@
 /**
  * GET /api/billing-credits-by-user — admin only
  *
- * Returns per-user attributed billing items. GitHub's billing usage endpoint
- * does NOT include a `user` field on its response items — it only supports
- * a `?user=<login>` filter parameter. To produce a per-user breakdown for
- * the Billing tab we fan out: list the seat assignees, then call the billing
- * endpoint once per user with `?user=<login>` and tag the returned items.
+ * Returns per-user attributed billing items for the explicit `?logins=`
+ * list. GitHub's billing endpoint does NOT include a `user` field on its
+ * response items — only a `?user=<login>` filter parameter — so we fan
+ * out one call per requested user and tag each returned item.
  *
- * Concurrency: 8 parallel calls. With GitHub's 5,000/hr core rate limit this
- * comfortably handles enterprises up to ~600 seats per dashboard load.
+ * Pagination model: the caller (frontend) controls which users are
+ * loaded. Pass `?logins=alice,bob,carol` for the currently-visible page
+ * of the per-user table; subsequent pages issue additional calls. This
+ * avoids a 600-call thundering herd on dashboard load when the table
+ * only renders ~25 rows at a time.
  *
- * Mock mode: returns the same `billing-credits.json` fixture as
- * /api/billing-credits — the mock already has user-tagged items.
+ * Limits per call:
+ *   - max 50 logins per request (HTTP query length + rate-limit safety)
+ *   - 8 concurrent fan-out fetches inside one request
+ *
+ * Mock mode: returns the same billing-credits.json fixture as
+ * /api/billing-credits — the mock already has user-tagged items, so the
+ * frontend can render the per-user table without round-tripping logins.
  *
  * Auth: same admin gate as /api/billing-credits.
  *
- * Response shape: `BillingCreditsResponse` (identical to /api/billing-credits)
- * but every item has a populated `user` field.
+ * Response shape: identical to /api/billing-credits; every returned item
+ * has a populated `user` field.
  */
 
 import { Options } from '@/model/Options';
@@ -26,11 +33,8 @@ import type { BillingCreditsResponse, BillingUsageItem } from './billing-credits
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockBilling from '../../public/mock-data/billing-credits.json';
 
-interface SeatLite { assignee?: { login?: string } | null; login?: string }
-interface SeatsPage { seats?: SeatLite[]; total_seats?: number }
-
 const CONCURRENCY = 8;
-const MAX_USERS = 600;
+const MAX_LOGINS_PER_CALL = 50;
 
 export default defineEventHandler(async (event): Promise<BillingCreditsResponse> => {
   const logger = console;
@@ -43,7 +47,30 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   }
 
   if (options.isDataMocked) {
-    return mockBilling as BillingCreditsResponse;
+    // Mock mode: the fixture is already user-attributed, return as-is. If
+    // the caller passed `logins`, filter down to just those users.
+    const filterLogins = parseLogins(query.logins);
+    const mock = mockBilling as BillingCreditsResponse;
+    if (filterLogins.length === 0) return mock;
+    const set = new Set(filterLogins.map(l => l.toLowerCase()));
+    return {
+      ...mock,
+      usageItems: (mock.usageItems ?? []).filter(it => it.user && set.has(it.user.toLowerCase())),
+    };
+  }
+
+  const requestedLogins = parseLogins(query.logins);
+  if (requestedLogins.length === 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: 'Missing ?logins= query param. Pass a comma-separated list of GitHub logins (max 50 per call). Enumerate the seat list via /api/seats.',
+    });
+  }
+  if (requestedLogins.length > MAX_LOGINS_PER_CALL) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `Too many logins (${requestedLogins.length}); cap is ${MAX_LOGINS_PER_CALL} per call. Split the request into multiple pages.`,
+    });
   }
 
   const billingToken = ((config.githubBillingToken as string | undefined) || '').trim()
@@ -54,7 +81,6 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       statusMessage: 'No billing credential configured — set NUXT_GITHUB_BILLING_TOKEN.',
     });
   }
-  const metricsToken = ((config.githubToken as string | undefined) || '').trim() || billingToken;
 
   const billingEnterprise = ((config.billingEnterprise as string | undefined) || '').trim();
   const baseUrl = (config.githubApiBaseUrl as string | undefined) || 'https://api.github.com';
@@ -72,52 +98,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     throw createError({ statusCode: 400, statusMessage: String(err instanceof Error ? err.message : err) });
   }
 
-  // ── Step 1: enumerate seat logins via the GitHub Copilot billing seats endpoint
-  const seatsBase = billingEnterprise
-    ? `${baseUrl}/enterprises/${billingEnterprise}/copilot/billing/seats`
-    : options.scope === 'enterprise' && options.githubEnt
-      ? `${baseUrl}/enterprises/${options.githubEnt}/copilot/billing/seats`
-      : `${baseUrl}/orgs/${options.githubOrg}/copilot/billing/seats`;
-
-  const logins: string[] = [];
-  const seatsHeaders = new Headers({
-    Authorization: `Bearer ${metricsToken}`,
-    Accept: 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-  });
-
-  try {
-    let page = 1;
-    while (page <= 50) {
-      const pageRes = await $fetch<SeatsPage>(`${seatsBase}?per_page=100&page=${page}`, { headers: seatsHeaders });
-      const seats = pageRes?.seats ?? [];
-      for (const s of seats) {
-        const login = s.assignee?.login || s.login;
-        if (login) logins.push(login);
-      }
-      if (seats.length < 100) break;
-      page++;
-    }
-  } catch (err) {
-    logger.error('billing-credits-by-user: failed to list seats', err);
-    throw createError({
-      statusCode: 502,
-      statusMessage: 'Failed to enumerate Copilot seats for per-user billing breakdown. The metrics token needs read:org (org scope) or read:enterprise (enterprise scope).',
-    });
-  }
-
-  const uniqueLogins = Array.from(new Set(logins));
-  if (uniqueLogins.length === 0) {
-    return { timePeriod: { year: 0, month: 0 }, usageItems: [] } as BillingCreditsResponse;
-  }
-
-  const truncated = uniqueLogins.length > MAX_USERS;
-  const targetLogins = truncated ? uniqueLogins.slice(0, MAX_USERS) : uniqueLogins;
-  if (truncated) {
-    logger.warn(`billing-credits-by-user: ${uniqueLogins.length} seats exceeds cap; truncating to ${MAX_USERS}`);
-  }
-
-  // ── Step 2: forward filter params (year/month/day/model/product/cost_center_id)
+  // Forward documented filter params (year/month/day/model/product/cost_center_id)
   const forwardParams: Record<string, string> = {};
   for (const key of ['year', 'month', 'day', 'model', 'product', 'cost_center_id']) {
     const v = query[key];
@@ -132,7 +113,6 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     'X-GitHub-Api-Version': '2026-03-10',
   });
 
-  // ── Step 3: bounded-concurrency fan-out
   const tagged: BillingUsageItem[] = [];
   let timePeriod: BillingCreditsResponse['timePeriod'] = { year: 0, month: 0 };
   let orgSlug: string | undefined;
@@ -156,16 +136,15 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     }
   }
 
-  // Simple p-limit shim
   let cursor = 0;
   async function worker(): Promise<void> {
-    while (cursor < targetLogins.length) {
+    while (cursor < requestedLogins.length) {
       const i = cursor++;
-      const login = targetLogins[i];
+      const login = requestedLogins[i];
       if (login) await fetchOne(login);
     }
   }
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, targetLogins.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, requestedLogins.length) }, () => worker()));
 
   if (failures > 0 && tagged.length === 0) {
     throw createError({
@@ -181,3 +160,11 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     usageItems: tagged,
   } as BillingCreditsResponse;
 });
+
+function parseLogins(raw: unknown): string[] {
+  if (!raw) return [];
+  const str = Array.isArray(raw) ? raw.join(',') : String(raw);
+  return Array.from(new Set(
+    str.split(',').map(s => s.trim()).filter(Boolean)
+  ));
+}

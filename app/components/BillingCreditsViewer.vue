@@ -64,15 +64,16 @@
             </v-card>
           </div>
 
-          <!-- Per-user breakdown — visible only when the billing response has
-               user attribution on at least one row. -->
+          <!-- Per-user breakdown — sourced from /api/user-metrics for the
+               full user list, billing $ lazy-loaded per visible v-data-table
+               page from /api/billing-credits-by-user. -->
           <v-row v-if="perUserRows.length > 0" dense class="px-3 mt-2">
             <v-col cols="12" md="6">
               <v-card variant="outlined">
                 <v-card-title class="text-subtitle-1">
                   Top spenders by net cost
                   <span class="text-caption text-medium-emphasis ml-2">
-                    ({{ perUserRows.length }} users with billing attribution)
+                    (loaded {{ loadedLoginsCount }} of {{ perUserRows.length }} users<span v-if="loadedLoginsCount < perUserRows.length">; sort by $ or page through to load more</span>)
                   </span>
                 </v-card-title>
                 <v-card-text>
@@ -104,13 +105,22 @@
           </v-row>
 
           <v-card v-if="perUserRows.length > 0" variant="outlined" class="ma-3">
-            <v-card-title class="text-subtitle-1">Per-user breakdown</v-card-title>
+            <v-card-title class="text-subtitle-1">
+              Per-user breakdown
+              <span class="text-caption text-medium-emphasis ml-2">
+                ({{ loadedLoginsCount }} of {{ perUserRows.length }} loaded)
+                <v-progress-circular
+                  v-if="perUserLoading" indeterminate size="14" width="2" class="ml-2"
+                />
+              </span>
+            </v-card-title>
             <v-data-table
               :items="perUserRows"
               :headers="perUserHeaders"
               density="compact"
-              items-per-page="25"
-              :sort-by="[{ key: 'netAmount', order: 'desc' }]"
+              :items-per-page="25"
+              :sort-by="[{ key: 'user', order: 'asc' }]"
+              @update:options="onTableOptions"
             >
               <template #[`item.netAmount`]="{ item }">
                 ${{ (item as PerUserRow).netAmount.toFixed(2) }}
@@ -145,7 +155,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from 'vue';
+import { defineComponent, computed, reactive, ref, onMounted } from 'vue';
 import { Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -182,22 +192,11 @@ export default defineComponent({
       server: false,
     });
 
-    // Per-user attribution: GitHub's billing endpoint returns aggregate items
-    // (no `user` field). We hit a separate server endpoint that fans out
-    // `?user=<login>` calls per seat assignee and tags each item — that's
-    // what drives the per-user table + Top Spenders / Top Token Users charts.
-    // Failure / empty is non-fatal: the per-user section just hides itself.
-    const { data: perUserData } = await useFetch<BillingCreditsResponse>(
-      '/api/billing-credits-by-user',
-      {
-        query: computed(() => props.queryParams),
-        server: false,
-      }
-    ).catch(() => ({ data: { value: null } }));
-
-    // Per-user token usage joined from the User Metrics endpoint (CLI tokens are
-    // the only per-user token signal GitHub exposes today). Failure is non-fatal:
-    // the table just shows "—" in the tokens column.
+    // Per-user token totals (and the canonical user list) come from
+    // /api/user-metrics. We do NOT fan out billing on initial load — instead,
+    // the per-user table emits @update:options with the visible page's logins
+    // and we batch-fetch billing on demand. Failures are non-fatal (table
+    // still renders with token data; $ columns show "—").
     const { data: userMetricsData } = await useFetch<{ login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[]>(
       '/api/user-metrics',
       {
@@ -205,6 +204,62 @@ export default defineComponent({
         server: false,
       }
     ).catch(() => ({ data: { value: null } }));
+
+    // ── Lazy per-user billing state ────────────────────────────────────────
+    // Map login (lowercase) → aggregated billing roll-up. Pages we haven't
+    // visited yet are simply absent from the map; perUserRows renders them
+    // with $0 / 0 credits / 0 models until the fetch completes.
+    interface BillingAgg { credits: number; grossAmount: number; netAmount: number; models: Set<string>; display: string }
+    const billingByLogin = reactive(new Map<string, BillingAgg>());
+    const loadedLogins = reactive(new Set<string>());
+    const perUserLoading = ref(false);
+
+    async function loadBillingForLogins(logins: string[]): Promise<void> {
+      const needed = logins.filter(l => l && !loadedLogins.has(l.toLowerCase()));
+      if (needed.length === 0) return;
+      // Mark as "in-flight" up front so concurrent page changes don't double-fetch.
+      for (const l of needed) loadedLogins.add(l.toLowerCase());
+      perUserLoading.value = true;
+      try {
+        // Chunk to the endpoint's per-call cap (50).
+        for (let i = 0; i < needed.length; i += 50) {
+          const chunk = needed.slice(i, i + 50);
+          const qp = { ...(props.queryParams || {}), logins: chunk.join(',') };
+          try {
+            const resp = await $fetch<BillingCreditsResponse>('/api/billing-credits-by-user', { query: qp });
+            for (const it of resp.usageItems ?? []) {
+              const u = (it.user || '').trim();
+              if (!u) continue;
+              const key = u.toLowerCase();
+              const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
+              prev.credits += Number.isFinite(it.netQuantity) ? it.netQuantity : 0;
+              prev.credits += Number.isFinite(it.discountQuantity) ? it.discountQuantity : 0;
+              prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
+              prev.netAmount += Number.isFinite(it.netAmount) ? it.netAmount : 0;
+              if (it.model) prev.models.add(it.model);
+              billingByLogin.set(key, prev);
+            }
+          } catch (err) {
+            // Don't unmark — failed fetches stay "loaded" so we don't retry
+            // forever; the rows just remain at $0. A page refresh re-tries.
+            console.warn('billing-credits-by-user chunk failed', err);
+          }
+        }
+      } finally {
+        perUserLoading.value = false;
+      }
+    }
+
+    // Called by v-data-table @update:options on initial mount, page change,
+    // and sort change. We use page + itemsPerPage + the currently-sorted
+    // `perUserRows` view to know which logins are visible.
+    function onTableOptions(opts: { page: number; itemsPerPage: number }): void {
+      const allRows = perUserRows.value;
+      if (allRows.length === 0) return;
+      const start = (opts.page - 1) * opts.itemsPerPage;
+      const visible = allRows.slice(start, start + opts.itemsPerPage).map(r => r.user);
+      void loadBillingForLogins(visible);
+    }
 
     const items = computed<BillingUsageItem[]>(() => data.value?.usageItems ?? []);
 
@@ -218,45 +273,50 @@ export default defineComponent({
       items.value.reduce((s, i) => s + (i.netAmount || 0), 0)
     );
 
-    // Build per-user roll-up from the fan-out endpoint (tagged items), then
-    // join token usage from /api/user-metrics by login (case-insensitive).
-    const perUserItems = computed<BillingUsageItem[]>(() => perUserData.value?.usageItems ?? []);
+    // Per-user rows are projected from /api/user-metrics (canonical user list
+    // + CLI token totals) and joined with the lazy-loaded billing map. Users
+    // we haven't fetched billing for yet appear with $0 / 0 credits and will
+    // populate as the v-data-table pages over them.
     const perUserRows = computed<PerUserRow[]>(() => {
-      const map = new Map<string, { credits: number; grossAmount: number; netAmount: number; models: Set<string> }>();
-      for (const it of perUserItems.value) {
+      const um = (userMetricsData?.value ?? []) as { login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[];
+      if (um.length === 0) return [];
+      return um.map(u => {
+        const key = u.login.toLowerCase();
+        const billing = billingByLogin.get(key);
+        const tu = u.totals_by_cli?.token_usage;
+        const tokens = tu ? (tu.prompt_tokens_sum || 0) + (tu.output_tokens_sum || 0) : 0;
+        return {
+          user: billing?.display || u.login,
+          credits: billing?.credits || 0,
+          grossAmount: billing?.grossAmount || 0,
+          netAmount: billing?.netAmount || 0,
+          tokens,
+          models: billing?.models.size || 0,
+        };
+      });
+    });
+    const loadedLoginsCount = computed(() => loadedLogins.size);
+
+    // Pre-populate billingByLogin from the aggregate /api/billing-credits
+    // response in mock mode (the fixture has user-tagged items) so Playwright
+    // tests + local dev keep working without round-tripping the by-user
+    // endpoint. In real mode the aggregate response has no `user` field, so
+    // this loop is a no-op there.
+    onMounted(() => {
+      const seeded = data.value?.usageItems ?? [];
+      for (const it of seeded) {
         const u = (it.user || '').trim();
         if (!u) continue;
         const key = u.toLowerCase();
-        const prev = map.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>() };
+        const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
         prev.credits += Number.isFinite(it.netQuantity) ? it.netQuantity : 0;
         prev.credits += Number.isFinite(it.discountQuantity) ? it.discountQuantity : 0;
         prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
         prev.netAmount += Number.isFinite(it.netAmount) ? it.netAmount : 0;
         if (it.model) prev.models.add(it.model);
-        map.set(key, prev);
+        billingByLogin.set(key, prev);
+        loadedLogins.add(key);
       }
-      const tokensByLogin = new Map<string, number>();
-      const um = userMetricsData?.value as { login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[] | null;
-      for (const u of um ?? []) {
-        const tu = u.totals_by_cli?.token_usage;
-        if (tu) {
-          tokensByLogin.set(u.login.toLowerCase(), (tu.prompt_tokens_sum || 0) + (tu.output_tokens_sum || 0));
-        }
-      }
-      // Recover the original-case login from the first billing row we saw.
-      const displayLogin = new Map<string, string>();
-      for (const it of perUserItems.value) {
-        const u = (it.user || '').trim();
-        if (u && !displayLogin.has(u.toLowerCase())) displayLogin.set(u.toLowerCase(), u);
-      }
-      return Array.from(map, ([key, v]) => ({
-        user: displayLogin.get(key) || key,
-        credits: v.credits,
-        grossAmount: v.grossAmount,
-        netAmount: v.netAmount,
-        tokens: tokensByLogin.get(key) || 0,
-        models: v.models.size,
-      })).sort((a, b) => b.netAmount - a.netAmount || b.credits - a.credits);
     });
 
     // Distinguish "our admin gate" 403 from "GitHub billing API" 403, since the
@@ -363,6 +423,7 @@ export default defineComponent({
       totalGrossQty, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserHeaders,
+      perUserLoading, loadedLoginsCount, onTableOptions,
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
     };
