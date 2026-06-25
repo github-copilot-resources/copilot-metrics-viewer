@@ -182,6 +182,19 @@ export default defineComponent({
       server: false,
     });
 
+    // Per-user attribution: GitHub's billing endpoint returns aggregate items
+    // (no `user` field). We hit a separate server endpoint that fans out
+    // `?user=<login>` calls per seat assignee and tags each item — that's
+    // what drives the per-user table + Top Spenders / Top Token Users charts.
+    // Failure / empty is non-fatal: the per-user section just hides itself.
+    const { data: perUserData } = await useFetch<BillingCreditsResponse>(
+      '/api/billing-credits-by-user',
+      {
+        query: computed(() => props.queryParams),
+        server: false,
+      }
+    ).catch(() => ({ data: { value: null } }));
+
     // Per-user token usage joined from the User Metrics endpoint (CLI tokens are
     // the only per-user token signal GitHub exposes today). Failure is non-fatal:
     // the table just shows "—" in the tokens column.
@@ -205,11 +218,12 @@ export default defineComponent({
       items.value.reduce((s, i) => s + (i.netAmount || 0), 0)
     );
 
-    // Build per-user roll-up from billing items, then join token usage from /api/user-metrics
-    // by login (case-insensitive).
+    // Build per-user roll-up from the fan-out endpoint (tagged items), then
+    // join token usage from /api/user-metrics by login (case-insensitive).
+    const perUserItems = computed<BillingUsageItem[]>(() => perUserData.value?.usageItems ?? []);
     const perUserRows = computed<PerUserRow[]>(() => {
       const map = new Map<string, { credits: number; grossAmount: number; netAmount: number; models: Set<string> }>();
-      for (const it of items.value) {
+      for (const it of perUserItems.value) {
         const u = (it.user || '').trim();
         if (!u) continue;
         const key = u.toLowerCase();
@@ -231,7 +245,7 @@ export default defineComponent({
       }
       // Recover the original-case login from the first billing row we saw.
       const displayLogin = new Map<string, string>();
-      for (const it of items.value) {
+      for (const it of perUserItems.value) {
         const u = (it.user || '').trim();
         if (u && !displayLogin.has(u.toLowerCase())) displayLogin.set(u.toLowerCase(), u);
       }
