@@ -62,4 +62,22 @@ test.describe('My Usage tab', () => {
         const credits = await myUsage.readTile('AI credits used');
         expect(credits.trim().length).toBeGreaterThan(0);
     });
+
+    test('my usage tab renders adoption phase chip on Active Days card', tag, async () => {
+        // PR feat/my-usage: the mock fixture has ai_adoption_phase populated
+        // for octocat, so the chip should be rendered next to "Active days".
+        // It carries the phase number ("Phase 1: Onboarded" style label).
+        await dashboard.gotoMyUsageTab();
+        const chip = dashboard.page.locator('.v-chip').filter({ hasText: /Phase \d/ }).first();
+        await expect(chip).toBeVisible();
+    });
+
+    test('my usage tab renders GitHub CLI usage card when fixture has CLI totals', tag, async () => {
+        // PR feat/my-usage: totals_by_cli is populated for octocat in the
+        // 28-day mock. The card surfaces request count + token usage + last
+        // known cli version.
+        await dashboard.gotoMyUsageTab();
+        const cliCard = dashboard.page.locator('.v-card').filter({ hasText: 'GitHub CLI' }).first();
+        await expect(cliCard).toBeVisible();
+    });
 });
