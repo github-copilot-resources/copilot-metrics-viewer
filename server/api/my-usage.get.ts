@@ -131,7 +131,23 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
       totals = preAgg?.find(u => matchesLogin(myLogin, u.login)) ?? null;
     }
 
-    return { ...responseShell, totals, dayRecords };
+    // Synthetic per-user spend fixture so the "Your AI credit spend" card is
+    // exercisable in mock mode / Playwright (no live billing endpoint needed).
+    // Values are anonymized — derived from realistic SKU/model mixes scaled
+    // down for the fixture user.
+    const mockSpend: MyUsageSpend = {
+      totalAmount: 18.42,
+      totalQuantity: 1842.0,
+      timePeriod: { year: 2026, month: 6 },
+      enterprise: 'mocked-enterprise',
+      byModel: [
+        { model: 'claude-sonnet-4.5', amount: 9.87, quantity: 987.0 },
+        { model: 'gpt-5.3-codex', amount: 5.41, quantity: 541.0 },
+        { model: 'claude-haiku-4.5', amount: 3.14, quantity: 314.0 },
+      ],
+    };
+
+    return { ...responseShell, totals, dayRecords, spend: mockSpend };
   }
 
   // ── Live API fetch ─────────────────────────────────────────────────────────

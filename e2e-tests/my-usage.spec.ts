@@ -80,4 +80,17 @@ test.describe('My Usage tab', () => {
         const cliCard = dashboard.page.locator('.v-card').filter({ hasText: 'GitHub CLI' }).first();
         await expect(cliCard).toBeVisible();
     });
+
+    test('my usage tab renders Your AI credit spend card from mock billing fixture', tag, async () => {
+        // The mock my-usage endpoint injects a synthetic MyUsageSpend payload so
+        // the spend card is exercisable without a live billing token.
+        // See server/api/my-usage.get.ts mock branch.
+        await dashboard.gotoMyUsageTab();
+        const spendCard = dashboard.page.locator('.v-card').filter({ hasText: 'Your AI credit spend' }).first();
+        await expect(spendCard).toBeVisible();
+        // Total spend, credits billed, and at least one per-model row should render.
+        await expect(spendCard).toContainText('Total spend');
+        await expect(spendCard).toContainText('Credits billed');
+        await expect(spendCard.locator('tbody tr').first()).toBeVisible();
+    });
 });
