@@ -22,7 +22,7 @@
           {{ error.statusMessage || error.message || 'Failed to load your usage' }}
         </v-alert>
 
-        <v-alert v-else-if="!data || !data.totals" type="info" density="compact" class="ma-3">
+        <v-alert v-else-if="!data || (!data.totals && !data.spend && !data.spendWarning && !cliTotals)" type="info" density="compact" class="ma-3">
           No Copilot usage recorded for <strong>{{ data?.user?.login }}</strong> in this period.
           <div class="text-caption mt-1">
             You may not have a Copilot seat assigned, or the reporting window may not include any
@@ -41,7 +41,18 @@
             </div>
           </div>
 
-          <v-row dense class="px-3">
+          <v-alert
+            v-if="!data.totals"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mx-3 mb-3"
+          >
+            No Copilot <strong>completion</strong> metrics for this period — the cards below show
+            CLI activity and/or AI credit spend, which are reported separately.
+          </v-alert>
+
+          <v-row v-if="data.totals" dense class="px-3">
             <v-col cols="12" sm="6" md="3">
               <v-card variant="tonal" color="indigo">
                 <v-card-text>
