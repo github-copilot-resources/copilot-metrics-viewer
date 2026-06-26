@@ -103,20 +103,6 @@
               </ul>
             </v-card>
           </v-col>
-
-          <v-col cols="12" md="6">
-            <v-card variant="outlined" class="pa-4 h-100">
-              <div class="text-subtitle-1 font-weight-medium mb-2">
-                <v-icon size="small" class="mr-1">mdi-alert-circle-outline</v-icon>
-                Known limitations from GitHub's API
-              </div>
-              <ul class="ml-4 text-body-2">
-                <li>Per-user attribution only works when GitHub tags items with a <code>user</code>. Some enterprise plans (Microsoft-internal pooled billing, fully-discounted plans) return spend at the enterprise level only, in which case the per-user table shows everyone at $0.</li>
-                <li>The Billing API exposes only <strong>ai-credits</strong>, never raw token counts. Per-user token usage shown here comes from the usage-metrics API and is currently only populated for the GitHub CLI.</li>
-                <li>The Coding Agent SKU is billed to a bot actor — its spend is visible in totals but never attributed to a human login.</li>
-              </ul>
-            </v-card>
-          </v-col>
         </v-row>
 
         <div class="text-caption text-medium-emphasis text-center mt-6">
