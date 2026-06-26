@@ -393,20 +393,39 @@ NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 
 #### NUXT_USAGE_ADMINS
 
-Comma-separated allowlist of logins or email addresses that can see the **Billing tab** (aggregate AI-credit breakdown by SKU/model/cost-center/repo). Mirrors `NUXT_AUTHORIZED_USERS` semantics — when this variable is empty, anyone who can already use the dashboard can also see the Billing tab. Set it to lock the tab to a specific admin set.
+Comma-separated allowlist of logins or email addresses that get **administrator privileges** on the dashboard. Administrators can:
+
+* See the **Billing tab** (aggregate AI-credit breakdown by SKU/model/cost-center/repo)
+* See **all users' rows** in the User Metrics tab and Seats Analysis (per [issue #398](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues/398) — restrict user-level breakdown data to authorized users for Austrian/EU compliance)
 
 ```
-# Open — everyone on the dashboard can see Billing
+# Closed by default — no one is admin; non-admins see only their own row on User Metrics
 NUXT_USAGE_ADMINS=
 
-# Restricted — only the listed logins/emails see Billing
+# Grant admin to specific logins/emails
 NUXT_USAGE_ADMINS=alice,bob@company.com
 ```
 
+> [!IMPORTANT]
+> **Breaking change in 3.11.0:** `NUXT_USAGE_ADMINS` was previously *open-by-default* (an empty value meant "everyone is admin"). It is now **closed-by-default**: anyone not explicitly listed is treated as a regular user and can only see their own row in User Metrics + Seats. Upgrade by setting `NUXT_USAGE_ADMINS` to your admin allowlist.
+
 > [!NOTE]
-> The Billing tab also requires `NUXT_GITHUB_BILLING_TOKEN` to be set — see above. When the billing token is absent the tab is shown to all users but renders a configuration-help placeholder instead of fetching data; the `NUXT_USAGE_ADMINS` gate only applies once the token is configured.
+> When `NUXT_GITHUB_BILLING_TOKEN` is unset, the Billing tab is shown to all users (admin or not) but renders a configuration-help placeholder instead of fetching data; the `NUXT_USAGE_ADMINS` gate only applies once the token is configured.
 
 The Billing tab exposes aggregate breakdowns (model / SKU / cost center) and an admin per-user breakdown. Per-user attribution depends on GitHub tagging each item with a `user`; some enterprise plans return only enterprise-level aggregates, in which case the per-user table is hidden behind an explanatory alert. The User Metrics `ai_credits_used` column and the My Usage spend card are independent of this.
+
+##### What non-admins see
+
+| Surface | Non-admin | Admin |
+|---|---|---|
+| Org / Enterprise aggregate metrics | ✅ all | ✅ all |
+| My Usage tab (own data) | ✅ own | ✅ own |
+| User Metrics tab | 🔒 own row only + banner | ✅ all rows |
+| Seats Analysis tab | 🔒 own seat only | ✅ all seats |
+| Billing tab (token configured) | ❌ hidden | ✅ visible |
+| Billing tab (token unset) | ⚙️ configuration-help placeholder | ⚙️ configuration-help placeholder |
+
+The filter is enforced **server-side** — non-admin requests never receive other users' data over the wire.
 
 ##### Auth-mode matrix for Billing & My Usage tabs
 
