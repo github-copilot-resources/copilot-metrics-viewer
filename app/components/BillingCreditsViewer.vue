@@ -14,6 +14,37 @@
             enterprise billing endpoint when available.
           </div>
         </div>
+        <div style="min-width: 200px;">
+          <v-text-field
+            v-model="selectedMonth"
+            label="Billing month"
+            type="month"
+            density="compact"
+            hide-details
+            variant="outlined"
+            prepend-inner-icon="mdi-calendar-month"
+          />
+          <div class="d-flex justify-space-between mt-1">
+            <v-btn
+              size="x-small"
+              variant="text"
+              prepend-icon="mdi-chevron-left"
+              @click="shiftMonth(-1)"
+            >Prev</v-btn>
+            <v-btn
+              size="x-small"
+              variant="text"
+              @click="selectedMonth = currentMonthIso"
+            >This month</v-btn>
+            <v-btn
+              size="x-small"
+              variant="text"
+              append-icon="mdi-chevron-right"
+              :disabled="selectedMonth >= currentMonthIso"
+              @click="shiftMonth(1)"
+            >Next</v-btn>
+          </div>
+        </div>
       </div>
     </v-card>
 
@@ -38,10 +69,34 @@
         </v-alert>
 
         <v-alert v-else-if="!items.length" type="info" density="compact" class="ma-3">
-          No billing data returned for {{ data?.organization || data?.enterprise }} in this period.
+          <div>
+            No billing data returned for {{ data?.organization || data?.enterprise }}
+            <span v-if="periodLabel">in <strong>{{ periodLabel }}</strong></span>
+            <span v-else>in this period</span>.
+          </div>
+          <div v-if="!isCurrentMonth" class="mt-2 text-caption">
+            GitHub's live billing API typically only returns data for the
+            <strong>current calendar month</strong>. Historical months will
+            populate here once the <em>Billing CSV ingest</em> in Admin Panel
+            has run for that range (the read path will switch to the database
+            once Phase B lands).
+          </div>
         </v-alert>
 
         <template v-else>
+          <v-alert
+            v-if="periodLabel"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mx-3 mt-3 mb-0"
+            icon="mdi-calendar-range"
+          >
+            Showing billing usage for <strong>{{ periodLabel }}</strong>.
+            Use the <em>Billing month</em> picker above to view a different
+            month. GitHub retains roughly 90 days of detail.
+          </v-alert>
+
           <div class="d-flex flex-wrap gap-3 pa-3">
             <v-card variant="tonal" color="cyan-darken-2" min-width="180">
               <v-card-text>
@@ -179,7 +234,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, reactive, ref, onMounted } from 'vue';
+import { defineComponent, computed, reactive, ref, watch, onMounted } from 'vue';
 import { Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -211,9 +266,48 @@ export default defineComponent({
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
   },
   async setup(props) {
+    // ── Billing month selector ─────────────────────────────────────────────
+    // GitHub's /settings/billing/ai_credit/usage endpoint defaults to the
+    // current calendar month. We expose a HTML5 `<input type=month>` so admins
+    // can browse the ~90 days of history GitHub retains without editing the
+    // URL by hand. State is local-only (no URL round-trip yet — keeps the
+    // surface area small; a future change can lift it to the route if shared
+    // links matter).
+    const pad2 = (n: number) => String(n).padStart(2, '0');
+    const monthIso = (d: Date) => `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}`;
+    const currentMonthIso = computed(() => monthIso(new Date()));
+    const selectedMonth = ref<string>(currentMonthIso.value); // "YYYY-MM"
+
+    function shiftMonth(delta: number): void {
+      const parts = selectedMonth.value.split('-').map(Number);
+      const y = parts[0] ?? new Date().getUTCFullYear();
+      const m = parts[1] ?? (new Date().getUTCMonth() + 1);
+      const dt = new Date(Date.UTC(y, (m - 1) + delta, 1));
+      const next = monthIso(dt);
+      // Don't allow scrolling past the current month (GitHub returns nothing).
+      if (next > currentMonthIso.value) return;
+      selectedMonth.value = next;
+    }
+
+    const isCurrentMonth = computed(() => selectedMonth.value === currentMonthIso.value);
+
+    // Merge picker state into the parent-provided queryParams. We only
+    // override year/month when the user has picked something other than the
+    // current month — keeps the default behavior identical to before.
+    const billingQuery = computed<Record<string, string>>(() => {
+      const merged: Record<string, string> = { ...props.queryParams };
+      const [y, m] = selectedMonth.value.split('-');
+      if (y && m) {
+        merged.year = y;
+        merged.month = String(Number(m));
+      }
+      return merged;
+    });
+
     const { data, pending, error } = await useFetch<BillingCreditsResponse>('/api/billing-credits', {
-      query: computed(() => props.queryParams),
+      query: billingQuery,
       server: false,
+      watch: [billingQuery],
     });
 
     // Per-user token totals (and the canonical user list) come from
@@ -238,6 +332,13 @@ export default defineComponent({
     const loadedLogins = reactive(new Set<string>());
     const perUserLoading = ref(false);
 
+    // When the user switches month, drop cached per-user roll-ups so the
+    // visible page re-fetches against the new window.
+    watch(selectedMonth, () => {
+      billingByLogin.clear();
+      loadedLogins.clear();
+    });
+
     async function loadBillingForLogins(logins: string[]): Promise<void> {
       const needed = logins.filter(l => l && !loadedLogins.has(l.toLowerCase()));
       if (needed.length === 0) return;
@@ -248,7 +349,12 @@ export default defineComponent({
         // Chunk to the endpoint's per-call cap (50).
         for (let i = 0; i < needed.length; i += 50) {
           const chunk = needed.slice(i, i + 50);
-          const qp = { ...(props.queryParams || {}), logins: chunk.join(',') };
+          const qp: Record<string, string> = { ...(props.queryParams || {}), logins: chunk.join(',') };
+          const [y, m] = selectedMonth.value.split('-');
+          if (y && m) {
+            qp.year = y;
+            qp.month = String(Number(m));
+          }
           try {
             const resp = await $fetch<BillingCreditsResponse>('/api/billing-credits-by-user', { query: qp });
             for (const it of resp.usageItems ?? []) {
@@ -286,6 +392,31 @@ export default defineComponent({
     }
 
     const items = computed<BillingUsageItem[]>(() => data.value?.usageItems ?? []);
+
+    /**
+     * Human-readable label for the billing period returned by GitHub.
+     * GitHub's /settings/billing/ai_credit/usage endpoint defaults to the
+     * current calendar month when no year/month/day is passed; the response
+     * echoes the applied window in `timePeriod`. Surface it so the totals
+     * aren't ambiguous (the card was previously dateless).
+     */
+    const periodLabel = computed(() => {
+      const tp = data.value?.timePeriod;
+      if (!tp || (tp.year == null && tp.month == null && tp.day == null)) return '';
+      const year = tp.year;
+      const month = tp.month;
+      const day = tp.day;
+      if (year && month && day) {
+        return new Date(Date.UTC(year, month - 1, day))
+          .toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+      }
+      if (year && month) {
+        return new Date(Date.UTC(year, month - 1, 1))
+          .toLocaleDateString(undefined, { year: 'numeric', month: 'long', timeZone: 'UTC' });
+      }
+      if (year) return String(year);
+      return '';
+    });
 
     const totalGrossQty = computed(() =>
       items.value.reduce((s, i) => s + (i.grossQuantity || 0), 0)
@@ -464,7 +595,8 @@ export default defineComponent({
     };
 
     return {
-      data, pending, error, items,
+      data, pending, error, items, periodLabel,
+      selectedMonth, currentMonthIso, shiftMonth, isCurrentMonth,
       totalGrossQty, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserHeaders,

@@ -6,6 +6,10 @@
 import { getSyncStats } from '../../services/sync-service';
 import { getPendingSyncs, getFailedSyncs } from '../../storage/sync-storage';
 import { Options } from '@/model/Options';
+import {
+  getInFlightBillingCsvJob,
+  listRecentBillingCsvJobs,
+} from '../../storage/billing-csv-sync-status-storage';
 
 export default defineEventHandler(async (event) => {
   const logger = console;
@@ -13,6 +17,27 @@ export default defineEventHandler(async (event) => {
 
   try {
     const options = Options.fromQuery(query);
+
+    // Billing CSV status is enterprise-scoped (independent of the dashboard
+    // scope+identifier), so compute it up front and include it on BOTH
+    // response shapes — otherwise the scoped branch below would drop it and
+    // the AdminPanel's Billing CSV ingest section never renders.
+    let billingCsv: { inFlight: unknown; recent: unknown[] } | null = null;
+    const config = useRuntimeConfig();
+    const billingEnterprise = (((config as Record<string, unknown>).billingEnterprise as string | undefined) || '').trim();
+    if (billingEnterprise) {
+      try {
+        const [inFlight, recent] = await Promise.all([
+          getInFlightBillingCsvJob(billingEnterprise),
+          listRecentBillingCsvJobs(billingEnterprise, 10),
+        ]);
+        billingCsv = { inFlight, recent };
+      } catch (e) {
+        // DB may not be configured (JSON mode). Surface a clear shape.
+        billingCsv = { inFlight: null, recent: [] };
+        logger.warn('Billing CSV status query failed:', e instanceof Error ? e.message : String(e));
+      }
+    }
 
     // If specific scope provided, get detailed stats
     if (options.scope && (options.githubOrg || options.githubEnt)) {
@@ -38,7 +63,8 @@ export default defineEventHandler(async (event) => {
           start: startDate,
           end: endDate
         },
-        stats
+        stats,
+        billingCsv,
       };
     }
 
@@ -54,7 +80,8 @@ export default defineEventHandler(async (event) => {
       pending: pending.length,
       failed: failed.length,
       pendingSyncs: pending.slice(0, 10), // 10 most recent pending
-      failedSyncs: failed.slice(0, 10) // 10 most recent failed
+      failedSyncs: failed.slice(0, 10), // 10 most recent failed
+      billingCsv,
     };
 
   } catch (error: unknown) {
