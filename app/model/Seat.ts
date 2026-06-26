@@ -8,7 +8,11 @@ export class Seat {
     plan_type: string;
 
     constructor(data: any) {
-        this.login = data.assignee ? data.assignee.login : 'deprecated';
+        // Empty string (not a real GitHub login) when there's no assignee, so
+        // the issue-#398 self-only filter can never match an assigneeless seat
+        // to a logged-in caller. A literal value like 'deprecated' would match
+        // a real GitHub user with that login (https://github.com/deprecated).
+        this.login = data.assignee ? data.assignee.login : '';
         this.id = data.assignee ? data.assignee.id : 0;
         this.team = data.assigning_team ? data.assigning_team.name : '';
         this.created_at = data.created_at;

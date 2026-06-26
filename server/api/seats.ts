@@ -310,6 +310,11 @@ export default defineEventHandler(async (event) => {
   // ── Organization scope: fetch only the GitHub pages needed for this UI page ─
   // For enterprise and team scopes we need all pages (for deduplication / filtering),
   // so we fall through to the "fetch all" path below.
+  //
+  // SECURITY: do NOT remove the `&& callerIsAdmin` clause without rethinking
+  // restrict-user-rows. The optimized path slices pre-paginated GitHub pages
+  // and would drop the non-admin caller's own row if it falls outside the
+  // window — silently returning [] for the caller's "own data" view.
   const isOrgOnly = options.scope === 'organization' && !options.githubTeam && callerIsAdmin;
 
   if (isOrgOnly) {
