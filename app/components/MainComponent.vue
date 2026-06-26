@@ -556,8 +556,11 @@ export default defineNuxtComponent({
       this.tabItems = this.tabItems.filter(t => t !== 'my usage');
     }
 
-    // "Billing" tab is admin-only; hidden by default until the /api/auth/usage-admin
-    // probe confirms the current session is on the NUXT_USAGE_ADMINS allowlist.
+    // Strip the "billing" tab unconditionally here; mounted() re-adds it after
+    // probing /api/auth/usage-admin. The probe decides whether to show:
+    //   - the real BillingCreditsViewer (admin + NUXT_GITHUB_BILLING_TOKEN set)
+    //   - the BillingNotConfigured placeholder (anyone, when token unset)
+    //   - nothing (non-admin in a configured deployment)
     this.tabItems = this.tabItems.filter(t => t !== 'billing');
 
     // Auto-hide teams tab when historical mode is disabled (team metrics require DB)

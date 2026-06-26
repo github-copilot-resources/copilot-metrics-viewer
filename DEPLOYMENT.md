@@ -363,7 +363,7 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `NUXT_GITHUB_TOKEN` | GitHub PAT (fine-grained or classic) or fallback for billing — metrics endpoints | Yes (PAT mode) |
-| `NUXT_GITHUB_BILLING_TOKEN` | **Classic** PAT with `manage_billing:enterprise`, SSO-authorized for the target enterprise. Required for the Billing tab and the My Usage "Your AI credit spend" card. When unset, those features are hidden. | Optional |
+| `NUXT_GITHUB_BILLING_TOKEN` | **Classic** PAT with `manage_billing:enterprise`, SSO-authorized for the target enterprise. Required for the Billing tab to show real data and for the My Usage "Your AI credit spend" card. When unset, the Billing tab is shown to all users as a configuration-help placeholder; the My Usage spend card is hidden. | Optional |
 | `NUXT_BILLING_ENTERPRISE` | Enterprise slug. When set, billing calls always go to `/enterprises/{slug}/...` regardless of dashboard scope. Required for org-scoped dashboards whose org is enterprise-owned (otherwise billing returns 404). | Optional |
 | `NUXT_PUBLIC_SCOPE` | `organization` or `enterprise` (legacy `team-organization`/`team-enterprise` have been removed; existing values are auto-normalized) | Yes |
 | `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
@@ -447,11 +447,14 @@ A GitHub App installation token lets the backend fetch Copilot data **without an
 5. Under **Organization permissions**:
    - `Copilot` → Read-only
    - `Members` → Read-only (for seat analysis)
-   - `Administration` → Read-only *(optional — only required if you want to enable the **Billing tab**, which calls `/organizations/{org}/settings/billing/ai_credit/usage`)*
-6. *(Optional)* Under **Enterprise permissions** (only if the App is installed at the enterprise level for the Billing tab):
-   - `Enterprise billing` → Read-only
-7. Set "Where can this GitHub App be installed?" → **Only on this account**
-8. Click **Create GitHub App**, then note the **App ID** on the next page
+6. Set "Where can this GitHub App be installed?" → **Only on this account**
+7. Click **Create GitHub App**, then note the **App ID** on the next page
+
+> **Note:** GitHub Apps cannot read billing — the Billing tab requires a
+> separate classic PAT with `manage_billing:enterprise` (or
+> `manage_billing:copilot`) configured via `NUXT_GITHUB_BILLING_TOKEN`.
+> Do not add `Administration` or `Enterprise billing` permissions here:
+> they will not enable the Billing tab.
 
 **Generate a private key:**
 
@@ -625,7 +628,7 @@ After a user authenticates with any provider, you can optionally restrict which 
 |---|---|
 | `NUXT_AUTHORIZED_USERS` | Comma-separated logins or emails: `alice,bob@company.com` |
 | `NUXT_AUTHORIZED_EMAIL_DOMAINS` | Comma-separated domains: `company.com,corp.org` |
-| `NUXT_USAGE_ADMINS` | Comma-separated logins or emails: `alice,bob@company.com`. **Open-by-default** — leave empty to grant Billing tab access to every dashboard user; set to lock down to a specific admin allowlist. No domain-wildcard support. |
+| `NUXT_USAGE_ADMINS` | Comma-separated logins or emails: `alice,bob@company.com`. **Closed-by-default in OAuth-mode deployments** — leaving it empty hides the Billing tab and restricts User Metrics to each caller's own row. PAT-mode deployments (no OAuth provider configured) bypass this gate. No domain-wildcard support. |
 
 When **both are empty** (default), all authenticated users are allowed. When either is set, a user must match at least one rule to gain access.
 

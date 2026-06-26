@@ -79,8 +79,10 @@
                     <td><code>NUXT_USAGE_ADMINS</code></td>
                     <td>
                       Comma-separated GitHub logins / emails allowed to see the
-                      Billing tab in production. Empty = visible to everyone
-                      who can see the dashboard.
+                      Billing tab. Required in OAuth-mode deployments — leaving
+                      it empty hides the Billing tab entirely. In PAT-mode
+                      deployments (no OAuth provider configured) the tab is
+                      visible without an allowlist.
                     </td>
                   </tr>
                 </tbody>

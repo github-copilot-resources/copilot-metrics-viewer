@@ -398,37 +398,6 @@ export class Options {
     }
 
     /**
-     * Get the AI credit billing usage API URL.
-     *
-     * Org form uses `/organizations/{org}/` (not `/orgs/{org}/`) — this is
-     * the path the billing API documents and is what we verified empirically.
-     *
-     * NOTE: We intentionally do NOT support the `?user=` query string on the
-     * org endpoint. GitHub returns 403 "Organization admins for enterprise
-     * owned organizations cannot filter usage by user." for any enterprise-
-     * owned org. The per-user breakdown is now exposed through the
-     * `ai_credits_used` field on the existing users-28-day metrics report
-     * instead. See `/api/my-usage` and the user metrics tab.
-     */
-    getBillingCreditsApiUrl(): string {
-        const baseUrl = getGitHubApiBaseUrl();
-        switch (this.scope) {
-            case 'organization':
-                if (!this.githubOrg) {
-                    throw new Error('GitHub organization must be set for organization scope');
-                }
-                return `${baseUrl}/organizations/${this.githubOrg}/settings/billing/ai_credit/usage`;
-            case 'enterprise':
-                if (!this.githubEnt) {
-                    throw new Error('GitHub enterprise must be set for enterprise scope');
-                }
-                return `${baseUrl}/enterprises/${this.githubEnt}/settings/billing/ai_credit/usage`;
-            default:
-                throw new Error(`Invalid scope: ${this.scope}`);
-        }
-    }
-
-    /**
      * Get the Teams API URL based on scope and configuration.
      * For enterprise scope with a githubOrg override, returns the org teams URL
      * to support browsing org-level teams in Full GHEC enterprises.
