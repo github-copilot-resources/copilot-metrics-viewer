@@ -6,8 +6,8 @@
           <div class="font-weight-bold text-body-1 mb-1">💳 AI Credit Billing</div>
           <div class="text-medium-emphasis">
             Aggregate breakdown of premium-request spend by model and SKU,
-            sourced from the GitHub Billing API. Visible to every dashboard
-            user by default; restrict via <code>NUXT_USAGE_ADMINS</code>.
+            sourced from the GitHub Billing API. Admin-only — restricted to
+            the <code>NUXT_USAGE_ADMINS</code> allowlist.
           </div>
           <div class="text-caption text-medium-emphasis mt-1">
             Per-user attribution below comes from the <code>user</code> field on the
@@ -29,10 +29,11 @@
           </div>
           <div v-else-if="errorReason === 'github-pat-scope'" class="mt-1 text-caption">
             The server-side token does not have permission to call the GitHub Billing API.
-            Use a classic PAT with <code>manage_billing:copilot</code> (for organization scope)
-            or <code>manage_billing:enterprise</code> (for enterprise scope), or grant the
-            GitHub App <em>Administration: Read</em> / <em>Enterprise billing: Read</em>.
-            Fine-grained PATs are not supported by these endpoints.
+            The Billing API only accepts <strong>classic PATs</strong> — set
+            <code>NUXT_GITHUB_BILLING_TOKEN</code> to a classic PAT with
+            <code>manage_billing:copilot</code> (for organization scope) or
+            <code>manage_billing:enterprise</code> (for enterprise scope).
+            Fine-grained PATs and GitHub Apps are not supported by these endpoints.
           </div>
         </v-alert>
 
@@ -67,7 +68,26 @@
           <!-- Per-user breakdown — sourced from /api/user-metrics for the
                full user list, billing $ lazy-loaded per visible v-data-table
                page from /api/billing-credits-by-user. -->
-          <v-row v-if="perUserRows.length > 0" dense class="px-3 mt-2">
+          <v-alert
+            v-if="perUserRows.length > 0 && noPerUserAttribution"
+            type="info"
+            variant="tonal"
+            density="comfortable"
+            class="mx-3 mt-3 mb-2"
+            icon="mdi-account-off-outline"
+          >
+            <div class="font-weight-medium mb-1">No per-user attribution available for this enterprise</div>
+            <div class="text-body-2">
+              The aggregate tiles above show real spend, but GitHub's billing
+              JSON returned zero items for every user we've fetched
+              ({{ loadedLoginsCount }} of {{ perUserRows.length }} loaded).
+              Some plans (typically pooled / fully-discounted enterprise
+              billing) report spend at the enterprise level only and do not
+              tag individual users. Per-user charts and the breakdown table
+              are hidden until GitHub starts returning attributed data.
+            </div>
+          </v-alert>
+          <v-row v-if="perUserRows.length > 0 && !noPerUserAttribution" dense class="px-3 mt-2">
             <v-col cols="12" md="6">
               <v-card variant="outlined">
                 <v-card-title class="text-subtitle-1">
@@ -77,9 +97,13 @@
                   </span>
                 </v-card-title>
                 <v-card-text>
-                  <div style="height: 280px">
+                  <div v-if="topSpendersChartData" style="height: 280px">
                     <Bar :data="topSpendersChartData" :options="topSpendersChartOptions" />
                   </div>
+                  <v-alert v-else type="info" variant="tonal" density="compact">
+                    No per-user spend loaded yet — page through the table below to
+                    populate billing for visible users.
+                  </v-alert>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -104,7 +128,7 @@
             </v-col>
           </v-row>
 
-          <v-card v-if="perUserRows.length > 0" variant="outlined" class="ma-3">
+          <v-card v-if="perUserRows.length > 0 && !noPerUserAttribution" variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">
               Per-user breakdown
               <span class="text-caption text-medium-emphasis ml-2">
@@ -297,6 +321,22 @@ export default defineComponent({
     });
     const loadedLoginsCount = computed(() => loadedLogins.size);
 
+    // True when we've loaded at least one page of users AND the aggregate
+    // totals show non-zero spend AND zero per-user attribution has come back.
+    // This is the common state for pooled / fully-discounted enterprise plans
+    // where GitHub's billing JSON does not tag items with a user, so the
+    // per-user breakdown would otherwise render N rows of $0 with no
+    // explanation of why. When true we suppress the per-user table + charts
+    // and surface an explanatory alert instead.
+    const noPerUserAttribution = computed(() => {
+      if (loadedLogins.size === 0) return false;
+      if (totalGrossAmount.value <= 0) return false;
+      for (const agg of billingByLogin.values()) {
+        if (agg.grossAmount > 0 || agg.netAmount > 0 || agg.credits > 0) return false;
+      }
+      return true;
+    });
+
     // Pre-populate billingByLogin from the aggregate /api/billing-credits
     // response in mock mode (the fixture has user-tagged items) so Playwright
     // tests + local dev keep working without round-tripping the by-user
@@ -351,7 +391,12 @@ export default defineComponent({
     ];
 
     const topSpendersChartData = computed(() => {
-      const top = perUserRows.value.slice(0, 10);
+      // Sort by netAmount desc and drop $0 rows so enterprises with no
+      // per-user attribution (or pages we haven't lazy-loaded yet) don't
+      // render a chart full of zero bars labelled "top spenders".
+      const withSpend = perUserRows.value.filter(r => r.netAmount > 0);
+      if (withSpend.length === 0) return null;
+      const top = [...withSpend].sort((a, b) => b.netAmount - a.netAmount).slice(0, 10);
       return {
         labels: top.map(r => r.user),
         datasets: [
@@ -423,7 +468,7 @@ export default defineComponent({
       totalGrossQty, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserHeaders,
-      perUserLoading, loadedLoginsCount, onTableOptions,
+      perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
     };
