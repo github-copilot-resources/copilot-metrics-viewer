@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
     const healthCheckPaths = ['/api/health', '/api/live', '/api/ready'];
     // Skip authentication for non-API routes, health checks, auth session, AI chat, and org picker
-    if (!url.startsWith('/api/') || healthCheckPaths.includes(url) || url.startsWith('/api/_auth/') || url.startsWith('/api/ai/') || url.startsWith('/api/installations') || url.startsWith('/api/msal/')) {
+    if (!url.startsWith('/api/') || healthCheckPaths.includes(url) || url.startsWith('/api/_auth/') || url.startsWith('/api/auth/') || url.startsWith('/api/ai/') || url.startsWith('/api/installations') || url.startsWith('/api/msal/')) {
         return;
     }
 

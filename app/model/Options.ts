@@ -396,7 +396,7 @@ export class Options {
                 throw new Error(`Invalid scope: ${this.scope}`);
         }
     }
-    
+
     /**
      * Get the Teams API URL based on scope and configuration.
      * For enterprise scope with a githubOrg override, returns the org teams URL

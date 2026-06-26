@@ -177,7 +177,8 @@
           "loc_added_sum": 120,
           "loc_deleted_sum": 5
         }
-      ]
+      ],
+      "ai_credits_used": 54.45
     },
     {
       "login": "octokitten",
@@ -289,7 +290,8 @@
           "loc_added_sum": 560,
           "loc_deleted_sum": 14
         }
-      ]
+      ],
+      "ai_credits_used": 60.99
     },
     {
       "login": "monalisa",
@@ -360,7 +362,8 @@
           "loc_added_sum": 250,
           "loc_deleted_sum": 7
         }
-      ]
+      ],
+      "ai_credits_used": 10.66
     },
     {
       "login": "defunkt",
@@ -452,7 +455,8 @@
           "loc_added_sum": 480,
           "loc_deleted_sum": 0
         }
-      ]
+      ],
+      "ai_credits_used": 20.6
     },
     {
       "login": "codertocat",
@@ -544,7 +548,8 @@
           "loc_added_sum": 190,
           "loc_deleted_sum": 0
         }
-      ]
+      ],
+      "ai_credits_used": 9.29
     },
     {
       "login": "hubot",
@@ -636,7 +641,8 @@
           "loc_added_sum": 310,
           "loc_deleted_sum": 0
         }
-      ]
+      ],
+      "ai_credits_used": 13.27
     },
     {
       "login": "alicechen",
@@ -728,7 +734,8 @@
           "loc_added_sum": 390,
           "loc_deleted_sum": 0
         }
-      ]
+      ],
+      "ai_credits_used": 41.61
     },
     {
       "login": "bobmartinez",
@@ -820,7 +827,8 @@
           "loc_added_sum": 220,
           "loc_deleted_sum": 0
         }
-      ]
+      ],
+      "ai_credits_used": 11.64
     }
   ]
 }

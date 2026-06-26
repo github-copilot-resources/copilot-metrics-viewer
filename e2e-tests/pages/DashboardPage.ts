@@ -6,6 +6,8 @@ import { ApiResponseTab } from "./ApiResponseTab";
 import { CopilotChatTab } from "./CopilotChatTab";
 import { ModelsTab } from "./ModelsTab";
 import { UserMetricsTab } from "./UserMetricsTab";
+import { MyUsageTab } from "./MyUsageTab";
+import { BillingTab } from "./BillingTab";
 
 export class DashboardPage {
     readonly page: Page;
@@ -30,6 +32,8 @@ export class DashboardPage {
     readonly copilotChatTabLink: Locator;
     readonly modelsTabLink: Locator;
     readonly userMetricsTabLink: Locator;
+    readonly myUsageTabLink: Locator;
+    readonly billingTabLink: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -64,6 +68,8 @@ export class DashboardPage {
         this.copilotChatTabLink = page.getByRole("tab", { name: "copilot chat" });
         this.modelsTabLink = page.getByRole("tab", { name: "models" });
         this.userMetricsTabLink = page.getByRole("tab", { name: "user metrics" });
+        this.myUsageTabLink = page.getByRole("tab", { name: "my usage" });
+        this.billingTabLink = page.getByRole("tab", { name: "billing" });
 
         this.teamTabLink = page.getByRole("tab", { name: "team" });
         this.teamsTabLink = page.getByRole("tab", { name: "teams" });
@@ -161,6 +167,21 @@ export class DashboardPage {
         await this.userMetricsTabLink.click();
         const tab = new UserMetricsTab(this.page);
         await tab.totalUsersLabel.waitFor({ state: 'visible', timeout: 15000 });
+        return tab;
+    }
+
+    async gotoMyUsageTab() {
+        await this.myUsageTabLink.click();
+        const tab = new MyUsageTab(this.page);
+        await tab.activeDaysLabel.waitFor({ state: 'visible', timeout: 15000 });
+        return tab;
+    }
+
+    async gotoBillingTab() {
+        await this.billingTabLink.click();
+        const tab = new BillingTab(this.page);
+        await tab.heading.waitFor({ state: 'visible', timeout: 15000 });
+        await tab.totalCreditsLabel.waitFor({ state: 'visible', timeout: 15000 });
         return tab;
     }
 

@@ -84,7 +84,13 @@
           "loc_added_sum": 40,
           "loc_deleted_sum": 1
         }
-      ]
+      ],
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 3.7
     }
   ]
 }

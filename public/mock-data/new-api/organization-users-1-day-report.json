@@ -126,7 +126,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 2,
+        "phase": "Phase 2",
+        "version": "v1"
+      },
+      "ai_credits_used": 2.5
     },
     {
       "user_id": 338094,
@@ -209,7 +215,13 @@
         }
       },
       "used_copilot_coding_agent": false,
-      "used_copilot_cloud_agent": false
+      "used_copilot_cloud_agent": false,
+      "ai_adoption_phase": {
+        "phase_number": 3,
+        "phase": "Phase 3",
+        "version": "v1"
+      },
+      "ai_credits_used": 5.0
     }
   ]
 }

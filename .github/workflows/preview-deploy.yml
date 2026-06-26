@@ -264,6 +264,9 @@ jobs:
               --env-vars \
                 NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
                 NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+                NUXT_GITHUB_BILLING_TOKEN=${{ secrets.PREVIEW_GITHUB_BILLING_TOKEN }} \
+                NUXT_USAGE_ADMINS=${{ secrets.PREVIEW_USAGE_ADMINS }} \
+                NUXT_BILLING_ENTERPRISE=${{ secrets.PREVIEW_BILLING_ENTERPRISE }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
                 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 SYNC_ENABLED=false \
@@ -284,6 +287,9 @@ jobs:
               --set-env-vars \
                 NUXT_SESSION_PASSWORD=${{ secrets.NUXT_SESSION_PASSWORD }} \
                 NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
+                NUXT_GITHUB_BILLING_TOKEN=${{ secrets.PREVIEW_GITHUB_BILLING_TOKEN }} \
+                NUXT_USAGE_ADMINS=${{ secrets.PREVIEW_USAGE_ADMINS }} \
+                NUXT_BILLING_ENTERPRISE=${{ secrets.PREVIEW_BILLING_ENTERPRISE }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
                 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 SYNC_ENABLED=false \

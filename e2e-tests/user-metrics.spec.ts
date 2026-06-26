@@ -156,5 +156,32 @@ test.describe('User Metrics tab', () => {
         // Reset
         await userMetrics.filterByActivity('All users');
     });
-});
 
+    test('user metrics table includes a Phase column showing adoption chips', tag, async () => {
+        // PR feat/my-usage: new Phase column on the per-user table. The chip
+        // renders the phase_number (1-4) with a title attribute like "Phase 2 (v1)".
+        const userMetrics = await dashboard.gotoUserMetricsTab();
+        await expect(userMetrics.page.getByRole('columnheader', { name: 'Phase' })).toBeVisible();
+        // Use the title attribute (stable across phase numbers) rather than the
+        // numeric chip text (which would collide with other table values).
+        const phaseChip = userMetrics.page.locator('tbody .v-chip[title^="Phase "]').first();
+        await expect(phaseChip).toBeVisible();
+    });
+
+    test('user metrics renders AI Adoption Phase Mix doughnut', tag, async () => {
+        // PR feat/my-usage: doughnut appears next to Engagement Distribution
+        // when at least one user in the fixture has an ai_adoption_phase value.
+        const userMetrics = await dashboard.gotoUserMetricsTab();
+        await expect(
+            userMetrics.page.getByText('AI Adoption Phase Mix', { exact: true })
+        ).toBeVisible();
+    });
+
+    test('user metrics renders Top Users by Active Days chart', tag, async () => {
+        // Fills the slot next to AI Adoption Phase Mix so the row isn't half-empty.
+        const userMetrics = await dashboard.gotoUserMetricsTab();
+        await expect(
+            userMetrics.page.getByText('Top Users by Active Days', { exact: true })
+        ).toBeVisible();
+    });
+});

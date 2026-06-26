@@ -13,6 +13,7 @@ export interface UserTotals {
   loc_suggested_to_delete_sum: number
   loc_added_sum: number
   loc_deleted_sum: number
+  ai_credits_used?: number
 }
 
 /** A user record from Microsoft Entra / Graph API */

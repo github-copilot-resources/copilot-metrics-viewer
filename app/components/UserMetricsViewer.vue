@@ -52,6 +52,18 @@
               <li><strong>Copilot CLI</strong> — tracked only as an org-level aggregate; no per-user breakdown.</li>
               <li><strong>GitHub.com Copilot</strong> (PR summaries, issue chat) — partially appears under Chat features but detailed stats are aggregate-only.</li>
             </ul>
+            <h4 class="mb-2">🎯 AI adoption phases</h4>
+            <ul class="ml-4 mb-3">
+              <li>GitHub assigns each user an <strong>AI adoption phase</strong> each day, returned on every user row as <code>ai_adoption_phase</code> with a <code>phase</code> label, a <code>phase_number</code>, and a classifier <code>version</code>.</li>
+              <li>The documented label values are <strong>No Cohort</strong> (the default, <code>phase_number: 0</code>), <strong>Phase 1</strong>, <strong>Phase 2</strong>, and <strong>Phase 3</strong>. Higher phase numbers correspond to deeper Copilot adoption.</li>
+              <li>GitHub does <em>not</em> publish the specific activity thresholds it uses to place a user into each phase — only the labels themselves. New phases may appear as the classifier evolves.</li>
+              <li>See the
+                <a
+                  href="https://docs.github.com/en/copilot/reference/copilot-usage-metrics/copilot-usage-metrics"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >Copilot usage metrics reference</a> for the authoritative field definitions.</li>
+            </ul>
             <h4 class="mb-2">💡 Tips</h4>
             <ul class="ml-4 mb-2">
               <li>A low acceptance rate doesn't mean low value — Chat/Agent users get significant value without inline completions.</li>
@@ -148,6 +160,37 @@
             </div>
             <div style="height:280px">
               <Doughnut :data="distributionChartData" :options="distributionOptions" />
+            </div>
+          </v-card>
+        </v-col>
+
+        <!-- AI adoption-phase mix — only rendered when at least one user has
+             an ai_adoption_phase value (older deployments / unsupported scopes
+             return nothing). -->
+        <v-col v-if="hasAdoptionPhaseData" cols="12" :md="chartColumns === '2' ? 7 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">AI Adoption Phase Mix</div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              Most recent <code>ai_adoption_phase</code> per user. GitHub groups
+              users into phases (<code>No Cohort</code>, <code>Phase 1</code>,
+              <code>Phase 2</code>, <code>Phase 3</code>); higher numbers mean
+              deeper adoption. GitHub does not publish the activity thresholds
+              for each phase.
+            </div>
+            <div style="height:280px">
+              <Doughnut :data="adoptionPhaseChartData" :options="distributionOptions" />
+            </div>
+          </v-card>
+        </v-col>
+
+        <!-- Top users by active days — most consistent Copilot users. Fills the
+             slot next to AI Adoption Phase Mix. -->
+        <v-col v-if="hasActiveUsers" cols="12" :md="chartColumns === '2' ? 5 : 12">
+          <v-card variant="outlined" class="pa-4">
+            <div class="text-subtitle-1 font-weight-medium mb-1">Top Users by Active Days</div>
+            <div class="text-caption text-medium-emphasis mb-3">Who's using Copilot most consistently in this period</div>
+            <div style="height:280px">
+              <Bar :data="topActiveUsersChartData" :options="topActiveUsersOptions" />
             </div>
           </v-card>
         </v-col>
@@ -255,6 +298,22 @@
               <td class="text-center">
                 <span v-if="getAgentLoc(item) > 0" class="font-weight-medium">{{ getAgentLoc(item).toLocaleString() }}</span>
                 <span v-else class="text-disabled">0</span>
+              </td>
+              <td class="text-center">
+                <span v-if="typeof item.ai_credits_used === 'number'" class="font-weight-medium text-cyan-darken-2">
+                  {{ item.ai_credits_used.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                </span>
+                <span v-else class="text-disabled" title="ai_credits_used is not yet reported by GitHub for this period">—</span>
+              </td>
+              <td class="text-center">
+                <v-chip v-if="item.ai_adoption_phase"
+                  size="x-small"
+                  variant="outlined"
+                  :color="adoptionPhaseColor(item.ai_adoption_phase.phase_number)"
+                  :title="`${item.ai_adoption_phase.phase} (${item.ai_adoption_phase.version})`">
+                  {{ item.ai_adoption_phase.phase_number }}
+                </v-chip>
+                <span v-else class="text-disabled" title="GitHub did not report an AI adoption phase for this user">—</span>
               </td>
               <td class="text-center">
                 <v-btn
@@ -770,6 +829,21 @@ export default defineComponent({
       return 'error';
     }
 
+    function adoptionPhaseColor(phaseNumber: number): string {
+      // Map GitHub's phase_number to a grey → green → blue → purple progression
+      // so the chip color carries ordering at a glance. GitHub documents
+      // phase_number 0 as "No Cohort" (default) and Phase 1..3 as increasing
+      // adoption; we extend the palette for any future phases the API returns.
+      switch (phaseNumber) {
+        case 0: return 'grey';        // No Cohort
+        case 1: return 'teal';        // Phase 1
+        case 2: return 'blue';        // Phase 2
+        case 3: return 'indigo';      // Phase 3
+        case 4: return 'deep-purple'; // Phase 4 (future-proof)
+        default: return 'grey';
+      }
+    }
+
     function getTopIde(user: UserTotals): string {
       if (!user.totals_by_ide || user.totals_by_ide.length === 0) return '—';
       const top = user.totals_by_ide.reduce((a, b) =>
@@ -890,6 +964,8 @@ export default defineComponent({
         { title: 'Chat',           key: 'uses_chat',                        sortable: true  },
         { title: 'Agent',          key: 'uses_agent',                       sortable: true  },
         { title: 'Agent LOC',      key: 'agent_loc',                        sortable: true  },
+        { title: 'AI Credits',     key: 'ai_credits_used',                  sortable: true  },
+        { title: 'Phase',          key: 'ai_adoption_phase',                sortable: true  },
       );
       if (showTrendButtons.value) {
         cols.push({ title: 'Trend', key: 'trend', sortable: false });
@@ -951,6 +1027,100 @@ export default defineComponent({
         datasets: [{ data: [high, medium, low, inactive], backgroundColor: DIST_COLORS, borderWidth: 1 }],
       };
     });
+
+    // Adoption-phase mix doughnut — counts users per phase_number, with an
+    // 'Unknown' bucket for users whose latest day had no ai_adoption_phase
+    // (e.g. inactive users, or days predating the field rollout).
+    const adoptionPhaseChartData = computed(() => {
+      // Bucket users by ai_adoption_phase. We trust whatever `phase` string
+      // GitHub returns (No Cohort, Phase 1..N) rather than hard-coding our own
+      // labels — the docs only commit to "No Cohort" (phase_number 0) and
+      // Phase 1..3 today, but new phases may be added as the classifier evolves.
+      const buckets = new Map<number, { phase: string; count: number }>();
+      let unknown = 0;
+      for (const u of props.userMetrics) {
+        const p = u.ai_adoption_phase;
+        const n = p?.phase_number;
+        const label = p?.phase;
+        if (typeof n === 'number' && label) {
+          const existing = buckets.get(n);
+          if (existing) existing.count += 1;
+          else buckets.set(n, { phase: label, count: 1 });
+        } else {
+          unknown += 1;
+        }
+      }
+      const ordered = [...buckets.entries()].sort(([a], [b]) => a - b);
+      // Palette ordered to match adoptionPhaseColor() ordering for visual
+      // consistency between the chip color and the doughnut slice color.
+      const PHASE_HEX: Record<number, string> = {
+        0: '#9E9E9E', // grey — No Cohort
+        1: '#009688', // teal — Phase 1
+        2: '#2196F3', // blue — Phase 2
+        3: '#3F51B5', // indigo — Phase 3
+        4: '#673AB7', // deep-purple — Phase 4 (future-proof)
+      };
+      const labels = ordered.map(([, v]) => `${v.phase} — ${v.count}`);
+      const data = ordered.map(([, v]) => v.count);
+      const backgroundColor = ordered.map(([n]) => PHASE_HEX[n] ?? '#90A4AE');
+      if (unknown > 0) {
+        labels.push(`Unknown — ${unknown}`);
+        data.push(unknown);
+        backgroundColor.push('#CFD8DC');
+      }
+      return {
+        labels,
+        datasets: [{ data, backgroundColor, borderWidth: 1 }],
+      };
+    });
+
+    const hasAdoptionPhaseData = computed(() =>
+      props.userMetrics.some(u => !!u.ai_adoption_phase)
+    );
+
+    // Top users by active days — how often is each developer actually showing
+    // up to Copilot. Fills the slot next to AI Adoption Phase Mix.
+    const topActiveUsersChartData = computed(() => {
+      const top10 = [...props.userMetrics]
+        .filter(u => (u.total_active_days || 0) > 0)
+        .sort((a, b) => (b.total_active_days || 0) - (a.total_active_days || 0))
+        .slice(0, 10);
+      return {
+        labels: top10.map(u => u.login),
+        datasets: [
+          {
+            label: 'Active days',
+            data: top10.map(u => u.total_active_days || 0),
+            backgroundColor: 'rgba(76, 175, 80, 0.75)',
+            borderColor: 'rgb(76, 175, 80)',
+            borderRadius: 4,
+          },
+        ],
+      };
+    });
+
+    const topActiveUsersOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y' as const,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx: { parsed: { x: number } }) =>
+              `${ctx.parsed.x} active day${ctx.parsed.x === 1 ? '' : 's'}`,
+          },
+        },
+      },
+      scales: {
+        x: { beginAtZero: true, title: { display: true, text: 'Active days' } },
+        y: { ticks: { font: { size: 11 } } },
+      },
+    };
+
+    const hasActiveUsers = computed(() =>
+      props.userMetrics.some(u => (u.total_active_days || 0) > 0)
+    );
 
     const distributionOptions = {
       responsive: true,
@@ -1063,6 +1233,7 @@ export default defineComponent({
       getActivityColor,
       getTopIde,
       getTopLanguage,
+      adoptionPhaseColor,
       usesChat,
       usesAgent,
       getChatInteractions,
@@ -1078,6 +1249,11 @@ export default defineComponent({
       topUsersChartData,
       topUsersOptions,
       distributionChartData,
+      adoptionPhaseChartData,
+      hasAdoptionPhaseData,
+      topActiveUsersChartData,
+      topActiveUsersOptions,
+      hasActiveUsers,
       distributionOptions,
       // trend dialog
       showTrendButtons,
