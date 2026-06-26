@@ -263,9 +263,10 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :query-params="seatsQueryParams"
             />
             <BillingCreditsViewer
-              v-if="item === 'billing'"
+              v-if="item === 'billing' && billingEnabled"
               :query-params="seatsQueryParams"
             />
+            <BillingNotConfigured v-else-if="item === 'billing'" />
             <ApiResponse
 v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMetrics"
               :seats="seats" />
@@ -317,6 +318,7 @@ import DateRangeSelector from './DateRangeSelector.vue'
 import UserMetricsViewer from './UserMetricsViewer.vue'
 import MyUsageViewer from './MyUsageViewer.vue'
 import BillingCreditsViewer from './BillingCreditsViewer.vue'
+import BillingNotConfigured from './BillingNotConfigured.vue'
 import AiChatPanel from './AiChatPanel.vue'
 import AdminPanel from './AdminPanel.vue'
 import { Options } from '@/model/Options';
@@ -341,6 +343,7 @@ export default defineNuxtComponent({
     UserMetricsViewer,
     MyUsageViewer,
     BillingCreditsViewer,
+    BillingNotConfigured,
     AiChatPanel,
     AdminPanel
   },
@@ -522,6 +525,7 @@ export default defineNuxtComponent({
       showMigrationBanner: false,
       showDateRange: false,
       showAdminPanel: false,
+      billingEnabled: true,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
@@ -571,10 +575,19 @@ export default defineNuxtComponent({
     // Probe the admin gate AND billing-token-configured flag. The endpoint never
     // throws — returns {isUsageAdmin:false} when no session is present or the user
     // isn't on the allowlist, and {billingEnabled:false} when the deployment has
-    // not configured NUXT_GITHUB_BILLING_TOKEN. The Billing tab requires both.
+    // not configured NUXT_GITHUB_BILLING_TOKEN.
+    //
+    // Tab visibility:
+    //   - billingEnabled === false  → show tab to everyone (renders a
+    //     BillingNotConfigured placeholder explaining how to enable the
+    //     feature). This is a discoverability aid for operators of the
+    //     dashboard who otherwise wouldn't know the tab exists.
+    //   - billingEnabled === true   → admin-only (existing behavior); the tab
+    //     renders the real BillingCreditsViewer.
     try {
       const probe = await $fetch<{ isUsageAdmin: boolean; billingEnabled?: boolean }>('/api/auth/usage-admin');
-      const shouldShowBilling = !!probe?.isUsageAdmin && probe?.billingEnabled !== false;
+      this.billingEnabled = probe?.billingEnabled !== false;
+      const shouldShowBilling = !this.billingEnabled || !!probe?.isUsageAdmin;
       if (shouldShowBilling && !this.tabItems.includes('billing')) {
         // Insert just before 'api response' (or at the end if that tab is hidden)
         const apiIdx = this.tabItems.indexOf('api response');
