@@ -73,12 +73,14 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     });
   }
 
-  const billingToken = ((config.githubBillingToken as string | undefined) || '').trim()
-    || ((config.githubToken as string | undefined) || '').trim();
+  // No fallback to NUXT_GITHUB_TOKEN: GitHub rejects fine-grained PATs and
+  // App tokens on the billing endpoints. See billing-credits.get.ts for the
+  // full rationale.
+  const billingToken = ((config.githubBillingToken as string | undefined) || '').trim();
   if (!billingToken) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'No billing credential configured — set NUXT_GITHUB_BILLING_TOKEN.',
+      statusMessage: 'No billing credential configured — set NUXT_GITHUB_BILLING_TOKEN (classic PAT with manage_billing:enterprise scope; SSO-authorized).',
     });
   }
 

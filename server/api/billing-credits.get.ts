@@ -90,8 +90,12 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   }
 
   // ── Token selection ────────────────────────────────────────────────────────
-  const billingToken = ((config.githubBillingToken as string | undefined) || '').trim()
-    || ((config.githubToken as string | undefined) || '').trim();
+  // No fallback to NUXT_GITHUB_TOKEN: that variable is usually a fine-grained
+  // PAT or a GitHub App installation token, neither of which GitHub accepts on
+  // the billing endpoints (the request returns a confusing 401/403). Require
+  // an explicit classic PAT instead so the failure surfaces as a clean 503
+  // with configuration instructions.
+  const billingToken = ((config.githubBillingToken as string | undefined) || '').trim();
   if (!billingToken) {
     throw createError({
       statusCode: 503,
