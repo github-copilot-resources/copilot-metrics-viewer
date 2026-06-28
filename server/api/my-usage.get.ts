@@ -182,16 +182,20 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
         dayRecords: myDays,
       };
     } else {
-      // No date range — use the pre-aggregated 28-day report
+      // No date range — use the pre-aggregated 28-day report. The report file
+      // already embeds per-day per-user rows in `day_totals`, so we can render
+      // the day-by-day chart without making 28 follow-up 1-day calls.
       const report = await fetchLatestUserReport(
         { scope, identifier, teamSlug: options.githubTeam },
         event.context.headers
       );
       const mine = report.user_totals.find(u => matchesLogin(myLogin, u.login)) ?? null;
+      const myDays = (report.day_totals ?? [])
+        .filter(r => matchesLogin(myLogin, r.user_login));
       baseResponse = {
         ...responseShell,
         totals: mine,
-        dayRecords: [],
+        dayRecords: myDays,
         reportStartDay: report.report_start_day,
         reportEndDay: report.report_end_day,
       };
