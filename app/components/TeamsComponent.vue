@@ -145,7 +145,7 @@
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
                 <span>Active Users (period)</span>
-                <span class="font-weight-medium">{{ singleTeamUserMetrics.length ? `${singleTeamUserMetrics.filter(u => u.total_active_days > 0).length} / ${singleTeamUserMetrics.length}` : card.activeUsers }}</span>
+                <span class="font-weight-medium">{{ isUsageAdmin !== false && singleTeamUserMetrics.length ? `${singleTeamUserMetrics.filter(u => u.total_active_days > 0).length} / ${singleTeamUserMetrics.length}` : card.activeUsers }}</span>
               </div>
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
                 <span>Acceptance Rate</span>
@@ -357,6 +357,17 @@
                 <v-icon size="16" color="warning" class="mr-1">mdi-alert-circle-outline</v-icon>
                 {{ userMetricsError }}
               </v-card-subtitle>
+              <v-alert
+                v-if="isUsageAdmin === false"
+                type="info"
+                variant="tonal"
+                density="compact"
+                class="mx-3 mb-2"
+              >
+                Per-user breakdowns are restricted to admins on
+                <code>NUXT_USAGE_ADMINS</code>. You see only your own row.
+                Team-level aggregate charts above include the whole team.
+              </v-alert>
               <v-progress-linear v-if="userMetricsLoading" indeterminate color="primary" class="mb-2" />
               <v-table v-if="sortedUserMetrics.length" density="compact">
                 <thead>
@@ -774,8 +785,12 @@ export default defineComponent({
 
       // Unique users active in the period — prefer user-metrics (per-user totals),
       // fall back to the max daily_active_users across the date range.
+      // For non-admins the user-metrics list is row-restricted (typically
+      // just the caller), so it would understate the true team active-user
+      // count — prefer the aggregate signal in that case.
+      const userMetricsTrustworthy = isUsageAdmin.value !== false
       let activeUsers = 0
-      if (singleTeamUserMetrics.value.length > 0) {
+      if (userMetricsTrustworthy && singleTeamUserMetrics.value.length > 0) {
         activeUsers = singleTeamUserMetrics.value.filter(u => u.total_active_days > 0).length
       } else if (td.reportData.length) {
         activeUsers = Math.max(...td.reportData.map(d => d.daily_active_users || 0), 0)
@@ -807,7 +822,7 @@ export default defineComponent({
         { label: 'Acceptance Rate', value: `${acceptanceRate}%`, color: 'success', subtitle: 'Completions accepted ÷ generated', tooltip: 'Weighted code acceptance rate (acceptances ÷ generations) over the date range' },
         { label: 'Interactions', value: totalInteractions ? totalInteractions.toLocaleString() : (totalAcc + totalGen).toLocaleString(), color: 'primary', subtitle: 'User-initiated requests', tooltip: 'Total user-initiated Copilot interactions over the date range' },
         { label: 'Top Language', value: topLang, color: 'primary', subtitle: 'By code generation count', tooltip: 'Most active programming language by code generation count' },
-        ...(singleTeamUserMetrics.value.length > 0 ? (() => {
+        ...(userMetricsTrustworthy && singleTeamUserMetrics.value.length > 0 ? (() => {
           const totalMembers = singleTeamUserMetrics.value.length
           const activeMembers = singleTeamUserMetrics.value.filter(u => u.total_active_days > 0).length
           const adoptionPct = Math.round(activeMembers / totalMembers * 100)
@@ -987,6 +1002,21 @@ export default defineComponent({
 
     // ── Loading state ─────────────────────────────────────────────────────────
     const isLoading = ref(false)
+
+    // ── Admin gate ────────────────────────────────────────────────────────────
+    // Non-admins receive a row-restricted /api/user-metrics response (issue
+    // #398 / PR #401) — typically just their own row. We probe the gate so
+    // we can substitute aggregate signals for KPIs that would otherwise read
+    // "1 of 1 members active" instead of the true team total.
+    const isUsageAdmin = ref<boolean | null>(null)
+    onMounted(async () => {
+      try {
+        const probe = await $fetch<{ isUsageAdmin: boolean }>('/api/auth/usage-admin')
+        isUsageAdmin.value = !!probe?.isUsageAdmin
+      } catch {
+        isUsageAdmin.value = false
+      }
+    })
 
     // ── User Metrics ──────────────────────────────────────────────────────────
     const singleTeamUserMetrics = ref<UserTotals[]>([])
@@ -1417,6 +1447,7 @@ export default defineComponent({
       sortedUserMetrics,
       userMetricsError,
       userMetricsLoading,
+      isUsageAdmin,
       // Entra org filter
       entraFilterLogins,
       entraFilterLabel,
