@@ -8,6 +8,7 @@ import { findNodeInTree, collectNodeAndDescendants, normalizeUPNtoLogin } from '
 import type { MockTreeNode } from '../utils/entra-mock-tree';
 import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
 import { isUsageAdminForEvent } from '../utils/usage-admin';
+import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
 import type { H3Event, EventHandlerRequest } from 'h3';
 
 /** UI page size cap — GitHub API max is 100, so 300 = 3 GitHub calls per page. */
@@ -231,6 +232,15 @@ export default defineEventHandler(async (event) => {
   const logger = console;
   const query = getQuery(event);
   const options = Options.fromQuery(query);
+
+  // GDPR / issue #398 — non-admins may only query teams they belong to.
+  // No-op for admins, PAT-mode operators, and queries without ?githubTeam.
+  await requireTeamMembershipOrAdmin(
+    event,
+    (options.scope || 'organization') as 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+    options.githubOrg,
+    options.githubTeam,
+  );
 
   // ── Parse UI pagination params ───────────────────────────────────────────
   const uiPage    = Math.max(1, parseInt(String(query.page    ?? '1'),  10) || 1);
