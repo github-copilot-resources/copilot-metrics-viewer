@@ -947,7 +947,9 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
   // Detect format: real API has `user_login` + `day`; pre-aggregated has `login` + `total_active_days`
   const first = records[0] as Record<string, unknown>;
   if ('user_login' in first && 'day' in first) {
-    // Real API format — aggregate daily records into per-user totals
+    // Real API format — aggregate daily records into per-user totals.
+    // Also surface the raw per-day per-user rows as `day_totals` so callers
+    // can render a day-by-day chart without making 28 follow-up 1-day calls.
     const dayRecords = records as UserDayRecord[];
     console.info(`[user-metrics-api] Aggregating ${dayRecords.length} daily user records`);
     const userTotals = aggregateUserDayRecords(dayRecords);
@@ -957,6 +959,7 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
       organization_id: first.organization_id as string,
       enterprise_id: first.enterprise_id as string,
       user_totals: userTotals,
+      day_totals: dayRecords,
     };
   }
 

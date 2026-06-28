@@ -207,7 +207,7 @@
 
           <v-row v-if="topIde || topModel" dense class="px-3 mt-2">
             <v-col v-if="topIde" cols="12" md="6">
-              <v-card variant="outlined">
+              <v-card variant="outlined" class="h-100">
                 <v-card-title class="text-subtitle-1">Top IDE</v-card-title>
                 <v-card-text>
                   <strong>{{ topIde.ide }}</strong> —
@@ -225,7 +225,7 @@
               </v-card>
             </v-col>
             <v-col v-if="topModel" cols="12" md="6">
-              <v-card variant="outlined">
+              <v-card variant="outlined" class="h-100">
                 <v-card-title class="text-subtitle-1">Top model</v-card-title>
                 <v-card-text>
                   <strong>{{ topModel.model }}</strong> ({{ topModel.feature }}) —
