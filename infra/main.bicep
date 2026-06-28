@@ -72,10 +72,6 @@ var settings = concat(
       value: 'true'
     }
     {
-      name: 'SYNC_ENABLED'
-      value: 'false'
-    }
-    {
       name: 'DATABASE_URL'
       value: databaseUrl
       secret: true
@@ -144,10 +140,6 @@ var syncSettings = concat(
     {
       name: 'NUXT_PUBLIC_SCOPE'
       value: githubScope
-    }
-    {
-      name: 'SYNC_ENABLED'
-      value: 'true'
     }
     {
       name: 'SYNC_DAYS_BACK'

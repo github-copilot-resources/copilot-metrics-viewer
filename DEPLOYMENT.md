@@ -371,7 +371,6 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `NUXT_SESSION_PASSWORD` | Session encryption key (min 32 chars) | Yes |
 | `DATABASE_URL` | PostgreSQL connection string | Historical mode only |
 | `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |
-| `SYNC_ENABLED` | `true` for sync service, `false` for web app | Historical mode only |
 | `SYNC_DAYS_BACK` | Days to sync (default: 1 for daily, 28 for bulk) | Sync only |
 | `NUXT_PUBLIC_AUTH_PROVIDERS` | Comma-separated active providers: `github`, `google`, `microsoft`, `auth0`, `keycloak` — setting this enables authentication | OAuth mode |
 | `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub App client ID | GitHub OAuth |
@@ -724,4 +723,3 @@ When using OAuth providers, update your redirect URIs to include the sub-path:
 | Auth0 | `https://your-host/copilot-metrics-viewer/auth/auth0` |
 | Keycloak | `https://your-host/copilot-metrics-viewer/auth/keycloak` |
 | MSAL popup | `https://your-host/copilot-metrics-viewer/api/msal/callback` |
-

@@ -207,10 +207,6 @@
                                 {
                                     "name": "DATABASE_URL",
                                     "secretRef": "database-url"
-                                },
-                                {
-                                    "name": "SYNC_ENABLED",
-                                    "value": "false"
                                 }
                             ]
                         }
@@ -277,10 +273,6 @@
                                 {
                                     "name": "DATABASE_URL",
                                     "secretRef": "database-url"
-                                },
-                                {
-                                    "name": "SYNC_ENABLED",
-                                    "value": "true"
                                 },
                                 {
                                     "name": "SYNC_DAYS_BACK",

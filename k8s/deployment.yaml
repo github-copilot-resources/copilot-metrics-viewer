@@ -59,10 +59,6 @@ spec:
               name: copilot-metrics-secrets
               key: database-url
         
-        # Disable built-in sync (use CronJob instead)
-        - name: SYNC_ENABLED
-          value: "false"
-        
         resources:
           requests:
             memory: "256Mi"

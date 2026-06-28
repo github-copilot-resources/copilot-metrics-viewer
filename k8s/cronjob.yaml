@@ -43,8 +43,6 @@ spec:
                   key: github-token
             
             # Sync configuration
-            - name: SYNC_ENABLED
-              value: "true"
             - name: SYNC_DAYS_BACK
               value: "1"  # Sync yesterday only
             
