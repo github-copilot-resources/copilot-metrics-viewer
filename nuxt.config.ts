@@ -76,8 +76,6 @@ export default defineNuxtConfig({
       'plugins/http-agent',
       'plugins/db-init',
     ],
-    // Scheduled sync is handled by the dedicated sync Docker container (Dockerfile.sync).
-    // Do not register scheduledTasks here to avoid Nitro "task not defined" warnings.
   },
   runtimeConfig: {
     githubToken: '',

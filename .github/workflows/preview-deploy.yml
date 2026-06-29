@@ -269,7 +269,6 @@ jobs:
                 NUXT_BILLING_ENTERPRISE=${{ secrets.PREVIEW_BILLING_ENTERPRISE }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
                 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
-                SYNC_ENABLED=false \
                 NITRO_PORT=3000 \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
@@ -292,7 +291,6 @@ jobs:
                 NUXT_BILLING_ENTERPRISE=${{ secrets.PREVIEW_BILLING_ENTERPRISE }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
                 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
-                SYNC_ENABLED=false \
                 NITRO_PORT=3000 \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
