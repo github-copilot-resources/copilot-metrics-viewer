@@ -374,6 +374,7 @@ export default defineComponent({
     // useFetch is auto-imported in Nuxt
     const { data, pending, error } = await useFetch<MyUsageResponse>('/api/my-usage', {
       query: computed(() => props.queryParams),
+      watch: [() => props.queryParams],
       server: false,
     });
 
