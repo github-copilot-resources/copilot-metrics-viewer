@@ -76,10 +76,10 @@
           </div>
           <div v-if="!isCurrentMonth" class="mt-2 text-caption">
             GitHub's live billing API typically only returns data for the
-            <strong>current calendar month</strong>. Historical months will
-            populate here once the <em>Billing CSV ingest</em> in Admin Panel
-            has run for that range (the read path will switch to the database
-            once Phase B lands).
+            <strong>current calendar month</strong>. Historical months populate
+            here once the <em>Billing CSV ingest</em> in the Admin Panel has
+            run for that range; a <strong>From DB</strong> badge will appear in
+            the period banner when the dashboard is serving stored data.
           </div>
         </v-alert>
 
@@ -92,9 +92,23 @@
             class="mx-3 mt-3 mb-0"
             icon="mdi-calendar-range"
           >
-            Showing billing usage for <strong>{{ periodLabel }}</strong>.
-            Use the <em>Billing month</em> picker above to view a different
-            month. GitHub retains roughly 90 days of detail.
+            <div class="d-flex flex-wrap align-center gap-2">
+              <span>
+                Showing billing usage for <strong>{{ periodLabel }}</strong>.
+                Use the <em>Billing month</em> picker above to view a different
+                month. GitHub retains roughly 90 days of detail.
+              </span>
+              <v-chip
+                v-if="dataSourceBadge"
+                :color="dataSourceBadge.color"
+                :prepend-icon="dataSourceBadge.icon"
+                size="small"
+                variant="elevated"
+                :title="dataSourceBadge.tooltip"
+              >
+                {{ dataSourceBadge.label }}
+              </v-chip>
+            </div>
           </v-alert>
 
           <div class="d-flex flex-wrap gap-3 pa-3">
@@ -247,6 +261,7 @@ import {
 } from 'chart.js';
 import { PALETTE } from '@/utils/chartPlugins';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
+import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -304,10 +319,26 @@ export default defineComponent({
       return merged;
     });
 
+    const dataSource = ref<{ source: 'db' | 'live' | null; syncedAt: string | null; reason: string | null }>({
+      source: null,
+      syncedAt: null,
+      reason: null,
+    });
+
     const { data, pending, error } = await useFetch<BillingCreditsResponse>('/api/billing-credits', {
       query: billingQuery,
       server: false,
       watch: [billingQuery],
+      onResponse({ response }) {
+        const src = response.headers.get('x-data-source');
+        const syncedAt = response.headers.get('x-data-source-synced-at');
+        const reason = response.headers.get('x-data-source-reason');
+        dataSource.value = {
+          source: src === 'db' || src === 'live' ? src : null,
+          syncedAt: syncedAt || null,
+          reason: reason || null,
+        };
+      },
     });
 
     // Per-user token totals (and the canonical user list) come from
@@ -594,6 +625,8 @@ export default defineComponent({
       },
     };
 
+    const dataSourceBadge = computed(() => buildDataSourceBadge(dataSource.value));
+
     return {
       data, pending, error, items, periodLabel,
       selectedMonth, currentMonthIso, shiftMonth, isCurrentMonth,
@@ -603,6 +636,7 @@ export default defineComponent({
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
+      dataSourceBadge,
     };
   },
 });

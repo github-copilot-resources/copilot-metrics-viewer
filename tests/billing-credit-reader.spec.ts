@@ -268,4 +268,64 @@ describe('aggregateForBillingByUser', () => {
     }, ['anyone']);
     expect(resp.usageItems[0]!.user).toBeUndefined();
   });
+
+  it('passes filter literals as bind params (SQL injection guard)', async () => {
+    // Defence-in-depth — pg already parameterizes, but verify we never
+    // string-interpolate user-supplied values into the SQL text.
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const evilModel = "gpt-4o'; DROP TABLE billing_credit_usage; --";
+    await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['alice'], { model: evilModel });
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).not.toContain('DROP TABLE');
+    expect(sql).not.toContain(evilModel);
+    expect(params).toContain(evilModel);
+  });
+});
+
+describe('edge cases', () => {
+  it('decideSource: prefers the most recent completed job when multiple cover the window (LIMIT 1 + ORDER BY)', async () => {
+    // We only verify the SQL — pg's executor handles ORDER BY DESC LIMIT 1.
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 999, completed_at: new Date('2026-06-28T00:00:00Z') }] });
+    await decideSource('ent', '2026-06-01', '2026-06-30');
+    const [sql] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/ORDER BY completed_at DESC/);
+    expect(sql).toMatch(/LIMIT 1/);
+  });
+
+  it('decideSource: requires start_date <= AND end_date >= (superset, not overlap)', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await decideSource('ent', '2026-06-01', '2026-06-30');
+    const [sql] = mockQuery.mock.calls[0]!;
+    // Critical: a partially-overlapping job (e.g. covers May 15–Jun 15) must
+    // NOT satisfy this — the test pins the operator direction.
+    expect(sql).toMatch(/start_date\s*<=\s*\$2/);
+    expect(sql).toMatch(/end_date\s*>=\s*\$3/);
+  });
+
+  it('aggregateForBilling: omits the empty organization/user fields from the envelope', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const resp = await aggregateForBilling('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    });
+    expect(resp.organization).toBeUndefined();
+    expect(resp.user).toBeUndefined();
+    expect(resp.enterprise).toBe('ent');
+  });
+
+  it('aggregateForBilling: treats empty-string filter values as "no filter"', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await aggregateForBilling('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, { user: '', model: '', organization: '' });
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    // Only enterprise + date binds (3 params) — none of the filters should
+    // have been appended.
+    expect(params).toHaveLength(3);
+    expect(sql).not.toMatch(/username = /);
+    expect(sql).not.toMatch(/model = /);
+    expect(sql).not.toMatch(/organization = /);
+  });
 });
