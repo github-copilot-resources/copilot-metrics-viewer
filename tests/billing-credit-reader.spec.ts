@@ -1,0 +1,271 @@
+// @vitest-environment node
+/**
+ * Unit tests for the Phase B billing reader.
+ *
+ * Pure-function tests for `resolveWindow` + `mapAggregateRowToItem` derivation
+ * run synchronously. DB-bound functions (`decideSource`, `aggregateForBilling`,
+ * `aggregateForBillingByUser`) are exercised against a mocked `getPool()` that
+ * captures SQL + params and returns canned rows — enough to pin behavior
+ * without needing a real Postgres in CI.
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const mockQuery = vi.fn();
+vi.mock('../server/storage/db', () => ({
+  getPool: () => ({ query: mockQuery }),
+  isDbConfigured: () => true,
+}));
+
+import {
+  resolveWindow,
+  decideSource,
+  aggregateForBilling,
+  aggregateForBillingByUser,
+} from '../server/services/billing-credit-reader';
+
+beforeEach(() => {
+  mockQuery.mockReset();
+});
+
+describe('resolveWindow', () => {
+  it('expands year+month to the full calendar month', () => {
+    const w = resolveWindow({ year: 2026, month: 6 });
+    expect(w.startDate).toBe('2026-06-01');
+    expect(w.endDate).toBe('2026-06-30');
+    expect(w.timePeriod).toEqual({ year: 2026, month: 6 });
+  });
+
+  it('handles February in leap years correctly', () => {
+    const w = resolveWindow({ year: 2024, month: 2 });
+    expect(w.endDate).toBe('2024-02-29');
+  });
+
+  it('handles February in non-leap years correctly', () => {
+    const w = resolveWindow({ year: 2025, month: 2 });
+    expect(w.endDate).toBe('2025-02-28');
+  });
+
+  it('expands year-only to the full calendar year', () => {
+    const w = resolveWindow({ year: 2026 });
+    expect(w.startDate).toBe('2026-01-01');
+    expect(w.endDate).toBe('2026-12-31');
+    expect(w.timePeriod).toEqual({ year: 2026 });
+  });
+
+  it('treats year+month+day as a single-day window', () => {
+    const w = resolveWindow({ year: 2026, month: 6, day: 15 });
+    expect(w.startDate).toBe('2026-06-15');
+    expect(w.endDate).toBe('2026-06-15');
+  });
+
+  it('zero-pads single-digit month and day', () => {
+    const w = resolveWindow({ year: 2026, month: 3, day: 5 });
+    expect(w.startDate).toBe('2026-03-05');
+    expect(w.endDate).toBe('2026-03-05');
+  });
+
+  it('defaults to the current UTC month when nothing is specified', () => {
+    const w = resolveWindow({});
+    const now = new Date();
+    expect(w.startDate.startsWith(String(now.getUTCFullYear()))).toBe(true);
+    expect(w.timePeriod.year).toBe(now.getUTCFullYear());
+    expect(w.timePeriod.month).toBe(now.getUTCMonth() + 1);
+  });
+
+  it('rejects out-of-range month', () => {
+    expect(() => resolveWindow({ year: 2026, month: 13 })).toThrow(/month/i);
+    expect(() => resolveWindow({ year: 2026, month: 0 })).toThrow(/month/i);
+  });
+
+  it('rejects day without month', () => {
+    expect(() => resolveWindow({ year: 2026, day: 5 })).toThrow(/day without month/i);
+  });
+});
+
+describe('decideSource', () => {
+  it('returns live when enterprise is empty', async () => {
+    const d = await decideSource('', '2026-06-01', '2026-06-30');
+    expect(d.source).toBe('live');
+    expect(d.jobId).toBeNull();
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('returns db when a completed job covers the window', async () => {
+    const completedAt = new Date('2026-06-27T10:00:00Z');
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 42, completed_at: completedAt }] });
+    const d = await decideSource('ent', '2026-06-01', '2026-06-30');
+    expect(d.source).toBe('db');
+    expect(d.jobId).toBe(42);
+    expect(d.lastIngestAt).toBe(completedAt.toISOString());
+    expect(d.reason).toMatch(/job #42/);
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/status\s*=\s*'completed'/);
+    expect(sql).toMatch(/start_date\s*<=/);
+    expect(sql).toMatch(/end_date\s*>=/);
+    expect(params).toEqual(['ent', '2026-06-01', '2026-06-30']);
+  });
+
+  it('returns live when no completed job covers the window', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const d = await decideSource('ent', '2026-04-01', '2026-04-30');
+    expect(d.source).toBe('live');
+    expect(d.jobId).toBeNull();
+    expect(d.reason).toMatch(/no completed ingest job covers 2026-04-01..2026-04-30/);
+  });
+
+  it('falls back to live (not 500) when the DB query throws', async () => {
+    mockQuery.mockRejectedValueOnce(new Error('connection refused'));
+    const d = await decideSource('ent', '2026-06-01', '2026-06-30');
+    expect(d.source).toBe('live');
+    expect(d.reason).toMatch(/coverage query failed.*connection refused/);
+  });
+});
+
+describe('aggregateForBilling', () => {
+  it('emits a single grouped row mapped to the BillingUsageItem shape', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        product: 'copilot',
+        sku: 'copilot_ai_credit',
+        model: 'gpt-4o',
+        unit_type: 'credits',
+        price_per_unit: 0.01,
+        gross_quantity: 100,
+        gross_amount: 1.0,
+        discount_amount: 1.0,
+        net_amount: 0,
+      }],
+    });
+
+    const resp = await aggregateForBilling('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30',
+      timePeriod: { year: 2026, month: 6 },
+    });
+
+    expect(resp.enterprise).toBe('ent');
+    expect(resp.timePeriod).toEqual({ year: 2026, month: 6 });
+    expect(resp.usageItems).toHaveLength(1);
+    const item = resp.usageItems[0]!;
+    expect(item.product).toBe('copilot');
+    expect(item.sku).toBe('copilot_ai_credit');
+    expect(item.model).toBe('gpt-4o');
+    expect(item.unitType).toBe('credits');
+    expect(item.pricePerUnit).toBe(0.01);
+    expect(item.grossQuantity).toBe(100);
+    expect(item.grossAmount).toBe(1.0);
+    expect(item.netAmount).toBe(0);
+    // 100% discount → all quantity is discounted, zero net
+    expect(item.discountQuantity).toBe(100);
+    expect(item.netQuantity).toBe(0);
+  });
+
+  it('derives net/discount quantities proportionally on partial discount', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        product: 'copilot', sku: 'copilot_premium_request', model: 'claude-sonnet-4', unit_type: 'requests',
+        price_per_unit: 0.04,
+        gross_quantity: 100,
+        gross_amount: 4.0,
+        discount_amount: 1.0,  // 25% discount
+        net_amount: 3.0,
+      }],
+    });
+    const resp = await aggregateForBilling('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    });
+    const item = resp.usageItems[0]!;
+    expect(item.discountQuantity).toBeCloseTo(25, 6);
+    expect(item.netQuantity).toBeCloseTo(75, 6);
+  });
+
+  it('degrades to netQuantity=grossQuantity when grossAmount is 0', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        product: 'copilot', sku: 'copilot_ai_credit', model: 'gpt-4o', unit_type: 'credits',
+        price_per_unit: 0, gross_quantity: 50, gross_amount: 0, discount_amount: 0, net_amount: 0,
+      }],
+    });
+    const resp = await aggregateForBilling('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    });
+    expect(resp.usageItems[0]!.netQuantity).toBe(50);
+    expect(resp.usageItems[0]!.discountQuantity).toBe(0);
+  });
+
+  it('passes filter params through to the SQL bind list', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await aggregateForBilling('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, { user: 'alice', organization: 'org1', model: 'gpt-4o' });
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/username = \$/);
+    expect(sql).toMatch(/organization = \$/);
+    expect(sql).toMatch(/model = \$/);
+    expect(params).toEqual(['ent', '2026-06-01', '2026-06-30', 'alice', 'org1', 'gpt-4o']);
+  });
+
+  it('echoes organization and user back into the response envelope when filtered', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const resp = await aggregateForBilling('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, { user: 'alice', organization: 'org1' });
+    expect(resp.organization).toBe('org1');
+    expect(resp.user).toBe('alice');
+  });
+});
+
+describe('aggregateForBillingByUser', () => {
+  it('returns an empty envelope when logins[] is empty without touching the DB', async () => {
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, []);
+    expect(resp.usageItems).toEqual([]);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('groups by username and tags each item with the user field (case-insensitive match)', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          username: 'alice', product: 'copilot', sku: 'copilot_ai_credit', model: 'gpt-4o',
+          unit_type: 'credits', price_per_unit: 0.01, gross_quantity: 10, gross_amount: 0.1,
+          discount_amount: 0.1, net_amount: 0,
+        },
+        {
+          username: 'bob', product: 'copilot', sku: 'copilot_ai_credit', model: 'gpt-4o',
+          unit_type: 'credits', price_per_unit: 0.01, gross_quantity: 20, gross_amount: 0.2,
+          discount_amount: 0.2, net_amount: 0,
+        },
+      ],
+    });
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['Alice', 'BOB']);
+
+    expect(resp.usageItems).toHaveLength(2);
+    expect(resp.usageItems[0]!.user).toBe('alice');
+    expect(resp.usageItems[1]!.user).toBe('bob');
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/LOWER\(username\) = ANY/);
+    expect(sql).toMatch(/GROUP BY username/);
+    // Logins must be lower-cased before being bound to the ANY($::text[]) param.
+    expect(params[3]).toEqual(['alice', 'bob']);
+  });
+
+  it('omits user field when username is blank (system actor)', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{
+        username: '', product: 'copilot', sku: 'copilot_ai_credit', model: '',
+        unit_type: '', price_per_unit: 0, gross_quantity: 5, gross_amount: 0,
+        discount_amount: 0, net_amount: 0,
+      }],
+    });
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['anyone']);
+    expect(resp.usageItems[0]!.user).toBeUndefined();
+  });
+});
