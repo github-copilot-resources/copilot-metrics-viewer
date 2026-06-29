@@ -8,7 +8,7 @@
  *     transformed CopilotMetrics (for UI consumption)
  */
 
-import { fetchLatestReport, fetchReportForDate, fetchRawUserDayRecords, type MetricsReportRequest, type ReportDayTotals, type UserDayRecord } from './github-copilot-usage-api';
+import { fetchLatestReport, fetchReportForDate, fetchRawUserDayRecords, fetchUserReportForDate, type MetricsReportRequest, type ReportDayTotals, type UserDayRecord } from './github-copilot-usage-api';
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
 import { saveUserDayMetricsBatch, hasUserDayMetricsForDate } from '../storage/user-day-metrics-storage';
@@ -222,6 +222,27 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
         await saveDayData(scope, identifier, dayData, teamSlug);
         syncedCount++;
         logger.info(`Saved metrics for ${date}`);
+      }
+    }
+
+    // Also fetch and persist per-user day records for this date so that
+    // /api/my-usage and team-level per-user queries work for out-of-window
+    // dates (the 28-day bulk path only covers the latest 28 days).
+    // Failure is non-fatal — aggregate metrics are already saved.
+    if (!teamSlug) {
+      try {
+        const alreadyStored = await hasUserDayMetricsForDate(scope, identifier, date);
+        if (!alreadyStored) {
+          const userReport = await fetchUserReportForDate({ scope, identifier }, headers, date);
+          const dayRecords = (userReport.day_totals ?? []).filter(r => r.day === date);
+          if (dayRecords.length > 0) {
+            await saveUserDayMetricsBatch(scope, identifier, dayRecords);
+            logger.info(`Saved per-user day records for ${date} (${dayRecords.length} users)`);
+          }
+        }
+      } catch (userErr) {
+        const msg = userErr instanceof Error ? userErr.message : String(userErr);
+        logger.warn(`Per-user day sync for ${date} failed (non-fatal): ${msg}`);
       }
     }
 
