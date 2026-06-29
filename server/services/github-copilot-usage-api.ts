@@ -360,6 +360,12 @@ export interface UserReport {
   enterprise_id?: string;
   created_at?: string;
   user_totals: UserTotals[];
+  /**
+   * Per-user per-day rows. Present in the 28-day report file even though the
+   * outer endpoint is pre-aggregated — GitHub bundles the daily breakdown so
+   * consumers don't have to make N follow-up 1-day calls.
+   */
+  day_totals?: UserDayRecord[];
 }
 
 // --- Helper: merge breakdown arrays by key ---
@@ -941,7 +947,9 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
   // Detect format: real API has `user_login` + `day`; pre-aggregated has `login` + `total_active_days`
   const first = records[0] as Record<string, unknown>;
   if ('user_login' in first && 'day' in first) {
-    // Real API format — aggregate daily records into per-user totals
+    // Real API format — aggregate daily records into per-user totals.
+    // Also surface the raw per-day per-user rows as `day_totals` so callers
+    // can render a day-by-day chart without making 28 follow-up 1-day calls.
     const dayRecords = records as UserDayRecord[];
     console.info(`[user-metrics-api] Aggregating ${dayRecords.length} daily user records`);
     const userTotals = aggregateUserDayRecords(dayRecords);
@@ -951,6 +959,7 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
       organization_id: first.organization_id as string,
       enterprise_id: first.enterprise_id as string,
       user_totals: userTotals,
+      day_totals: dayRecords,
     };
   }
 
@@ -983,9 +992,12 @@ export async function fetchLatestUserReport(
     download_links.map(url => downloadUserReport(url))
   );
 
-  // Merge: use first report as base, combine user_totals from all files
+  // Merge: use first report as base, combine user_totals AND day_totals from all files.
+  // The 28-day report file already contains per-day per-user rows (`day_totals`),
+  // so consumers can render a day-by-day chart without a separate 1-day fetch.
   const merged: UserReport = { ...reports[0]! };
   merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
+  merged.day_totals = reports.flatMap(r => r.day_totals ?? []);
 
   return merged;
 }
@@ -1010,6 +1022,7 @@ export async function fetchUserReportForDate(
 
   const merged: UserReport = { ...reports[0]! };
   merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
+  merged.day_totals = reports.flatMap(r => r.day_totals ?? []);
 
   return merged;
 }

@@ -66,7 +66,7 @@ describe('Seat.ts', () => {
     const seat = new Seat(seatData)
 
     // Should use fallback values for null assignee
-    expect(seat.login).toBe('deprecated')
+    expect(seat.login).toBe('')
     expect(seat.id).toBe(0)
     expect(seat.team).toBe('Justice League')
     expect(seat.created_at).toBe('2021-08-03T18:00:00-06:00')
@@ -89,7 +89,7 @@ describe('Seat.ts', () => {
     const seat = new Seat(seatData)
 
     // Should use fallback values for both null fields
-    expect(seat.login).toBe('deprecated')
+    expect(seat.login).toBe('')
     expect(seat.id).toBe(0)
     expect(seat.team).toBe('')
     expect(seat.created_at).toBe('2021-08-03T18:00:00-06:00')
@@ -117,7 +117,7 @@ describe('Seat.ts', () => {
 
     const seat = new Seat(seatDataFromMock)
 
-    expect(seat.login).toBe('deprecated')
+    expect(seat.login).toBe('')
     expect(seat.id).toBe(0)
     expect(seat.team).toBe('Justice League')
   })

@@ -8,7 +8,7 @@
  *     transformed CopilotMetrics (for UI consumption)
  */
 
-import { fetchLatestReport, fetchReportForDate, fetchRawUserDayRecords, type MetricsReportRequest, type ReportDayTotals, type UserDayRecord } from './github-copilot-usage-api';
+import { fetchLatestReport, fetchReportForDate, fetchRawUserDayRecords, fetchUserReportForDate, type MetricsReportRequest, type ReportDayTotals, type UserDayRecord } from './github-copilot-usage-api';
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
 import { saveUserDayMetricsBatch, hasUserDayMetricsForDate } from '../storage/user-day-metrics-storage';
@@ -197,10 +197,32 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
   }
 
   try {
-    // Check if already synced
+    // Helper to backfill per-user day records for a date. Idempotent — skips
+    // if already stored. Non-fatal on errors.
+    const backfillPerUser = async (): Promise<void> => {
+      if (teamSlug) return;
+      try {
+        const alreadyStored = await hasUserDayMetricsForDate(scope, identifier, date);
+        if (alreadyStored) return;
+        const userReport = await fetchUserReportForDate({ scope, identifier }, headers, date);
+        const dayRecords = (userReport.day_totals ?? []).filter(r => r.day === date);
+        if (dayRecords.length > 0) {
+          await saveUserDayMetricsBatch(scope, identifier, dayRecords);
+          logger.info(`Saved per-user day records for ${date} (${dayRecords.length} users)`);
+        }
+      } catch (userErr) {
+        const msg = userErr instanceof Error ? userErr.message : String(userErr);
+        logger.warn(`Per-user day sync for ${date} failed (non-fatal): ${msg}`);
+      }
+    };
+
+    // Check if aggregate metrics already synced. We still attempt the per-user
+    // backfill in that case so existing installs benefit from the per-user
+    // fetch added later without having to wipe the metrics table first.
     const exists = await hasMetrics(scope, identifier, date, teamSlug);
     if (exists) {
-      logger.info(`Metrics for ${date} already synced, skipping`);
+      logger.info(`Metrics for ${date} already synced, attempting per-user backfill`);
+      await backfillPerUser();
       return { success: true, date, metricsCount: 1 };
     }
 
@@ -224,6 +246,8 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
         logger.info(`Saved metrics for ${date}`);
       }
     }
+
+    await backfillPerUser();
 
     await markSyncCompleted(scope, identifier, date, teamSlug);
     return { success: true, date, metricsCount: syncedCount };

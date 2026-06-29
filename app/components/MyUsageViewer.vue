@@ -15,7 +15,7 @@
     </v-card>
 
     <v-main class="p-2">
-      <v-container class="elevation-2">
+      <v-container class="elevation-2" :fluid="chartColumns === 'full'" :class="chartColumns === 'full' ? 'px-0' : ''">
         <v-progress-linear v-if="pending" indeterminate color="indigo" />
 
         <v-alert v-else-if="error" type="error" density="compact" class="ma-3">
@@ -31,6 +31,15 @@
         </v-alert>
 
         <template v-else>
+          <!-- Chart layout toggle -->
+          <div class="d-flex justify-end pa-3 pb-0">
+            <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
+              <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+              <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+              <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+            </v-btn-toggle>
+          </div>
+
           <div class="d-flex align-center pa-3">
             <v-avatar size="48" color="indigo" class="mr-3">
               <span class="text-h6 text-white">{{ initials }}</span>
@@ -54,7 +63,7 @@
 
           <v-row v-if="data.totals" dense class="px-3">
             <v-col cols="12" sm="6" md="3">
-              <v-card variant="tonal" color="indigo">
+              <v-card variant="tonal" color="indigo" class="h-100">
                 <v-card-text>
                   <div class="text-caption">Active days</div>
                   <div class="text-h4 font-weight-bold">{{ data.totals.total_active_days }}</div>
@@ -67,7 +76,7 @@
               </v-card>
             </v-col>
             <v-col cols="12" sm="6" md="3">
-              <v-card variant="tonal" color="green">
+              <v-card variant="tonal" color="green" class="h-100">
                 <v-card-text>
                   <div class="text-caption">Interactions</div>
                   <div class="text-h4 font-weight-bold">
@@ -77,7 +86,7 @@
               </v-card>
             </v-col>
             <v-col cols="12" sm="6" md="3">
-              <v-card variant="tonal" color="deep-purple">
+              <v-card variant="tonal" color="deep-purple" class="h-100">
                 <v-card-text>
                   <div class="text-caption">Accepted lines</div>
                   <div class="text-h4 font-weight-bold">
@@ -87,7 +96,7 @@
               </v-card>
             </v-col>
             <v-col cols="12" sm="6" md="3">
-              <v-card variant="tonal" color="cyan-darken-2">
+              <v-card variant="tonal" color="cyan-darken-2" class="h-100">
                 <v-card-text>
                   <div class="text-caption">AI credits used</div>
                   <div class="text-h4 font-weight-bold">
@@ -206,8 +215,8 @@
           </v-row>
 
           <v-row v-if="topIde || topModel" dense class="px-3 mt-2">
-            <v-col v-if="topIde" cols="12" md="6">
-              <v-card variant="outlined">
+            <v-col v-if="topIde" cols="12" :md="chartColumns === '2' ? 6 : 12">
+              <v-card variant="outlined" class="h-100">
                 <v-card-title class="text-subtitle-1">Top IDE</v-card-title>
                 <v-card-text>
                   <strong>{{ topIde.ide }}</strong> —
@@ -224,8 +233,8 @@
                 </v-card-text>
               </v-card>
             </v-col>
-            <v-col v-if="topModel" cols="12" md="6">
-              <v-card variant="outlined">
+            <v-col v-if="topModel" cols="12" :md="chartColumns === '2' ? 6 : 12">
+              <v-card variant="outlined" class="h-100">
                 <v-card-title class="text-subtitle-1">Top model</v-card-title>
                 <v-card-text>
                   <strong>{{ topModel.model }}</strong> ({{ topModel.feature }}) —
@@ -262,7 +271,7 @@
           <v-row v-else-if="data.dayRecords && data.dayRecords.length === 0" dense class="px-3 mt-2">
             <v-col cols="12">
               <v-alert type="info" variant="tonal" density="compact">
-                Pick a date range above to see the day-by-day AI credit usage breakdown.
+                No day-by-day AI credit activity recorded for you in the last 28 days.
               </v-alert>
             </v-col>
           </v-row>
@@ -319,7 +328,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from 'vue';
+import { defineComponent, computed, ref } from 'vue';
 import { Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -361,9 +370,11 @@ export default defineComponent({
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
   },
   async setup(props) {
+    const chartColumns = ref<'1' | '2' | 'full'>('2');
     // useFetch is auto-imported in Nuxt
     const { data, pending, error } = await useFetch<MyUsageResponse>('/api/my-usage', {
       query: computed(() => props.queryParams),
+      watch: [() => props.queryParams],
       server: false,
     });
 
@@ -585,6 +596,7 @@ export default defineComponent({
       aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,
       dailySpendChartData, dailySpendChartOptions, dailySpendTotalLabel,
       dailyTokensChartData, dailyTokensChartOptions, dailyTokensTotalLabel,
+      chartColumns,
     };
   },
 });
