@@ -6,6 +6,10 @@ import { getLatestSeats } from '../storage/seats-storage';
 import { filterSeatsByTeamMembers } from '../utils/seats-filter';
 import { findNodeInTree, collectNodeAndDescendants, normalizeUPNtoLogin } from '../utils/entra-mock-tree';
 import type { MockTreeNode } from '../utils/entra-mock-tree';
+import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
+import { isUsageAdminForEvent } from '../utils/usage-admin';
+import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
+import type { H3Event, EventHandlerRequest } from 'h3';
 
 /** UI page size cap — GitHub API max is 100, so 300 = 3 GitHub calls per page. */
 const UI_MAX_PER_PAGE = 300;
@@ -207,11 +211,36 @@ function paginateSeats(allSeats: Seat[], page: number, perPage: number): SeatsAp
   };
 }
 
+/**
+ * Apply the issue-#398 self-only restriction to a seat list BEFORE pagination
+ * so non-admin callers see consistent pages (their own row on page 1, then
+ * empty). Admins and mock-mode callers pass through unchanged.
+ */
+async function restrictSeatsAndPaginate(
+  event: H3Event<EventHandlerRequest>,
+  allSeats: Seat[],
+  page: number,
+  perPage: number,
+  opts: { isMocked?: boolean } = {}
+): Promise<SeatsApiResponse> {
+  const restricted = await restrictUserRowsToSelf(event, allSeats, opts);
+  return paginateSeats(restricted, page, perPage);
+}
+
 export default defineEventHandler(async (event) => {
 
   const logger = console;
   const query = getQuery(event);
   const options = Options.fromQuery(query);
+
+  // GDPR / issue #398 — non-admins may only query teams they belong to.
+  // No-op for admins, PAT-mode operators, and queries without ?githubTeam.
+  await requireTeamMembershipOrAdmin(
+    event,
+    (options.scope || 'organization') as 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+    options.githubOrg,
+    options.githubTeam,
+  );
 
   // ── Parse UI pagination params ───────────────────────────────────────────
   const uiPage    = Math.max(1, parseInt(String(query.page    ?? '1'),  10) || 1);
@@ -235,7 +264,7 @@ export default defineEventHandler(async (event) => {
       seatsData = filterSeatsByTeamMembers(seatsData, mockMembers);
     }
     logger.info('Using mocked data');
-    return paginateSeats(seatsData, uiPage, uiPerPage);
+    return restrictSeatsAndPaginate(event, seatsData, uiPage, uiPerPage, { isMocked: true });
   }
 
   if (!event.context.headers?.has('Authorization')) {
@@ -254,7 +283,7 @@ export default defineEventHandler(async (event) => {
       const identifier = options.githubOrg  || options.githubEnt || '';
       const stored = identifier ? await getLatestSeats(scope, identifier) : null;
       const seats  = stored ? deduplicateSeats(stored) : [];
-      return paginateSeats(seats, uiPage, uiPerPage);
+      return restrictSeatsAndPaginate(event, seats, uiPage, uiPerPage);
     }
     logger.error('No Authentication provided');
     throw createError({ statusCode: 401, statusMessage: 'No Authentication provided' });
@@ -273,7 +302,7 @@ export default defineEventHandler(async (event) => {
           const teamMembers = await fetchAllTeamMembers(options, event.context.headers);
           seats = filterSeatsByTeamMembers(seats, teamMembers);
         }
-        return paginateSeats(seats, uiPage, uiPerPage);
+        return restrictSeatsAndPaginate(event, seats, uiPage, uiPerPage);
       }
       logger.info('No seats in storage yet, falling back to live API');
     }
@@ -282,10 +311,21 @@ export default defineEventHandler(async (event) => {
   // if scope is team - get team members (needed for filtering — always fetch all)
   const teamMembers: TeamMember[] = await fetchAllTeamMembers(options, event.context.headers);
 
+  // For non-admin callers (issue #398) we MUST inspect the entire seat list to
+  // locate the caller's own row — the optimized "fetch only the requested UI
+  // page" path below cannot guarantee that, so fall through to the fetch-all
+  // branch for non-admins. Admins keep the optimized path.
+  const callerIsAdmin = await isUsageAdminForEvent(event);
+
   // ── Organization scope: fetch only the GitHub pages needed for this UI page ─
   // For enterprise and team scopes we need all pages (for deduplication / filtering),
   // so we fall through to the "fetch all" path below.
-  const isOrgOnly = options.scope === 'organization' && !options.githubTeam;
+  //
+  // SECURITY: do NOT remove the `&& callerIsAdmin` clause without rethinking
+  // restrict-user-rows. The optimized path slices pre-paginated GitHub pages
+  // and would drop the non-admin caller's own row if it falls outside the
+  // window — silently returning [] for the caller's "own data" view.
+  const isOrgOnly = options.scope === 'organization' && !options.githubTeam && callerIsAdmin;
 
   if (isOrgOnly) {
     // Determine which GitHub pages cover the requested UI page window
@@ -329,6 +369,8 @@ export default defineEventHandler(async (event) => {
     // then slice to the window within these fetched pages.
     const deduped    = deduplicateSeats(fetched);
     const pageSeats  = deduped.slice(localOffset, localOffset + uiPerPage);
+    // Reached only for admin callers (non-admins fall through to the fetch-all
+    // branch above via isOrgOnly = ... && callerIsAdmin).
     return {
       seats: pageSeats,
       total_seats: totalSeats,
@@ -367,5 +409,5 @@ export default defineEventHandler(async (event) => {
   let deduplicatedSeats = deduplicateSeats(seatsData);
   deduplicatedSeats = filterSeatsByTeamMembers(deduplicatedSeats, teamMembers);
 
-  return paginateSeats(deduplicatedSeats, uiPage, uiPerPage);
+  return restrictSeatsAndPaginate(event, deduplicatedSeats, uiPage, uiPerPage);
 })

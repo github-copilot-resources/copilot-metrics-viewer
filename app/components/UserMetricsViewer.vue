@@ -204,6 +204,23 @@
         <h2>Per-User Copilot Usage Metrics</h2>
         <div class="text-caption mb-4">{{ dateRangeDescription }}</div>
 
+        <!-- Issue #398: non-admin callers see only their own row server-side.
+             Explain this so the page doesn't look broken. -->
+        <v-alert
+          v-if="showRestrictionBanner"
+          type="info"
+          variant="tonal"
+          density="compact"
+          class="mb-4"
+        >
+          <div class="text-body-2">
+            <strong>Showing only your own data.</strong> Per-user breakdowns for
+            other organization members are restricted to administrators. Ask
+            the dashboard operator to add your GitHub login or email to
+            <code>NUXT_USAGE_ADMINS</code> to see other users' data.
+          </div>
+        </v-alert>
+
         <!-- Understanding your metrics moved to top of page -->
         <v-row class="mb-4" align="center">
           <v-col cols="12" md="4">
@@ -501,7 +518,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, watch, type PropType } from 'vue';
+import { defineComponent, ref, computed, watch, onMounted, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
 import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
 import { CHAT_FEATURES, AGENT_FEATURES, COMPLETION_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
@@ -553,6 +570,23 @@ export default defineComponent({
   setup(props) {
     const search = ref('');
     const activityFilter = ref('all');
+
+    // ── Issue #398: usage-admin probe for restriction banner ───────────────
+    // Non-admins receive only their own row from /api/user-metrics. Probe the
+    // session's admin status so we can render an explanatory banner instead
+    // of leaving the page looking like the data is missing/broken.
+    const isUsageAdmin = ref<boolean | null>(null);
+    onMounted(async () => {
+      try {
+        const probe = await $fetch<{ isUsageAdmin: boolean }>('/api/auth/usage-admin');
+        isUsageAdmin.value = !!probe?.isUsageAdmin;
+      } catch {
+        isUsageAdmin.value = false;
+      }
+    });
+    const showRestrictionBanner = computed(() =>
+      isUsageAdmin.value === false && props.userMetrics.length <= 1
+    );
 
     // ── User selection for drill-down charts ───────────────────────────────
     const selectedUserLogin = ref<string | null>(null);
@@ -1255,6 +1289,8 @@ export default defineComponent({
       topActiveUsersOptions,
       hasActiveUsers,
       distributionOptions,
+      // restriction banner (issue #398)
+      showRestrictionBanner,
       // trend dialog
       showTrendButtons,
       trendDialog,

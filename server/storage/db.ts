@@ -33,6 +33,14 @@ export function getPool(): pg.Pool {
 }
 
 /**
+ * Whether DB-backed historical storage is enabled. When false, endpoints
+ * that have a DB-backed path should fall back to the live GitHub API.
+ */
+export function isDbConfigured(): boolean {
+  return !!process.env.DATABASE_URL || process.env.ENABLE_HISTORICAL_MODE === 'true';
+}
+
+/**
  * Close the connection pool (for graceful shutdown).
  */
 export async function closePool(): Promise<void> {

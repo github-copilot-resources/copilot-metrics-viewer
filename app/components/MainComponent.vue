@@ -260,7 +260,7 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <MyUsageViewer
               v-if="item === 'my usage'"
               :date-range-description="dateRangeDescription"
-              :query-params="seatsQueryParams"
+              :query-params="myUsageQueryParams"
             />
             <BillingCreditsViewer
               v-if="item === 'billing' && billingEnabled"
@@ -769,6 +769,11 @@ export default defineNuxtComponent({
       return rest;
     });
 
+    const myUsageQueryParams = computed(() => {
+      const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
+      return options.toParams();
+    });
+
     const userMetricsFetch = useFetch('/api/user-metrics', {
       server: true,
       immediate: false,
@@ -849,6 +854,7 @@ export default defineNuxtComponent({
       route,
       seatsCurrentPage,
       seatsQueryParams,
+      myUsageQueryParams,
       aiQueryParams,
       entraEnabled,
       sessionEmail,

@@ -20,6 +20,8 @@ import {
 } from '../services/github-copilot-usage-api';
 import { getUserMetricsByDateRange } from '../storage/user-metrics-storage';
 import { fetchAllTeamMembers } from './seats';
+import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
+import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,6 +97,15 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 
+  // GDPR / issue #398 — non-admins may only query teams they belong to.
+  // No-op for admins, PAT-mode operators, and queries without ?githubTeam.
+  await requireTeamMembershipOrAdmin(
+    event,
+    (options.scope || 'organization') as 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+    options.githubOrg,
+    options.githubTeam,
+  );
+
   // ── Mock mode ──────────────────────────────────────────────────────────────
   if (options.isDataMocked) {
     const isOrg = (options.scope || 'organization') === 'organization';
@@ -114,7 +125,7 @@ export default defineEventHandler(async (event) => {
       const members = await filterByTeamIfNeeded(userTotals, options, new Headers());
       userTotals = members;
     }
-    return userTotals;
+    return restrictUserRowsToSelf(event, userTotals, { isMocked: true });
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────
@@ -136,7 +147,7 @@ export default defineEventHandler(async (event) => {
       if (stored) {
         const filtered = await filterByTeamIfNeeded(stored.userTotals, options, event.context.headers);
         logger.info(`Returning ${filtered.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay})`);
-        return filtered;
+        return restrictUserRowsToSelf(event, filtered);
       }
       logger.info('No user metrics in storage yet, attempting live fetch');
     } catch (err) {
@@ -191,7 +202,7 @@ export default defineEventHandler(async (event) => {
 
     const filtered = await filterByTeamIfNeeded(userTotals, options, event.context.headers);
     logger.info(`Returned ${filtered.length} user records for ${scope}:${identifier} (${userTotals.length} before team filter)`);
-    return filtered;
+    return restrictUserRowsToSelf(event, filtered);
 
   } catch (error: unknown) {
     logger.error('Error fetching user metrics:', error);

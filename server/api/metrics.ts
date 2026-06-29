@@ -1,6 +1,8 @@
 import { convertToMetrics } from '@/model/MetricsToUsageConverter';
 import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
+import { Options } from '@/model/Options';
+import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
 
 function sortMetricsByDay<T extends { day: string }>(metrics: T[]): T[] {
     return [...metrics].sort((left, right) => left.day.localeCompare(right.day));
@@ -11,6 +13,16 @@ export default defineEventHandler(async (event) => {
     const logger = console;
 
     try {
+        // GDPR / issue #398 — gate team-filtered queries by membership for non-admins.
+        const query = getQuery(event);
+        const options = Options.fromQuery(query);
+        await requireTeamMembershipOrAdmin(
+            event,
+            (options.scope || 'organization') as 'organization' | 'enterprise' | 'team-organization' | 'team-enterprise',
+            options.githubOrg,
+            options.githubTeam,
+        );
+
         // Always use v2 handler which tries new API first, falls back to legacy
         const { metrics: usageData, reportData } = await getMetricsDataV2(event);
 

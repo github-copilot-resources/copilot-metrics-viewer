@@ -29,6 +29,8 @@ import {
   type UserDayRecord,
   type UserTotals,
 } from '../services/github-copilot-usage-api';
+import { getUserDayMetricsByDateRange } from '../storage/user-day-metrics-storage';
+import { isDbConfigured } from '../storage/db';
 import { buildBillingApiUrl } from '../utils/billing-url';
 import { aggregateBillingSpend, type BillingUsageItem } from '../utils/billing-spend-aggregator';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,11 +170,29 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
   try {
     let baseResponse: MyUsageResponse;
     if (options.since || options.until) {
-      // Date range specified: fetch per-day, filter both by date AND by user
-      const dayRecords = await fetchRawUserDayRecords(
-        { scope, identifier, teamSlug: options.githubTeam },
-        event.context.headers
-      );
+      // Date range specified. Prefer the DB-backed user_day_metrics table —
+      // when admin bulk sync has been run, it stores per-day per-user records
+      // for arbitrary historical dates (the live 28-day report only covers
+      // the latest 28 days, so it can't satisfy ranges starting older than that).
+      let dayRecords: UserDayRecord[];
+      if (isDbConfigured() && !options.githubTeam) {
+        const since = options.since ?? '1970-01-01';
+        const until = options.until ?? '9999-12-31';
+        dayRecords = await getUserDayMetricsByDateRange(scope, identifier, since, until);
+        // Fall back to the live API if the DB is empty for this range (e.g.
+        // sync hasn't run yet) — better than returning blank.
+        if (dayRecords.length === 0) {
+          dayRecords = await fetchRawUserDayRecords(
+            { scope, identifier, teamSlug: options.githubTeam },
+            event.context.headers
+          );
+        }
+      } else {
+        dayRecords = await fetchRawUserDayRecords(
+          { scope, identifier, teamSlug: options.githubTeam },
+          event.context.headers
+        );
+      }
       const myDays = filterDaysByDateRange(dayRecords, options.since, options.until)
         .filter(r => matchesLogin(myLogin, r.user_login));
       const aggregated = aggregateUserDayRecords(myDays);
@@ -182,16 +202,20 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
         dayRecords: myDays,
       };
     } else {
-      // No date range — use the pre-aggregated 28-day report
+      // No date range — use the pre-aggregated 28-day report. The report file
+      // already embeds per-day per-user rows in `day_totals`, so we can render
+      // the day-by-day chart without making 28 follow-up 1-day calls.
       const report = await fetchLatestUserReport(
         { scope, identifier, teamSlug: options.githubTeam },
         event.context.headers
       );
       const mine = report.user_totals.find(u => matchesLogin(myLogin, u.login)) ?? null;
+      const myDays = (report.day_totals ?? [])
+        .filter(r => matchesLogin(myLogin, r.user_login));
       baseResponse = {
         ...responseShell,
         totals: mine,
-        dayRecords: [],
+        dayRecords: myDays,
         reportStartDay: report.report_start_day,
         reportEndDay: report.report_end_day,
       };
