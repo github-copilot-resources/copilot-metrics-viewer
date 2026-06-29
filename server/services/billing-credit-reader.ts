@@ -330,6 +330,137 @@ interface AggregateRow {
   net_amount: number;
 }
 
+/**
+ * Find ingest gaps within the requested window.
+ *
+ * Given a requested `[start, end]` and the set of completed
+ * `billing_csv_sync_status` jobs whose windows intersect it, returns the
+ * sub-ranges that are NOT yet covered. The caller (admin sync action) uses
+ * this to only ask GitHub for CSVs over the missing days — much faster than
+ * re-ingesting weeks of already-stored data, and avoids GitHub's per-job
+ * generation cost for chunks we already have.
+ *
+ * Example:
+ *   Requested:        2026-04-01..2026-06-29
+ *   Existing jobs:    [2026-05-01..2026-06-27]
+ *   Returned gaps:    [{start: 2026-04-01, end: 2026-04-30},
+ *                      {start: 2026-06-28, end: 2026-06-29}]
+ *
+ * If the entire window is already covered, returns an empty array.
+ * If no completed jobs exist, returns the entire window as a single gap.
+ *
+ * The pure shape-merging logic is extracted into `subtractRanges()` so it
+ * can be unit-tested without a database.
+ */
+export async function findBillingCsvGaps(
+  enterprise: string,
+  windowStart: string,
+  windowEnd: string,
+): Promise<Array<{ start: string; end: string }>> {
+  if (!enterprise) {
+    return [{ start: windowStart, end: windowEnd }];
+  }
+
+  let pool;
+  try {
+    pool = getPool();
+  } catch {
+    // No DB → assume nothing is ingested → entire window is a gap.
+    return [{ start: windowStart, end: windowEnd }];
+  }
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT start_date, end_date
+         FROM billing_csv_sync_status
+        WHERE enterprise = $1
+          AND status = 'completed'
+          AND start_date <= $3::date
+          AND end_date   >= $2::date`,
+      [enterprise, windowStart, windowEnd],
+    );
+    const existing = rows.map((r: { start_date: Date | string; end_date: Date | string }) => ({
+      start: toIsoDate(r.start_date),
+      end: toIsoDate(r.end_date),
+    }));
+    return subtractRanges({ start: windowStart, end: windowEnd }, existing);
+  } catch {
+    // Be defensive: on any DB error, return the full window so the ingester
+    // falls back to the legacy "fetch everything" behavior.
+    return [{ start: windowStart, end: windowEnd }];
+  }
+}
+
+/**
+ * Pure shape: given a requested `[start, end]` window and a list of
+ * already-covered ranges, return the sub-ranges of the window that aren't
+ * covered by ANY existing range.
+ *
+ * Algorithm:
+ *   1. Clip every existing range to the window (drop the parts outside it).
+ *   2. Sort by start, merge overlaps.
+ *   3. Walk the merged ranges, emitting the gaps between them.
+ *
+ * All dates are inclusive YYYY-MM-DD. "Adjacent" ranges (end of one =
+ * start - 1 day of next) merge into one — there's no point creating a
+ * one-day fetch between two abutting completed windows.
+ */
+export function subtractRanges(
+  window: { start: string; end: string },
+  covered: Array<{ start: string; end: string }>,
+): Array<{ start: string; end: string }> {
+  if (window.start > window.end) return [];
+
+  const clipped = covered
+    .map(r => ({
+      start: r.start < window.start ? window.start : r.start,
+      end: r.end > window.end ? window.end : r.end,
+    }))
+    .filter(r => r.start <= r.end)
+    .sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0));
+
+  // Merge overlapping/adjacent ranges
+  const merged: Array<{ start: string; end: string }> = [];
+  for (const r of clipped) {
+    const last = merged[merged.length - 1];
+    if (last && r.start <= addDays(last.end, 1)) {
+      if (r.end > last.end) last.end = r.end;
+    } else {
+      merged.push({ ...r });
+    }
+  }
+
+  const gaps: Array<{ start: string; end: string }> = [];
+  let cursor = window.start;
+  for (const r of merged) {
+    if (cursor < r.start) {
+      gaps.push({ start: cursor, end: addDays(r.start, -1) });
+    }
+    cursor = addDays(r.end, 1);
+  }
+  if (cursor <= window.end) {
+    gaps.push({ start: cursor, end: window.end });
+  }
+
+  return gaps;
+}
+
+function toIsoDate(d: Date | string): string {
+  if (typeof d === 'string') return d.length >= 10 ? d.slice(0, 10) : d;
+  // pg returns DATE as a JS Date in local TZ — extract calendar parts in UTC
+  // to match how dates were originally written (the ingester stores them as
+  // calendar strings; pg parses on read).
+  return d.toISOString().slice(0, 10);
+}
+
+function addDays(iso: string, n: number): string {
+  // Treat the input as a calendar date in UTC to avoid DST/local-TZ drift.
+  const parts = iso.split('-').map(Number);
+  const d = new Date(Date.UTC(parts[0]!, (parts[1]! - 1), parts[2]!));
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 function mapAggregateRowToItem(r: AggregateRow): BillingUsageItem {
   const grossQuantity = Number(r.gross_quantity) || 0;
   const grossAmount = Number(r.gross_amount) || 0;

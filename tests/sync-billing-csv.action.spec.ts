@@ -149,7 +149,7 @@ describe('sync.post — sync-billing-csv action', () => {
     expect(arg.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(arg.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(arg.triggeredBy).toBe('alice');
-    expect(mockRunIngester).toHaveBeenCalledWith({ token: 'ghp_x', jobId: 99 });
+    expect(mockRunIngester).toHaveBeenCalledWith({ token: 'ghp_x', jobId: 99, fillGapsOnly: false });
   });
 
   it('uses since/until for sync-billing-csv-range', async () => {

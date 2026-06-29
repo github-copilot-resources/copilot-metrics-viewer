@@ -22,6 +22,8 @@ import {
   decideSource,
   aggregateForBilling,
   aggregateForBillingByUser,
+  subtractRanges,
+  findBillingCsvGaps,
 } from '../server/services/billing-credit-reader';
 
 beforeEach(() => {
@@ -327,5 +329,161 @@ describe('edge cases', () => {
     expect(sql).not.toMatch(/username = /);
     expect(sql).not.toMatch(/model = /);
     expect(sql).not.toMatch(/organization = /);
+  });
+});
+
+describe('subtractRanges', () => {
+  it('returns the full window when nothing is covered', () => {
+    expect(subtractRanges({ start: '2026-04-01', end: '2026-06-29' }, []))
+      .toEqual([{ start: '2026-04-01', end: '2026-06-29' }]);
+  });
+
+  it('returns an empty list when the window is fully covered by one range', () => {
+    expect(subtractRanges(
+      { start: '2026-04-01', end: '2026-06-29' },
+      [{ start: '2026-03-15', end: '2026-07-01' }],
+    )).toEqual([]);
+  });
+
+  it('returns prefix + suffix gaps around a single inner covered range', () => {
+    // Exactly the user-reported scenario from 2026-06-29.
+    const gaps = subtractRanges(
+      { start: '2026-04-01', end: '2026-06-29' },
+      [{ start: '2026-05-01', end: '2026-06-27' }],
+    );
+    expect(gaps).toEqual([
+      { start: '2026-04-01', end: '2026-04-30' },
+      { start: '2026-06-28', end: '2026-06-29' },
+    ]);
+  });
+
+  it('merges overlapping covered ranges', () => {
+    const gaps = subtractRanges(
+      { start: '2026-04-01', end: '2026-06-30' },
+      [
+        { start: '2026-04-15', end: '2026-05-15' },
+        { start: '2026-05-10', end: '2026-05-31' }, // overlaps with previous
+      ],
+    );
+    // After merging the two ranges (Apr15..May31), the gaps are Apr1-14 and Jun1-30
+    expect(gaps).toEqual([
+      { start: '2026-04-01', end: '2026-04-14' },
+      { start: '2026-06-01', end: '2026-06-30' },
+    ]);
+  });
+
+  it('merges adjacent ranges (no one-day gap between)', () => {
+    // Two completed jobs that abut (end of one = day-before-start of next)
+    // should NOT produce a zero-day gap between them.
+    const gaps = subtractRanges(
+      { start: '2026-04-01', end: '2026-06-30' },
+      [
+        { start: '2026-04-10', end: '2026-04-20' },
+        { start: '2026-04-21', end: '2026-04-30' }, // adjacent — no gap
+      ],
+    );
+    expect(gaps).toEqual([
+      { start: '2026-04-01', end: '2026-04-09' },
+      { start: '2026-05-01', end: '2026-06-30' },
+    ]);
+  });
+
+  it('clips covered ranges that extend beyond the window', () => {
+    const gaps = subtractRanges(
+      { start: '2026-04-01', end: '2026-04-30' },
+      [{ start: '2026-01-01', end: '2026-04-15' }],
+    );
+    expect(gaps).toEqual([{ start: '2026-04-16', end: '2026-04-30' }]);
+  });
+
+  it('ignores covered ranges that are entirely outside the window', () => {
+    const gaps = subtractRanges(
+      { start: '2026-04-01', end: '2026-04-30' },
+      [
+        { start: '2025-01-01', end: '2025-12-31' },
+        { start: '2027-01-01', end: '2027-12-31' },
+      ],
+    );
+    expect(gaps).toEqual([{ start: '2026-04-01', end: '2026-04-30' }]);
+  });
+
+  it('handles a degenerate single-day window', () => {
+    expect(subtractRanges(
+      { start: '2026-06-29', end: '2026-06-29' },
+      [],
+    )).toEqual([{ start: '2026-06-29', end: '2026-06-29' }]);
+
+    expect(subtractRanges(
+      { start: '2026-06-29', end: '2026-06-29' },
+      [{ start: '2026-06-29', end: '2026-06-29' }],
+    )).toEqual([]);
+  });
+
+  it('returns [] when start > end (invalid window)', () => {
+    expect(subtractRanges({ start: '2026-06-30', end: '2026-06-01' }, [])).toEqual([]);
+  });
+
+  it('handles multiple separate covered ranges', () => {
+    const gaps = subtractRanges(
+      { start: '2026-04-01', end: '2026-06-30' },
+      [
+        { start: '2026-04-10', end: '2026-04-15' },
+        { start: '2026-05-20', end: '2026-05-25' },
+      ],
+    );
+    expect(gaps).toEqual([
+      { start: '2026-04-01', end: '2026-04-09' },
+      { start: '2026-04-16', end: '2026-05-19' },
+      { start: '2026-05-26', end: '2026-06-30' },
+    ]);
+  });
+});
+
+describe('findBillingCsvGaps', () => {
+  it('returns the full window when enterprise is empty', async () => {
+    const gaps = await findBillingCsvGaps('', '2026-04-01', '2026-06-29');
+    expect(gaps).toEqual([{ start: '2026-04-01', end: '2026-06-29' }]);
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('returns the full window when no completed jobs exist', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    const gaps = await findBillingCsvGaps('ent', '2026-04-01', '2026-06-29');
+    expect(gaps).toEqual([{ start: '2026-04-01', end: '2026-06-29' }]);
+  });
+
+  it('subtracts existing completed jobs and returns the unmet gaps', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ start_date: '2026-05-01', end_date: '2026-06-27' }],
+    });
+    const gaps = await findBillingCsvGaps('ent', '2026-04-01', '2026-06-29');
+    expect(gaps).toEqual([
+      { start: '2026-04-01', end: '2026-04-30' },
+      { start: '2026-06-28', end: '2026-06-29' },
+    ]);
+    // Verify the SQL is intersection-correct: existing.start <= win.end AND existing.end >= win.start
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/start_date\s*<=\s*\$3/);
+    expect(sql).toMatch(/end_date\s*>=\s*\$2/);
+    expect(params).toEqual(['ent', '2026-04-01', '2026-06-29']);
+  });
+
+  it('accepts pg Date objects (DATE column read-back)', async () => {
+    // pg returns DATE as a JS Date in local TZ; verify the toIsoDate helper
+    // converts it back to YYYY-MM-DD strings before passing to subtractRanges.
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ start_date: new Date('2026-05-01T00:00:00Z'), end_date: new Date('2026-06-27T00:00:00Z') }],
+    });
+    const gaps = await findBillingCsvGaps('ent', '2026-04-01', '2026-06-29');
+    expect(gaps).toEqual([
+      { start: '2026-04-01', end: '2026-04-30' },
+      { start: '2026-06-28', end: '2026-06-29' },
+    ]);
+  });
+
+  it('falls back to full window when the DB query throws', async () => {
+    mockQuery.mockRejectedValueOnce(new Error('connection refused'));
+    const gaps = await findBillingCsvGaps('ent', '2026-04-01', '2026-06-29');
+    expect(gaps).toEqual([{ start: '2026-04-01', end: '2026-06-29' }]);
   });
 });

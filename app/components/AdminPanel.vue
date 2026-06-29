@@ -283,7 +283,7 @@
               prepend-icon="mdi-cloud-download"
               :loading="busyAction === 'sync-billing-csv'"
               :disabled="!!busyAction || !!billingStatus.inFlight"
-              @click="runAction('sync-billing-csv')"
+              @click="runAction('sync-billing-csv', { fillGapsOnly: billingForm.fillGapsOnly })"
             >
               Sync last 30 days
             </v-btn>
@@ -357,6 +357,28 @@
               </v-btn>
             </v-col>
           </v-row>
+          <v-row dense class="mb-2">
+            <v-col cols="12">
+              <v-checkbox
+                v-model="billingForm.fillGapsOnly"
+                label="Skip already-ingested ranges (fill gaps only)"
+                density="compact"
+                hide-details
+                color="primary"
+                :disabled="!!busyAction || !!billingStatus.inFlight"
+              >
+                <template #label>
+                  <span>
+                    Skip already-ingested ranges (fill gaps only)
+                    <span class="text-caption text-medium-emphasis">
+                      — saves time and GitHub export quota by only fetching
+                      dates not yet in the database
+                    </span>
+                  </span>
+                </template>
+              </v-checkbox>
+            </v-col>
+          </v-row>
 
           <v-table v-if="billingStatus.recent?.length" density="compact">
             <thead>
@@ -366,6 +388,7 @@
                 <th>Rows</th>
                 <th>Triggered by</th>
                 <th>Completed</th>
+                <th>Error</th>
               </tr>
             </thead>
             <tbody>
@@ -383,6 +406,15 @@
                 <td>{{ j.rowsIngested }}</td>
                 <td>{{ j.triggeredBy || '—' }}</td>
                 <td>{{ j.completedAt ? new Date(j.completedAt).toLocaleString() : '—' }}</td>
+                <td style="max-width: 360px;">
+                  <span
+                    v-if="j.errorMessage"
+                    class="text-caption text-error"
+                    style="white-space: pre-wrap; word-break: break-word;"
+                    :title="j.errorMessage"
+                  >{{ truncate(j.errorMessage, 200) }}</span>
+                  <span v-else>—</span>
+                </td>
               </tr>
             </tbody>
           </v-table>
@@ -454,7 +486,7 @@ function isoDaysAgo(days: number): string {
   d.setUTCDate(d.getUTCDate() - days)
   return d.toISOString().split('T')[0] || ''
 }
-const billingForm = ref({ since: isoDaysAgo(30), until: isoToday() })
+const billingForm = ref({ since: isoDaysAgo(30), until: isoToday(), fillGapsOnly: true })
 
 interface BillingCsvJob {
   id: number
@@ -465,6 +497,7 @@ interface BillingCsvJob {
   rowsIngested: number
   triggeredBy: string | null
   completedAt: string | null
+  errorMessage: string | null
 }
 
 interface BillingStatus {
@@ -481,6 +514,10 @@ function billingJobChipColor(status: string): string {
   if (status === 'failed') return 'error'
   if (status === 'cancelled') return 'warning'
   return 'info'
+}
+
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max - 1) + '…' : s
 }
 
 async function loadBillingStatus() {
@@ -568,7 +605,7 @@ function describeError(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
-async function runAction(action: string, extra?: Record<string, string>) {
+async function runAction(action: string, extra?: Record<string, string | boolean>) {
   busyAction.value = action
   actionResult.value = null
   try {

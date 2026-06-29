@@ -242,7 +242,10 @@ export default defineEventHandler(async (event) => {
         // Fire-and-forget. The ingester catches all errors and records them
         // on the job row; we just need to make sure unhandled rejections
         // don't crash the process.
-        void runBillingCsvIngester({ token, jobId: job.id }).catch(err => {
+        const fillGapsOnly = params.fillGapsOnly === true
+          || params.fillGapsOnly === 'true'
+          || params.fillGapsOnly === '1';
+        void runBillingCsvIngester({ token, jobId: job.id, fillGapsOnly }).catch(err => {
           logger.error(`Billing CSV ingest job ${job.id} crashed:`, err);
         });
 
@@ -252,6 +255,7 @@ export default defineEventHandler(async (event) => {
           enterprise,
           startDate,
           endDate,
+          fillGapsOnly,
           status: 'queued',
         };
       }
