@@ -118,6 +118,27 @@ Aggregate AI credit billing breakdown by model, SKU, cost center, and repository
 
 **Per-user attribution caveat:** the per-user breakdown depends on GitHub tagging each billing item with a `user`. Some enterprise plans (typically fully-pooled / centrally-billed) return only enterprise-level aggregates, in which case every user appears at $0 in the per-user table; the Billing tab surfaces an explanatory alert in that state. The My Usage tab and the User Metrics `ai_credits_used` column are independent of this and still work.
 
+#### Billing CSV Ingest (local cache, multi-month windows)
+
+The live billing endpoints cap windows at ~31 days and rate-limit aggressively. For longer historical analysis, the dashboard can pull GitHub's **enterprise billing CSV exports** into a local Postgres table, then serve the Billing tab from the cache.
+
+When the cache covers the selected window, the Billing tab serves data from the DB and shows a small "Source: local cache" chip with the last-synced timestamp. When the window is partially or not covered, it falls back to the live API automatically.
+
+**Triggering an ingest** (admin panel → Billing CSV ingest):
+- Pick a date range (defaults to last 30 days through today)
+- Leave **"Skip already-ingested ranges"** checked to fetch only the gaps in your selected window — re-running for an overlapping range becomes cheap
+- Submit; the job runs in the background, polled by the recent-jobs table
+
+GitHub builds the export server-side and returns one or more signed download URLs (60-minute TTL). The ingester downloads, parses, dedupes by primary key, and bulk-upserts into the `billing_credit_usage` table. Multi-month windows are chunked at ≤31 days internally — you can request months of data in a single click.
+
+The recent-jobs table shows status, row count, who triggered, and a hover tooltip on the row count surfacing **what was fetched vs. skipped** (so you can verify gap-mode actually pruned re-fetches of already-ingested ranges).
+
+**Requires:** `NUXT_GITHUB_BILLING_TOKEN` set to a classic PAT with `manage_billing:enterprise` (same token used by the live Billing tab) plus `NUXT_BILLING_ENTERPRISE` for the enterprise slug. Postgres must be configured (see the storage section).
+
+> _Screenshot: Admin panel — Billing CSV ingest form + recent-jobs table_ <!-- TODO(b8-readme): add anonymized screenshot showing the form, the gap-fill checkbox, and a recent-jobs row with the fetched/skipped tooltip expanded -->
+
+> _Screenshot: Billing tab with "Source: local cache" badge_ <!-- TODO(b8-readme): add anonymized screenshot of the Billing tab showing the chip + sync timestamp + per-user table populated from the cache -->
+
 ### My Usage (per-user, self-service)
 Personal Copilot activity for the signed-in user only — server-side filtered against the session. Surfaces:
 - `ai_credits_used` totals + per-day chart (when a date range is selected)
