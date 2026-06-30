@@ -389,6 +389,7 @@
                 <th>Triggered by</th>
                 <th>Completed</th>
                 <th>Error</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -421,6 +422,17 @@
                     :title="j.errorMessage"
                   >{{ truncate(j.errorMessage, 200) }}</span>
                   <span v-else>—</span>
+                </td>
+                <td style="width: 40px;">
+                  <v-btn
+                    v-if="canDismissJob(j)"
+                    icon="mdi-close"
+                    size="x-small"
+                    variant="text"
+                    density="compact"
+                    title="Dismiss this row (kept in DB so gap-mode coverage still works)"
+                    @click="dismissBillingJob(j.id)"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -629,7 +641,7 @@ function describeError(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
-async function runAction(action: string, extra?: Record<string, string | boolean>) {
+async function runAction(action: string, extra?: Record<string, string | boolean | number>) {
   busyAction.value = action
   actionResult.value = null
   try {
@@ -646,6 +658,20 @@ async function runAction(action: string, extra?: Record<string, string | boolean
   } finally {
     busyAction.value = null
   }
+}
+
+/**
+ * A finished job (any non-in-flight status) can be hidden from the recent-jobs
+ * table. In-flight jobs must be cancelled first via the "Cancel in-flight" button.
+ */
+function canDismissJob(j: BillingCsvJob): boolean {
+  const inFlight = new Set(['queued', 'processing', 'downloading', 'upserting'])
+  return !inFlight.has(j.status)
+}
+
+async function dismissBillingJob(jobId: number) {
+  await runAction('sync-billing-csv-dismiss', { jobId })
+  await loadBillingStatus()
 }
 
 async function retryOne(date: string) {
@@ -700,6 +726,11 @@ function summarizeResult(result: Record<string, unknown>): string {
   }
   if (a === 'sync-billing-csv-cancel') {
     return `Cancelled ${result.cancelled ?? 0} in-flight billing CSV job(s)`
+  }
+  if (a === 'sync-billing-csv-dismiss') {
+    return result.dismissed
+      ? `Dismissed job ${result.jobId} from the recent-jobs list`
+      : `Job ${result.jobId} not dismissed (already hidden, in-flight, or not found)`
   }
   return `Action ${a} completed`
 }

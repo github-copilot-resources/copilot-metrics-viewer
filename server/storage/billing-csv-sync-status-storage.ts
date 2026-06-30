@@ -154,7 +154,7 @@ export async function getInFlightBillingCsvJob(enterprise: string): Promise<Bill
   return rows.length === 0 ? null : rowToJob(rows[0]);
 }
 
-/** Most recent N jobs (any status) for this enterprise. */
+/** Most recent N jobs (any status) for this enterprise. Excludes soft-dismissed rows. */
 export async function listRecentBillingCsvJobs(
   enterprise: string,
   limit = 10,
@@ -163,11 +163,34 @@ export async function listRecentBillingCsvJobs(
   const { rows } = await pool.query(
     `SELECT * FROM billing_csv_sync_status
      WHERE enterprise = $1
+       AND dismissed_at IS NULL
      ORDER BY created_at DESC
      LIMIT $2`,
     [enterprise, limit],
   );
   return rows.map(rowToJob);
+}
+
+/**
+ * Soft-dismiss a job: hides it from the recent-jobs UI but keeps the row in
+ * the DB so gap-mode coverage detection (which queries `status='completed'`
+ * rows) continues to see it. Refuses to dismiss in-flight jobs — the user
+ * should cancel those first.
+ *
+ * Returns true if the row was dismissed, false if the job was not found OR
+ * was in-flight OR was already dismissed (caller can treat those as no-ops).
+ */
+export async function dismissBillingCsvJob(id: number): Promise<boolean> {
+  const pool = getPool();
+  const result = await pool.query(
+    `UPDATE billing_csv_sync_status
+     SET dismissed_at = NOW(), updated_at = NOW()
+     WHERE id = $1
+       AND status NOT IN ('queued','processing','downloading','upserting')
+       AND dismissed_at IS NULL`,
+    [id],
+  );
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**

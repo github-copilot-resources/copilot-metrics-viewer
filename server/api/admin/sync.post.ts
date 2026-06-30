@@ -11,6 +11,7 @@ import { requireUsageAdmin } from '../../utils/usage-admin';
 import {
   createBillingCsvJob,
   cancelInFlightBillingCsvJobs,
+  dismissBillingCsvJob,
   BillingCsvJobInFlightError,
 } from '../../storage/billing-csv-sync-status-storage';
 import { runBillingCsvIngester } from '../../services/billing-csv-ingester';
@@ -276,6 +277,21 @@ export default defineEventHandler(async (event) => {
         }
         const cancelled = await cancelInFlightBillingCsvJobs(enterprise);
         return { action, cancelled };
+      }
+
+      case 'sync-billing-csv-dismiss': {
+        // Soft-dismiss a finished job so it stops cluttering the recent-jobs
+        // table. The row is kept in the DB so gap-mode coverage detection
+        // (which queries status='completed' rows) keeps working. Refuses to
+        // dismiss in-flight jobs — the user should cancel those first.
+        await requireUsageAdmin(event);
+        const rawId = params.jobId;
+        const jobId = typeof rawId === 'number' ? rawId : Number.parseInt(String(rawId ?? ''), 10);
+        if (!Number.isInteger(jobId) || jobId <= 0) {
+          throw createError({ statusCode: 400, statusMessage: 'jobId (positive integer) required' });
+        }
+        const dismissed = await dismissBillingCsvJob(jobId);
+        return { action, jobId, dismissed };
       }
 
       default:

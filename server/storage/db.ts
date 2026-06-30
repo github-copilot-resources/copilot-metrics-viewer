@@ -206,6 +206,14 @@ export async function initSchema(): Promise<void> {
     ADD COLUMN IF NOT EXISTS gaps_skipped   JSONB;
   `);
 
+  // Soft-dismiss column (v3.13): admins can hide noisy/old job rows from the
+  // recent-jobs UI without deleting them — the row stays so gap-mode coverage
+  // detection (which keys off status='completed' rows) keeps working.
+  await pool.query(`
+    ALTER TABLE billing_csv_sync_status
+    ADD COLUMN IF NOT EXISTS dismissed_at TIMESTAMPTZ;
+  `);
+
   await pool.query(`
     CREATE INDEX IF NOT EXISTS idx_bcss_ent_created
     ON billing_csv_sync_status (enterprise, created_at DESC);
