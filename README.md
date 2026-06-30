@@ -105,6 +105,10 @@ Personal dashboard for the currently-authenticated user. Shows your own active d
 
 Visible to every authenticated user when any auth provider is configured (`NUXT_PUBLIC_AUTH_PROVIDERS`). Hidden when the app is running in PAT-only / no-auth mode, because there is no session user to filter by.
 
+<p align="center">
+  <img width="800" alt="My Usage tab — personal AI credit spend, CLI token usage, and daily charts" src="./images/my-usage.png">
+</p>
+
 ### Billing (admin)
 Aggregate AI credit billing breakdown by model, SKU, cost center, and repository — pulled from the GitHub Billing API (`/organizations/{org}/settings/billing/ai_credit/usage` and `/enterprises/{ent}/settings/billing/ai_credit/usage`). Also includes a **per-user breakdown table** that joins the org's user list with each user's billing spend (lazy-loaded one page at a time), with "Top spenders by net cost" and "Top CLI token users" charts.
 
