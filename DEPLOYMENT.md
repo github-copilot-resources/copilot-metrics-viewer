@@ -358,6 +358,51 @@ curl -X POST http://localhost:3000/api/admin/sync \
 # → {"action":"sync-gaps","gapsDetected":82,"gapsFilled":80,"outsideWindow":0,"failureCount":2,"results":[...]}
 ```
 
+**`sync-billing-csv`** — Trigger an asynchronous AI-credit billing CSV export for the configured enterprise (default window: last 30 days). Admin-only and fire-and-forget — returns a `jobId` immediately while the ingester runs in the background. Poll `GET /api/admin/sync-status` to see progress in the `billingCsv` block. Requires `NUXT_GITHUB_BILLING_TOKEN` + `NUXT_BILLING_ENTERPRISE` and database mode.
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync-billing-csv"}'
+# → {"action":"sync-billing-csv","jobId":42,"enterprise":"acme-ent","startDate":"2026-05-27","endDate":"2026-06-26","status":"queued"}
+```
+
+**`sync-billing-csv-range`** — Same as `sync-billing-csv` but for an arbitrary `since`/`until` window. The ingester automatically chunks into 31-day segments (GitHub's per-export cap) and aggregates row counts on a single audit-table row. GitHub enforces enterprise-wide single-flight across billing exports — a 409 is returned if another job is already in flight. Use this for historical backfill from the UI or scripts.
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync-billing-csv-range","since":"2026-01-01","until":"2026-06-30"}'
+```
+
+**`sync-billing-csv-cancel`** — Marks any in-flight billing CSV jobs for the configured enterprise as `cancelled` in the audit table. Does NOT interrupt the in-flight HTTP poll/download — it primarily clears a stuck-looking job from the Admin Panel so the next trigger can proceed without hitting the single-flight unique index.
+
+```bash
+curl -X POST http://localhost:3000/api/admin/sync \
+  -H "Content-Type: application/json" \
+  -d '{"action":"sync-billing-csv-cancel"}'
+# → {"action":"sync-billing-csv-cancel","cancelled":1}
+```
+
+#### Billing CSV ingest (database mode only)
+
+The async CSV export endpoint returns line-level data (one row per user × day × SKU × org × repo × model) that the synchronous JSON billing endpoint does not surface — including per-user attribution, `premium_request` SKUs, organization/repository breakdown, and full historical depth. Ingestion is **database-mode only**: rows land in the `billing_credit_usage` table and the read endpoints (`/api/billing-credits`, `/api/billing-credits-by-user`) will be wired to prefer DB rows when present in a follow-up phase.
+
+Triggers:
+1. **Sync container** — runs after the regular metrics sync on every cron tick. Default 30-day window (override with `BILLING_CSV_DAYS_BACK`). Configure on the existing CronJob — no new infrastructure required.
+2. **Admin Panel** — buttons under the "Billing CSV ingest" section of the Admin Panel. "Sync last 30 days" for normal runs, since/until pickers for backfill, plus a Cancel button visible while a job is in flight.
+3. **HTTP API** — the three actions documented above.
+
+The ingester state machine: `queued → processing → downloading → upserting → completed` (or `failed` / `cancelled`). Each chunk uses a single transaction that deletes existing rows for the window before re-inserting, so re-runs are idempotent and upstream data corrections propagate.
+
+Required environment for billing ingest:
+- `NUXT_GITHUB_BILLING_TOKEN` — classic PAT with `manage_billing:enterprise` scope, SSO-authorized for the target enterprise. Same token used by `/api/billing-credits`.
+- `NUXT_BILLING_ENTERPRISE` — enterprise slug (e.g. `acme-ent`).
+- `BILLING_CSV_DAYS_BACK` — optional, default `30`. Sync container uses this as its window each tick.
+- Database mode (`ENABLE_HISTORICAL_MODE=true` + valid `DATABASE_URL` / PG env vars).
+
+If these are not set, the sync container logs `Billing CSV ingest skipped` and exits 0; the admin endpoints return 503 with a clear "configure X" message. No regression for deployments not opted into billing ingest.
+
 ## Environment Variables Reference
 
 | Variable | Description | Required |
@@ -372,6 +417,9 @@ curl -X POST http://localhost:3000/api/admin/sync \
 | `DATABASE_URL` | PostgreSQL connection string | Historical mode only |
 | `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |
 | `SYNC_DAYS_BACK` | Days to sync (default: 1 for daily, 28 for bulk) | Sync only |
+| `NUXT_GITHUB_BILLING_TOKEN` | Classic PAT with `manage_billing:enterprise` (SSO-authorized) used by `/api/billing-credits*` and the async CSV ingest. | Billing |
+| `NUXT_BILLING_ENTERPRISE` | Enterprise slug to query for billing endpoints (overrides dashboard scope). | Billing |
+| `BILLING_CSV_DAYS_BACK` | Window (in days) the sync container ingests on each tick (default: `30`). | Billing CSV |
 | `NUXT_PUBLIC_AUTH_PROVIDERS` | Comma-separated active providers: `github`, `google`, `microsoft`, `auth0`, `keycloak` — setting this enables authentication | OAuth mode |
 | `NUXT_OAUTH_GITHUB_CLIENT_ID` | GitHub App client ID | GitHub OAuth |
 | `NUXT_OAUTH_GITHUB_CLIENT_SECRET` | GitHub App client secret | GitHub OAuth |

@@ -27,6 +27,8 @@ import { syncBulk } from './services/sync-service';
 import { initSchema } from './storage/db';
 import { closePool } from './storage/db';
 import { getSyncAuthHeaders } from './utils/sync-auth';
+import { runForegroundIngest } from './services/billing-csv-ingester';
+import { BillingCsvJobInFlightError } from './storage/billing-csv-sync-status-storage';
 
 export async function runSync() {
   const logger = console;
@@ -83,11 +85,56 @@ export async function runSync() {
 
     logger.info('Sync job completed successfully');
 
+    // Optional billing CSV ingest. Only runs when both env vars are set and
+    // the database mode is active (this entry point requires DB). Failures
+    // are logged but do NOT roll back the metrics sync we just completed.
+    await runBillingCsvIfConfigured(logger);
+
   } catch (error) {
     logger.error('Sync job failed:', error);
     process.exitCode = 1;
   } finally {
     await closePool();
+  }
+}
+
+/**
+ * Run a billing CSV ingest in the foreground when configured. Surfaces
+ * failure via process.exitCode=1 so the CronJob runner sees a non-zero
+ * exit, but does not throw — the metrics-sync commit upstream is preserved.
+ * Skips quietly when NUXT_GITHUB_BILLING_TOKEN or NUXT_BILLING_ENTERPRISE is
+ * missing, and logs+exits 0 if another job is already in flight (next cron
+ * tick picks up).
+ */
+async function runBillingCsvIfConfigured(logger: Console): Promise<void> {
+  const token = (process.env.NUXT_GITHUB_BILLING_TOKEN || '').trim();
+  const enterprise = (process.env.NUXT_BILLING_ENTERPRISE || '').trim();
+  if (!token || !enterprise) {
+    logger.info('Billing CSV ingest skipped (NUXT_GITHUB_BILLING_TOKEN or NUXT_BILLING_ENTERPRISE not set)');
+    return;
+  }
+  const daysBack = Math.max(1, parseInt(process.env.BILLING_CSV_DAYS_BACK || '30', 10));
+  const end = new Date();
+  const start = new Date(end.getTime() - (daysBack - 1) * 24 * 60 * 60 * 1000);
+  const startDate = start.toISOString().slice(0, 10);
+  const endDate = end.toISOString().slice(0, 10);
+
+  logger.info(`Starting billing CSV ingest for ${enterprise}: ${startDate} → ${endDate}`);
+  try {
+    const result = await runForegroundIngest(token, enterprise, startDate, endDate, 'sync-container');
+    if (result.status === 'completed') {
+      logger.info(`Billing CSV ingest completed: ${result.rowsIngested} row(s) from ${result.downloadUrlCount} file(s)`);
+    } else {
+      logger.error(`Billing CSV ingest finished with status=${result.status}: ${result.errorMessage}`);
+      process.exitCode = 1;
+    }
+  } catch (e) {
+    if (e instanceof BillingCsvJobInFlightError) {
+      logger.warn(`Billing CSV ingest skipped: ${e.message}. Next sync will retry.`);
+      return;
+    }
+    logger.error('Billing CSV ingest crashed:', e instanceof Error ? e.message : String(e));
+    process.exitCode = 1;
   }
 }
 

@@ -260,6 +260,133 @@
             </tbody>
           </v-table>
         </template>
+
+        <!-- ── Section 4: Billing CSV ingest ─────────────────────────── -->
+        <template v-if="billingStatus !== null">
+          <v-divider class="my-3" />
+          <div class="d-flex align-center mb-2">
+            <span class="text-overline">Billing CSV ingest</span>
+            <v-chip
+              v-if="billingStatus.inFlight"
+              size="x-small"
+              color="info"
+              variant="tonal"
+              class="ml-2"
+            >
+              {{ billingStatus.inFlight.status }}
+            </v-chip>
+            <v-spacer />
+            <v-btn
+              size="small"
+              variant="tonal"
+              color="primary"
+              prepend-icon="mdi-cloud-download"
+              :loading="busyAction === 'sync-billing-csv'"
+              :disabled="!!busyAction || !!billingStatus.inFlight"
+              @click="runAction('sync-billing-csv')"
+            >
+              Sync last 30 days
+            </v-btn>
+            <v-btn
+              v-if="billingStatus.inFlight"
+              size="small"
+              variant="text"
+              color="warning"
+              prepend-icon="mdi-cancel"
+              class="ml-2"
+              :loading="busyAction === 'sync-billing-csv-cancel'"
+              :disabled="busyAction === 'sync-billing-csv-cancel'"
+              @click="runAction('sync-billing-csv-cancel')"
+            >
+              Cancel
+            </v-btn>
+          </div>
+
+          <v-alert
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-2"
+            icon="mdi-clock-outline"
+          >
+            <strong>Heads up — this is a slow, costly operation.</strong>
+            We ask GitHub to generate a billing CSV export job, poll until it's
+            ready (typically <strong>1–5 minutes</strong>, but can be 10+ for
+            wide windows or busy enterprises), then download and upsert every
+            row. Windows wider than 31 days are split into multiple chunks
+            (GitHub's per-export cap), each one a full request → poll →
+            download cycle. The job runs server-side in the background — you
+            can close this tab and check back later; the recent-jobs table
+            below shows progress.
+          </v-alert>
+
+          <!-- Backfill range -->
+          <v-row dense align="center" class="mb-1">
+            <v-col cols="12" sm="4">
+              <v-text-field
+                v-model="billingForm.since"
+                label="Since (YYYY-MM-DD)"
+                type="date"
+                density="compact"
+                hide-details
+                :disabled="!!busyAction || !!billingStatus.inFlight"
+              />
+            </v-col>
+            <v-col cols="12" sm="4">
+              <v-text-field
+                v-model="billingForm.until"
+                label="Until (YYYY-MM-DD)"
+                type="date"
+                density="compact"
+                hide-details
+                :disabled="!!busyAction || !!billingStatus.inFlight"
+              />
+            </v-col>
+            <v-col cols="12" sm="4">
+              <v-btn
+                block
+                size="small"
+                variant="tonal"
+                color="primary"
+                prepend-icon="mdi-history"
+                :loading="busyAction === 'sync-billing-csv-range'"
+                :disabled="!!busyAction || !!billingStatus.inFlight || !billingForm.since || !billingForm.until"
+                @click="runAction('sync-billing-csv-range', billingForm)"
+              >
+                Backfill range
+              </v-btn>
+            </v-col>
+          </v-row>
+
+          <v-table v-if="billingStatus.recent?.length" density="compact">
+            <thead>
+              <tr>
+                <th>Window</th>
+                <th>Status</th>
+                <th>Rows</th>
+                <th>Triggered by</th>
+                <th>Completed</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="j in billingStatus.recent" :key="j.id">
+                <td><code>{{ j.startDate }}</code> → <code>{{ j.endDate }}</code></td>
+                <td>
+                  <v-chip
+                    size="x-small"
+                    :color="billingJobChipColor(j.status)"
+                    variant="tonal"
+                  >
+                    {{ j.status }}
+                  </v-chip>
+                </td>
+                <td>{{ j.rowsIngested }}</td>
+                <td>{{ j.triggeredBy || '—' }}</td>
+                <td>{{ j.completedAt ? new Date(j.completedAt).toLocaleString() : '—' }}</td>
+              </tr>
+            </tbody>
+          </v-table>
+        </template>
       </v-card-text>
 
       <v-divider />
@@ -273,7 +400,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 
 interface Props {
   modelValue: boolean
@@ -315,6 +442,80 @@ const actionResult = ref<{ success: boolean; message: string } | null>(null)
 
 const singleDate = ref('')
 const gapForm = ref({ since: '', until: '' })
+// Pre-fill the backfill window with a sensible default: last 30 days through
+// today. Admins can still override either field, but this saves clicks for
+// the common "ingest recent history" flow and makes the operation runnable
+// in a single click after the gap-fill is unblocked.
+function isoToday(): string {
+  return new Date().toISOString().split('T')[0] || ''
+}
+function isoDaysAgo(days: number): string {
+  const d = new Date()
+  d.setUTCDate(d.getUTCDate() - days)
+  return d.toISOString().split('T')[0] || ''
+}
+const billingForm = ref({ since: isoDaysAgo(30), until: isoToday() })
+
+interface BillingCsvJob {
+  id: number
+  enterprise: string
+  startDate: string
+  endDate: string
+  status: string
+  rowsIngested: number
+  triggeredBy: string | null
+  completedAt: string | null
+}
+
+interface BillingStatus {
+  inFlight: BillingCsvJob | null
+  recent: BillingCsvJob[]
+}
+
+// `null` means "billing CSV not configured server-side, hide the section".
+const billingStatus = ref<BillingStatus | null>(null)
+let billingPollHandle: ReturnType<typeof setInterval> | null = null
+
+function billingJobChipColor(status: string): string {
+  if (status === 'completed') return 'success'
+  if (status === 'failed') return 'error'
+  if (status === 'cancelled') return 'warning'
+  return 'info'
+}
+
+async function loadBillingStatus() {
+  try {
+    const resp = await $fetch<{ billingCsv: BillingStatus | null }>('/api/admin/sync-status' + buildQuery())
+    billingStatus.value = resp.billingCsv ?? null
+  } catch {
+    // Leave billingStatus alone on transient errors so the UI doesn't flicker.
+  }
+}
+
+function startBillingPolling() {
+  if (billingPollHandle) return
+  billingPollHandle = setInterval(() => {
+    if (!billingStatus.value?.inFlight) {
+      stopBillingPolling()
+      return
+    }
+    loadBillingStatus()
+  }, 5000)
+}
+
+function stopBillingPolling() {
+  if (billingPollHandle) {
+    clearInterval(billingPollHandle)
+    billingPollHandle = null
+  }
+}
+
+watch(() => billingStatus.value?.inFlight, (inFlight) => {
+  if (inFlight) startBillingPolling()
+  else stopBillingPolling()
+})
+
+onUnmounted(stopBillingPolling)
 
 const modeColor = computed(() => {
   switch (overview.value?.mode) {
@@ -349,6 +550,8 @@ async function refresh() {
     if (overview.value.dataRange.latest && !gapForm.value.until) {
       gapForm.value.until = overview.value.dataRange.latest
     }
+    // Billing status is a separate endpoint; non-blocking.
+    void loadBillingStatus()
   } catch (err) {
     actionResult.value = { success: false, message: `Failed to load overview: ${describeError(err)}` }
   } finally {
@@ -430,6 +633,12 @@ function summarizeResult(result: Record<string, unknown>): string {
   }
   if (a === 'clear-failed') {
     return `Cleared ${result.removed ?? 0} failed sync row(s)`
+  }
+  if (a === 'sync-billing-csv' || a === 'sync-billing-csv-range') {
+    return `Billing CSV job ${result.jobId} queued (${result.startDate} → ${result.endDate})`
+  }
+  if (a === 'sync-billing-csv-cancel') {
+    return `Cancelled ${result.cancelled ?? 0} in-flight billing CSV job(s)`
   }
   return `Action ${a} completed`
 }
