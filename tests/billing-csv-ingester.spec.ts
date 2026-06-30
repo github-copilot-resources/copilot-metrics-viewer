@@ -244,7 +244,9 @@ describe('runBillingCsvIngester — multi-file download_urls', () => {
     expect(mockUpsert.mock.calls[0]![0]).toHaveLength(2);
   });
 
-  it('fails when GitHub completes with zero download_urls', async () => {
+  it('treats a completed report with zero download_urls as a 0-row chunk (no usage yet)', async () => {
+    // Common case: requesting "today" before GitHub has posted any usage for it.
+    // Should NOT abort a multi-chunk backfill — prior chunks may have ingested data.
     mockGetJob.mockResolvedValue(defaultJob());
     fetchImpl = async (url, opts) => {
       if (opts?.method === 'POST') return { id: 'gh-1', status: 'processing' };
@@ -252,8 +254,10 @@ describe('runBillingCsvIngester — multi-file download_urls', () => {
       throw new Error(url);
     };
     const result = await runBillingCsvIngester({ token: 't', jobId: 42, sleep: async () => {} });
-    expect(result.status).toBe('failed');
-    expect(result.errorMessage).toMatch(/no download_urls/);
+    expect(result.status).toBe('completed');
+    expect(result.rowsIngested).toBe(0);
+    expect(result.downloadUrlCount).toBe(0);
+    expect(result.errorMessage).toBeNull();
   });
 });
 

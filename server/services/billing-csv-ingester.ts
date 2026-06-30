@@ -216,9 +216,15 @@ async function runChunk(input: ChunkInput): Promise<ChunkResult> {
   const completed = await pollUntilCompleted(input.token, input.enterprise, created.id, input.sleep, input.now);
   const urls = completed.download_urls ?? [];
   if (urls.length === 0) {
-    throw new Error(
-      `Chunk ${input.startDate}..${input.endDate}: report completed with no download_urls`,
-    );
+    // A completed report with no download_urls means GitHub has no billing
+    // rows for that window yet. This is normal for "today" before usage is
+    // posted, or for date ranges with zero activity. Treat as a 0-row chunk
+    // rather than aborting the entire multi-chunk job.
+    return {
+      rowsIngested: 0,
+      downloadUrlCount: 0,
+      githubJobId: created.id,
+    };
   }
 
   // 3. Download all SAS URLs in parallel (60-min TTL — must download promptly).
