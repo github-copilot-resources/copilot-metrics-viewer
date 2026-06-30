@@ -135,9 +135,9 @@ The recent-jobs table shows status, row count, who triggered, and a hover toolti
 
 **Requires:** `NUXT_GITHUB_BILLING_TOKEN` set to a classic PAT with `manage_billing:enterprise` (same token used by the live Billing tab) plus `NUXT_BILLING_ENTERPRISE` for the enterprise slug. Postgres must be configured (see the storage section).
 
-> _Screenshot: Admin panel — Billing CSV ingest form + recent-jobs table_ <!-- TODO(b8-readme): add anonymized screenshot showing the form, the gap-fill checkbox, and a recent-jobs row with the fetched/skipped tooltip expanded -->
+![Admin panel — Billing CSV ingest controls](images/billing-csv-ingest.png)
 
-> _Screenshot: Billing tab with "Source: local cache" badge_ <!-- TODO(b8-readme): add anonymized screenshot of the Billing tab showing the chip + sync timestamp + per-user table populated from the cache -->
+![Billing tab with per-user breakdown sourced from the local cache](images/billing-tab-cache.png)
 
 ### My Usage (per-user, self-service)
 Personal Copilot activity for the signed-in user only — server-side filtered against the session. Surfaces:
