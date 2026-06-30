@@ -32,9 +32,15 @@ vi.mock('../server/storage/db', () => ({
 }));
 
 const mockFindGaps = vi.fn();
-vi.mock('../server/services/billing-credit-reader', () => ({
-  findBillingCsvGaps: (...a: any[]) => mockFindGaps(...a),
-}));
+vi.mock('../server/services/billing-credit-reader', async () => {
+  const actual = await vi.importActual<typeof import('../server/services/billing-credit-reader')>(
+    '../server/services/billing-credit-reader',
+  );
+  return {
+    ...actual,
+    findBillingCsvGaps: (...a: any[]) => mockFindGaps(...a),
+  };
+});
 
 // ---- $fetch mock ---------------------------------------------------------
 
@@ -385,5 +391,57 @@ describe('runBillingCsvIngester — fillGapsOnly', () => {
 
     expect(result.status).toBe('completed');
     expect(mockFindGaps).not.toHaveBeenCalled();
+  });
+
+  it('persists chunksFetched and gapsSkipped on the job row (observability)', async () => {
+    mockGetJob.mockResolvedValue(defaultJob({ startDate: '2026-04-01', endDate: '2026-06-30' }));
+    // Simulate: May 1 - Jun 29 already ingested, so gaps are April + Jun 30.
+    mockFindGaps.mockResolvedValueOnce([
+      { start: '2026-04-01', end: '2026-04-30' },
+      { start: '2026-06-30', end: '2026-06-30' },
+    ]);
+    fetchImpl = async (url, opts) => {
+      if (url.endsWith('/reports') && opts.method === 'POST') return { id: 'ghjob-1' };
+      if (url.includes('/reports/')) return { id: 'ghjob-1', status: 'completed', download_urls: ['https://blob.example/x.csv'] };
+      if (url.startsWith('https://blob.example/')) return TINY_CSV;
+      throw new Error('unexpected URL ' + url);
+    };
+
+    await runBillingCsvIngester({
+      token: 'ghp_x', jobId: 42, sleep: async () => {}, fillGapsOnly: true,
+    });
+
+    // Find the update call that wrote chunksFetched/gapsSkipped.
+    const obsCall = mockUpdateJob.mock.calls.find(
+      c => c[1]?.chunksFetched !== undefined || c[1]?.gapsSkipped !== undefined,
+    );
+    expect(obsCall).toBeDefined();
+    expect(obsCall![1].chunksFetched).toEqual([
+      { start: '2026-04-01', end: '2026-04-30' },
+      { start: '2026-06-30', end: '2026-06-30' },
+    ]);
+    // May 1 - Jun 29 is the skipped span (everything in [job window] minus [fetched]).
+    expect(obsCall![1].gapsSkipped).toEqual([
+      { start: '2026-05-01', end: '2026-06-29' },
+    ]);
+  });
+
+  it('records empty gapsSkipped when not in fillGapsOnly mode', async () => {
+    mockGetJob.mockResolvedValue(defaultJob({ startDate: '2026-06-01', endDate: '2026-06-10' }));
+    fetchImpl = async (url, opts) => {
+      if (url.endsWith('/reports') && opts.method === 'POST') return { id: 'ghjob-1' };
+      if (url.includes('/reports/')) return { id: 'ghjob-1', status: 'completed', download_urls: ['https://blob.example/x.csv'] };
+      if (url.startsWith('https://blob.example/')) return TINY_CSV;
+      throw new Error('unexpected URL ' + url);
+    };
+
+    await runBillingCsvIngester({ token: 'ghp_x', jobId: 42, sleep: async () => {} });
+
+    const obsCall = mockUpdateJob.mock.calls.find(
+      c => c[1]?.chunksFetched !== undefined,
+    );
+    expect(obsCall).toBeDefined();
+    expect(obsCall![1].chunksFetched).toEqual([{ start: '2026-06-01', end: '2026-06-10' }]);
+    expect(obsCall![1].gapsSkipped).toEqual([]);
   });
 });

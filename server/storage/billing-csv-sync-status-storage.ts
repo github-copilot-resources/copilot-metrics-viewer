@@ -37,6 +37,19 @@ export interface BillingCsvJob {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  /**
+   * Sub-ranges this job actually requested from GitHub. With gap-mode, this
+   * is a strict subset of [startDate, endDate]; without it, equals the full
+   * window. NULL on jobs that ran before v3.13 added the column.
+   */
+  chunksFetched: Array<{ start: string; end: string }> | null;
+  /**
+   * Sub-ranges within [startDate, endDate] that gap-mode determined were
+   * already covered by an earlier completed job, and therefore were NOT
+   * re-fetched. NULL on jobs that ran before v3.13 added the column, and
+   * always [] for jobs that ran without fillGapsOnly.
+   */
+  gapsSkipped: Array<{ start: string; end: string }> | null;
 }
 
 /**
@@ -91,6 +104,8 @@ export interface UpdateJobInput {
   downloadUrlCount?: number;
   errorMessage?: string | null;
   completedAt?: Date | null;
+  chunksFetched?: Array<{ start: string; end: string }> | null;
+  gapsSkipped?: Array<{ start: string; end: string }> | null;
 }
 
 /** Patch the mutable fields of a job. Always bumps updated_at. */
@@ -104,6 +119,8 @@ export async function updateBillingCsvJob(id: number, patch: UpdateJobInput): Pr
   if (patch.downloadUrlCount !== undefined)  { params.push(patch.downloadUrlCount);    sets.push(`download_url_count = $${params.length}`); }
   if (patch.errorMessage !== undefined)      { params.push(patch.errorMessage);        sets.push(`error_message = $${params.length}`); }
   if (patch.completedAt !== undefined)       { params.push(patch.completedAt);         sets.push(`completed_at = $${params.length}`); }
+  if (patch.chunksFetched !== undefined)     { params.push(JSON.stringify(patch.chunksFetched)); sets.push(`chunks_fetched = $${params.length}::jsonb`); }
+  if (patch.gapsSkipped !== undefined)       { params.push(JSON.stringify(patch.gapsSkipped));   sets.push(`gaps_skipped = $${params.length}::jsonb`); }
 
   params.push(id);
   const pool = getPool();
@@ -190,7 +207,25 @@ function rowToJob(row: Record<string, unknown>): BillingCsvJob {
     createdAt: toIsoString(row.created_at),
     updatedAt: toIsoString(row.updated_at),
     completedAt: row.completed_at ? toIsoString(row.completed_at) : null,
+    chunksFetched: parseRanges(row.chunks_fetched),
+    gapsSkipped: parseRanges(row.gaps_skipped),
   };
+}
+
+function parseRanges(v: unknown): Array<{ start: string; end: string }> | null {
+  if (v == null) return null;
+  // pg returns JSONB as parsed JS values when oid types are configured; some
+  // drivers return strings. Handle both.
+  const parsed = typeof v === 'string' ? safeJsonParse(v) : v;
+  if (!Array.isArray(parsed)) return null;
+  return parsed.filter((r): r is { start: string; end: string } =>
+    !!r && typeof r === 'object' && typeof (r as { start: unknown }).start === 'string'
+        && typeof (r as { end: unknown }).end === 'string',
+  );
+}
+
+function safeJsonParse(s: string): unknown {
+  try { return JSON.parse(s); } catch { return null; }
 }
 
 function toIsoDate(v: unknown): string {

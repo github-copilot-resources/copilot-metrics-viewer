@@ -403,7 +403,14 @@
                     {{ j.status }}
                   </v-chip>
                 </td>
-                <td>{{ j.rowsIngested }}</td>
+                <td>
+                  <span
+                    v-if="(j.chunksFetched && j.chunksFetched.length > 0) || (j.gapsSkipped && j.gapsSkipped.length > 0)"
+                    style="cursor: help; border-bottom: 1px dotted currentColor;"
+                    :title="formatJobBreakdown(j)"
+                  >{{ j.rowsIngested }}</span>
+                  <span v-else>{{ j.rowsIngested }}</span>
+                </td>
                 <td>{{ j.triggeredBy || '—' }}</td>
                 <td>{{ j.completedAt ? new Date(j.completedAt).toLocaleString() : '—' }}</td>
                 <td style="max-width: 360px;">
@@ -498,6 +505,8 @@ interface BillingCsvJob {
   triggeredBy: string | null
   completedAt: string | null
   errorMessage: string | null
+  chunksFetched: Array<{ start: string; end: string }> | null
+  gapsSkipped: Array<{ start: string; end: string }> | null
 }
 
 interface BillingStatus {
@@ -518,6 +527,21 @@ function billingJobChipColor(status: string): string {
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max - 1) + '…' : s
+}
+
+/**
+ * Compose a hover tooltip explaining what a job actually fetched vs skipped.
+ * Pure / cheap; reads only from the job row, no I/O.
+ */
+function formatJobBreakdown(j: BillingCsvJob): string {
+  const lines: string[] = []
+  if (j.chunksFetched && j.chunksFetched.length > 0) {
+    lines.push('Fetched: ' + j.chunksFetched.map(r => `${r.start}..${r.end}`).join(', '))
+  }
+  if (j.gapsSkipped && j.gapsSkipped.length > 0) {
+    lines.push('Skipped (already ingested): ' + j.gapsSkipped.map(r => `${r.start}..${r.end}`).join(', '))
+  }
+  return lines.join('\n')
 }
 
 async function loadBillingStatus() {

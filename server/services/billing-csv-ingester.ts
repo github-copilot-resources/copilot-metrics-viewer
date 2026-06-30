@@ -43,7 +43,7 @@ import {
 } from '../storage/billing-credit-usage-storage';
 import { parseBillingCsv, type ParsedBillingRow } from './billing-csv-parser';
 import { getPool } from '../storage/db';
-import { findBillingCsvGaps } from './billing-credit-reader';
+import { findBillingCsvGaps, subtractRanges } from './billing-credit-reader';
 
 const GITHUB_API_BASE = process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
 const GITHUB_API_VERSION = '2026-03-10';
@@ -114,10 +114,22 @@ export async function runBillingCsvIngester(opts: RunIngesterOptions): Promise<I
       ? await findBillingCsvGaps(job.enterprise, job.startDate, job.endDate)
       : [{ start: job.startDate, end: job.endDate }];
 
+    // What gap-mode pruned away (only meaningful when fillGapsOnly=true).
+    const gapsSkipped = opts.fillGapsOnly
+      ? subtractRanges({ start: job.startDate, end: job.endDate }, targetRanges)
+      : [];
+
     const chunks: Array<{ start: string; end: string }> = [];
     for (const r of targetRanges) {
       chunks.push(...chunkDateRange(r.start, r.end, MAX_CHUNK_DAYS));
     }
+
+    // Persist observability up-front so the UI can show "fetched X, skipped Y"
+    // even while the job is still running.
+    await updateBillingCsvJob(job.id, {
+      chunksFetched: chunks,
+      gapsSkipped,
+    });
 
     // If gap-mode finds nothing to do, mark the job completed immediately.
     // This is the "you already have this data" no-op path — useful UX so
