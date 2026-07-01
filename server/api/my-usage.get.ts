@@ -123,25 +123,29 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
     myLogin = 'octocat';
     myEmail = undefined;
   }
-  if (!myLogin) {
-    throw createError({ statusCode: 401, statusMessage: 'No session — sign in to view My Usage' });
+
+  // Admin drill-down (`?login=<other>`) works in PAT-only deployments where
+  // there is no OAuth session — the operator is admin-by-PAT. Gate on
+  // isUsageAdminForEvent and use the requested login as the effective target.
+  // This must run BEFORE the "no session → 401" branch so PAT admins can
+  // drive the Billing tab's per-user picker.
+  if (requestedLogin) {
+    if (!myLogin || requestedLogin.toLowerCase() !== myLogin.toLowerCase()) {
+      const isAdmin = await isUsageAdminForEvent(event);
+      if (!isAdmin) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Forbidden: only usage admins can view another user\'s activity.',
+        });
+      }
+      myLogin = requestedLogin;
+      myEmail = undefined;
+      viewingAsAdmin = true;
+    }
   }
 
-  // Admin override: another login was requested. Require admin, then swap
-  // the filter target. Email is cleared because we do not have another
-  // user's email in the metrics report (the Billing tab drill-down doesn't
-  // need it).
-  if (requestedLogin && requestedLogin.toLowerCase() !== myLogin.toLowerCase()) {
-    const isAdmin = await isUsageAdminForEvent(event);
-    if (!isAdmin) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Forbidden: only usage admins can view another user\'s activity.',
-      });
-    }
-    myLogin = requestedLogin;
-    myEmail = undefined;
-    viewingAsAdmin = true;
+  if (!myLogin) {
+    throw createError({ statusCode: 401, statusMessage: 'No session — sign in to view My Usage' });
   }
 
   const responseShell = {

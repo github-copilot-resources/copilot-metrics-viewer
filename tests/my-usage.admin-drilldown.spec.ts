@@ -152,4 +152,30 @@ describe('GET /api/my-usage — admin drill-down', () => {
     expect(result.user.login).toBe('octocat');
     expect(result.viewingAsAdmin).toBe(false);
   });
+
+  it('PAT-only admin (no OAuth session) can drill down via ?login=<other>', async () => {
+    // In PAT-only deployments there is no OAuth session, but the operator
+    // is admin-by-PAT. The Billing tab drill-down must still work — the
+    // 401-no-session guard must NOT fire when ?login is supplied and the
+    // caller passes the admin check.
+    setSession(null);
+    mockIsAdmin.mockResolvedValueOnce(true);
+    setQuery({ scope: 'organization', githubOrg: 'octodemo', login: 'bob' });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await handler(makeEvent() as any);
+
+    expect(mockIsAdmin).toHaveBeenCalledOnce();
+    expect(result.user.login).toBe('bob');
+    expect(result.viewingAsAdmin).toBe(true);
+  });
+
+  it('PAT-only non-admin (no OAuth session) is rejected with 403 on ?login=<other>', async () => {
+    setSession(null);
+    mockIsAdmin.mockResolvedValueOnce(false);
+    setQuery({ scope: 'organization', githubOrg: 'octodemo', login: 'bob' });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await expect(handler(makeEvent() as any)).rejects.toMatchObject({ statusCode: 403 });
+  });
 });
