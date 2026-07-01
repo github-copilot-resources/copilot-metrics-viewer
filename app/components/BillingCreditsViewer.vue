@@ -216,12 +216,14 @@
               @update:options="onTableOptions"
             >
               <template #[`item.user`]="{ item }">
-                <a
-                  href="#"
-                  class="text-decoration-none"
+                <v-chip
+                  :color="userDetailLogin && userDetailLogin.toLowerCase() === (item as PerUserRow).user.toLowerCase() ? 'primary' : 'default'"
+                  :variant="userDetailLogin && userDetailLogin.toLowerCase() === (item as PerUserRow).user.toLowerCase() ? 'flat' : 'tonal'"
+                  size="small"
+                  class="cursor-pointer"
                   :title="`View Copilot activity for ${(item as PerUserRow).user}`"
-                  @click.prevent="openUserDetail((item as PerUserRow).user)"
-                >{{ (item as PerUserRow).user }}</a>
+                  @click="openUserDetail((item as PerUserRow).user)"
+                >{{ (item as PerUserRow).user }}</v-chip>
               </template>
               <template #[`item.netAmount`]="{ item }">
                 ${{ (item as PerUserRow).netAmount.toFixed(2) }}
@@ -240,29 +242,53 @@
             </v-data-table>
           </v-card>
 
-          <!-- Admin drill-down dialog: shows MyUsageViewer for a selected user -->
-          <v-dialog v-model="userDetailOpen" max-width="1200" scrollable>
-            <v-card v-if="userDetailLogin">
-              <v-card-title class="d-flex align-center">
-                <span>Activity for {{ userDetailLogin }}</span>
-                <v-spacer />
-                <v-btn
-                  icon="mdi-close"
-                  variant="text"
-                  aria-label="Close"
-                  data-testid="user-detail-close"
-                  @click="userDetailOpen = false"
-                />
-              </v-card-title>
-              <v-divider />
-              <v-card-text class="pa-0" style="max-height: 80vh;">
-                <MyUsageViewer
-                  :key="userDetailLogin"
-                  :query-params="userDetailQueryParams"
-                />
-              </v-card-text>
-            </v-card>
-          </v-dialog>
+          <!-- Admin drill-down: inline "User insights" section.
+               No user selected → info banner explaining the feature.
+               User selected → MyUsageViewer for that user, remounted via :key. -->
+          <v-card
+            v-if="perUserRows.length > 0 && !noPerUserAttribution"
+            variant="outlined"
+            class="ma-3"
+            data-testid="user-insights-section"
+          >
+            <v-card-title class="text-subtitle-1 d-flex align-center">
+              <v-icon icon="mdi-account-search" class="mr-2" />
+              <span>User insights</span>
+              <template v-if="userDetailLogin">
+                <span class="text-medium-emphasis mx-2">·</span>
+                <span class="text-primary">{{ userDetailLogin }}</span>
+              </template>
+              <v-spacer />
+              <v-btn
+                v-if="userDetailLogin"
+                size="small"
+                variant="text"
+                prepend-icon="mdi-close"
+                data-testid="user-detail-close"
+                @click="userDetailLogin = null"
+              >Clear selection</v-btn>
+            </v-card-title>
+            <v-divider />
+            <v-card-text v-if="!userDetailLogin" class="pa-0">
+              <v-alert
+                type="info"
+                variant="tonal"
+                density="comfortable"
+                border="start"
+                class="ma-0"
+                rounded="0"
+              >
+                Select a user from the table above to see their individual usage
+                details, language breakdown, model preferences, and activity history.
+              </v-alert>
+            </v-card-text>
+            <v-card-text v-else class="pa-0">
+              <MyUsageViewer
+                :key="userDetailLogin"
+                :query-params="userDetailQueryParams"
+              />
+            </v-card-text>
+          </v-card>
 
           <v-card variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">Raw billing line items</v-card-title>
@@ -660,16 +686,19 @@ export default defineComponent({
 
     const dataSourceBadge = computed(() => buildDataSourceBadge(dataSource.value));
 
-    // ── Admin drill-down: click a username → open MyUsageViewer dialog ───────
+    // ── Admin drill-down: click a username → show inline User insights ──────
     // Billing tab is already admin-gated, so we don't add a second check here.
     // The /api/my-usage endpoint enforces its own `requireUsageAdmin` when
     // `?login=<other>` is supplied.
-    const userDetailOpen = ref(false);
     const userDetailLogin = ref<string | null>(null);
     function openUserDetail(login: string): void {
       if (!login) return;
+      // Toggle off if the same user is clicked twice
+      if (userDetailLogin.value && userDetailLogin.value.toLowerCase() === login.toLowerCase()) {
+        userDetailLogin.value = null;
+        return;
+      }
       userDetailLogin.value = login;
-      userDetailOpen.value = true;
     }
     const userDetailQueryParams = computed<Record<string, string>>(() => {
       // Reuse parent query params (scope + org/ent) so the report the API
@@ -688,7 +717,7 @@ export default defineComponent({
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
       dataSourceBadge,
-      userDetailOpen, userDetailLogin, userDetailQueryParams, openUserDetail,
+      userDetailLogin, userDetailQueryParams, openUserDetail,
     };
   },
 });
