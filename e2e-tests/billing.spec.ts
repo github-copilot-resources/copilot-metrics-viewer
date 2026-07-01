@@ -101,4 +101,38 @@ test.describe('Billing tab', () => {
         const topCard = topTitle.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
         await expect(topCard.locator('canvas')).toBeVisible();
     });
+
+    test('clicking a user in the per-user breakdown opens a My Usage drill-down dialog', tag, async () => {
+        // Admin drill-down: each username in the Per-user breakdown table is a
+        // clickable link that opens <MyUsageViewer> in a v-dialog with
+        // ?login=<other>. Server enforces requireUsageAdmin — the Billing tab
+        // itself is already admin-gated so no extra frontend guard is needed.
+        await dashboard.gotoBillingTab();
+
+        const perUserTitle = dashboard.page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }).first();
+        await expect(perUserTitle).toBeVisible();
+        const perUserCard = perUserTitle.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
+
+        // Grab the first row's user cell link and its displayed login text.
+        const firstUserLink = perUserCard.locator('tbody tr').first().locator('td').first().locator('a');
+        await expect(firstUserLink).toBeVisible();
+        const clickedLogin = (await firstUserLink.textContent())?.trim() || '';
+        expect(clickedLogin.length).toBeGreaterThan(0);
+
+        await firstUserLink.click();
+
+        // Dialog opens with the "Usage for <login>" header (admin-drill-down
+        // variant, not the personal "My Usage" title).
+        const dialog = dashboard.page.locator('.v-overlay__content').filter({ hasText: /Usage for/ }).first();
+        await expect(dialog).toBeVisible({ timeout: 5000 });
+        await expect(dialog.getByText(clickedLogin, { exact: false }).first()).toBeVisible();
+
+        // Personal metrics render inside the dialog — Active days tile is a
+        // stable landmark from MyUsageViewer.
+        await expect(dialog.getByText('Active days').first()).toBeVisible({ timeout: 8000 });
+
+        // Close and confirm the dialog is gone.
+        await dialog.getByRole('button', { name: /close/i }).first().click();
+        await expect(dialog).toBeHidden({ timeout: 3000 });
+    });
 });
