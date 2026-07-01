@@ -132,7 +132,7 @@ test.describe('Billing tab', () => {
         await expect(dialog.getByText('Active days').first()).toBeVisible({ timeout: 8000 });
 
         // Close and confirm the dialog is gone.
-        await dialog.getByRole('button', { name: /close/i }).first().click();
+        await dialog.locator('[data-testid="user-detail-close"]').click();
         await expect(dialog).toBeHidden({ timeout: 3000 });
     });
 });

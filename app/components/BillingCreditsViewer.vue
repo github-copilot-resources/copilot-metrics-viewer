@@ -246,7 +246,13 @@
               <v-card-title class="d-flex align-center">
                 <span>Activity for {{ userDetailLogin }}</span>
                 <v-spacer />
-                <v-btn icon="mdi-close" variant="text" @click="userDetailOpen = false" />
+                <v-btn
+                  icon="mdi-close"
+                  variant="text"
+                  aria-label="Close"
+                  data-testid="user-detail-close"
+                  @click="userDetailOpen = false"
+                />
               </v-card-title>
               <v-divider />
               <v-card-text class="pa-0" style="max-height: 80vh;">
