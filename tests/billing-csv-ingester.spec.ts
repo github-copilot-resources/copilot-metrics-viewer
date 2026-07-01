@@ -31,6 +31,17 @@ vi.mock('../server/storage/db', () => ({
   getPool: () => ({ connect: async () => fakeClient }),
 }));
 
+const mockFindGaps = vi.fn();
+vi.mock('../server/services/billing-credit-reader', async () => {
+  const actual = await vi.importActual<typeof import('../server/services/billing-credit-reader')>(
+    '../server/services/billing-credit-reader',
+  );
+  return {
+    ...actual,
+    findBillingCsvGaps: (...a: any[]) => mockFindGaps(...a),
+  };
+});
+
 // ---- $fetch mock ---------------------------------------------------------
 
 interface FetchCall { url: string; opts: any }
@@ -54,6 +65,7 @@ beforeEach(() => {
   mockDeleteRange.mockReset().mockResolvedValue(undefined);
   fakeClient.query.mockClear();
   fakeClient.release.mockClear();
+  mockFindGaps.mockReset();
 });
 
 const HEADER = 'date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,total_monthly_quota,organization,repository,cost_center_name,aic_quantity,aic_gross_amount';
@@ -238,7 +250,9 @@ describe('runBillingCsvIngester — multi-file download_urls', () => {
     expect(mockUpsert.mock.calls[0]![0]).toHaveLength(2);
   });
 
-  it('fails when GitHub completes with zero download_urls', async () => {
+  it('treats a completed report with zero download_urls as a 0-row chunk (no usage yet)', async () => {
+    // Common case: requesting "today" before GitHub has posted any usage for it.
+    // Should NOT abort a multi-chunk backfill — prior chunks may have ingested data.
     mockGetJob.mockResolvedValue(defaultJob());
     fetchImpl = async (url, opts) => {
       if (opts?.method === 'POST') return { id: 'gh-1', status: 'processing' };
@@ -246,8 +260,10 @@ describe('runBillingCsvIngester — multi-file download_urls', () => {
       throw new Error(url);
     };
     const result = await runBillingCsvIngester({ token: 't', jobId: 42, sleep: async () => {} });
-    expect(result.status).toBe('failed');
-    expect(result.errorMessage).toMatch(/no download_urls/);
+    expect(result.status).toBe('completed');
+    expect(result.rowsIngested).toBe(0);
+    expect(result.downloadUrlCount).toBe(0);
+    expect(result.errorMessage).toBeNull();
   });
 });
 
@@ -305,5 +321,127 @@ describe('runBillingCsvIngester — multi-chunk (>31 days)', () => {
     expect(postCount).toBe(3);
     expect(result.rowsIngested).toBe(3);
     expect(mockDeleteRange).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe('runBillingCsvIngester — fillGapsOnly', () => {
+  it('only fetches CSVs for the gap ranges, not the full window', async () => {
+    mockGetJob.mockResolvedValue(defaultJob({ startDate: '2026-04-01', endDate: '2026-06-29' }));
+    // Existing completed job covers most of the middle — only need 2 prefix
+    // days + 2 suffix days.
+    mockFindGaps.mockResolvedValueOnce([
+      { start: '2026-04-01', end: '2026-04-02' },
+      { start: '2026-06-28', end: '2026-06-29' },
+    ]);
+
+    const postedRanges: Array<{ since: string; until: string }> = [];
+    fetchImpl = async (url, opts) => {
+      if (url.endsWith('/reports') && opts.method === 'POST') {
+        postedRanges.push({ since: opts.body.start_date, until: opts.body.end_date });
+        return { id: 'ghjob-' + postedRanges.length };
+      }
+      if (url.includes('/reports/')) {
+        return { id: opts?._jobId ?? 'ghjob-x', status: 'completed', download_urls: ['https://blob.example/x.csv'] };
+      }
+      if (url.startsWith('https://blob.example/')) return TINY_CSV;
+      throw new Error('unexpected URL ' + url);
+    };
+
+    const result = await runBillingCsvIngester({
+      token: 'ghp_x', jobId: 42, sleep: async () => {}, fillGapsOnly: true,
+    });
+
+    expect(result.status).toBe('completed');
+    expect(mockFindGaps).toHaveBeenCalledWith('acme-ent', '2026-04-01', '2026-06-29');
+    // Critical: exactly the 2 gap ranges were posted (not the full window).
+    expect(postedRanges).toEqual([
+      { since: '2026-04-01', until: '2026-04-02' },
+      { since: '2026-06-28', until: '2026-06-29' },
+    ]);
+  });
+
+  it('marks the job completed with 0 rows when nothing needs ingesting (no gaps)', async () => {
+    mockGetJob.mockResolvedValue(defaultJob({ startDate: '2026-05-01', endDate: '2026-06-27' }));
+    mockFindGaps.mockResolvedValueOnce([]);
+
+    const result = await runBillingCsvIngester({
+      token: 'ghp_x', jobId: 42, sleep: async () => {}, fillGapsOnly: true,
+    });
+
+    expect(result.status).toBe('completed');
+    expect(result.rowsIngested).toBe(0);
+    expect(result.downloadUrlCount).toBe(0);
+    // No GitHub calls should have been made.
+    expect(fetchCalls).toHaveLength(0);
+    // The job row should still be marked completed.
+    const completedCall = mockUpdateJob.mock.calls.find(c => c[1]?.status === 'completed');
+    expect(completedCall).toBeDefined();
+  });
+
+  it('legacy default (fillGapsOnly omitted) fetches the full window without consulting findGaps', async () => {
+    mockGetJob.mockResolvedValue(defaultJob({ startDate: '2026-06-01', endDate: '2026-06-10' }));
+    fetchImpl = async (url, opts) => {
+      if (url.endsWith('/reports') && opts.method === 'POST') return { id: 'ghjob-1' };
+      if (url.includes('/reports/')) return { id: 'ghjob-1', status: 'completed', download_urls: ['https://blob.example/x.csv'] };
+      if (url.startsWith('https://blob.example/')) return TINY_CSV;
+      throw new Error('unexpected URL ' + url);
+    };
+
+    const result = await runBillingCsvIngester({ token: 'ghp_x', jobId: 42, sleep: async () => {} });
+
+    expect(result.status).toBe('completed');
+    expect(mockFindGaps).not.toHaveBeenCalled();
+  });
+
+  it('persists chunksFetched and gapsSkipped on the job row (observability)', async () => {
+    mockGetJob.mockResolvedValue(defaultJob({ startDate: '2026-04-01', endDate: '2026-06-30' }));
+    // Simulate: May 1 - Jun 29 already ingested, so gaps are April + Jun 30.
+    mockFindGaps.mockResolvedValueOnce([
+      { start: '2026-04-01', end: '2026-04-30' },
+      { start: '2026-06-30', end: '2026-06-30' },
+    ]);
+    fetchImpl = async (url, opts) => {
+      if (url.endsWith('/reports') && opts.method === 'POST') return { id: 'ghjob-1' };
+      if (url.includes('/reports/')) return { id: 'ghjob-1', status: 'completed', download_urls: ['https://blob.example/x.csv'] };
+      if (url.startsWith('https://blob.example/')) return TINY_CSV;
+      throw new Error('unexpected URL ' + url);
+    };
+
+    await runBillingCsvIngester({
+      token: 'ghp_x', jobId: 42, sleep: async () => {}, fillGapsOnly: true,
+    });
+
+    // Find the update call that wrote chunksFetched/gapsSkipped.
+    const obsCall = mockUpdateJob.mock.calls.find(
+      c => c[1]?.chunksFetched !== undefined || c[1]?.gapsSkipped !== undefined,
+    );
+    expect(obsCall).toBeDefined();
+    expect(obsCall![1].chunksFetched).toEqual([
+      { start: '2026-04-01', end: '2026-04-30' },
+      { start: '2026-06-30', end: '2026-06-30' },
+    ]);
+    // May 1 - Jun 29 is the skipped span (everything in [job window] minus [fetched]).
+    expect(obsCall![1].gapsSkipped).toEqual([
+      { start: '2026-05-01', end: '2026-06-29' },
+    ]);
+  });
+
+  it('records empty gapsSkipped when not in fillGapsOnly mode', async () => {
+    mockGetJob.mockResolvedValue(defaultJob({ startDate: '2026-06-01', endDate: '2026-06-10' }));
+    fetchImpl = async (url, opts) => {
+      if (url.endsWith('/reports') && opts.method === 'POST') return { id: 'ghjob-1' };
+      if (url.includes('/reports/')) return { id: 'ghjob-1', status: 'completed', download_urls: ['https://blob.example/x.csv'] };
+      if (url.startsWith('https://blob.example/')) return TINY_CSV;
+      throw new Error('unexpected URL ' + url);
+    };
+
+    await runBillingCsvIngester({ token: 'ghp_x', jobId: 42, sleep: async () => {} });
+
+    const obsCall = mockUpdateJob.mock.calls.find(
+      c => c[1]?.chunksFetched !== undefined,
+    );
+    expect(obsCall).toBeDefined();
+    expect(obsCall![1].chunksFetched).toEqual([{ start: '2026-06-01', end: '2026-06-10' }]);
+    expect(obsCall![1].gapsSkipped).toEqual([]);
   });
 });

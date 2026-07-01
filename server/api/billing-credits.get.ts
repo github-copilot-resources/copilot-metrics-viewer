@@ -33,6 +33,11 @@
 import { Options } from '@/model/Options';
 import { requireUsageAdmin } from '../utils/usage-admin';
 import { buildBillingApiUrl } from '../utils/billing-url';
+import {
+  decideSource,
+  resolveWindow,
+  aggregateForBilling,
+} from '../services/billing-credit-reader';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockBilling from '../../public/mock-data/billing-credits.json';
 
@@ -89,6 +94,63 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     return mockBilling as BillingCreditsResponse;
   }
 
+  // ── DB-first read path (Phase B) ───────────────────────────────────────────
+  // If the CSV ingest has materialized a job whose [start_date, end_date]
+  // window covers the requested period, serve the aggregate from Postgres
+  // and skip the live GitHub call entirely. This unlocks two things the live
+  // JSON endpoint can't do today:
+  //   - historical windows older than GitHub's rolling 90-day cap
+  //   - per-user filtering (the JSON endpoint hides usernames)
+  //
+  // The DB only has enterprise-scoped data (ingester is enterprise-only), so
+  // we only attempt this branch when we can resolve an enterprise key. Both
+  // enterprise-scoped calls AND org-scoped calls with NUXT_BILLING_ENTERPRISE
+  // set (the documented escape hatch for enterprise-billed orgs) qualify;
+  // plain org-scoped calls without that override fall through to live.
+  const billingEnterpriseEarly = ((config.billingEnterprise as string | undefined) || '').trim();
+  const dbEnterprise = billingEnterpriseEarly
+    || (options.scope === 'enterprise' ? options.githubEnt : '')
+    || '';
+
+  if (dbEnterprise) {
+    try {
+      const window = resolveWindow({
+        year: query.year ? Number(query.year) : undefined,
+        month: query.month ? Number(query.month) : undefined,
+        day: query.day ? Number(query.day) : undefined,
+      });
+      const decision = await decideSource(dbEnterprise, window.startDate, window.endDate);
+      if (decision.source === 'db') {
+        setResponseHeader(event, 'X-Data-Source', 'db');
+        if (decision.lastIngestAt) {
+          setResponseHeader(event, 'X-Data-Source-Synced-At', decision.lastIngestAt);
+        }
+        setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
+        return await aggregateForBilling(dbEnterprise, window, {
+          user: query.user ? String(query.user) : undefined,
+          model: query.model ? String(query.model) : undefined,
+          // product → SKU is non-trivial (multiple SKUs per product); we only
+          // filter on it when the caller specifically asks for a known SKU.
+          sku: query.sku ? String(query.sku) : undefined,
+        });
+      }
+      // decision.source === 'live' falls through to the live fetch below.
+      // Record why so curl users can see in the response headers.
+      setResponseHeader(event, 'X-Data-Source', 'live');
+      setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
+    } catch (e) {
+      // Resolve-window 400s shouldn't be swallowed — re-throw as a clean 400.
+      if (e instanceof Error && /Invalid|day without month/i.test(e.message)) {
+        throw createError({ statusCode: 400, statusMessage: e.message });
+      }
+      // Any other DB-side error: fall through to the live path, but flag it
+      // so curl users can see we tried and bailed.
+      setResponseHeader(event, 'X-Data-Source', 'live');
+      setResponseHeader(event, 'X-Data-Source-Reason',
+        `db read failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   // ── Token selection ────────────────────────────────────────────────────────
   // No fallback to NUXT_GITHUB_TOKEN: that variable is usually a fine-grained
   // PAT or a GitHub App installation token, neither of which GitHub accepts on
@@ -104,7 +166,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   }
 
   // ── URL selection ──────────────────────────────────────────────────────────
-  const billingEnterprise = ((config.billingEnterprise as string | undefined) || '').trim();
+  const billingEnterprise = billingEnterpriseEarly;
   const baseUrl = (config.githubApiBaseUrl as string | undefined) || 'https://api.github.com';
 
   let apiUrl: string;

@@ -283,7 +283,7 @@
               prepend-icon="mdi-cloud-download"
               :loading="busyAction === 'sync-billing-csv'"
               :disabled="!!busyAction || !!billingStatus.inFlight"
-              @click="runAction('sync-billing-csv')"
+              @click="runAction('sync-billing-csv', { fillGapsOnly: billingForm.fillGapsOnly })"
             >
               Sync last 30 days
             </v-btn>
@@ -357,6 +357,28 @@
               </v-btn>
             </v-col>
           </v-row>
+          <v-row dense class="mb-2">
+            <v-col cols="12">
+              <v-checkbox
+                v-model="billingForm.fillGapsOnly"
+                label="Skip already-ingested ranges (fill gaps only)"
+                density="compact"
+                hide-details
+                color="primary"
+                :disabled="!!busyAction || !!billingStatus.inFlight"
+              >
+                <template #label>
+                  <span>
+                    Skip already-ingested ranges (fill gaps only)
+                    <span class="text-caption text-medium-emphasis">
+                      — saves time and GitHub export quota by only fetching
+                      dates not yet in the database
+                    </span>
+                  </span>
+                </template>
+              </v-checkbox>
+            </v-col>
+          </v-row>
 
           <v-table v-if="billingStatus.recent?.length" density="compact">
             <thead>
@@ -366,6 +388,8 @@
                 <th>Rows</th>
                 <th>Triggered by</th>
                 <th>Completed</th>
+                <th>Error</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -380,9 +404,36 @@
                     {{ j.status }}
                   </v-chip>
                 </td>
-                <td>{{ j.rowsIngested }}</td>
+                <td>
+                  <span
+                    v-if="(j.chunksFetched && j.chunksFetched.length > 0) || (j.gapsSkipped && j.gapsSkipped.length > 0)"
+                    style="cursor: help; border-bottom: 1px dotted currentColor;"
+                    :title="formatJobBreakdown(j)"
+                  >{{ j.rowsIngested }}</span>
+                  <span v-else>{{ j.rowsIngested }}</span>
+                </td>
                 <td>{{ j.triggeredBy || '—' }}</td>
                 <td>{{ j.completedAt ? new Date(j.completedAt).toLocaleString() : '—' }}</td>
+                <td style="max-width: 360px;">
+                  <span
+                    v-if="j.errorMessage"
+                    class="text-caption text-error"
+                    style="white-space: pre-wrap; word-break: break-word;"
+                    :title="j.errorMessage"
+                  >{{ truncate(j.errorMessage, 200) }}</span>
+                  <span v-else>—</span>
+                </td>
+                <td style="width: 40px;">
+                  <v-btn
+                    v-if="canDismissJob(j)"
+                    icon="mdi-close"
+                    size="x-small"
+                    variant="text"
+                    density="compact"
+                    title="Dismiss this row (kept in DB so gap-mode coverage still works)"
+                    @click="dismissBillingJob(j.id)"
+                  />
+                </td>
               </tr>
             </tbody>
           </v-table>
@@ -454,7 +505,7 @@ function isoDaysAgo(days: number): string {
   d.setUTCDate(d.getUTCDate() - days)
   return d.toISOString().split('T')[0] || ''
 }
-const billingForm = ref({ since: isoDaysAgo(30), until: isoToday() })
+const billingForm = ref({ since: isoDaysAgo(30), until: isoToday(), fillGapsOnly: true })
 
 interface BillingCsvJob {
   id: number
@@ -465,6 +516,9 @@ interface BillingCsvJob {
   rowsIngested: number
   triggeredBy: string | null
   completedAt: string | null
+  errorMessage: string | null
+  chunksFetched: Array<{ start: string; end: string }> | null
+  gapsSkipped: Array<{ start: string; end: string }> | null
 }
 
 interface BillingStatus {
@@ -481,6 +535,25 @@ function billingJobChipColor(status: string): string {
   if (status === 'failed') return 'error'
   if (status === 'cancelled') return 'warning'
   return 'info'
+}
+
+function truncate(s: string, max: number): string {
+  return s.length > max ? s.slice(0, max - 1) + '…' : s
+}
+
+/**
+ * Compose a hover tooltip explaining what a job actually fetched vs skipped.
+ * Pure / cheap; reads only from the job row, no I/O.
+ */
+function formatJobBreakdown(j: BillingCsvJob): string {
+  const lines: string[] = []
+  if (j.chunksFetched && j.chunksFetched.length > 0) {
+    lines.push('Fetched: ' + j.chunksFetched.map(r => `${r.start}..${r.end}`).join(', '))
+  }
+  if (j.gapsSkipped && j.gapsSkipped.length > 0) {
+    lines.push('Skipped (already ingested): ' + j.gapsSkipped.map(r => `${r.start}..${r.end}`).join(', '))
+  }
+  return lines.join('\n')
 }
 
 async function loadBillingStatus() {
@@ -568,7 +641,7 @@ function describeError(err: unknown): string {
   return err instanceof Error ? err.message : String(err)
 }
 
-async function runAction(action: string, extra?: Record<string, string>) {
+async function runAction(action: string, extra?: Record<string, string | boolean | number>) {
   busyAction.value = action
   actionResult.value = null
   try {
@@ -585,6 +658,20 @@ async function runAction(action: string, extra?: Record<string, string>) {
   } finally {
     busyAction.value = null
   }
+}
+
+/**
+ * A finished job (any non-in-flight status) can be hidden from the recent-jobs
+ * table. In-flight jobs must be cancelled first via the "Cancel in-flight" button.
+ */
+function canDismissJob(j: BillingCsvJob): boolean {
+  const inFlight = new Set(['queued', 'processing', 'downloading', 'upserting'])
+  return !inFlight.has(j.status)
+}
+
+async function dismissBillingJob(jobId: number) {
+  await runAction('sync-billing-csv-dismiss', { jobId })
+  await loadBillingStatus()
 }
 
 async function retryOne(date: string) {
@@ -639,6 +726,11 @@ function summarizeResult(result: Record<string, unknown>): string {
   }
   if (a === 'sync-billing-csv-cancel') {
     return `Cancelled ${result.cancelled ?? 0} in-flight billing CSV job(s)`
+  }
+  if (a === 'sync-billing-csv-dismiss') {
+    return result.dismissed
+      ? `Dismissed job ${result.jobId} from the recent-jobs list`
+      : `Job ${result.jobId} not dismissed (already hidden, in-flight, or not found)`
   }
   return `Action ${a} completed`
 }

@@ -52,6 +52,7 @@ vi.mock('../server/utils/usage-admin', () => ({
 
 const mockCreateBillingCsvJob = vi.fn();
 const mockCancelInFlight = vi.fn();
+const mockDismissJob = vi.fn();
 const { BillingCsvJobInFlightErrorMock } = vi.hoisted(() => {
   class BillingCsvJobInFlightErrorMock extends Error {
     constructor(enterprise: string) {
@@ -64,6 +65,7 @@ const { BillingCsvJobInFlightErrorMock } = vi.hoisted(() => {
 vi.mock('../server/storage/billing-csv-sync-status-storage', () => ({
   createBillingCsvJob: (...a: any[]) => mockCreateBillingCsvJob(...a),
   cancelInFlightBillingCsvJobs: (...a: any[]) => mockCancelInFlight(...a),
+  dismissBillingCsvJob: (...a: any[]) => mockDismissJob(...a),
   BillingCsvJobInFlightError: BillingCsvJobInFlightErrorMock,
 }));
 
@@ -149,7 +151,7 @@ describe('sync.post — sync-billing-csv action', () => {
     expect(arg.startDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(arg.endDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(arg.triggeredBy).toBe('alice');
-    expect(mockRunIngester).toHaveBeenCalledWith({ token: 'ghp_x', jobId: 99 });
+    expect(mockRunIngester).toHaveBeenCalledWith({ token: 'ghp_x', jobId: 99, fillGapsOnly: false });
   });
 
   it('uses since/until for sync-billing-csv-range', async () => {
@@ -199,5 +201,45 @@ describe('sync.post — sync-billing-csv-cancel action', () => {
     setConfig({ billingEnterprise: '' });
     setBody({ action: 'sync-billing-csv-cancel' });
     await expect(handler(makeEvent())).rejects.toThrow(/NUXT_BILLING_ENTERPRISE/);
+  });
+});
+
+describe('sync.post — sync-billing-csv-dismiss action', () => {
+  it('returns 403 when caller is not a usage admin', async () => {
+    mockRequireUsageAdmin.mockRejectedValueOnce(Object.assign(new Error('Forbidden'), { statusCode: 403 }));
+    setBody({ action: 'sync-billing-csv-dismiss', jobId: 42 });
+    await expect(handler(makeEvent())).rejects.toThrow(/Forbidden/);
+    expect(mockDismissJob).not.toHaveBeenCalled();
+  });
+
+  it('soft-dismisses the job and returns dismissed=true', async () => {
+    mockDismissJob.mockResolvedValue(true);
+    setBody({ action: 'sync-billing-csv-dismiss', jobId: 42 });
+    const result = await handler(makeEvent());
+    expect(result).toEqual({ action: 'sync-billing-csv-dismiss', jobId: 42, dismissed: true });
+    expect(mockDismissJob).toHaveBeenCalledWith(42);
+  });
+
+  it('returns dismissed=false when storage refuses (in-flight / already dismissed / not found)', async () => {
+    mockDismissJob.mockResolvedValue(false);
+    setBody({ action: 'sync-billing-csv-dismiss', jobId: 99 });
+    const result = await handler(makeEvent());
+    expect(result.dismissed).toBe(false);
+  });
+
+  it('accepts jobId as a numeric string (Vue body serializer quirk)', async () => {
+    mockDismissJob.mockResolvedValue(true);
+    setBody({ action: 'sync-billing-csv-dismiss', jobId: '42' });
+    const result = await handler(makeEvent());
+    expect(result.jobId).toBe(42);
+    expect(mockDismissJob).toHaveBeenCalledWith(42);
+  });
+
+  it('rejects non-numeric / missing jobId with 400', async () => {
+    setBody({ action: 'sync-billing-csv-dismiss' });
+    await expect(handler(makeEvent())).rejects.toThrow(/jobId/);
+    setBody({ action: 'sync-billing-csv-dismiss', jobId: 'not-a-number' });
+    await expect(handler(makeEvent())).rejects.toThrow(/jobId/);
+    expect(mockDismissJob).not.toHaveBeenCalled();
   });
 });

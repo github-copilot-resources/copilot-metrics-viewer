@@ -76,10 +76,10 @@
           </div>
           <div v-if="!isCurrentMonth" class="mt-2 text-caption">
             GitHub's live billing API typically only returns data for the
-            <strong>current calendar month</strong>. Historical months will
-            populate here once the <em>Billing CSV ingest</em> in Admin Panel
-            has run for that range (the read path will switch to the database
-            once Phase B lands).
+            <strong>current calendar month</strong>. Historical months populate
+            here once the <em>Billing CSV ingest</em> in the Admin Panel has
+            run for that range; a <strong>From DB</strong> badge will appear in
+            the period banner when the dashboard is serving stored data.
           </div>
         </v-alert>
 
@@ -92,9 +92,23 @@
             class="mx-3 mt-3 mb-0"
             icon="mdi-calendar-range"
           >
-            Showing billing usage for <strong>{{ periodLabel }}</strong>.
-            Use the <em>Billing month</em> picker above to view a different
-            month. GitHub retains roughly 90 days of detail.
+            <div class="d-flex flex-wrap align-center gap-2">
+              <span>
+                Showing billing usage for <strong>{{ periodLabel }}</strong>.
+                Use the <em>Billing month</em> picker above to view a different
+                month. GitHub retains roughly 90 days of detail.
+              </span>
+              <v-chip
+                v-if="dataSourceBadge"
+                :color="dataSourceBadge.color"
+                :prepend-icon="dataSourceBadge.icon"
+                size="small"
+                variant="elevated"
+                :title="dataSourceBadge.tooltip"
+              >
+                {{ dataSourceBadge.label }}
+              </v-chip>
+            </div>
           </v-alert>
 
           <div class="d-flex flex-wrap gap-3 pa-3">
@@ -201,6 +215,16 @@
               :sort-by="[{ key: 'user', order: 'asc' }]"
               @update:options="onTableOptions"
             >
+              <template #[`item.user`]="{ item }">
+                <v-chip
+                  :color="userDetailLogin && userDetailLogin.toLowerCase() === (item as PerUserRow).user.toLowerCase() ? 'primary' : 'default'"
+                  :variant="userDetailLogin && userDetailLogin.toLowerCase() === (item as PerUserRow).user.toLowerCase() ? 'flat' : 'tonal'"
+                  size="small"
+                  class="cursor-pointer"
+                  :title="`View Copilot activity for ${(item as PerUserRow).user}`"
+                  @click="openUserDetail((item as PerUserRow).user)"
+                >{{ (item as PerUserRow).user }}</v-chip>
+              </template>
               <template #[`item.netAmount`]="{ item }">
                 ${{ (item as PerUserRow).netAmount.toFixed(2) }}
               </template>
@@ -216,6 +240,54 @@
                     : '—' }}
               </template>
             </v-data-table>
+          </v-card>
+
+          <!-- Admin drill-down: inline "User insights" section.
+               No user selected → info banner explaining the feature.
+               User selected → MyUsageViewer for that user, remounted via :key. -->
+          <v-card
+            v-if="perUserRows.length > 0 && !noPerUserAttribution"
+            variant="outlined"
+            class="ma-3"
+            data-testid="user-insights-section"
+          >
+            <v-card-title class="text-subtitle-1 d-flex align-center">
+              <v-icon icon="mdi-account-search" class="mr-2" />
+              <span>User insights</span>
+              <template v-if="userDetailLogin">
+                <span class="text-medium-emphasis mx-2">·</span>
+                <span class="text-primary">{{ userDetailLogin }}</span>
+              </template>
+              <v-spacer />
+              <v-btn
+                v-if="userDetailLogin"
+                size="small"
+                variant="text"
+                prepend-icon="mdi-close"
+                data-testid="user-detail-close"
+                @click="userDetailLogin = null"
+              >Clear selection</v-btn>
+            </v-card-title>
+            <v-divider />
+            <v-card-text v-if="!userDetailLogin" class="pa-0">
+              <v-alert
+                type="info"
+                variant="tonal"
+                density="comfortable"
+                border="start"
+                class="ma-0"
+                rounded="0"
+              >
+                Select a user from the table above to see their individual usage
+                details, language breakdown, model preferences, and activity history.
+              </v-alert>
+            </v-card-text>
+            <v-card-text v-else class="pa-0">
+              <MyUsageViewer
+                :key="userDetailLogin"
+                :query-params="userDetailQueryParams"
+              />
+            </v-card-text>
           </v-card>
 
           <v-card variant="outlined" class="ma-3">
@@ -236,6 +308,7 @@
 <script lang="ts">
 import { defineComponent, computed, reactive, ref, watch, onMounted } from 'vue';
 import { Bar } from 'vue-chartjs';
+import MyUsageViewer from './MyUsageViewer.vue';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -247,6 +320,7 @@ import {
 } from 'chart.js';
 import { PALETTE } from '@/utils/chartPlugins';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
+import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
@@ -261,7 +335,7 @@ interface PerUserRow {
 
 export default defineComponent({
   name: 'BillingCreditsViewer',
-  components: { Bar },
+  components: { Bar, MyUsageViewer },
   props: {
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
   },
@@ -304,10 +378,26 @@ export default defineComponent({
       return merged;
     });
 
+    const dataSource = ref<{ source: 'db' | 'live' | null; syncedAt: string | null; reason: string | null }>({
+      source: null,
+      syncedAt: null,
+      reason: null,
+    });
+
     const { data, pending, error } = await useFetch<BillingCreditsResponse>('/api/billing-credits', {
       query: billingQuery,
       server: false,
       watch: [billingQuery],
+      onResponse({ response }) {
+        const src = response.headers.get('x-data-source');
+        const syncedAt = response.headers.get('x-data-source-synced-at');
+        const reason = response.headers.get('x-data-source-reason');
+        dataSource.value = {
+          source: src === 'db' || src === 'live' ? src : null,
+          syncedAt: syncedAt || null,
+          reason: reason || null,
+        };
+      },
     });
 
     // Per-user token totals (and the canonical user list) come from
@@ -594,6 +684,29 @@ export default defineComponent({
       },
     };
 
+    const dataSourceBadge = computed(() => buildDataSourceBadge(dataSource.value));
+
+    // ── Admin drill-down: click a username → show inline User insights ──────
+    // Billing tab is already admin-gated, so we don't add a second check here.
+    // The /api/my-usage endpoint enforces its own `requireUsageAdmin` when
+    // `?login=<other>` is supplied.
+    const userDetailLogin = ref<string | null>(null);
+    function openUserDetail(login: string): void {
+      if (!login) return;
+      // Toggle off if the same user is clicked twice
+      if (userDetailLogin.value && userDetailLogin.value.toLowerCase() === login.toLowerCase()) {
+        userDetailLogin.value = null;
+        return;
+      }
+      userDetailLogin.value = login;
+    }
+    const userDetailQueryParams = computed<Record<string, string>>(() => {
+      // Reuse parent query params (scope + org/ent) so the report the API
+      // fetches matches the current dashboard context; add `login` last so
+      // it wins over anything the parent might have set.
+      return { ...(props.queryParams || {}), login: userDetailLogin.value || '' };
+    });
+
     return {
       data, pending, error, items, periodLabel,
       selectedMonth, currentMonthIso, shiftMonth, isCurrentMonth,
@@ -603,6 +716,8 @@ export default defineComponent({
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
+      dataSourceBadge,
+      userDetailLogin, userDetailQueryParams, openUserDetail,
     };
   },
 });

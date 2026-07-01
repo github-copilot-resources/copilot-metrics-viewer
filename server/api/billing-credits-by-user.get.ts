@@ -30,6 +30,11 @@ import { Options } from '@/model/Options';
 import { requireUsageAdmin } from '../utils/usage-admin';
 import { buildBillingApiUrl } from '../utils/billing-url';
 import type { BillingCreditsResponse, BillingUsageItem } from './billing-credits.get';
+import {
+  decideSource,
+  resolveWindow,
+  aggregateForBillingByUser,
+} from '../services/billing-credit-reader';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockBilling from '../../public/mock-data/billing-credits.json';
 
@@ -73,6 +78,48 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     });
   }
 
+  // ── DB-first read path (Phase B) ───────────────────────────────────────────
+  // Same coverage check as /api/billing-credits: if a completed CSV ingest
+  // job covers the requested window, serve the per-user aggregate from
+  // Postgres in a SINGLE query instead of fanning out N live calls.
+  // This is also the only way to query per-user data for historical windows
+  // (>90 days old) since GitHub's JSON endpoint can't reach them.
+  const billingEnterpriseEarly = ((config.billingEnterprise as string | undefined) || '').trim();
+  const dbEnterprise = billingEnterpriseEarly
+    || (options.scope === 'enterprise' ? options.githubEnt : '')
+    || '';
+
+  if (dbEnterprise) {
+    try {
+      const window = resolveWindow({
+        year: query.year ? Number(query.year) : undefined,
+        month: query.month ? Number(query.month) : undefined,
+        day: query.day ? Number(query.day) : undefined,
+      });
+      const decision = await decideSource(dbEnterprise, window.startDate, window.endDate);
+      if (decision.source === 'db') {
+        setResponseHeader(event, 'X-Data-Source', 'db');
+        if (decision.lastIngestAt) {
+          setResponseHeader(event, 'X-Data-Source-Synced-At', decision.lastIngestAt);
+        }
+        setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
+        return await aggregateForBillingByUser(dbEnterprise, window, requestedLogins, {
+          model: query.model ? String(query.model) : undefined,
+          sku: query.sku ? String(query.sku) : undefined,
+        });
+      }
+      setResponseHeader(event, 'X-Data-Source', 'live');
+      setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
+    } catch (e) {
+      if (e instanceof Error && /Invalid|day without month/i.test(e.message)) {
+        throw createError({ statusCode: 400, statusMessage: e.message });
+      }
+      setResponseHeader(event, 'X-Data-Source', 'live');
+      setResponseHeader(event, 'X-Data-Source-Reason',
+        `db read failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
   // No fallback to NUXT_GITHUB_TOKEN: GitHub rejects fine-grained PATs and
   // App tokens on the billing endpoints. See billing-credits.get.ts for the
   // full rationale.
@@ -84,7 +131,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     });
   }
 
-  const billingEnterprise = ((config.billingEnterprise as string | undefined) || '').trim();
+  const billingEnterprise = billingEnterpriseEarly;
   const baseUrl = (config.githubApiBaseUrl as string | undefined) || 'https://api.github.com';
 
   let apiUrl: string;

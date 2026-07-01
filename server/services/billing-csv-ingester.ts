@@ -43,6 +43,7 @@ import {
 } from '../storage/billing-credit-usage-storage';
 import { parseBillingCsv, type ParsedBillingRow } from './billing-csv-parser';
 import { getPool } from '../storage/db';
+import { findBillingCsvGaps, subtractRanges } from './billing-credit-reader';
 
 const GITHUB_API_BASE = process.env.NUXT_GITHUB_API_BASE_URL || 'https://api.github.com';
 const GITHUB_API_VERSION = '2026-03-10';
@@ -61,6 +62,16 @@ export interface RunIngesterOptions {
   now?: () => number;
   /** Lets tests inject a fake sleep so they don't actually wait 5s between polls. */
   sleep?: (ms: number) => Promise<void>;
+  /**
+   * When true, skip date ranges already covered by a completed job — only
+   * fetch CSVs for the gaps in `[job.startDate, job.endDate]`. The job row
+   * still records the full requested window so the coverage detector
+   * (decideSource) treats it as one logical span.
+   *
+   * Default: false (legacy "fetch everything" behavior). Wired by the
+   * AdminPanel "Skip already-ingested ranges" checkbox.
+   */
+  fillGapsOnly?: boolean;
 }
 
 export interface IngesterResult {
@@ -94,7 +105,51 @@ export async function runBillingCsvIngester(opts: RunIngesterOptions): Promise<I
 
   try {
     await updateBillingCsvJob(job.id, { status: 'processing' });
-    const chunks = chunkDateRange(job.startDate, job.endDate, MAX_CHUNK_DAYS);
+
+    // Compute the actual sub-ranges to fetch. Default: chunk the full window
+    // into ≤31-day pieces. When fillGapsOnly is true, first ask the reader
+    // which sub-ranges are already covered by other completed jobs and only
+    // fetch the gaps — each gap is then chunked independently.
+    const targetRanges = opts.fillGapsOnly
+      ? await findBillingCsvGaps(job.enterprise, job.startDate, job.endDate)
+      : [{ start: job.startDate, end: job.endDate }];
+
+    // What gap-mode pruned away (only meaningful when fillGapsOnly=true).
+    const gapsSkipped = opts.fillGapsOnly
+      ? subtractRanges({ start: job.startDate, end: job.endDate }, targetRanges)
+      : [];
+
+    const chunks: Array<{ start: string; end: string }> = [];
+    for (const r of targetRanges) {
+      chunks.push(...chunkDateRange(r.start, r.end, MAX_CHUNK_DAYS));
+    }
+
+    // Persist observability up-front so the UI can show "fetched X, skipped Y"
+    // even while the job is still running.
+    await updateBillingCsvJob(job.id, {
+      chunksFetched: chunks,
+      gapsSkipped,
+    });
+
+    // If gap-mode finds nothing to do, mark the job completed immediately.
+    // This is the "you already have this data" no-op path — useful UX so
+    // the user gets a clear "0 rows ingested, completed" instead of a 5xx.
+    if (chunks.length === 0) {
+      await updateBillingCsvJob(job.id, {
+        status: 'completed',
+        rowsIngested: 0,
+        downloadUrlCount: 0,
+        completedAt: new Date(now()),
+      });
+      return {
+        jobId: job.id,
+        status: 'completed',
+        rowsIngested: 0,
+        downloadUrlCount: 0,
+        errorMessage: null,
+      };
+    }
+
     let totalRows = 0;
     let totalUrlCount = 0;
 
@@ -173,9 +228,15 @@ async function runChunk(input: ChunkInput): Promise<ChunkResult> {
   const completed = await pollUntilCompleted(input.token, input.enterprise, created.id, input.sleep, input.now);
   const urls = completed.download_urls ?? [];
   if (urls.length === 0) {
-    throw new Error(
-      `Chunk ${input.startDate}..${input.endDate}: report completed with no download_urls`,
-    );
+    // A completed report with no download_urls means GitHub has no billing
+    // rows for that window yet. This is normal for "today" before usage is
+    // posted, or for date ranges with zero activity. Treat as a 0-row chunk
+    // rather than aborting the entire multi-chunk job.
+    return {
+      rowsIngested: 0,
+      downloadUrlCount: 0,
+      githubJobId: created.id,
+    };
   }
 
   // 3. Download all SAS URLs in parallel (60-min TTL — must download promptly).

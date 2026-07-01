@@ -43,11 +43,26 @@ const UPSERT_COLUMNS = [
  * Uses a single multi-row INSERT ... ON CONFLICT for efficiency — Postgres handles
  * batches of several thousand rows fine in one statement.
  *
+ * **PK collapse:** the input CSV can contain multiple rows that share the same
+ * primary key `(enterprise, date, sku, username, organization, repository,
+ * model)` but differ in non-PK columns — most commonly `cost_center_name`
+ * (a user can be charged across multiple cost centers in one day) or
+ * `unit_type` variants. Postgres rejects such batches with
+ * `ON CONFLICT DO UPDATE command cannot affect row a second time`, so we
+ * collapse them in-memory first:
+ *   - Numeric columns are SUMmed (quantity, *_amount, aic_*, total_monthly_quota)
+ *   - applied_cost_per_quantity takes MAX (peak price for the period)
+ *   - cost_center_name takes the first non-empty value (cost-center detail is
+ *     surfaced via a dedicated billing.cost_center_name=… filter when needed;
+ *     the rolled-up PK row should still have a sensible label)
+ *
  * Returns the number of rows actually written (Postgres counts inserts+updates
  * the same way through `rowCount`).
  */
 export async function upsertBillingCreditRows(rows: BillingCreditRow[]): Promise<number> {
   if (rows.length === 0) return 0;
+
+  rows = collapseByPrimaryKey(rows);
 
   const pool = getPool();
 
@@ -82,6 +97,51 @@ export async function upsertBillingCreditRows(rows: BillingCreditRow[]): Promise
 
   const result = await pool.query(sql, params);
   return result.rowCount ?? rows.length;
+}
+
+/**
+ * Collapse rows that share the upsert primary key. Pure / exported for tests.
+ *
+ * Order-independent: callers may pass rows in any order; the returned array
+ * is sorted by `(date, sku, username, organization, repository, model)` for
+ * deterministic test assertions.
+ */
+export function collapseByPrimaryKey(rows: BillingCreditRow[]): BillingCreditRow[] {
+  if (rows.length <= 1) return rows;
+
+  const byKey = new Map<string, BillingCreditRow>();
+  for (const r of rows) {
+    const key = [
+      r.enterprise, r.date, r.sku, r.username,
+      r.organization, r.repository, r.model,
+    ].join('\x1f');
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...r });
+      continue;
+    }
+    existing.quantity            += r.quantity;
+    existing.gross_amount        += r.gross_amount;
+    existing.net_amount          += r.net_amount;
+    existing.discount_amount     += r.discount_amount;
+    existing.aic_quantity        += r.aic_quantity;
+    existing.aic_gross_amount    += r.aic_gross_amount;
+    existing.total_monthly_quota += r.total_monthly_quota;
+    if (r.applied_cost_per_quantity > existing.applied_cost_per_quantity) {
+      existing.applied_cost_per_quantity = r.applied_cost_per_quantity;
+    }
+    if (!existing.cost_center_name && r.cost_center_name) {
+      existing.cost_center_name = r.cost_center_name;
+    }
+    // unit_type / product should be identical for the same SKU; if not,
+    // keep the first one seen.
+  }
+
+  return [...byKey.values()].sort((a, b) => {
+    const ka = `${a.date}|${a.sku}|${a.username}|${a.organization}|${a.repository}|${a.model}`;
+    const kb = `${b.date}|${b.sku}|${b.username}|${b.organization}|${b.repository}|${b.model}`;
+    return ka < kb ? -1 : ka > kb ? 1 : 0;
+  });
 }
 
 /**

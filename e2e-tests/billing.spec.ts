@@ -101,4 +101,42 @@ test.describe('Billing tab', () => {
         const topCard = topTitle.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
         await expect(topCard.locator('canvas')).toBeVisible();
     });
+
+    test('clicking a user in the per-user breakdown reveals the inline User insights section', tag, async () => {
+        // Admin drill-down: each username in the Per-user breakdown table is a
+        // clickable chip. Clicking swaps the "User insights" section from an
+        // info banner to <MyUsageViewer> for the selected user. Server enforces
+        // requireUsageAdmin — the Billing tab itself is already admin-gated so
+        // no extra frontend guard is needed.
+        await dashboard.gotoBillingTab();
+
+        const perUserTitle = dashboard.page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }).first();
+        await expect(perUserTitle).toBeVisible();
+        const perUserCard = perUserTitle.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
+
+        // User insights section starts collapsed to an info banner.
+        const insights = dashboard.page.locator('[data-testid="user-insights-section"]');
+        await expect(insights).toBeVisible();
+        await expect(insights.getByText(/Select a user from the table above/i)).toBeVisible();
+
+        // Grab the first row's user chip and its displayed login text.
+        const firstUserChip = perUserCard.locator('tbody tr').first().locator('td').first().locator('.v-chip');
+        await expect(firstUserChip).toBeVisible();
+        const clickedLogin = (await firstUserChip.textContent())?.trim() || '';
+        expect(clickedLogin.length).toBeGreaterThan(0);
+
+        await firstUserChip.click();
+
+        // Info banner is replaced by MyUsageViewer for the clicked user.
+        await expect(insights.getByText(/Select a user from the table above/i)).toBeHidden();
+        await expect(insights.getByText(clickedLogin, { exact: false }).first()).toBeVisible({ timeout: 5000 });
+
+        // Personal metrics render inline — Active days tile is a stable
+        // landmark from MyUsageViewer.
+        await expect(insights.getByText('Active days').first()).toBeVisible({ timeout: 8000 });
+
+        // Clear selection and confirm the info banner is back.
+        await insights.locator('[data-testid="user-detail-close"]').click();
+        await expect(insights.getByText(/Select a user from the table above/i)).toBeVisible({ timeout: 3000 });
+    });
 });

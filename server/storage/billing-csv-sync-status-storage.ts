@@ -37,6 +37,19 @@ export interface BillingCsvJob {
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  /**
+   * Sub-ranges this job actually requested from GitHub. With gap-mode, this
+   * is a strict subset of [startDate, endDate]; without it, equals the full
+   * window. NULL on jobs that ran before v3.13 added the column.
+   */
+  chunksFetched: Array<{ start: string; end: string }> | null;
+  /**
+   * Sub-ranges within [startDate, endDate] that gap-mode determined were
+   * already covered by an earlier completed job, and therefore were NOT
+   * re-fetched. NULL on jobs that ran before v3.13 added the column, and
+   * always [] for jobs that ran without fillGapsOnly.
+   */
+  gapsSkipped: Array<{ start: string; end: string }> | null;
 }
 
 /**
@@ -91,6 +104,8 @@ export interface UpdateJobInput {
   downloadUrlCount?: number;
   errorMessage?: string | null;
   completedAt?: Date | null;
+  chunksFetched?: Array<{ start: string; end: string }> | null;
+  gapsSkipped?: Array<{ start: string; end: string }> | null;
 }
 
 /** Patch the mutable fields of a job. Always bumps updated_at. */
@@ -104,6 +119,8 @@ export async function updateBillingCsvJob(id: number, patch: UpdateJobInput): Pr
   if (patch.downloadUrlCount !== undefined)  { params.push(patch.downloadUrlCount);    sets.push(`download_url_count = $${params.length}`); }
   if (patch.errorMessage !== undefined)      { params.push(patch.errorMessage);        sets.push(`error_message = $${params.length}`); }
   if (patch.completedAt !== undefined)       { params.push(patch.completedAt);         sets.push(`completed_at = $${params.length}`); }
+  if (patch.chunksFetched !== undefined)     { params.push(JSON.stringify(patch.chunksFetched)); sets.push(`chunks_fetched = $${params.length}::jsonb`); }
+  if (patch.gapsSkipped !== undefined)       { params.push(JSON.stringify(patch.gapsSkipped));   sets.push(`gaps_skipped = $${params.length}::jsonb`); }
 
   params.push(id);
   const pool = getPool();
@@ -137,7 +154,7 @@ export async function getInFlightBillingCsvJob(enterprise: string): Promise<Bill
   return rows.length === 0 ? null : rowToJob(rows[0]);
 }
 
-/** Most recent N jobs (any status) for this enterprise. */
+/** Most recent N jobs (any status) for this enterprise. Excludes soft-dismissed rows. */
 export async function listRecentBillingCsvJobs(
   enterprise: string,
   limit = 10,
@@ -146,11 +163,34 @@ export async function listRecentBillingCsvJobs(
   const { rows } = await pool.query(
     `SELECT * FROM billing_csv_sync_status
      WHERE enterprise = $1
+       AND dismissed_at IS NULL
      ORDER BY created_at DESC
      LIMIT $2`,
     [enterprise, limit],
   );
   return rows.map(rowToJob);
+}
+
+/**
+ * Soft-dismiss a job: hides it from the recent-jobs UI but keeps the row in
+ * the DB so gap-mode coverage detection (which queries `status='completed'`
+ * rows) continues to see it. Refuses to dismiss in-flight jobs — the user
+ * should cancel those first.
+ *
+ * Returns true if the row was dismissed, false if the job was not found OR
+ * was in-flight OR was already dismissed (caller can treat those as no-ops).
+ */
+export async function dismissBillingCsvJob(id: number): Promise<boolean> {
+  const pool = getPool();
+  const result = await pool.query(
+    `UPDATE billing_csv_sync_status
+     SET dismissed_at = NOW(), updated_at = NOW()
+     WHERE id = $1
+       AND status NOT IN ('queued','processing','downloading','upserting')
+       AND dismissed_at IS NULL`,
+    [id],
+  );
+  return (result.rowCount ?? 0) > 0;
 }
 
 /**
@@ -190,7 +230,25 @@ function rowToJob(row: Record<string, unknown>): BillingCsvJob {
     createdAt: toIsoString(row.created_at),
     updatedAt: toIsoString(row.updated_at),
     completedAt: row.completed_at ? toIsoString(row.completed_at) : null,
+    chunksFetched: parseRanges(row.chunks_fetched),
+    gapsSkipped: parseRanges(row.gaps_skipped),
   };
+}
+
+function parseRanges(v: unknown): Array<{ start: string; end: string }> | null {
+  if (v == null) return null;
+  // pg returns JSONB as parsed JS values when oid types are configured; some
+  // drivers return strings. Handle both.
+  const parsed = typeof v === 'string' ? safeJsonParse(v) : v;
+  if (!Array.isArray(parsed)) return null;
+  return parsed.filter((r): r is { start: string; end: string } =>
+    !!r && typeof r === 'object' && typeof (r as { start: unknown }).start === 'string'
+        && typeof (r as { end: unknown }).end === 'string',
+  );
+}
+
+function safeJsonParse(s: string): unknown {
+  try { return JSON.parse(s); } catch { return null; }
 }
 
 function toIsoDate(v: unknown): string {

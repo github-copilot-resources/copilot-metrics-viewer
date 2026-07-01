@@ -1,16 +1,18 @@
 /**
  * GET /api/my-usage
  *
- * Personal Copilot usage for the currently-authenticated user.
+ * Personal Copilot usage for the currently-authenticated user, or — when the
+ * caller is a usage admin — for a specific user identified by `?login=<other>`.
  *
  * Implementation: filters the existing per-user metrics report
  * (users-28-day, which already includes ai_credits_used since 2026-06-19)
- * to just the session user's row, server-side. The client cannot tamper
- * with the user filter because it is read from the session, not the query.
+ * to a single user's row, server-side. Non-admins can only see themselves;
+ * the `?login` override is checked against `requireUsageAdmin`.
  *
  * Returns:
- *   - 200 with { user, totals: UserTotals | null, dayRecords: UserDayRecord[] }
- *   - 401 if no session
+ *   - 200 with { user, viewingAsAdmin, totals: UserTotals | null, dayRecords: UserDayRecord[] }
+ *   - 401 if no session and no `?login` override
+ *   - 403 if `?login=<other>` is used by a non-admin
  *   - 503 if no GitHub credential is configured
  *
  * Auth modes:
@@ -33,6 +35,7 @@ import { getUserDayMetricsByDateRange } from '../storage/user-day-metrics-storag
 import { isDbConfigured } from '../storage/db';
 import { buildBillingApiUrl } from '../utils/billing-url';
 import { aggregateBillingSpend, type BillingUsageItem } from '../utils/billing-spend-aggregator';
+import { isUsageAdminForEvent } from '../utils/usage-admin';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,6 +60,13 @@ export interface MyUsageSpend {
 
 interface MyUsageResponse {
   user: { login: string; email?: string };
+  /**
+   * True when the response is for a user other than the session user — i.e.
+   * an admin is inspecting another login via `?login=<other>`. UI can use
+   * this to swap the header from "My Usage" to something like
+   * "Usage for <login>" and hide personal chrome (avatar of session user).
+   */
+  viewingAsAdmin?: boolean;
   totals: UserTotals | null;
   dayRecords: UserDayRecord[];
   reportStartDay?: string;
@@ -93,9 +103,16 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 
-  // ── Identity: session is the ONLY trusted source for the user filter ──────
+  // ── Identity: session is the ONLY trusted source for the session user ─────
+  // Admins may opt in to viewing another user's data via `?login=<other>`
+  // (used by the Billing tab's per-user drill-down). Non-admins asking for
+  // another login are rejected with 403 by the admin-override branch below.
   const session = await getUserSession(event).catch(() => null);
   const sessionUser = session?.user as { login?: string; email?: string } | undefined;
+
+  const requestedLoginRaw = typeof query.login === 'string' ? query.login.trim() : '';
+  const requestedLogin = requestedLoginRaw || undefined;
+  let viewingAsAdmin = false;
 
   // Mock mode: fall back to a fixture user (octocat) so the My Usage tab is
   // exercisable without OAuth in local dev / Playwright runs. The /api/auth/
@@ -106,12 +123,34 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
     myLogin = 'octocat';
     myEmail = undefined;
   }
+
+  // Admin drill-down (`?login=<other>`) works in PAT-only deployments where
+  // there is no OAuth session — the operator is admin-by-PAT. Gate on
+  // isUsageAdminForEvent and use the requested login as the effective target.
+  // This must run BEFORE the "no session → 401" branch so PAT admins can
+  // drive the Billing tab's per-user picker.
+  if (requestedLogin) {
+    if (!myLogin || requestedLogin.toLowerCase() !== myLogin.toLowerCase()) {
+      const isAdmin = await isUsageAdminForEvent(event);
+      if (!isAdmin) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: 'Forbidden: only usage admins can view another user\'s activity.',
+        });
+      }
+      myLogin = requestedLogin;
+      myEmail = undefined;
+      viewingAsAdmin = true;
+    }
+  }
+
   if (!myLogin) {
     throw createError({ statusCode: 401, statusMessage: 'No session — sign in to view My Usage' });
   }
 
   const responseShell = {
     user: { login: myLogin, email: myEmail },
+    viewingAsAdmin,
   };
 
   // ── Mock mode ──────────────────────────────────────────────────────────────
@@ -242,14 +281,16 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
 });
 
 /**
- * Fetch the caller's own AI credit spend, if a billing token is configured.
+ * Fetch a target user's AI credit spend, if a billing token is configured.
  * Returns:
  *   - { data: MyUsageSpend } on success
  *   - { warning: string }    on graceful failure (e.g. SSO not authorized, 404)
  *   - null                   when no billing token is configured (silently skip)
  *
- * Always uses `?user=<session-login>` — there is no way for a caller to
- * read another user's spend through this endpoint.
+ * The `myLogin` argument is always resolved server-side — either from the
+ * session (default) or, for admins, from the `?login=<other>` query param
+ * (see the admin gate in the main handler). Callers cannot pipe an
+ * arbitrary login through this function without going through that gate.
  */
 async function fetchSelfSpend(
   event: Parameters<typeof defineEventHandler>[0] extends (e: infer E) => unknown ? E : never,

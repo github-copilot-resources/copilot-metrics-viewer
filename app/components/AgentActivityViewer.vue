@@ -190,6 +190,9 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 const PALETTE = ['#4C9BE8', '#E8834C', '#4CE88A', '#E8E04C', '#C44CE8', '#4CE8E0'];
 const AGENT_COLOR = '#E8834C';
 const USER_COLOR  = '#4C9BE8';
+// "Deleted" gets a distinct red so it never collides visually with USER/AGENT
+// "Added" series. Picked for contrast against both blue and orange.
+const DELETED_COLOR = '#D32F2F';
 
 const FEATURE_DISPLAY: Record<string, string> = {
   code_completion: 'Completions',
@@ -287,8 +290,8 @@ export default defineComponent({
       dailyLocChartData.value = {
         labels,
         datasets: [
-          { label: 'Lines Added',   data: data.map(d => d.loc_added_sum   ?? 0), backgroundColor: USER_COLOR,  borderRadius: 3 },
-          { label: 'Lines Deleted', data: data.map(d => d.loc_deleted_sum ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+          { label: 'Lines Added',   data: data.map(d => d.loc_added_sum   ?? 0), backgroundColor: USER_COLOR,    borderRadius: 3 },
+          { label: 'Lines Deleted', data: data.map(d => d.loc_deleted_sum ?? 0), backgroundColor: DELETED_COLOR, borderRadius: 3 },
         ],
       };
 
@@ -317,17 +320,21 @@ export default defineComponent({
           {
             label: 'Lines Added',
             data: data.map(d => (d.totals_by_feature ?? []).find(f => f.feature === 'agent_edit')?.loc_added_sum ?? 0),
-            backgroundColor: USER_COLOR, borderRadius: 3,
+            backgroundColor: AGENT_COLOR, borderRadius: 3,
           },
           {
             label: 'Lines Deleted',
             data: data.map(d => (d.totals_by_feature ?? []).find(f => f.feature === 'agent_edit')?.loc_deleted_sum ?? 0),
-            backgroundColor: AGENT_COLOR, borderRadius: 3,
+            backgroundColor: DELETED_COLOR, borderRadius: 3,
           },
         ],
       };
 
       // ── Per-model aggregation ─────────────────────────────────
+      // IMPORTANT: filter user-feature buckets with USER_FEATURES, matching
+      // the aggregate chart at line ~408. Without this filter, features like
+      // chat_panel_edit_mode contribute to loc_added_sum but never to
+      // loc_suggested_to_add_sum, inflating "Added" beyond "Suggested".
       const userModelSuggestedMap = new Map<string, number>();
       const userModelAddedMap     = new Map<string, number>();
       const agentModelAddedMap    = new Map<string, number>();
@@ -337,7 +344,7 @@ export default defineComponent({
           if (mf.feature === 'agent_edit') {
             agentModelAddedMap.set(mf.model, (agentModelAddedMap.get(mf.model) ?? 0) + (mf.loc_added_sum ?? 0));
             agentModelDeletedMap.set(mf.model, (agentModelDeletedMap.get(mf.model) ?? 0) + (mf.loc_deleted_sum ?? 0));
-          } else {
+          } else if (USER_FEATURES.includes(mf.feature)) {
             userModelSuggestedMap.set(mf.model, (userModelSuggestedMap.get(mf.model) ?? 0) + (mf.loc_suggested_to_add_sum ?? 0));
             userModelAddedMap.set(mf.model, (userModelAddedMap.get(mf.model) ?? 0) + (mf.loc_added_sum ?? 0));
           }
@@ -349,19 +356,20 @@ export default defineComponent({
       userModelChartData.value = {
         labels: topUserModels,
         datasets: [
-          { label: 'Suggested', data: topUserModels.map(m => userModelSuggestedMap.get(m) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
-          { label: 'Added', data: topUserModels.map(m => userModelAddedMap.get(m) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+          { label: 'Suggested', data: topUserModels.map(m => userModelSuggestedMap.get(m) ?? 0), backgroundColor: USER_COLOR,  borderRadius: 3 },
+          { label: 'Added',     data: topUserModels.map(m => userModelAddedMap.get(m)     ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
         ],
       };
       agentModelChartData.value = {
         labels: topAgentModels,
         datasets: [
-          { label: 'Added', data: topAgentModels.map(m => agentModelAddedMap.get(m) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
-          { label: 'Deleted', data: topAgentModels.map(m => agentModelDeletedMap.get(m) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+          { label: 'Added',   data: topAgentModels.map(m => agentModelAddedMap.get(m)   ?? 0), backgroundColor: AGENT_COLOR,   borderRadius: 3 },
+          { label: 'Deleted', data: topAgentModels.map(m => agentModelDeletedMap.get(m) ?? 0), backgroundColor: DELETED_COLOR, borderRadius: 3 },
         ],
       };
 
       // ── Per-language aggregation ──────────────────────────────
+      // Same USER_FEATURES filter as the per-model section above.
       const userLangSuggestedMap = new Map<string, number>();
       const userLangAddedMap     = new Map<string, number>();
       const agentLangAddedMap    = new Map<string, number>();
@@ -371,7 +379,7 @@ export default defineComponent({
           if (lf.feature === 'agent_edit') {
             agentLangAddedMap.set(lf.language, (agentLangAddedMap.get(lf.language) ?? 0) + (lf.loc_added_sum ?? 0));
             agentLangDeletedMap.set(lf.language, (agentLangDeletedMap.get(lf.language) ?? 0) + (lf.loc_deleted_sum ?? 0));
-          } else {
+          } else if (USER_FEATURES.includes(lf.feature)) {
             userLangSuggestedMap.set(lf.language, (userLangSuggestedMap.get(lf.language) ?? 0) + (lf.loc_suggested_to_add_sum ?? 0));
             userLangAddedMap.set(lf.language, (userLangAddedMap.get(lf.language) ?? 0) + (lf.loc_added_sum ?? 0));
           }
@@ -383,15 +391,15 @@ export default defineComponent({
       userLanguageChartData.value = {
         labels: topUserLangs,
         datasets: [
-          { label: 'Suggested', data: topUserLangs.map(l => userLangSuggestedMap.get(l) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
-          { label: 'Added', data: topUserLangs.map(l => userLangAddedMap.get(l) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+          { label: 'Suggested', data: topUserLangs.map(l => userLangSuggestedMap.get(l) ?? 0), backgroundColor: USER_COLOR,  borderRadius: 3 },
+          { label: 'Added',     data: topUserLangs.map(l => userLangAddedMap.get(l)     ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
         ],
       };
       agentLanguageChartData.value = {
         labels: topAgentLangs,
         datasets: [
-          { label: 'Added', data: topAgentLangs.map(l => agentLangAddedMap.get(l) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
-          { label: 'Deleted', data: topAgentLangs.map(l => agentLangDeletedMap.get(l) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+          { label: 'Added',   data: topAgentLangs.map(l => agentLangAddedMap.get(l)   ?? 0), backgroundColor: AGENT_COLOR,   borderRadius: 3 },
+          { label: 'Deleted', data: topAgentLangs.map(l => agentLangDeletedMap.get(l) ?? 0), backgroundColor: DELETED_COLOR, borderRadius: 3 },
         ],
       };
 
@@ -424,8 +432,8 @@ export default defineComponent({
       agentModeSummaryChartData.value = {
         labels: agentModeKeys.map(f => FEATURE_DISPLAY[f] ?? f),
         datasets: [
-          { label: 'Added', data: agentModeKeys.map(f => agentModeAddedMap.get(f) ?? 0), backgroundColor: USER_COLOR, borderRadius: 3 },
-          { label: 'Deleted', data: agentModeKeys.map(f => agentModeDeletedMap.get(f) ?? 0), backgroundColor: AGENT_COLOR, borderRadius: 3 },
+          { label: 'Added',   data: agentModeKeys.map(f => agentModeAddedMap.get(f)   ?? 0), backgroundColor: AGENT_COLOR,   borderRadius: 3 },
+          { label: 'Deleted', data: agentModeKeys.map(f => agentModeDeletedMap.get(f) ?? 0), backgroundColor: DELETED_COLOR, borderRadius: 3 },
         ],
       };
     });
