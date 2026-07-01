@@ -122,6 +122,18 @@ Aggregate AI credit billing breakdown by model, SKU, cost center, and repository
 
 **Per-user attribution caveat:** the per-user breakdown depends on GitHub tagging each billing item with a `user`. Some enterprise plans (typically fully-pooled / centrally-billed) return only enterprise-level aggregates, in which case every user appears at $0 in the per-user table; the Billing tab surfaces an explanatory alert in that state. The My Usage tab and the User Metrics `ai_credits_used` column are independent of this and still work.
 
+#### Admin drill-down — inline User insights per user
+
+Each username in the Per-user breakdown table is a clickable chip. Selecting a chip reveals an inline **User insights** section directly below the table with that user's full Copilot activity report — the same view the user would see on their own My Usage tab (Active days, Interactions, Accepted lines, AI credits used, per-model spend, top IDE / language / model, day-by-day charts).
+
+No user selected → the section shows an info banner explaining the feature. Clicking a chip a second time (or "Clear selection") returns to the banner state.
+
+**Requires** the same `NUXT_GITHUB_BILLING_TOKEN` + `NUXT_BILLING_ENTERPRISE` variables as the rest of the Billing tab. The drill-down endpoint (`/api/my-usage?login=<other>`) is gated by `NUXT_USAGE_ADMINS`; non-admins receive 403. In PAT-only deployments the operator is admin-by-PAT and the drill-down works without an OAuth session.
+
+![Billing tab — Per-user breakdown with chip-style logins and the info banner state](images/billing-user-insights-banner.png)
+
+![Billing tab — inline User insights section showing a selected user's activity](images/billing-user-insights-selected.png)
+
 #### Billing CSV Ingest (local cache, multi-month windows)
 
 The live billing endpoints cap windows at ~31 days and rate-limit aggressively. For longer historical analysis, the dashboard can pull GitHub's **enterprise billing CSV exports** into a local Postgres table, then serve the Billing tab from the cache.
