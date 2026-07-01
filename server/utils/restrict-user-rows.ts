@@ -1,14 +1,22 @@
 /**
- * User-data visibility filter for issue #398 (Austrian/EU compliance).
+ * User-data visibility filter (originally issue #398 — Austrian/EU compliance).
  *
- * Non-admin callers must NOT see other users' breakdown rows. Each endpoint
- * that returns per-user records (currently /api/user-metrics, /api/seats)
+ * When the deployment operator populates `NUXT_USAGE_ADMINS`, non-admin
+ * callers must NOT see other users' breakdown rows. Each endpoint that
+ * returns per-user records (currently /api/user-metrics, /api/seats)
  * delegates to this helper to strip out everyone except the session login
  * itself.
+ *
+ * The gate is OPT-IN: when the allowlist is empty, `isUsageAdminForEvent`
+ * returns `true` for every caller and this filter becomes a no-op. To
+ * enforce row-level scoping (GDPR / works-council style), populate
+ * NUXT_USAGE_ADMINS with the small set of logins that should see cross-
+ * user data.
  *
  * Behaviour matrix:
  *   - Mock mode                                     → return rows unchanged
  *   - PAT-mode (no OAuth configured)                → return rows unchanged
+ *   - Allowlist empty (opt-in gate inactive)        → return rows unchanged
  *   - isUsageAdminForEvent === true                 → return rows unchanged
  *   - No session login resolvable                   → return []
  *   - Otherwise                                     → keep only the row whose

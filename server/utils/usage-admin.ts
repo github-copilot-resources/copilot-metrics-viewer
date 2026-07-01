@@ -6,23 +6,30 @@
  *      breakdown by SKU/model/cost-center/repo.
  *   2. **User-level breakdown data** (/api/user-metrics, /api/seats) —
  *      per-user names and metrics. Non-admins are restricted to their own
- *      row only (issue #398 — Austrian/EU compliance).
+ *      row only (issue #398 — Austrian/EU compliance) — but only when an
+ *      allowlist is actually configured.
  *
- * Gating is **CLOSED-BY-DEFAULT** in OAuth-mode deployments: when
- * NUXT_USAGE_ADMINS is empty, NO ONE is an admin. This is a deliberate
- * breaking change from earlier versions to align with the principle of
- * least privilege and the EU compliance requirement in issue #398.
+ * Gating is **OPT-IN**: when NUXT_USAGE_ADMINS is empty, the allowlist is
+ * treated as inactive and every authenticated caller is treated as an admin.
+ * A deployment operator opts INTO row-level restrictions by populating
+ * NUXT_USAGE_ADMINS with the explicit set of logins/emails that should see
+ * cross-user data. Everyone else is then restricted to their own row.
+ *
+ * Rationale for opt-in (rather than closed-by-default):
+ *   - The dashboard's primary value is org-wide visibility. A closed-by-
+ *     default gate silently hid data from GitHub org owners on upgrade,
+ *     which was a surprising behaviour change from earlier versions.
+ *   - Deployments that need GDPR/works-council-style row-level scoping
+ *     opt in explicitly by listing the small admin set — the audit trail
+ *     is the presence of the env var itself.
  *
  * In **PAT-mode deployments** (no OAuth provider configured, recognised via
  * requireAuth / usingGithubAuth / isPublicApp / authProviders all falsy)
  * there is no per-user identity, so the allowlist has no signal to act on.
- * In that case we treat every caller as admin so the Billing tab and
- * per-user breakdowns remain usable. PAT-mode is the legacy single-tenant
- * model — it should be locked down at the network layer (firewall / IP
- * allowlist) rather than at the row layer.
- *
- * To restore the old "everyone sees everything" behaviour, deployments must
- * set `NUXT_USAGE_ADMINS` to an explicit allowlist of logins/emails.
+ * Every caller is treated as admin so the Billing tab and per-user
+ * breakdowns remain usable. PAT-mode is the legacy single-tenant model —
+ * it should be locked down at the network layer (firewall / IP allowlist)
+ * rather than at the row layer.
  *
  * We do NOT support email-domain wildcards — only explicit logins / email
  * addresses — so the admin set is auditable.
@@ -35,7 +42,8 @@ import type { AuthorizedIdentity } from './authorization'
  * Pure check — accepts an explicit allowlist string so it can be unit-tested
  * without mocking Nuxt runtime config.
  *
- * Closed-by-default: empty / whitespace / delimiters-only allowlist → false.
+ * Opt-in gating: empty / whitespace / delimiters-only allowlist means the
+ * gate is inactive and every caller is treated as admin.
  *
  * @param identity   The authenticated user's login and/or email
  * @param allowlist  Comma-separated logins/emails
@@ -44,9 +52,11 @@ export function isUsageAdmin(
   identity: AuthorizedIdentity,
   allowlist: string
 ): boolean {
-  // Closed-by-default: an unconfigured allowlist means NO admin access.
+  // Opt-in gating: an unconfigured allowlist means the admin gate is inactive
+  // and every caller is treated as an admin (open by default). Operators opt
+  // INTO row-level restrictions by populating NUXT_USAGE_ADMINS.
   if (!allowlist || !allowlist.trim()) {
-    return false
+    return true
   }
 
   const allowed = allowlist
@@ -54,9 +64,9 @@ export function isUsageAdmin(
     .map(s => s.trim().toLowerCase())
     .filter(Boolean)
 
-  // A string like ",,," parses to zero entries — still treat as closed.
+  // A string like ",,," parses to zero entries — treat as unconfigured (open).
   if (allowed.length === 0) {
-    return false
+    return true
   }
 
   const login = identity.login?.toLowerCase()
@@ -75,7 +85,7 @@ export function isUsageAdmin(
  * H3 wrapper that reads the allowlist from runtime config (NUXT_USAGE_ADMINS).
  *
  * Behaviour:
- *   - allowlist empty                              → false (closed by default)
+ *   - allowlist empty                              → true  (opt-in: gate inactive)
  *   - allowlist set, session present + on list     → true
  *   - allowlist set, session present + not on list → false
  *   - allowlist set, NO session                    → false
@@ -96,14 +106,15 @@ export async function isUsageAdminForEvent(
     pub.requireAuth || pub.usingGithubAuth || pub.isPublicApp || !!pub.authProviders
   if (!authConfigured) return true
 
-  // Closed-by-default — empty or whitespace-only allowlist denies access.
+  // Opt-in gating — empty or whitespace-only allowlist means every authenticated
+  // caller is treated as an admin.
   if (!allowlist.trim()) {
-    return false
+    return true
   }
-  // A "list" with only delimiters is also treated as closed.
+  // A "list" with only delimiters is also treated as unconfigured (open).
   const parsed = allowlist.split(',').map(s => s.trim()).filter(Boolean)
   if (parsed.length === 0) {
-    return false
+    return true
   }
 
   const session = await getUserSession(event).catch(() => null)

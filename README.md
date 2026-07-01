@@ -116,9 +116,14 @@ Aggregate AI credit billing breakdown by model, SKU, cost center, and repository
 1. **When `NUXT_GITHUB_BILLING_TOKEN` is *not* configured** — the tab is shown to every dashboard user, but renders only a configuration-help placeholder (no data is fetched). This is a discoverability aid so operators learn the feature exists.
 2. **When `NUXT_GITHUB_BILLING_TOKEN` *is* configured** — the tab is **admin-only**: visible only to users on the `NUXT_USAGE_ADMINS` allowlist. In PAT-mode deployments (no OAuth provider configured) the allowlist is bypassed and the tab is visible to anyone who can reach the dashboard.
 
-**Why a separate token?** Billing endpoints have stricter auth than metrics endpoints — they require a **classic PAT** with `manage_billing:enterprise` (or `manage_billing:copilot`), SSO-authorized for the target enterprise. Fine-grained PATs and GitHub Apps cannot read billing today. Keeping `NUXT_GITHUB_BILLING_TOKEN` separate from `NUXT_GITHUB_TOKEN` means your metrics calls can keep using a GitHub App / fine-grained PAT while only billing uses the classic PAT.
+**Why a separate token?** Billing endpoints have stricter auth than metrics endpoints — they require a **classic PAT** with `manage_billing:enterprise` (for enterprise-owned orgs, SSO-authorized for the enterprise if enforced) or `manage_billing:copilot` (for standalone orgs). Fine-grained PATs and GitHub Apps cannot read billing today. Keeping `NUXT_GITHUB_BILLING_TOKEN` separate from `NUXT_GITHUB_TOKEN` means your metrics calls can keep using a GitHub App / fine-grained PAT while only billing uses the classic PAT.
 
-**Enterprise-owned orgs:** when a dashboard's org is consolidated under an enterprise (very common), `/organizations/{org}/settings/billing/ai_credit/usage` returns **404**. Set `NUXT_BILLING_ENTERPRISE=<enterprise-slug>` to route billing calls to `/enterprises/{slug}/...` regardless of the dashboard's scope. Without this override an org-scoped dashboard will see a 404 with a hint pointing at the variable.
+**Which billing endpoint gets called?**
+
+- **Standalone organizations (no parent enterprise):** billing calls go to `/organizations/{org}/settings/billing/ai_credit/usage` automatically — **leave `NUXT_BILLING_ENTERPRISE` unset**. A classic PAT with `manage_billing:copilot` scope is sufficient.
+- **Enterprise-owned organizations (org billing consolidated under an enterprise):** the org-level endpoint returns **404** because billing lives at the enterprise level. Set `NUXT_BILLING_ENTERPRISE=<enterprise-slug>` to route billing calls to `/enterprises/{slug}/...` — use a classic PAT with `manage_billing:enterprise` scope, SSO-authorized for that enterprise. Without this override an org-scoped dashboard will see a 404 with a hint pointing at the variable.
+
+Not sure which one applies to you? Call `GET /orgs/<your-org>` and look at the `enterprise` field — `null` means standalone, an object with a `slug` means enterprise-owned (use that slug).
 
 **Per-user attribution caveat:** the per-user breakdown depends on GitHub tagging each billing item with a `user`. Some enterprise plans (typically fully-pooled / centrally-billed) return only enterprise-level aggregates, in which case every user appears at $0 in the per-user table; the Billing tab surfaces an explanatory alert in that state. The My Usage tab and the User Metrics `ai_credits_used` column are independent of this and still work.
 
@@ -128,7 +133,7 @@ Each username in the Per-user breakdown table is a clickable chip. Selecting a c
 
 No user selected → the section shows an info banner explaining the feature. Clicking a chip a second time (or "Clear selection") returns to the banner state.
 
-**Requires** the same `NUXT_GITHUB_BILLING_TOKEN` + `NUXT_BILLING_ENTERPRISE` variables as the rest of the Billing tab. The drill-down endpoint (`/api/my-usage?login=<other>`) is gated by `NUXT_USAGE_ADMINS`; non-admins receive 403. In PAT-only deployments the operator is admin-by-PAT and the drill-down works without an OAuth session.
+**Requires** `NUXT_GITHUB_BILLING_TOKEN` (always) and — only for enterprise-owned orgs — `NUXT_BILLING_ENTERPRISE`. Standalone orgs work without the enterprise slug. The drill-down endpoint (`/api/my-usage?login=<other>`) is gated by `NUXT_USAGE_ADMINS`; non-admins receive 403. In PAT-only deployments the operator is admin-by-PAT and the drill-down works without an OAuth session.
 
 ![Billing tab — Per-user breakdown with chip-style logins and the info banner state](images/billing-user-insights-banner.png)
 
@@ -149,7 +154,7 @@ GitHub builds the export server-side and returns one or more signed download URL
 
 The recent-jobs table shows status, row count, who triggered, and a hover tooltip on the row count surfacing **what was fetched vs. skipped** (so you can verify gap-mode actually pruned re-fetches of already-ingested ranges).
 
-**Requires:** `NUXT_GITHUB_BILLING_TOKEN` set to a classic PAT with `manage_billing:enterprise` (same token used by the live Billing tab) plus `NUXT_BILLING_ENTERPRISE` for the enterprise slug. Postgres must be configured (see the storage section).
+**Requires:** an **enterprise-owned org** — the CSV export endpoint (`/enterprises/{slug}/settings/billing/usage_report`) is enterprise-only. Standalone orgs must use the live Billing tab instead. Set `NUXT_GITHUB_BILLING_TOKEN` to a classic PAT with `manage_billing:enterprise` (SSO-authorized if enforced) and `NUXT_BILLING_ENTERPRISE` to the enterprise slug. Postgres must be configured (see the storage section).
 
 ![Admin panel — Billing CSV ingest controls](images/billing-csv-ingest.png)
 
@@ -360,13 +365,23 @@ NUXT_GITHUB_BILLING_TOKEN=ghp_classic_pat_with_manage_billing_enterprise
 
 #### NUXT_BILLING_ENTERPRISE
 
-Optional. **Forces billing calls to query `/enterprises/{slug}/...` regardless of dashboard scope.** Set to the enterprise slug when an org-scoped dashboard's org is consolidated under an enterprise (the typical case — GitHub returns 404 on the `/organizations/{org}/...` billing endpoint for those orgs).
+Optional. **Set only when your organization's billing is consolidated under a GitHub enterprise.** When set, it forces billing calls to `/enterprises/{slug}/settings/billing/ai_credit/usage` regardless of the dashboard's scope.
+
+**Leave unset for standalone organizations** — the app will automatically use `/organizations/{org}/settings/billing/ai_credit/usage`, which is the correct endpoint for orgs that aren't part of an enterprise.
+
+To check whether your org is enterprise-owned:
+
+```bash
+curl -H "Authorization: token <PAT>" https://api.github.com/orgs/<your-org> | jq '.enterprise'
+```
+
+`null` → standalone (leave `NUXT_BILLING_ENTERPRISE` unset); an object with a `slug` → enterprise-owned (use that slug).
 
 ````
 NUXT_BILLING_ENTERPRISE=my-enterprise-slug
 ````
 
-If you get a 404 from the Billing tab with the dashboard scoped to an organization, the error message will point you at this variable.
+If you get a 404 from the Billing tab with the dashboard scoped to an enterprise-owned organization, the error message will point you at this variable.
 
 #### NUXT_GITHUB_API_BASE_URL
 
@@ -433,25 +448,35 @@ NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 Comma-separated allowlist of logins or email addresses that get **administrator privileges** on the dashboard. Administrators can:
 
 * See the **Billing tab** (aggregate AI-credit breakdown by SKU/model/cost-center/repo)
-* See **all users' rows** in the User Metrics tab and Seats Analysis (per [issue #398](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues/398) — restrict user-level breakdown data to authorized users for Austrian/EU compliance)
+* See **all users' rows** in the User Metrics tab and Seats Analysis
+* Query any team on the Teams tab, including enterprise-scope team queries
+* Use the `?login=<other-user>` override on `/api/my-usage` and `/api/user-metrics-history`
+
+The gate is **opt-in**: when `NUXT_USAGE_ADMINS` is empty (default), the admin gate is **inactive** and every authenticated caller is treated as an admin — the dashboard behaves as it did before the allowlist was introduced. Populate the variable to enable row-level scoping (e.g. for GDPR / Austrian works-council compliance per [issue #398](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues/398)); once set, anyone not on the list is restricted to their own row.
 
 ```
-# Closed by default — no one is admin; non-admins see only their own row on User Metrics
+# Opt-in mode: empty allowlist → gate inactive, all authenticated users see everything
 NUXT_USAGE_ADMINS=
 
-# Grant admin to specific logins/emails
+# Enable row-level scoping — only these logins/emails see cross-user data
 NUXT_USAGE_ADMINS=alice,bob@company.com
 ```
 
 > [!IMPORTANT]
-> **Breaking change in 3.11.0:** `NUXT_USAGE_ADMINS` was previously *open-by-default* (an empty value meant "everyone is admin"). It is now **closed-by-default**: anyone not explicitly listed is treated as a regular user and can only see their own row in User Metrics + Seats. Upgrade by setting `NUXT_USAGE_ADMINS` to your admin allowlist.
+> **Behaviour changes across recent releases:**
+> - **3.11.0** introduced `NUXT_USAGE_ADMINS` as a *closed-by-default* gate (empty = nobody is admin).
+> - The current release restores **opt-in** semantics: empty = everyone is admin. GitHub org owners no longer need to be listed to see other users' data unless you deliberately turn the gate on.
+> - There is **no automatic elevation from GitHub org/enterprise roles** — admin status is determined solely by this env var. If you want row-level scoping, list the small set of humans who should see cross-user data.
+> - **PAT-mode** (no OAuth provider configured — `NUXT_PUBLIC_REQUIRE_AUTH`, `NUXT_PUBLIC_USING_GITHUB_AUTH`, `NUXT_PUBLIC_IS_PUBLIC_APP`, `NUXT_PUBLIC_AUTH_PROVIDERS` all unset) always bypasses this gate, because there is no per-user identity to gate on. Lock PAT-mode deployments down at the network layer.
 
 > [!NOTE]
 > When `NUXT_GITHUB_BILLING_TOKEN` is unset, the Billing tab is shown to all users (admin or not) but renders a configuration-help placeholder instead of fetching data; the `NUXT_USAGE_ADMINS` gate only applies once the token is configured.
 
 The Billing tab exposes aggregate breakdowns (model / SKU / cost center) and an admin per-user breakdown. Per-user attribution depends on GitHub tagging each item with a `user`; some enterprise plans return only enterprise-level aggregates, in which case the per-user table is hidden behind an explanatory alert. The User Metrics `ai_credits_used` column and the My Usage spend card are independent of this.
 
-##### What non-admins see
+##### What non-admins see (only when `NUXT_USAGE_ADMINS` is populated)
+
+Row-level scoping only applies when the allowlist is set. With an empty allowlist every column below reads as "✅ all" for every caller.
 
 | Surface | Non-admin | Admin |
 |---|---|---|
@@ -459,10 +484,12 @@ The Billing tab exposes aggregate breakdowns (model / SKU / cost center) and an 
 | My Usage tab (own data) | ✅ own | ✅ own |
 | User Metrics tab | 🔒 own row only + banner | ✅ all rows |
 | Seats Analysis tab | 🔒 own seat only | ✅ all seats |
+| Teams tab — org scope | 🔒 only teams the caller is a member of | ✅ all teams |
+| Teams tab — enterprise scope with `?githubTeam=` | ❌ 403 (GitHub has no enterprise-wide team-membership API) | ✅ all teams |
 | Billing tab (token configured) | ❌ hidden | ✅ visible |
 | Billing tab (token unset) | ⚙️ configuration-help placeholder | ⚙️ configuration-help placeholder |
 
-The filter is enforced **server-side** — non-admin requests never receive other users' data over the wire.
+The filter is enforced **server-side** — non-admin requests never receive other users' data over the wire. On the Teams tab, KPI tiles automatically switch to aggregate signals (rather than derived-from-user-rows) when the caller is row-restricted, so team totals still render correctly.
 
 ##### Auth-mode matrix for Billing & My Usage tabs
 
@@ -472,10 +499,10 @@ Metrics endpoints (User Metrics, My Usage, Seats) accept any token type. Billing
 |---|---|---|---|---|
 | My Usage tab metrics | ✅ fixtures | ✅ | ✅ | ✅ |
 | User Metrics `ai_credits_used` column | ✅ fixtures | ✅ | ✅ | ✅ |
-| My Usage "Your AI credit spend" card | ✅ fixtures | — | — | ✅ with `manage_billing:enterprise` |
-| Billing tab (aggregate + per-user) | ✅ fixtures | — | — | ✅ with `manage_billing:enterprise` |
+| My Usage "Your AI credit spend" card | ✅ fixtures | — | — | ✅ with `manage_billing:enterprise` (enterprise-owned orgs) or `manage_billing:copilot` (standalone orgs) |
+| Billing tab (aggregate + per-user) | ✅ fixtures | — | — | ✅ with `manage_billing:enterprise` (enterprise-owned orgs) or `manage_billing:copilot` (standalone orgs) |
 
-Even when on the admin allowlist, an admin only sees billing data if `NUXT_GITHUB_BILLING_TOKEN` is set AND that classic PAT is SSO-authorized for the target enterprise. If GitHub returns 403, the tab surfaces the message inline so it's clear which side needs adjustment.
+Even when on the admin allowlist, an admin only sees billing data if `NUXT_GITHUB_BILLING_TOKEN` is set AND the classic PAT has the right scope for the org's billing setup — `manage_billing:enterprise` (SSO-authorized for the target enterprise) for enterprise-owned orgs, or `manage_billing:copilot` for standalone orgs. If GitHub returns 403 or 404, the tab surfaces the message inline so it's clear which side needs adjustment (see `NUXT_BILLING_ENTERPRISE` above for the standalone-vs-enterprise-owned decision).
 
 #### OAuth provider variables
 
@@ -516,6 +543,14 @@ Default is `false`. When set to `true`, the application uses a PostgreSQL databa
 
 ````
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false
+````
+
+#### NUXT_PUBLIC_ANNOUNCEMENT_MESSAGE
+
+Optional site-wide announcement banner. When set to a non-empty string, an info banner with this text is shown at the top of the dashboard. Users can dismiss it for the current tab session; a new value re-shows the banner. Leave unset to hide the banner entirely.
+
+````
+NUXT_PUBLIC_ANNOUNCEMENT_MESSAGE=Scheduled maintenance on Sat 08:00 UTC — the sync container will be paused for ~30 minutes.
 ````
 
 #### HTTP_PROXY

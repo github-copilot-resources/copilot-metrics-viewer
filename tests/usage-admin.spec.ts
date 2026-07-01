@@ -1,9 +1,9 @@
 /**
  * Unit tests for the usage-admin pure check.
  *
- * Verifies the strict, closed-by-default behaviour:
- *   - Empty allowlist → false for everyone (even authenticated users).
- *   - Comma/whitespace handling.
+ * Verifies the opt-in behaviour:
+ *   - Empty allowlist → true for everyone (gate inactive, opt-in mode).
+ *   - When set, comma/whitespace/case handling on entries.
  *   - Case-insensitive matching for both login and email.
  *   - No domain-wildcard matching (only explicit entries).
  */
@@ -12,24 +12,24 @@ import { describe, it, expect } from 'vitest';
 import { isUsageAdmin } from '../server/utils/usage-admin';
 
 describe('isUsageAdmin', () => {
-  describe('closed-by-default when allowlist is empty', () => {
-    it('returns false when allowlist is empty', () => {
-      expect(isUsageAdmin({ login: 'alice' }, '')).toBe(false);
+  describe('opt-in gate: empty allowlist means everyone is admin', () => {
+    it('returns true when allowlist is empty', () => {
+      expect(isUsageAdmin({ login: 'alice' }, '')).toBe(true);
     });
 
-    it('returns false when allowlist is whitespace only', () => {
-      expect(isUsageAdmin({ login: 'alice' }, '   ')).toBe(false);
+    it('returns true when allowlist is whitespace only', () => {
+      expect(isUsageAdmin({ login: 'alice' }, '   ')).toBe(true);
     });
 
-    it('returns false when allowlist is comma-only', () => {
-      expect(isUsageAdmin({ login: 'alice' }, ',,,')).toBe(false);
+    it('returns true when allowlist is comma-only', () => {
+      expect(isUsageAdmin({ login: 'alice' }, ',,,')).toBe(true);
     });
 
-    it('returns false when identity has no login or email (closed mode)', () => {
-      expect(isUsageAdmin({}, '')).toBe(false);
+    it('returns true even when identity is empty (unconfigured gate is open)', () => {
+      expect(isUsageAdmin({}, '')).toBe(true);
     });
 
-    it('returns false when allowlist is set but identity has no login or email', () => {
+    it('returns false when allowlist IS set but identity has no login or email', () => {
       expect(isUsageAdmin({}, 'alice,bob')).toBe(false);
     });
   });

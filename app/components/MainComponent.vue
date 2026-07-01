@@ -93,22 +93,19 @@
 
     </v-toolbar>
 
-      <!-- v3.0 Migration Banner -->
+      <!-- Site-wide announcement banner (NUXT_PUBLIC_ANNOUNCEMENT_MESSAGE) -->
     <v-banner
-      v-if="showMigrationBanner"
+      v-if="showAnnouncementBanner"
       color="info"
       icon="mdi-information"
       lines="two"
-      class="migration-banner"
+      class="announcement-banner"
     >
       <v-banner-text>
-        <strong>v3.0 — New Copilot Usage Metrics API.</strong>
-        Your GitHub App now requires the <strong>"Organization Copilot metrics: Read"</strong> permission.
-        Update at GitHub → Settings → Developer settings → GitHub Apps → Permissions.
-        <a href="https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics" target="_blank">Learn more</a>
+        <span style="white-space: pre-line">{{ announcementMessage }}</span>
       </v-banner-text>
       <template #actions>
-        <v-btn text="Dismiss" @click="showMigrationBanner = false" />
+        <v-btn text="Dismiss" @click="dismissAnnouncement" />
       </template>
     </v-banner>
 
@@ -347,7 +344,23 @@ export default defineNuxtComponent({
     AiChatPanel,
     AdminPanel
   },
+  computed: {
+    announcementMessage(): string {
+      return (this.config?.public?.announcementMessage as string) || '';
+    },
+    showAnnouncementBanner(): boolean {
+      return !!this.announcementMessage && !this.announcementDismissed;
+    },
+  },
   methods: {
+    dismissAnnouncement() {
+      this.announcementDismissed = true;
+      if (import.meta.client) {
+        try {
+          sessionStorage.setItem('announcementDismissed', this.announcementMessage);
+        } catch { /* sessionStorage unavailable */ }
+      }
+    },
     logout() {
       const { clear } = useUserSession()
       this.metrics = [];
@@ -522,7 +535,7 @@ export default defineNuxtComponent({
       userMetrics: [] as UserTotals[],
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
-      showMigrationBanner: false,
+      announcementDismissed: false,
       showDateRange: false,
       showAdminPanel: false,
       billingEnabled: true,
@@ -536,6 +549,17 @@ export default defineNuxtComponent({
     this.tabItems.unshift(this.getDisplayTabName(this.itemName));
     
     this.config = useRuntimeConfig();
+
+    // Restore prior dismissal of the announcement banner (per-tab session),
+    // keyed on the exact message so a new announcement re-appears.
+    if (import.meta.client && this.announcementMessage) {
+      try {
+        const dismissed = sessionStorage.getItem('announcementDismissed');
+        if (dismissed === this.announcementMessage) {
+          this.announcementDismissed = true;
+        }
+      } catch { /* sessionStorage unavailable */ }
+    }
 
     // Add teams tab for organization/enterprise to allow team comparison
     if (this.itemName === 'organization' || this.itemName === 'enterprise') {
