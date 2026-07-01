@@ -106,7 +106,7 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
   // ── Identity: session is the ONLY trusted source for the session user ─────
   // Admins may opt in to viewing another user's data via `?login=<other>`
   // (used by the Billing tab's per-user drill-down). Non-admins asking for
-  // another login are silently ignored — they always see themselves.
+  // another login are rejected with 403 by the admin-override branch below.
   const session = await getUserSession(event).catch(() => null);
   const sessionUser = session?.user as { login?: string; email?: string } | undefined;
 

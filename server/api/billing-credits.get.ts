@@ -103,8 +103,10 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   //   - per-user filtering (the JSON endpoint hides usernames)
   //
   // The DB only has enterprise-scoped data (ingester is enterprise-only), so
-  // we only attempt this branch when the call resolves to an enterprise key.
-  // Org-scoped calls fall through to live as before.
+  // we only attempt this branch when we can resolve an enterprise key. Both
+  // enterprise-scoped calls AND org-scoped calls with NUXT_BILLING_ENTERPRISE
+  // set (the documented escape hatch for enterprise-billed orgs) qualify;
+  // plain org-scoped calls without that override fall through to live.
   const billingEnterpriseEarly = ((config.billingEnterprise as string | undefined) || '').trim();
   const dbEnterprise = billingEnterpriseEarly
     || (options.scope === 'enterprise' ? options.githubEnt : '')
