@@ -433,25 +433,35 @@ NUXT_AUTHORIZED_EMAIL_DOMAINS=company.com
 Comma-separated allowlist of logins or email addresses that get **administrator privileges** on the dashboard. Administrators can:
 
 * See the **Billing tab** (aggregate AI-credit breakdown by SKU/model/cost-center/repo)
-* See **all users' rows** in the User Metrics tab and Seats Analysis (per [issue #398](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues/398) — restrict user-level breakdown data to authorized users for Austrian/EU compliance)
+* See **all users' rows** in the User Metrics tab and Seats Analysis
+* Query any team on the Teams tab, including enterprise-scope team queries
+* Use the `?login=<other-user>` override on `/api/my-usage` and `/api/user-metrics-history`
+
+The gate is **opt-in**: when `NUXT_USAGE_ADMINS` is empty (default), the admin gate is **inactive** and every authenticated caller is treated as an admin — the dashboard behaves as it did before the allowlist was introduced. Populate the variable to enable row-level scoping (e.g. for GDPR / Austrian works-council compliance per [issue #398](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues/398)); once set, anyone not on the list is restricted to their own row.
 
 ```
-# Closed by default — no one is admin; non-admins see only their own row on User Metrics
+# Opt-in mode: empty allowlist → gate inactive, all authenticated users see everything
 NUXT_USAGE_ADMINS=
 
-# Grant admin to specific logins/emails
+# Enable row-level scoping — only these logins/emails see cross-user data
 NUXT_USAGE_ADMINS=alice,bob@company.com
 ```
 
 > [!IMPORTANT]
-> **Breaking change in 3.11.0:** `NUXT_USAGE_ADMINS` was previously *open-by-default* (an empty value meant "everyone is admin"). It is now **closed-by-default**: anyone not explicitly listed is treated as a regular user and can only see their own row in User Metrics + Seats. Upgrade by setting `NUXT_USAGE_ADMINS` to your admin allowlist.
+> **Behaviour changes across recent releases:**
+> - **3.11.0** introduced `NUXT_USAGE_ADMINS` as a *closed-by-default* gate (empty = nobody is admin).
+> - The current release restores **opt-in** semantics: empty = everyone is admin. GitHub org owners no longer need to be listed to see other users' data unless you deliberately turn the gate on.
+> - There is **no automatic elevation from GitHub org/enterprise roles** — admin status is determined solely by this env var. If you want row-level scoping, list the small set of humans who should see cross-user data.
+> - **PAT-mode** (no OAuth provider configured — `NUXT_PUBLIC_REQUIRE_AUTH`, `NUXT_PUBLIC_USING_GITHUB_AUTH`, `NUXT_PUBLIC_IS_PUBLIC_APP`, `NUXT_PUBLIC_AUTH_PROVIDERS` all unset) always bypasses this gate, because there is no per-user identity to gate on. Lock PAT-mode deployments down at the network layer.
 
 > [!NOTE]
 > When `NUXT_GITHUB_BILLING_TOKEN` is unset, the Billing tab is shown to all users (admin or not) but renders a configuration-help placeholder instead of fetching data; the `NUXT_USAGE_ADMINS` gate only applies once the token is configured.
 
 The Billing tab exposes aggregate breakdowns (model / SKU / cost center) and an admin per-user breakdown. Per-user attribution depends on GitHub tagging each item with a `user`; some enterprise plans return only enterprise-level aggregates, in which case the per-user table is hidden behind an explanatory alert. The User Metrics `ai_credits_used` column and the My Usage spend card are independent of this.
 
-##### What non-admins see
+##### What non-admins see (only when `NUXT_USAGE_ADMINS` is populated)
+
+Row-level scoping only applies when the allowlist is set. With an empty allowlist every column below reads as "✅ all" for every caller.
 
 | Surface | Non-admin | Admin |
 |---|---|---|
@@ -459,10 +469,12 @@ The Billing tab exposes aggregate breakdowns (model / SKU / cost center) and an 
 | My Usage tab (own data) | ✅ own | ✅ own |
 | User Metrics tab | 🔒 own row only + banner | ✅ all rows |
 | Seats Analysis tab | 🔒 own seat only | ✅ all seats |
+| Teams tab — org scope | 🔒 only teams the caller is a member of | ✅ all teams |
+| Teams tab — enterprise scope with `?githubTeam=` | ❌ 403 (GitHub has no enterprise-wide team-membership API) | ✅ all teams |
 | Billing tab (token configured) | ❌ hidden | ✅ visible |
 | Billing tab (token unset) | ⚙️ configuration-help placeholder | ⚙️ configuration-help placeholder |
 
-The filter is enforced **server-side** — non-admin requests never receive other users' data over the wire.
+The filter is enforced **server-side** — non-admin requests never receive other users' data over the wire. On the Teams tab, KPI tiles automatically switch to aggregate signals (rather than derived-from-user-rows) when the caller is row-restricted, so team totals still render correctly.
 
 ##### Auth-mode matrix for Billing & My Usage tabs
 
@@ -516,6 +528,14 @@ Default is `false`. When set to `true`, the application uses a PostgreSQL databa
 
 ````
 NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false
+````
+
+#### NUXT_PUBLIC_ANNOUNCEMENT_MESSAGE
+
+Optional site-wide announcement banner. When set to a non-empty string, an info banner with this text is shown at the top of the dashboard. Users can dismiss it for the current tab session; a new value re-shows the banner. Leave unset to hide the banner entirely.
+
+````
+NUXT_PUBLIC_ANNOUNCEMENT_MESSAGE=Scheduled maintenance on Sat 08:00 UTC — the sync container will be paused for ~30 minutes.
 ````
 
 #### HTTP_PROXY

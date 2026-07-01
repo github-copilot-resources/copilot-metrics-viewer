@@ -1,5 +1,5 @@
 /**
- * Team-membership gating for non-admin callers (issue #398, Policy C).
+ * Team-membership gating for non-admin callers (originally issue #398, Policy C).
  *
  * Background: aggregate team metrics (interactions, accepted lines, etc.)
  * are derived from individual contributors. On small teams (2-3 people) a
@@ -8,8 +8,13 @@
  * productivity data must not be exposed to people who are not their direct
  * collaborators.
  *
- * Policy:
- *   - Usage admins (NUXT_USAGE_ADMINS) — unchanged, see all teams.
+ * The gate is OPT-IN and only activates when NUXT_USAGE_ADMINS is populated.
+ * With an empty allowlist every caller is treated as an admin and this gate
+ * is a no-op — a deployment operator must opt INTO row-level scoping by
+ * declaring the admin set.
+ *
+ * Policy (only relevant when NUXT_USAGE_ADMINS is set):
+ *   - Usage admins (NUXT_USAGE_ADMINS) — see all teams.
  *   - PAT-mode deployments (no OAuth provider) — bypassed, no session
  *     identity to gate on. Operators are expected to lock these down at the
  *     network layer.
