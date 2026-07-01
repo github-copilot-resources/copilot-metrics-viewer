@@ -215,6 +215,14 @@
               :sort-by="[{ key: 'user', order: 'asc' }]"
               @update:options="onTableOptions"
             >
+              <template #[`item.user`]="{ item }">
+                <a
+                  href="#"
+                  class="text-decoration-none"
+                  :title="`View Copilot activity for ${(item as PerUserRow).user}`"
+                  @click.prevent="openUserDetail((item as PerUserRow).user)"
+                >{{ (item as PerUserRow).user }}</a>
+              </template>
               <template #[`item.netAmount`]="{ item }">
                 ${{ (item as PerUserRow).netAmount.toFixed(2) }}
               </template>
@@ -231,6 +239,24 @@
               </template>
             </v-data-table>
           </v-card>
+
+          <!-- Admin drill-down dialog: shows MyUsageViewer for a selected user -->
+          <v-dialog v-model="userDetailOpen" max-width="1200" scrollable>
+            <v-card v-if="userDetailLogin">
+              <v-card-title class="d-flex align-center">
+                <span>Activity for {{ userDetailLogin }}</span>
+                <v-spacer />
+                <v-btn icon="mdi-close" variant="text" @click="userDetailOpen = false" />
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-0" style="max-height: 80vh;">
+                <MyUsageViewer
+                  :key="userDetailLogin"
+                  :query-params="userDetailQueryParams"
+                />
+              </v-card-text>
+            </v-card>
+          </v-dialog>
 
           <v-card variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">Raw billing line items</v-card-title>
@@ -250,6 +276,7 @@
 <script lang="ts">
 import { defineComponent, computed, reactive, ref, watch, onMounted } from 'vue';
 import { Bar } from 'vue-chartjs';
+import MyUsageViewer from './MyUsageViewer.vue';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -276,7 +303,7 @@ interface PerUserRow {
 
 export default defineComponent({
   name: 'BillingCreditsViewer',
-  components: { Bar },
+  components: { Bar, MyUsageViewer },
   props: {
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
   },
@@ -627,6 +654,24 @@ export default defineComponent({
 
     const dataSourceBadge = computed(() => buildDataSourceBadge(dataSource.value));
 
+    // ── Admin drill-down: click a username → open MyUsageViewer dialog ───────
+    // Billing tab is already admin-gated, so we don't add a second check here.
+    // The /api/my-usage endpoint enforces its own `requireUsageAdmin` when
+    // `?login=<other>` is supplied.
+    const userDetailOpen = ref(false);
+    const userDetailLogin = ref<string | null>(null);
+    function openUserDetail(login: string): void {
+      if (!login) return;
+      userDetailLogin.value = login;
+      userDetailOpen.value = true;
+    }
+    const userDetailQueryParams = computed<Record<string, string>>(() => {
+      // Reuse parent query params (scope + org/ent) so the report the API
+      // fetches matches the current dashboard context; add `login` last so
+      // it wins over anything the parent might have set.
+      return { ...(props.queryParams || {}), login: userDetailLogin.value || '' };
+    });
+
     return {
       data, pending, error, items, periodLabel,
       selectedMonth, currentMonthIso, shiftMonth, isCurrentMonth,
@@ -637,6 +682,7 @@ export default defineComponent({
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
       dataSourceBadge,
+      userDetailOpen, userDetailLogin, userDetailQueryParams, openUserDetail,
     };
   },
 });

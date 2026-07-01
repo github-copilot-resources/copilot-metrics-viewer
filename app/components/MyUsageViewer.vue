@@ -4,11 +4,19 @@
       <div class="d-flex flex-wrap align-start gap-2 text-body-2">
         <div class="mr-3" style="flex: 1; min-width: 250px;">
           <div class="d-flex align-center gap-2">
-            <div class="font-weight-bold text-body-1 mb-1">🧑‍💻 My Usage</div>
+            <div class="font-weight-bold text-body-1 mb-1">
+              <template v-if="data?.viewingAsAdmin">👁️ Usage for <code>{{ data.user.login }}</code></template>
+              <template v-else>🧑‍💻 My Usage</template>
+            </div>
           </div>
           <div class="text-medium-emphasis">
-            Your personal Copilot activity for the reporting period. Data is filtered server-side
-            to your authenticated user only — you can't see other users from this tab.
+            <template v-if="data?.viewingAsAdmin">
+              Admin drill-down — the same personal Copilot activity report this user would see on their own My Usage tab.
+            </template>
+            <template v-else>
+              Your personal Copilot activity for the reporting period. Data is filtered server-side
+              to your authenticated user only — you can't see other users from this tab.
+            </template>
           </div>
         </div>
       </div>
@@ -354,6 +362,7 @@ interface MyUsageSpend {
 
 interface MyUsageResponse {
   user: { login: string; email?: string };
+  viewingAsAdmin?: boolean;
   totals: UserTotals | null;
   dayRecords: UserDayRecord[];
   reportStartDay?: string;
