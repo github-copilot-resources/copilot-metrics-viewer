@@ -215,9 +215,7 @@
         >
           <div class="text-body-2">
             <strong>Showing only your own data.</strong> Per-user breakdowns for
-            other organization members are restricted to administrators. Ask
-            the dashboard operator to add your GitHub login or email to
-            <code>NUXT_USAGE_ADMINS</code> to see other users' data.
+            other organization members are restricted to administrators.
           </div>
         </v-alert>
 

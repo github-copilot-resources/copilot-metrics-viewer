@@ -44,14 +44,23 @@ import mockUsersEnt28Day from '../../public/mock-data/new-api/enterprise-users-2
 /**
  * Per-user spend roll-up sourced from /enterprises/.../ai_credit/usage?user=<login>.
  * Optional — populated only when NUXT_GITHUB_BILLING_TOKEN is configured.
+ *
+ * Both net (what the user pays after any discount) AND gross (list-price)
+ * totals are exposed — issue #398 reporter's plan fully discounts every
+ * item, so netAmount/netQuantity are always 0. The UI needs gross values
+ * to render "you used N credits" tiles meaningfully.
  */
 export interface MyUsageSpend {
-  /** USD (or local currency) total for the user across all SKUs/models in the period. */
+  /** USD net total (what the user is billed) across all SKUs/models. */
   totalAmount: number;
-  /** Total credits/units billed (`netQuantity` sum — typically AI credits). */
+  /** Net credits/units billed (`netQuantity` sum). Zero on fully-discounted plans. */
   totalQuantity: number;
+  /** USD gross total (pre-discount list-price). Non-zero even when fully discounted. */
+  totalGrossAmount: number;
+  /** Gross credits/units consumed (`grossQuantity` sum) — the true "credits used" figure. */
+  totalGrossQuantity: number;
   /** Per-model breakdown so the UI can list "claude-sonnet-4.5: $X.XX" etc. */
-  byModel: { model: string; amount: number; quantity: number }[];
+  byModel: { model: string; amount: number; quantity: number; grossAmount: number; grossQuantity: number }[];
   /** Time period the billing API returned (year/month). */
   timePeriod?: { year?: number; month?: number; day?: number };
   /** Enterprise slug the billing call queried (echoed for the UI footnote). */
@@ -179,12 +188,14 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
     const mockSpend: MyUsageSpend = {
       totalAmount: 18.42,
       totalQuantity: 1842.0,
+      totalGrossAmount: 20.46,
+      totalGrossQuantity: 2046.0,
       timePeriod: { year: 2026, month: 6 },
       enterprise: 'mocked-enterprise',
       byModel: [
-        { model: 'claude-sonnet-4.5', amount: 9.87, quantity: 987.0 },
-        { model: 'gpt-5.3-codex', amount: 5.41, quantity: 541.0 },
-        { model: 'claude-haiku-4.5', amount: 3.14, quantity: 314.0 },
+        { model: 'claude-sonnet-4.5', amount: 9.87, quantity: 987.0, grossAmount: 10.97, grossQuantity: 1097.0 },
+        { model: 'gpt-5.3-codex',     amount: 5.41, quantity: 541.0, grossAmount: 6.01,  grossQuantity: 601.0 },
+        { model: 'claude-haiku-4.5',  amount: 3.14, quantity: 314.0, grossAmount: 3.48,  grossQuantity: 348.0 },
       ],
     };
 
@@ -327,12 +338,14 @@ async function fetchSelfSpend(
     });
     interface BillingResp { timePeriod?: { year?: number; month?: number; day?: number }; enterprise?: string; usageItems: BillingUsageItem[] }
     const resp = await $fetch<BillingResp>(url, { headers });
-    const { totalAmount, totalQuantity, byModel } = aggregateBillingSpend(resp.usageItems);
+    const { totalAmount, totalQuantity, totalGrossAmount, totalGrossQuantity, byModel } = aggregateBillingSpend(resp.usageItems);
 
     return {
       data: {
         totalAmount,
         totalQuantity,
+        totalGrossAmount,
+        totalGrossQuantity,
         byModel,
         timePeriod: resp.timePeriod,
         enterprise: resp.enterprise || billingEnterprise || undefined,

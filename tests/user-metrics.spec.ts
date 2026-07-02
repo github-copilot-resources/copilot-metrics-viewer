@@ -335,43 +335,81 @@ describe('UserTotals business logic', () => {
 });
 
 // ── Multi-file merging (large-enterprise support) ─────────────────────────────
+// GitHub returns per-user reports split across multiple download files for
+// large orgs. Each file contains its own `user_totals` (aggregated only over
+// that file's date subset) plus per-day rows. If we naively flatMap the
+// per-file `user_totals` we double-count users that appear in more than one
+// file — see issue #398 (reporter saw 3,401 "total users" for an org with
+// ~200 Copilot seats).
+//
+// The fix (`fetchLatestUserReport` / `fetchUserReportForDate`) re-derives
+// `user_totals` from the merged `day_totals` via `aggregateUserDayRecords`
+// whenever `reports.length > 1`. These tests exercise that dedup path.
 
 describe('User report merging for large enterprises', () => {
-  it('merges user_totals arrays from multiple download files', () => {
-    // Simulate split report — two files each with different users
-    const file1: UserReport = {
+  it('re-aggregates user_totals from merged day_totals when the same user appears in multiple files (#398)', () => {
+    // Same user in two files with 2 days each — the naive flatMap would emit
+    // two rows for octocat and inflate downstream counts.
+    const day1: UserDayRecord = {
+      user_login: 'octocat',
+      user_id: 1,
+      day: '2026-02-04',
       report_start_day: '2026-02-04',
       report_end_day: '2026-03-03',
       organization_id: '100000001',
-      user_totals: [SAMPLE_USER_REPORT.user_totals[0]!],  // octocat
+      enterprise_id: '200001',
+      user_initiated_interaction_count: 10,
+      code_generation_activity_count: 30,
+      code_acceptance_activity_count: 20,
+      loc_suggested_to_add_sum: 100,
+      loc_suggested_to_delete_sum: 5,
+      loc_added_sum: 70,
+      loc_deleted_sum: 3,
     };
-    const file2: UserReport = {
-      report_start_day: '2026-02-04',
-      report_end_day: '2026-03-03',
-      organization_id: '100000001',
-      user_totals: [SAMPLE_USER_REPORT.user_totals[1]!],  // octokitten
-    };
+    const day2: UserDayRecord = { ...day1, day: '2026-02-05', user_initiated_interaction_count: 15, code_generation_activity_count: 40 };
+    const day3: UserDayRecord = { ...day1, day: '2026-02-18', user_initiated_interaction_count: 20, code_generation_activity_count: 50 };
+    const day4: UserDayRecord = { ...day1, day: '2026-02-19', user_initiated_interaction_count: 25, code_generation_activity_count: 60 };
 
-    // Same logic as fetchLatestUserReport
-    const reports = [file1, file2];
-    const merged: UserReport = { ...reports[0]! };
-    merged.user_totals = reports.flatMap(r => r.user_totals);
+    // First file covers early Feb, second covers mid-Feb — same octocat in both.
+    const mergedDayTotals = [day1, day2, day3, day4];
+    const deduped = aggregateUserDayRecords(mergedDayTotals);
 
-    expect(merged.user_totals).toHaveLength(2);
-    expect(merged.user_totals.map(u => u.login)).toContain('octocat');
-    expect(merged.user_totals.map(u => u.login)).toContain('octokitten');
-    expect(merged.report_start_day).toBe('2026-02-04');
-    expect(merged.report_end_day).toBe('2026-03-03');
+    expect(deduped).toHaveLength(1);
+    expect(deduped[0]!.login).toBe('octocat');
+    expect(deduped[0]!.total_active_days).toBe(4);
+    expect(deduped[0]!.user_initiated_interaction_count).toBe(70); // 10 + 15 + 20 + 25
+    expect(deduped[0]!.code_generation_activity_count).toBe(180);  // 30 + 40 + 50 + 60
   });
 
-  it('handles single-file report without merging', () => {
-    const reports = [SAMPLE_USER_REPORT];
-    const merged: UserReport = { ...reports[0]! };
-    if (reports.length > 1) {
-      merged.user_totals = reports.flatMap(r => r.user_totals);
-    }
+  it('preserves distinct users across files (disjoint case)', () => {
+    const octocatDay: UserDayRecord = {
+      user_login: 'octocat',
+      user_id: 1,
+      day: '2026-02-04',
+      report_start_day: '2026-02-04',
+      report_end_day: '2026-03-03',
+      organization_id: '100000001',
+      enterprise_id: '200001',
+      user_initiated_interaction_count: 10,
+      code_generation_activity_count: 20,
+      code_acceptance_activity_count: 10,
+      loc_suggested_to_add_sum: 50,
+      loc_suggested_to_delete_sum: 0,
+      loc_added_sum: 30,
+      loc_deleted_sum: 0,
+    };
+    const octokittenDay: UserDayRecord = { ...octocatDay, user_login: 'octokitten', user_id: 2 };
 
-    expect(merged.user_totals).toHaveLength(SAMPLE_USER_REPORT.user_totals.length);
+    const deduped = aggregateUserDayRecords([octocatDay, octokittenDay]);
+    expect(deduped).toHaveLength(2);
+    expect(deduped.map(u => u.login).sort()).toEqual(['octocat', 'octokitten']);
+  });
+
+  it('SAMPLE_USER_REPORT sanity: uses distinct logins so a single-file report needs no dedup', () => {
+    // Guardrail — if we ever add a duplicate row to SAMPLE_USER_REPORT this
+    // test starts failing and the fixture stays honest.
+    const logins = SAMPLE_USER_REPORT.user_totals.map(u => u.login);
+    expect(new Set(logins).size).toBe(logins.length);
   });
 });
 
