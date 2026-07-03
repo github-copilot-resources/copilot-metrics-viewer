@@ -90,7 +90,7 @@ test.describe('My Usage tab', () => {
         await expect(title).toBeVisible();
         const card = title.locator('xpath=ancestor::*[contains(@class,"v-card")][1]');
         await expect(card).toContainText('Total spend');
-        await expect(card).toContainText('Credits billed');
+        await expect(card).toContainText('Credits used');
         await expect(card.locator('tbody tr').first()).toBeVisible();
     });
 
