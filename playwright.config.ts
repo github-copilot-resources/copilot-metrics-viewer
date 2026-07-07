@@ -6,8 +6,10 @@ import { isCI } from 'std-env'
 // set the runtimeConfig values for the test
 process.env.NUXT_PUBLIC_USING_GITHUB_AUTH = 'false'
 process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'true'
-// Enable historical mode for e2e tests so the teams tab is visible for teams-comparison tests
-process.env.NUXT_PUBLIC_ENABLE_HISTORICAL_MODE = 'true'
+// Enable historical mode for e2e tests so the teams tab is visible for teams-comparison tests.
+// Historical mode is now derived from DATABASE_URL at boot (see nuxt.config.ts) —
+// use a sentinel value; the mock-mode server never actually connects to Postgres.
+process.env.DATABASE_URL = 'postgres://mock:mock@localhost:5432/mock'
 // Hide 'agent activity' tab to test the configurable tabs feature
 process.env.NUXT_PUBLIC_HIDDEN_TABS = 'agent activity'
 // Enable AI chat for e2e testing (uses mock responses in mock mode)

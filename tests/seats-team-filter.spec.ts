@@ -102,21 +102,21 @@ function makeEvent(withAuth: boolean): any {
 }
 
 describe('/api/seats handler – historical mode team filtering', () => {
-  const ORIG_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIG_DBURL = process.env.DATABASE_URL
   const ORIG_MOCKED     = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
   const ORIG_GET_QUERY  = (globalThis as any).getQuery
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.ENABLE_HISTORICAL_MODE    = 'true'
+    process.env.DATABASE_URL    = 'postgres://test'
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
     // Storage returns both users
     mockGetLatestSeats.mockResolvedValue([seatOctocat, seatOctokitten])
   })
 
   afterEach(() => {
-    if (ORIG_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIG_HISTORICAL
+    if (ORIG_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIG_DBURL
 
     if (ORIG_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIG_MOCKED

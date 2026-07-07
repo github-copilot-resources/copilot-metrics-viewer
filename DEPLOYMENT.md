@@ -187,7 +187,6 @@ Adds PostgreSQL for persistent storage — enables metrics beyond 28 days, per-u
 export NUXT_GITHUB_TOKEN=github_pat_...    # Fine-grained PAT with "Copilot metrics" permission
 export NUXT_PUBLIC_GITHUB_ORG=your-org
 export NUXT_PUBLIC_IS_DATA_MOCKED=false
-export ENABLE_HISTORICAL_MODE=true
 
 # Start web app + database
 docker compose up web db
@@ -209,7 +208,6 @@ export NUXT_GITHUB_TOKEN=github_pat_...
 export NUXT_PUBLIC_SCOPE=enterprise
 export NUXT_PUBLIC_GITHUB_ENT=your-enterprise
 export NUXT_PUBLIC_IS_DATA_MOCKED=false
-export ENABLE_HISTORICAL_MODE=true
 
 docker compose up web db
 docker compose run --rm sync
@@ -399,7 +397,7 @@ Required environment for billing ingest:
 - `NUXT_GITHUB_BILLING_TOKEN` — classic PAT with `manage_billing:enterprise` scope, SSO-authorized for the target enterprise. Same token used by `/api/billing-credits`.
 - `NUXT_BILLING_ENTERPRISE` — enterprise slug (e.g. `acme-ent`).
 - `BILLING_CSV_DAYS_BACK` — optional, default `30`. Sync container uses this as its window each tick.
-- Database mode (`ENABLE_HISTORICAL_MODE=true` + valid `DATABASE_URL` / PG env vars).
+- Database mode — set `DATABASE_URL` (or valid `PG*` env vars). Setting `DATABASE_URL` alone enables historical mode.
 
 If these are not set, the sync container logs `Billing CSV ingest skipped` and exits 0; the admin endpoints return 503 with a clear "configure X" message. No regression for deployments not opted into billing ingest.
 
@@ -414,8 +412,7 @@ If these are not set, the sync container logs `Billing CSV ingest skipped` and e
 | `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
 | `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise scope |
 | `NUXT_SESSION_PASSWORD` | Session encryption key (min 32 chars) | Yes |
-| `DATABASE_URL` | PostgreSQL connection string | Historical mode only |
-| `ENABLE_HISTORICAL_MODE` | `true` to read metrics from database | Historical mode only |
+| `DATABASE_URL` | PostgreSQL connection string. **Setting this alone enables historical mode** (DB-backed reads, `/api/*-history` endpoints, Teams tab). | Historical mode only |
 | `SYNC_DAYS_BACK` | Days to sync (default: 1 for daily, 28 for bulk) | Sync only |
 | `NUXT_GITHUB_BILLING_TOKEN` | Classic PAT with `manage_billing:enterprise` (SSO-authorized) used by `/api/billing-credits*` and the async CSV ingest. | Billing |
 | `NUXT_BILLING_ENTERPRISE` | Enterprise slug to query for billing endpoints (overrides dashboard scope). | Billing |

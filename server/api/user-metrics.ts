@@ -131,7 +131,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────
-  if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+  if (isDbConfigured()) {
     const isTeamScope = !!options.githubTeam;
 
     // Team-scoped queries require auth to resolve current team membership

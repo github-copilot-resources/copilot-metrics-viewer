@@ -3,7 +3,7 @@
  *
  * Two-phase test (run in separate containers sharing a volume):
  *   Phase 1 (@seed): Run with IS_DATA_MOCKED=true → admin sync writes mock data to DB
- *   Phase 2 (@storage): Run with IS_DATA_MOCKED=false, ENABLE_HISTORICAL_MODE=true
+ *   Phase 2 (@storage): Run with IS_DATA_MOCKED=false and DATABASE_URL set
  *            → dashboard reads from DB, no mock, no GitHub token needed
  *
  * Usage:
@@ -52,7 +52,7 @@ test.describe('Seed storage @seed', () => {
 });
 
 // --- Phase 2: Dashboard reads from DB ---
-// Runs in a container with IS_DATA_MOCKED=false, ENABLE_HISTORICAL_MODE=true
+// Runs in a container with IS_DATA_MOCKED=false and DATABASE_URL set
 test.describe('Storage Pipeline @storage', () => {
 
   test('dashboard loads metrics from DB', async ({ browser }) => {

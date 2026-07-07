@@ -68,6 +68,5 @@ jobs:
       #     NUXT_SESSION_PASSWORD=copilot-agent-setup-session-password-32chars
       #     NUXT_PUBLIC_GITHUB_ORG=octodemo
       #     NUXT_PUBLIC_IS_DATA_MOCKED=true
-      #     ENABLE_HISTORICAL_MODE=false
       #     RUN_COMMAND='npm run preview'
       #     npx playwright test --grep-invert "@seed|@storage"

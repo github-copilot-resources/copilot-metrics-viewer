@@ -2,8 +2,8 @@
  * GET /api/seats-history
  *
  * Returns a time-series of daily seat snapshots aggregated into summary
- * statistics.  Only available when ENABLE_HISTORICAL_MODE=true (data is
- * collected by the daily sync job).
+ * statistics.  Only available when historical mode is on (DATABASE_URL is set —
+ * data is collected by the daily sync job).
  *
  * Response: SeatHistoryEntry[]
  *   { snapshot_date, total_seats, never_active, inactive_7d, inactive_30d }
@@ -11,14 +11,15 @@
 
 import { Options } from '@/model/Options';
 import { getSeatsHistorySummary } from '../storage/seats-storage';
+import { isDbConfigured } from '../storage/db';
 
 export default defineEventHandler(async (event) => {
   const logger = console;
 
-  if (process.env.ENABLE_HISTORICAL_MODE !== 'true') {
+  if (!isDbConfigured()) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'seats-history endpoint requires ENABLE_HISTORICAL_MODE=true'
+      statusMessage: 'seats-history endpoint requires DATABASE_URL to be set (historical mode).'
     });
   }
 

@@ -292,7 +292,6 @@ Public variables:
 - `NUXT_PUBLIC_GITHUB_ENT`
 - `NUXT_PUBLIC_GITHUB_ORG`
 - `NUXT_PUBLIC_HIDDEN_TABS`
-- `NUXT_PUBLIC_ENABLE_HISTORICAL_MODE`
 
 can be overridden by route parameters, e.g.
 - `http://localhost:3000/enterprises/octo-demo-ent`
@@ -534,15 +533,18 @@ Available tab names: `languages`, `editors`, `copilot chat`, `agent activity`, `
 NUXT_PUBLIC_HIDDEN_TABS=agent activity,api response
 ````
 
-#### NUXT_PUBLIC_ENABLE_HISTORICAL_MODE
+#### DATABASE_URL — enables historical mode
 
-Default is `false`. When set to `true`, the application uses a PostgreSQL database (configured via `DATABASE_URL`) to store and query historical Copilot metrics.
+Historical mode is enabled by simply setting `DATABASE_URL` to a PostgreSQL connection string. When set, the application stores and queries historical Copilot metrics from the database, exposes the `/api/*-history` endpoints, and shows the **Teams** comparison tab.
+
+There is no separate `NUXT_PUBLIC_ENABLE_HISTORICAL_MODE` flag — the client-side flag (`config.public.enableHistoricalMode`) is derived from `DATABASE_URL` at server boot to guarantee the client and server can never drift.
 
 > [!IMPORTANT]
-> The **Teams** tab is automatically hidden when `NUXT_PUBLIC_ENABLE_HISTORICAL_MODE` is not `true`. Team-level metrics are derived from per-user daily records in the database (`user_day_metrics` table). Without the database, the teams comparison tab would display identical org-wide data for every team.
+> The **Teams** tab is automatically hidden when `DATABASE_URL` is not set. Team-level metrics are derived from per-user daily records in the database (`user_day_metrics` table). Without the database, the teams comparison tab would display identical org-wide data for every team.
 
 ````
-NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=false
+# Enable historical mode by setting a Postgres connection string:
+DATABASE_URL=postgres://user:password@host:5432/copilot_metrics
 ````
 
 #### NUXT_PUBLIC_ANNOUNCEMENT_MESSAGE

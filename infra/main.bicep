@@ -68,10 +68,6 @@ var settings = concat(
       value: githubScope
     }
     {
-      name: 'ENABLE_HISTORICAL_MODE'
-      value: 'true'
-    }
-    {
       name: 'DATABASE_URL'
       value: databaseUrl
       secret: true

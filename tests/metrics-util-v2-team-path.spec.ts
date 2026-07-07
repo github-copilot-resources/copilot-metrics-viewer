@@ -3,7 +3,7 @@
  *
  * Bug: the line `const userDayRecords = await getUserDayMetricsByDateRange(...)`
  * had the function name accidentally deleted, leaving `userDayRecords` undeclared.
- * Any request with `githubTeam` + `ENABLE_HISTORICAL_MODE=true` would crash with
+ * Any request with `githubTeam` + `DATABASE_URL` set would crash with
  * a ReferenceError and return HTTP 500.
  *
  * These tests verify:
@@ -106,12 +106,12 @@ function makeEvent(withAuth = true): any {
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('getMetricsDataV2 — historical mode team path (regression for 500 bug)', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE;
+  const ORIGINAL_DBURL = process.env.DATABASE_URL;
   const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.ENABLE_HISTORICAL_MODE = 'true';
+    process.env.DATABASE_URL = 'postgres://test';
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false';
     _mockQuery = {
       scope: 'organization',
@@ -127,8 +127,8 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
   });
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE;
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL;
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = ORIGINAL_DBURL;
     if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED;
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED;
     vi.resetModules();

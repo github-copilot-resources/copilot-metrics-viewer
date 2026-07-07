@@ -453,7 +453,7 @@ vi.mock('../server/storage/user-metrics-storage', () => ({
 }))
 
 // DB-layer mocks for the live-API-path DB-first tests
-const mockIsDbConfigured = vi.fn(() => false)
+const mockIsDbConfigured = vi.fn(() => !!process.env.DATABASE_URL)
 const mockGetUserDayMetricsByDateRange = vi.fn(async () => [] as UserDayRecord[])
 
 vi.mock('../server/storage/db', () => ({
@@ -476,18 +476,18 @@ function makeEvent(withAuth: boolean): any {
 }
 
 describe('/api/user-metrics handler – historical mode fallback', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
   const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
   })
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
     if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED
   })
@@ -555,15 +555,15 @@ describe('/api/user-metrics handler – historical mode fallback', () => {
 // ── /api/user-metrics-history handler — graceful DB failure ──────────────────
 
 describe('/api/user-metrics-history handler – storage failure returns empty array', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
 
   beforeEach(() => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
   })
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
   })
 
   it('returns [] instead of throwing 500 when getUserMetricsHistory rejects', async () => {
@@ -615,13 +615,13 @@ vi.mock('../server/api/seats', () => ({
 }))
 
 describe('/api/user-metrics handler – team filtering', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
   const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
   const ORIGINAL_GET_QUERY = (globalThis as any).getQuery
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
     mockFetchAllTeamMembers.mockResolvedValue([
       { login: 'octocat', id: 1 },
@@ -629,8 +629,8 @@ describe('/api/user-metrics handler – team filtering', () => {
   })
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
     if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED
     ;(globalThis as any).getQuery = ORIGINAL_GET_QUERY
@@ -792,7 +792,7 @@ import { fetchRawUserDayRecords as _fetchRawUserDayRecords } from '../server/ser
 const mockFetchRawUserDayRecords = vi.mocked(_fetchRawUserDayRecords)
 
 describe('/api/user-metrics handler – live path DB-first when date range > 28 days', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
   const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
   const ORIGINAL_GET_QUERY = (globalThis as any).getQuery
 
@@ -819,7 +819,7 @@ describe('/api/user-metrics handler – live path DB-first when date range > 28 
   beforeEach(() => {
     vi.clearAllMocks()
     // Historical mode is OFF — we're testing the live path
-    delete process.env.ENABLE_HISTORICAL_MODE
+    delete process.env.DATABASE_URL
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
     ;(globalThis as any).getQuery = () => ({
       scope: 'organization',
@@ -832,8 +832,8 @@ describe('/api/user-metrics handler – live path DB-first when date range > 28 
   })
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
     if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED
     ;(globalThis as any).getQuery = ORIGINAL_GET_QUERY
