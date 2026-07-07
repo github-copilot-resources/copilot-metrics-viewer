@@ -454,7 +454,7 @@ vi.mock('../server/storage/user-metrics-storage', () => ({
 
 // DB-layer mocks for the live-API-path DB-first tests
 const mockIsDbConfigured = vi.fn(() => !!process.env.DATABASE_URL)
-const mockGetUserDayMetricsByDateRange = vi.fn(async () => [] as UserDayRecord[])
+const mockGetUserDayMetricsByDateRange = vi.fn(async (..._args: unknown[]) => [] as UserDayRecord[])
 
 vi.mock('../server/storage/db', () => ({
   isDbConfigured: () => mockIsDbConfigured(),
