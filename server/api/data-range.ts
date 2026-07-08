@@ -40,14 +40,19 @@ function toIsoDay(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** ISO YYYY-MM-DD for yesterday (UTC). Shared between live and historical modes. */
+function yesterdayIso(): string {
+  const now = new Date();
+  return toIsoDay(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+}
+
 /** Live-mode default window: the 28 days ending yesterday. */
 function liveWindow(): { earliest: string; latest: string } {
-  const now = new Date();
-  // Yesterday — GitHub metrics have ~1-day lag, today is not ready yet
-  const latest = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const latestIso = yesterdayIso();
+  const latest = new Date(`${latestIso}T00:00:00Z`);
   // 28 days inclusive ending yesterday → start = latest - 27d
   const earliest = new Date(latest.getTime() - 27 * 24 * 60 * 60 * 1000);
-  return { earliest: toIsoDay(earliest), latest: toIsoDay(latest) };
+  return { earliest: toIsoDay(earliest), latest: latestIso };
 }
 
 /** Extract every `day` (YYYY-MM-DD) field from a mock JSON `day_totals` array. */
@@ -119,7 +124,16 @@ export default defineEventHandler(async (event): Promise<DataRange> => {
   // sync pipeline regardless of the mode label.
   try {
     const stored = await historicalRange(scope, identifier);
-    if (stored) return { ...stored, mode: 'historical' };
+    if (stored) {
+      // Bug #412: the sync container ingests once/day, so MAX(metrics_date)
+      // can lag 1–2 days behind the calendar. Meanwhile the billing tile on
+      // My Usage pulls live from GitHub and already shows yesterday's spend.
+      // Widen `latest` to at least yesterday so the date picker doesn't
+      // block users from selecting a day that the billing endpoint (and the
+      // live-API fallback in my-usage / metrics handlers) will happily serve.
+      const widenedLatest = stored.latest < yesterdayIso() ? yesterdayIso() : stored.latest;
+      return { earliest: stored.earliest, latest: widenedLatest, mode: 'historical' };
+    }
     logger.info('[data-range] No stored data yet, falling back to live window');
   } catch (err) {
     logger.warn('[data-range] Storage lookup failed, falling back to live window:', err);
