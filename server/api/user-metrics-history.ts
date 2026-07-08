@@ -11,20 +11,21 @@
  *    Returns UserTimeSeriesEntry[] — one entry per snapshot where the user appears,
  *    showing that individual user's stats over time.
  *
- * Only available when ENABLE_HISTORICAL_MODE=true.
+ * Only available when historical mode is on (DATABASE_URL is set).
  */
 
 import { Options } from '@/model/Options';
 import { getUserMetricsHistory, getUserTimeSeries } from '../storage/user-metrics-storage';
+import { isDbConfigured } from '../storage/db';
 import { isUsageAdminForEvent, getSessionLoginForFilter } from '../utils/usage-admin';
 
 export default defineEventHandler(async (event) => {
   const logger = console;
 
-  if (process.env.ENABLE_HISTORICAL_MODE !== 'true') {
+  if (!isDbConfigured()) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'user-metrics-history endpoint requires ENABLE_HISTORICAL_MODE=true'
+      statusMessage: 'user-metrics-history endpoint requires DATABASE_URL to be set (historical mode).'
     });
   }
 

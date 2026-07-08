@@ -6,6 +6,7 @@
  */
 
 import pg from 'pg';
+export { isDbConfigured } from './db-config';
 const { Pool } = pg;
 
 let _pool: pg.Pool | null = null;
@@ -33,12 +34,10 @@ export function getPool(): pg.Pool {
 }
 
 /**
- * Whether DB-backed historical storage is enabled. When false, endpoints
- * that have a DB-backed path should fall back to the live GitHub API.
+ * Whether DB-backed historical storage is enabled. Re-exported from db-config.
+ * (Kept here as a comment anchor — the implementation lives in db-config.ts so
+ * modules that only need the flag don't pay the cost of importing `pg`.)
  */
-export function isDbConfigured(): boolean {
-  return !!process.env.DATABASE_URL || process.env.ENABLE_HISTORICAL_MODE === 'true';
-}
 
 /**
  * Close the connection pool (for graceful shutdown).

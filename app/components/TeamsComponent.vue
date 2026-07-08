@@ -33,7 +33,7 @@
     >
       <strong>Performance notice:</strong> Team metrics are computed by fetching enterprise-wide user data and filtering by team membership.
       Each team selection triggers a full user-metrics download, which may hit GitHub API rate limits with frequent use.
-      For production use, enable <strong>historical mode</strong> (<code>ENABLE_HISTORICAL_MODE=true</code>) to cache data in the database and avoid repeated API calls.
+      For production use, enable <strong>historical mode</strong> (set <code>DATABASE_URL</code>) to cache data in the database and avoid repeated API calls.
     </v-alert>
 
     <!-- Team selector -->

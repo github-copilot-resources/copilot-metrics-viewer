@@ -24,6 +24,7 @@ function setQuery(q: Record<string, string>) { _query = q }
 const mockPoolQuery = vi.fn()
 vi.mock('../server/storage/db', () => ({
   getPool: () => ({ query: (...args: any[]) => mockPoolQuery(...args) }),
+  isDbConfigured: () => !!process.env.DATABASE_URL,
 }))
 
 /** Build an empty H3-style event (the handler does not read it directly). */
@@ -31,20 +32,20 @@ function makeEvent() {
   return { context: { headers: new Headers() }, node: { req: { url: '/api/data-range' } } }
 }
 
-const ORIG_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+const ORIG_DBURL = process.env.DATABASE_URL
 const ORIG_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
 
 describe('/api/data-range handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.ENABLE_HISTORICAL_MODE
+    delete process.env.DATABASE_URL
     delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     setQuery({ scope: 'organization', githubOrg: 'test-org' })
   })
 
   afterEach(() => {
-    if (ORIG_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIG_HISTORICAL
+    if (ORIG_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIG_DBURL
     if (ORIG_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIG_MOCKED
   })
@@ -90,7 +91,7 @@ describe('/api/data-range handler', () => {
   })
 
   it('historical mode: returns DB-derived earliest/latest', async () => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     mockPoolQuery.mockResolvedValue({
       rows: [{ earliest: '2026-01-15', latest: '2026-06-14' }],
     })
@@ -106,7 +107,7 @@ describe('/api/data-range handler', () => {
   })
 
   it('historical mode: strips team- prefix to base scope', async () => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     setQuery({ scope: 'team-organization', githubOrg: 'test-org', githubTeam: 'a-team' })
     mockPoolQuery.mockResolvedValue({
       rows: [{ earliest: '2026-01-15', latest: '2026-06-14' }],
@@ -120,7 +121,7 @@ describe('/api/data-range handler', () => {
   })
 
   it('historical mode: falls back to live window when DB has no data', async () => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     mockPoolQuery.mockResolvedValue({ rows: [{ earliest: null, latest: null }] })
 
     const { default: handler } = await import('../server/api/data-range')
@@ -132,7 +133,7 @@ describe('/api/data-range handler', () => {
   })
 
   it('historical mode: falls back to live window when the DB query throws', async () => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     mockPoolQuery.mockRejectedValue(new Error('connection refused'))
 
     const { default: handler } = await import('../server/api/data-range')

@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
 import { resolve } from 'path';
 import { getLatestSeats } from '../storage/seats-storage';
+import { isDbConfigured } from '../storage/db-config';
 import { filterSeatsByTeamMembers } from '../utils/seats-filter';
 import { findNodeInTree, collectNodeAndDescendants, normalizeUPNtoLogin } from '../utils/entra-mock-tree';
 import type { MockTreeNode } from '../utils/entra-mock-tree';
@@ -269,7 +270,7 @@ export default defineEventHandler(async (event) => {
 
   if (!event.context.headers?.has('Authorization')) {
     // ── Historical mode without auth — serve from DB ───────────────────────
-    if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+    if (isDbConfigured()) {
       // Team-scoped requests require fetching team members from GitHub, which
       // needs auth. Without auth we cannot apply the team filter safely.
       if (options.githubTeam) {
@@ -290,7 +291,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── Historical mode with auth — DB first, live fallback ───────────────────
-  if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+  if (isDbConfigured()) {
     const scope      = options.scope      || 'organization';
     const identifier = options.githubOrg  || options.githubEnt || '';
     if (identifier) {

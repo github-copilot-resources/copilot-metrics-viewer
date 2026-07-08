@@ -268,7 +268,6 @@ jobs:
                 NUXT_USAGE_ADMINS=${{ secrets.PREVIEW_USAGE_ADMINS }} \
                 NUXT_BILLING_ENTERPRISE=${{ secrets.PREVIEW_BILLING_ENTERPRISE }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-                NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 NITRO_PORT=3000 \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
@@ -290,7 +289,6 @@ jobs:
                 NUXT_USAGE_ADMINS=${{ secrets.PREVIEW_USAGE_ADMINS }} \
                 NUXT_BILLING_ENTERPRISE=${{ secrets.PREVIEW_BILLING_ENTERPRISE }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-                NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 NITRO_PORT=3000 \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
@@ -348,7 +346,6 @@ jobs:
               --env-vars \
                 NUXT_GITHUB_TOKEN=${{ secrets.PREVIEW_GITHUB_TOKEN }} \
                 DATABASE_URL=${{ steps.dburl.outputs.database_url }} \
-                NUXT_PUBLIC_ENABLE_HISTORICAL_MODE=true \
                 NUXT_PUBLIC_IS_DATA_MOCKED=false \
                 NUXT_PUBLIC_SCOPE=${{ secrets.PREVIEW_SCOPE || 'organization' }} \
                 NUXT_PUBLIC_GITHUB_ORG=${{ secrets.PREVIEW_GITHUB_ORG }}

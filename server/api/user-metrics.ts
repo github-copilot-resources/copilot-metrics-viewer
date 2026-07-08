@@ -19,6 +19,8 @@ import {
   type UserTotals
 } from '../services/github-copilot-usage-api';
 import { getUserMetricsByDateRange } from '../storage/user-metrics-storage';
+import { getUserDayMetricsByDateRange } from '../storage/user-day-metrics-storage';
+import { isDbConfigured } from '../storage/db';
 import { fetchAllTeamMembers } from './seats';
 import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
@@ -129,7 +131,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────
-  if (process.env.ENABLE_HISTORICAL_MODE === 'true') {
+  if (isDbConfigured()) {
     const isTeamScope = !!options.githubTeam;
 
     // Team-scoped queries require auth to resolve current team membership
@@ -183,11 +185,28 @@ export default defineEventHandler(async (event) => {
     let userTotals: UserTotals[];
 
     if (options.since || options.until) {
-      // Date range specified: fetch per-day records so we can filter accurately
-      const dayRecords = await fetchRawUserDayRecords(
-        { scope, identifier, teamSlug: options.githubTeam },
-        event.context.headers
-      );
+      // Date range specified.
+      // When DB is configured, prefer per-day records stored there — they cover
+      // arbitrary historical ranges beyond the 28-day live API window.
+      let dayRecords: UserDayRecord[];
+      if (isDbConfigured()) {
+        const since = options.since ?? '1970-01-01';
+        const until = options.until ?? '9999-12-31';
+        dayRecords = await getUserDayMetricsByDateRange(scope, identifier, since, until);
+        // Fall back to the live API if the DB is empty for this range (e.g.
+        // sync hasn't run yet) — better than returning blank.
+        if (dayRecords.length === 0) {
+          dayRecords = await fetchRawUserDayRecords(
+            { scope, identifier, teamSlug: options.githubTeam },
+            event.context.headers
+          );
+        }
+      } else {
+        dayRecords = await fetchRawUserDayRecords(
+          { scope, identifier, teamSlug: options.githubTeam },
+          event.context.headers
+        );
+      }
       userTotals = aggregateUserDayRecords(
         filterDaysByDateRange(dayRecords, options.since, options.until)
       );

@@ -12,7 +12,7 @@
 
 import { Options } from '@/model/Options';
 import { baseScope } from '../../storage/user-day-metrics-storage';
-import { getPool } from '../../storage/db';
+import { getPool, isDbConfigured } from '../../storage/db';
 import { getFailedSyncsForScope, getPendingSyncsForScope } from '../../storage/sync-storage';
 import { getSyncStats } from '../../services/sync-service';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
@@ -58,7 +58,7 @@ async function probeDb(): Promise<OverviewResponse['db']> {
 /** Resolve the current data mode using the same precedence as /api/data-range. */
 function resolveMode(isDataMocked: boolean, dbConnected: boolean): OverviewResponse['mode'] {
   if (isDataMocked) return 'mock';
-  if (process.env.ENABLE_HISTORICAL_MODE === 'true' && dbConnected) return 'historical';
+  if (isDbConfigured() && dbConnected) return 'historical';
   return 'live';
 }
 
