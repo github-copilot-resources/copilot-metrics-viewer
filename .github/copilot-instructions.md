@@ -2,7 +2,7 @@
 name: copilot-metrics-viewer
 description: Nuxt 3 web application for GitHub Copilot usage metrics and analytics
 stack: Vue.js, TypeScript, Nuxt 3, Vuetify, Chart.js
-version: 3.6.1
+version: 3.11.3
 ---
 
 # GitHub Copilot Metrics Viewer
@@ -155,26 +155,26 @@ The CI release workflow **hard-fails** if the git tag does not match `package.js
 
 **During code review, flag a missing version bump if the PR:**
 - Is labelled as a release or contains a changelog/release-notes update
-- Bumps the git tag (e.g. `v3.7.0`) without a matching change to `"version"` in `package.json`
+- Bumps the git tag (e.g. `v3.12.0`) without a matching change to `"version"` in `package.json`
 
 **The correct release workflow:**
 1. In a commit on `main`, bump `package.json` **and** `package-lock.json` together — always use
    `npm version` (never edit `package.json` manually) so both files stay in sync:
    ```bash
-   # Patch bump (3.6.1 → 3.6.2):
+   # Patch bump (3.11.2 → 3.11.3):
    npm version patch --no-git-tag-version
 
    # Or set an explicit version:
-   npm version 3.7.0 --no-git-tag-version
+   npm version 3.12.0 --no-git-tag-version
 
    git add package.json package-lock.json
-   git commit -m "chore: bump version to 3.7.0"
+   git commit -m "chore: bump version to 3.12.0"
    git push origin main
    ```
 2. Push the matching release tag:
    ```bash
-   git tag v3.7.0
-   git push origin v3.7.0
+   git tag v3.12.0
+   git push origin v3.12.0
    ```
 3. The CI pipeline checks `tag == package.json version` and fails with a clear error if they differ.
 
