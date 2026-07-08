@@ -50,9 +50,7 @@ spec:
               name: copilot-metrics-secrets
               key: session-password
         
-        # Historical mode with PostgreSQL
-        - name: ENABLE_HISTORICAL_MODE
-          value: "true"
+        # Historical mode with PostgreSQL — enabled by setting DATABASE_URL
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:

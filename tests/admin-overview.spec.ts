@@ -25,6 +25,7 @@ function setBody(b: Record<string, unknown>) { _body = b }
 const mockPoolQuery = vi.fn()
 vi.mock('../server/storage/db', () => ({
   getPool: () => ({ query: (...args: any[]) => mockPoolQuery(...args) }),
+  isDbConfigured: () => !!process.env.DATABASE_URL,
 }))
 
 const mockGetFailedSyncsForScope = vi.fn()
@@ -61,16 +62,16 @@ function makeEvent(withAuth = true): any {
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 describe('/api/admin/overview', () => {
-  const ORIG_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIG_DBURL = process.env.DATABASE_URL
 
   beforeEach(() => {
     vi.clearAllMocks()
-    delete process.env.ENABLE_HISTORICAL_MODE
+    delete process.env.DATABASE_URL
     setQuery({ scope: 'organization', githubOrg: 'cody-test-org' })
   })
   afterEach(() => {
-    if (ORIG_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIG_HISTORICAL
+    if (ORIG_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIG_DBURL
   })
 
   it('mock mode: reports mock + skips DB probe', async () => {
@@ -108,7 +109,7 @@ describe('/api/admin/overview', () => {
   })
 
   it('historical mode: enriches with data range, sync stats and failures', async () => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     // 1st query: SELECT 1 (probe)
     mockPoolQuery.mockResolvedValueOnce({ rows: [{ '?column?': 1 }] })
     // 2nd query: data range
@@ -139,7 +140,7 @@ describe('/api/admin/overview', () => {
   })
 
   it('historical mode: gracefully degrades when DB is down', async () => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     mockPoolQuery.mockRejectedValue(new Error('connection refused'))
 
     const { default: handler } = await import('../server/api/admin/overview.get')
@@ -154,19 +155,19 @@ describe('/api/admin/overview', () => {
 })
 
 describe('/api/admin/sync — retry-failed action', () => {
-  const ORIG_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIG_DBURL = process.env.DATABASE_URL
   const ORIG_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
     setQuery({})
     setBody({})
   })
   afterEach(() => {
-    if (ORIG_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIG_HISTORICAL
+    if (ORIG_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIG_DBURL
     if (ORIG_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIG_MOCKED
   })

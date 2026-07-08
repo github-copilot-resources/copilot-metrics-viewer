@@ -115,7 +115,7 @@ export default defineEventHandler(async (event): Promise<DataRange> => {
   }
 
   // Whenever the DB is reachable and has data for this scope, use it.
-  // We don't gate this on ENABLE_HISTORICAL_MODE — writes happen via the
+  // We don't gate this on DATABASE_URL — writes happen via the
   // sync pipeline regardless of the mode label.
   try {
     const stored = await historicalRange(scope, identifier);

@@ -1,4 +1,5 @@
 import { authenticateAndGetGitHubHeaders } from '../modules/authentication';
+import { isDbConfigured } from '../storage/db-config';
 
 type Scope = 'org' | 'ent';
 
@@ -68,7 +69,7 @@ export default defineEventHandler(async (event) => {
 
     // When historical mode is enabled, metrics come from DB — auth is optional
     // (the handler will request auth only if it needs to sync from the API)
-    const historicalMode = process.env.ENABLE_HISTORICAL_MODE === 'true';
+    const historicalMode = isDbConfigured();
     if (historicalMode && (url.startsWith('/api/metrics') || url.startsWith('/api/seats') || url.startsWith('/api/user-metrics'))) {
         try {
             event.context.headers = await authenticateAndGetGitHubHeaders(event);

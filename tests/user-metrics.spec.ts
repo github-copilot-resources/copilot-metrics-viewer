@@ -81,6 +81,7 @@ vi.mock('../server/services/github-copilot-usage-api', async (importOriginal) =>
   return {
     ...(actual as object),
     fetchLatestUserReport: vi.fn(async () => SAMPLE_USER_REPORT),
+    fetchRawUserDayRecords: vi.fn(async () => []),
     fetchUserReportForDate: vi.fn(async () => ({
       ...SAMPLE_USER_REPORT,
       report_start_day: '2026-03-03',
@@ -451,6 +452,22 @@ vi.mock('../server/storage/user-metrics-storage', () => ({
   getUserTimeSeries: vi.fn(async () => []),
 }))
 
+// DB-layer mocks for the live-API-path DB-first tests
+const mockIsDbConfigured = vi.fn(() => !!process.env.DATABASE_URL)
+const mockGetUserDayMetricsByDateRange = vi.fn(async (..._args: unknown[]) => [] as UserDayRecord[])
+
+vi.mock('../server/storage/db', () => ({
+  isDbConfigured: () => mockIsDbConfigured(),
+  getPool: vi.fn(),
+}))
+
+vi.mock('../server/storage/user-day-metrics-storage', () => ({
+  getUserDayMetricsByDateRange: (...args: any[]) => mockGetUserDayMetricsByDateRange(...args),
+  saveUserDayMetricsBatch: vi.fn(),
+  hasUserDayMetricsForDate: vi.fn(),
+  baseScope: (s: string) => s.replace(/^team-/, ''),
+}))
+
 /** Build a minimal H3-style event with/without an Authorization header. */
 function makeEvent(withAuth: boolean): any {
   const headers = new Headers()
@@ -459,18 +476,18 @@ function makeEvent(withAuth: boolean): any {
 }
 
 describe('/api/user-metrics handler – historical mode fallback', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
   const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
   })
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
     if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED
   })
@@ -538,15 +555,15 @@ describe('/api/user-metrics handler – historical mode fallback', () => {
 // ── /api/user-metrics-history handler — graceful DB failure ──────────────────
 
 describe('/api/user-metrics-history handler – storage failure returns empty array', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
 
   beforeEach(() => {
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
   })
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
   })
 
   it('returns [] instead of throwing 500 when getUserMetricsHistory rejects', async () => {
@@ -598,13 +615,13 @@ vi.mock('../server/api/seats', () => ({
 }))
 
 describe('/api/user-metrics handler – team filtering', () => {
-  const ORIGINAL_HISTORICAL = process.env.ENABLE_HISTORICAL_MODE
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
   const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
   const ORIGINAL_GET_QUERY = (globalThis as any).getQuery
 
   beforeEach(() => {
     vi.clearAllMocks()
-    process.env.ENABLE_HISTORICAL_MODE = 'true'
+    process.env.DATABASE_URL = 'postgres://test'
     process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
     mockFetchAllTeamMembers.mockResolvedValue([
       { login: 'octocat', id: 1 },
@@ -612,8 +629,8 @@ describe('/api/user-metrics handler – team filtering', () => {
   })
 
   afterEach(() => {
-    if (ORIGINAL_HISTORICAL === undefined) delete process.env.ENABLE_HISTORICAL_MODE
-    else process.env.ENABLE_HISTORICAL_MODE = ORIGINAL_HISTORICAL
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
     if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
     else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED
     ;(globalThis as any).getQuery = ORIGINAL_GET_QUERY
@@ -761,5 +778,114 @@ describe('/api/user-metrics handler – team filtering', () => {
     expect(inactive.user_initiated_interaction_count).toBe(0)
     expect(inactive.code_generation_activity_count).toBe(0)
     expect(inactive.code_acceptance_activity_count).toBe(0)
+  })
+})
+
+// ── /api/user-metrics handler — live API path DB-first for date ranges > 28 days ──
+//
+// When a date range is specified and DB is configured, the live API path must
+// query the DB first (covering arbitrary historical ranges), falling back to the
+// 28-day live API only when the DB is empty for that range.
+// Regression for: USER METRICS date filter capped at 28 days (issue #403).
+
+import { fetchRawUserDayRecords as _fetchRawUserDayRecords } from '../server/services/github-copilot-usage-api'
+const mockFetchRawUserDayRecords = vi.mocked(_fetchRawUserDayRecords)
+
+describe('/api/user-metrics handler – live path DB-first when date range > 28 days', () => {
+  const ORIGINAL_DBURL = process.env.DATABASE_URL
+  const ORIGINAL_MOCKED = process.env.NUXT_PUBLIC_IS_DATA_MOCKED
+  const ORIGINAL_GET_QUERY = (globalThis as any).getQuery
+
+  // Minimal set of UserDayRecords spanning 40 days (> 28)
+  const DB_DAY_RECORDS: UserDayRecord[] = (() => {
+    const records: UserDayRecord[] = []
+    const baseDate = new Date('2026-04-15')
+    for (let i = 0; i < 40; i++) {
+      const d = new Date(baseDate)
+      d.setDate(d.getDate() + i)
+      const day = d.toISOString().slice(0, 10)
+      records.push({
+        report_start_day: '2026-04-15', report_end_day: '2026-05-24',
+        day,
+        organization_id: '100', enterprise_id: '', user_id: 1, user_login: 'octocat',
+        user_initiated_interaction_count: 2, code_generation_activity_count: 5,
+        code_acceptance_activity_count: 3, loc_suggested_to_add_sum: 10,
+        loc_suggested_to_delete_sum: 0, loc_added_sum: 8, loc_deleted_sum: 0,
+      })
+    }
+    return records
+  })()
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Historical mode is OFF — we're testing the live path
+    delete process.env.DATABASE_URL
+    process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'false'
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'organization',
+      githubOrg: 'test-org',
+      since: '2026-04-15',
+      until: '2026-05-24', // 40-day range, well beyond 28 days
+    })
+    // Historical mode storage returns null (not called in live path anyway)
+    mockGetUserMetricsByDateRange.mockResolvedValue(null)
+  })
+
+  afterEach(() => {
+    if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL
+    else process.env.DATABASE_URL = ORIGINAL_DBURL
+    if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED
+    else process.env.NUXT_PUBLIC_IS_DATA_MOCKED = ORIGINAL_MOCKED
+    ;(globalThis as any).getQuery = ORIGINAL_GET_QUERY
+  })
+
+  it('uses DB records when DB is configured and has data for the date range', async () => {
+    mockIsDbConfigured.mockReturnValue(true)
+    mockGetUserDayMetricsByDateRange.mockResolvedValue(DB_DAY_RECORDS)
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = (await handler(makeEvent(true))) as any[]
+
+    // DB was queried for the full range
+    expect(mockGetUserDayMetricsByDateRange).toHaveBeenCalledWith(
+      'organization', 'test-org', '2026-04-15', '2026-05-24'
+    )
+    // Live API was NOT called because DB had data
+    expect(mockFetchRawUserDayRecords).not.toHaveBeenCalled()
+    // Result contains aggregated data for all 40 days
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(1)
+    expect((result[0] as any).login).toBe('octocat')
+    expect((result[0] as any).total_active_days).toBe(40)
+  })
+
+  it('falls back to live API (28-day) when DB is configured but empty for the range', async () => {
+    mockIsDbConfigured.mockReturnValue(true)
+    mockGetUserDayMetricsByDateRange.mockResolvedValue([]) // DB empty
+
+    // Live API returns some data (mocked)
+    mockFetchRawUserDayRecords.mockResolvedValue(DB_DAY_RECORDS.slice(0, 28))
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = (await handler(makeEvent(true))) as any[]
+
+    // DB was tried first
+    expect(mockGetUserDayMetricsByDateRange).toHaveBeenCalled()
+    // Live API was called as fallback
+    expect(mockFetchRawUserDayRecords).toHaveBeenCalled()
+    expect(Array.isArray(result)).toBe(true)
+  })
+
+  it('uses live API directly when DB is not configured', async () => {
+    mockIsDbConfigured.mockReturnValue(false)
+    mockFetchRawUserDayRecords.mockResolvedValue(DB_DAY_RECORDS.slice(0, 28))
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    await handler(makeEvent(true))
+
+    // DB was never queried
+    expect(mockGetUserDayMetricsByDateRange).not.toHaveBeenCalled()
+    // Live API was called directly
+    expect(mockFetchRawUserDayRecords).toHaveBeenCalled()
   })
 })

@@ -201,10 +201,6 @@
                                     "value": "3000"
                                 },
                                 {
-                                    "name": "ENABLE_HISTORICAL_MODE",
-                                    "value": "true"
-                                },
-                                {
                                     "name": "DATABASE_URL",
                                     "secretRef": "database-url"
                                 }

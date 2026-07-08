@@ -24,7 +24,8 @@
 #     export NUXT_GITHUB_TOKEN=github_pat_...
 #     export NUXT_PUBLIC_GITHUB_ORG=your-org
 #     export NUXT_PUBLIC_IS_DATA_MOCKED=false
-#     export ENABLE_HISTORICAL_MODE=true
+#     # Historical mode is enabled simply by setting DATABASE_URL (auto-set below
+#     # for docker-compose). No separate flag is needed.
 #     docker compose up db web
 #     → First request auto-syncs from API to DB; subsequent requests read from DB
 #
@@ -54,17 +55,18 @@
 #   NUXT_PUBLIC_GITHUB_ORG      — Target GitHub organization
 #   NUXT_PUBLIC_IS_DATA_MOCKED  — "true" for mock data, "false" for real API
 #   NUXT_GITHUB_TOKEN           — GitHub PAT (fine-grained, "Copilot metrics" permission)
-#   ENABLE_HISTORICAL_MODE      — "true" to read from DB with sync-on-miss
 #   USE_LEGACY_API              — set to "true" to use deprecated /copilot/metrics endpoint
 #   NUXT_SESSION_PASSWORD       — Session secret (min 32 chars, auto-set below)
-#   DATABASE_URL                — PostgreSQL connection string (auto-set for docker-compose)
+#   DATABASE_URL                — PostgreSQL connection string. Setting this ALSO
+#                                 enables historical mode (DB-backed reads,
+#                                 /api/*-history endpoints, Teams tab).
 #
 # =============================================================================
 
 services:
   # ─── Database ────────────────────────────────────────────────────────────
   # PostgreSQL for persistent metrics storage.
-  # Used by: web (when ENABLE_HISTORICAL_MODE=true), sync service.
+  # Used by: web (when DATABASE_URL is set — historical mode), sync service.
   # Data persisted in the postgres_data volume.
   db:
     image: postgres:15-alpine
@@ -87,7 +89,7 @@ services:
   # Modes:
   #   - Mock data:       IS_DATA_MOCKED=true (default, no token needed)
   #   - Direct API:      IS_DATA_MOCKED=false, token required
-  #   - Historical (DB): IS_DATA_MOCKED=false, ENABLE_HISTORICAL_MODE=true
+  #   - Historical (DB): IS_DATA_MOCKED=false, DATABASE_URL set
   #                      Reads from PostgreSQL, auto-syncs missing data from API.
   web:
     build:
@@ -102,7 +104,6 @@ services:
       - NUXT_SESSION_PASSWORD=${NUXT_SESSION_PASSWORD:-at_least_32_characters_long_password_here}
       # API mode: "new" (download-based, default) or "legacy" (deprecated April 2026)
       - USE_LEGACY_API=${USE_LEGACY_API:-false}
-      - ENABLE_HISTORICAL_MODE=${ENABLE_HISTORICAL_MODE:-false}
       # GitHub token — required unless using mock data
       - NUXT_GITHUB_TOKEN=${NUXT_GITHUB_TOKEN:-}
       # GitHub OAuth — required for OAuth login flow (optional)
@@ -113,9 +114,10 @@ services:
       - NUXT_USAGE_ADMINS=${NUXT_USAGE_ADMINS:-}
       - NUXT_BILLING_ENTERPRISE=${NUXT_BILLING_ENTERPRISE:-}
       - NUXT_GITHUB_BILLING_TOKEN=${NUXT_GITHUB_BILLING_TOKEN:-}
-      # PostgreSQL — used when ENABLE_HISTORICAL_MODE=true
+      # PostgreSQL — setting DATABASE_URL enables historical mode automatically.
+      # Comment out this line (or unset the var) to run in live-API mode without a DB.
       - DATABASE_URL=postgresql://metrics_user:metrics_password@db:5432/copilot_metrics
-    # Note: DB is only needed when ENABLE_HISTORICAL_MODE=true.
+    # Note: DB is only needed when DATABASE_URL is set (historical mode).
     # For direct API or mock mode, just run: docker compose up web
 
   # ─── Sync Service ───────────────────────────────────────────────────────
@@ -179,7 +181,6 @@ services:
       - NUXT_PUBLIC_SCOPE=organization
       - NUXT_PUBLIC_GITHUB_ORG=storage-test-org
       - NUXT_SESSION_PASSWORD=at_least_32_characters_long_password_here
-      - ENABLE_HISTORICAL_MODE=true
       - DATABASE_URL=postgresql://metrics_user:metrics_password@db:5432/copilot_metrics
       - NITRO_PORT=3000
     entrypoint: ["npx", "playwright", "test", "-c", "playwright.docker.config.ts", "--workers", "1", "--grep", "@storage"]
@@ -202,7 +203,6 @@ services:
       - NUXT_PUBLIC_SCOPE=organization
       - NUXT_PUBLIC_GITHUB_ORG=storage-test-org
       - NUXT_SESSION_PASSWORD=at_least_32_characters_long_password_here
-      - ENABLE_HISTORICAL_MODE=true
       - DATABASE_URL=postgresql://metrics_user:metrics_password@db:5432/copilot_metrics
       - NITRO_PORT=3000
     entrypoint: ["npx", "playwright", "test", "-c", "playwright.docker.config.ts", "--workers", "1", "--grep", "@seed"]

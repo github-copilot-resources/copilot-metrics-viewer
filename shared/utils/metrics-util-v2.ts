@@ -27,6 +27,7 @@ import {
 import { isMockMode } from '../../server/services/github-copilot-usage-api-mock';
 import { aggregateTeamMetrics } from '../../server/services/user-metrics-aggregator';
 import { fetchAllTeamMembers } from '../../server/api/seats';
+import { isDbConfigured } from '../../server/storage/db-config';
 
 export interface MetricsDataResult {
   metrics: CopilotMetrics[];
@@ -49,12 +50,10 @@ function isLegacyMode(): boolean {
 }
 
 /**
- * Check if storage mode is enabled
+ * Check if storage mode is enabled (DATABASE_URL set → historical mode).
  */
 function isStorageModeEnabled(): boolean {
-  const config = useRuntimeConfig();
-  return config.public?.enableHistoricalMode === true || 
-         process.env.ENABLE_HISTORICAL_MODE === 'true';
+  return isDbConfigured();
 }
 
 /**
@@ -103,7 +102,7 @@ async function fetchFromNewApi(
  * 
  * Decision tree:
  * 1. Mock mode (IS_DATA_MOCKED=true) → return mock files, no DB, no API
- * 2. Historical mode (ENABLE_HISTORICAL_MODE=true) → read from DB, sync-on-miss from API
+ * 2. Historical mode (DATABASE_URL set) → read from DB, sync-on-miss from API
  * 3. Direct API mode → fetch from GitHub API (no DB)
  *
  * Mock mode never touches DB or real API.
