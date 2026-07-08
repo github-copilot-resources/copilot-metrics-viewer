@@ -55,10 +55,16 @@ export function aggregateTeamMetrics(
     byDay.set(record.day, existing);
   }
 
+  const sortedDays = Array.from(byDay.keys()).sort();
+
+  // Pre-compute rolling window distinct-user sets per day so the day-level
+  // aggregator can reflect proper 7-day / 28-day windows (bug #410).
+  const rollingCounts = computeRollingWindowCounts(sortedDays, byDay);
+
   // Aggregate each day
-  const day_totals: ReportDayTotals[] = Array.from(byDay.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([day, records]) => aggregateDayRecords(day, records));
+  const day_totals: ReportDayTotals[] = sortedDays.map(day =>
+    aggregateDayRecords(day, byDay.get(day)!, rollingCounts.get(day)!)
+  );
 
   const allDays = day_totals.map(d => d.day);
   const report_start_day = allDays.length > 0 ? allDays[0]! : '';
@@ -78,8 +84,16 @@ export function aggregateTeamMetrics(
 
 /**
  * Aggregate a set of per-user records for a single day into one ReportDayTotals.
+ *
+ * Rolling-window active-user counts (weekly / monthly) are pre-computed at the
+ * team level in {@link computeRollingWindowCounts} and passed in via `rolling`,
+ * because a single day's records do not have visibility into other days.
  */
-function aggregateDayRecords(day: string, records: UserDayRecord[]): ReportDayTotals {
+function aggregateDayRecords(
+  day: string,
+  records: UserDayRecord[],
+  rolling: RollingWindowCounts,
+): ReportDayTotals {
   const activeUsers = records.length;
 
   return {
@@ -87,10 +101,10 @@ function aggregateDayRecords(day: string, records: UserDayRecord[]): ReportDayTo
     organization_id: records[0]?.organization_id ?? '',
     enterprise_id: records[0]?.enterprise_id ?? '',
     daily_active_users: activeUsers,
-    weekly_active_users: activeUsers,
-    monthly_active_users: activeUsers,
-    monthly_active_chat_users: records.filter(r => r.used_chat).length,
-    monthly_active_agent_users: records.filter(r => r.used_agent).length,
+    weekly_active_users: rolling.weekly_active_users,
+    monthly_active_users: rolling.monthly_active_users,
+    monthly_active_chat_users: rolling.monthly_active_chat_users,
+    monthly_active_agent_users: rolling.monthly_active_agent_users,
     user_initiated_interaction_count: sum(records, r => r.user_initiated_interaction_count),
     code_generation_activity_count: sum(records, r => r.code_generation_activity_count),
     code_acceptance_activity_count: sum(records, r => r.code_acceptance_activity_count),
@@ -104,6 +118,78 @@ function aggregateDayRecords(day: string, records: UserDayRecord[]): ReportDayTo
     totals_by_language_model: buildLanguageModelTotals(records),
     totals_by_model_feature: mergeModelFeatureTotals(records.flatMap(r => r.totals_by_model_feature ?? [])),
   };
+}
+
+// --- Rolling active-user window counts (bug #410) ---
+
+const WEEKLY_WINDOW_DAYS = 7;
+const MONTHLY_WINDOW_DAYS = 28;
+
+interface RollingWindowCounts {
+  weekly_active_users: number;
+  monthly_active_users: number;
+  monthly_active_chat_users: number;
+  monthly_active_agent_users: number;
+}
+
+/**
+ * For each day, compute distinct-user counts over the trailing 7-day and
+ * 28-day windows (including that day itself). Mirrors how GitHub computes
+ * `weekly_active_users` / `monthly_active_users` at the org level.
+ *
+ * Users are keyed case-insensitively by `user_login` (matching the login
+ * normalization used to filter team members).
+ */
+function computeRollingWindowCounts(
+  sortedDays: string[],
+  byDay: Map<string, UserDayRecord[]>,
+): Map<string, RollingWindowCounts> {
+  const result = new Map<string, RollingWindowCounts>();
+
+  for (const day of sortedDays) {
+    const weeklyCutoff = getDateNDaysAgo(day, WEEKLY_WINDOW_DAYS - 1);
+    const monthlyCutoff = getDateNDaysAgo(day, MONTHLY_WINDOW_DAYS - 1);
+
+    const weeklyUsers = new Set<string>();
+    const monthlyUsers = new Set<string>();
+    const monthlyChatUsers = new Set<string>();
+    const monthlyAgentUsers = new Set<string>();
+
+    for (const otherDay of sortedDays) {
+      if (otherDay > day || otherDay < monthlyCutoff) continue;
+      const records = byDay.get(otherDay) ?? [];
+      const inWeeklyWindow = otherDay >= weeklyCutoff;
+
+      for (const r of records) {
+        const login = r.user_login?.toLowerCase();
+        if (!login) continue;
+        monthlyUsers.add(login);
+        if (r.used_chat) monthlyChatUsers.add(login);
+        if (r.used_agent) monthlyAgentUsers.add(login);
+        if (inWeeklyWindow) weeklyUsers.add(login);
+      }
+    }
+
+    result.set(day, {
+      weekly_active_users: weeklyUsers.size,
+      monthly_active_users: monthlyUsers.size,
+      monthly_active_chat_users: monthlyChatUsers.size,
+      monthly_active_agent_users: monthlyAgentUsers.size,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Return the ISO date string N days before `dateStr` (UTC). Used to compute
+ * inclusive rolling-window cutoffs — e.g. `getDateNDaysAgo(d, 6)` gives the
+ * 7-day window start when combined with `d` itself.
+ */
+function getDateNDaysAgo(dateStr: string, n: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().split('T')[0]!;
 }
 
 // --- Merge helpers ---

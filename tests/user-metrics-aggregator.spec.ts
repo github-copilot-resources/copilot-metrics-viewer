@@ -375,4 +375,136 @@ describe('aggregateTeamMetrics', () => {
     const result = aggregateTeamMetrics([noCompletionRecord], new Set(['alice']));
     expect(result.day_totals[0]!.totals_by_language_model).toHaveLength(0);
   });
+
+  // ── Bug #410: rolling active-user window counts ─────────────────────────────
+
+  describe('rolling active-user window counts (bug #410)', () => {
+    it('computes weekly_active_users as distinct users over the trailing 7-day window', () => {
+      // alice active on day 1, bob active on day 4, charlie active on day 7
+      // On day 7 the trailing 7-day window (day 1..day 7) should contain all 3 distinct users.
+      const records = [
+        makeUser('alice', 1, '2026-02-01'),
+        makeUser('bob', 2, '2026-02-04'),
+        makeUser('charlie', 3, '2026-02-07'),
+      ];
+      const result = aggregateTeamMetrics(records, new Set(['alice', 'bob', 'charlie']));
+
+      const day1 = result.day_totals.find(d => d.day === '2026-02-01')!;
+      const day7 = result.day_totals.find(d => d.day === '2026-02-07')!;
+
+      expect(day1.weekly_active_users).toBe(1);
+      expect(day1.daily_active_users).toBe(1);
+
+      // Day 7 window covers [2026-02-01, 2026-02-07] => 3 distinct users
+      expect(day7.weekly_active_users).toBe(3);
+      // Daily count is still just today's actives
+      expect(day7.daily_active_users).toBe(1);
+    });
+
+    it('excludes users active outside the trailing 7-day window from weekly_active_users', () => {
+      // alice active day 1, bob active day 10. On day 10 the 7-day window is [day 4..day 10],
+      // so alice should NOT be counted.
+      const records = [
+        makeUser('alice', 1, '2026-02-01'),
+        makeUser('bob', 2, '2026-02-10'),
+      ];
+      const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
+
+      const day10 = result.day_totals.find(d => d.day === '2026-02-10')!;
+      expect(day10.weekly_active_users).toBe(1); // only bob
+    });
+
+    it('computes monthly_active_users as distinct users over the trailing 28-day window', () => {
+      // 4 users active on different days spanning ~3 weeks. On the last day, all 4 should
+      // fall within the 28-day window.
+      const records = [
+        makeUser('alice', 1, '2026-02-01'),
+        makeUser('bob', 2, '2026-02-08'),
+        makeUser('charlie', 3, '2026-02-15'),
+        makeUser('dave', 4, '2026-02-22'),
+      ];
+      const result = aggregateTeamMetrics(
+        records,
+        new Set(['alice', 'bob', 'charlie', 'dave'])
+      );
+
+      const lastDay = result.day_totals.find(d => d.day === '2026-02-22')!;
+      expect(lastDay.monthly_active_users).toBe(4);
+      expect(lastDay.daily_active_users).toBe(1);
+    });
+
+    it('excludes users active outside the trailing 28-day window from monthly_active_users', () => {
+      // alice active day 1, bob active day 30. Window on day 30 covers [day 3..day 30],
+      // so alice should NOT be counted.
+      const records = [
+        makeUser('alice', 1, '2026-02-01'),
+        makeUser('bob', 2, '2026-03-02'), // 29 days after
+      ];
+      const result = aggregateTeamMetrics(records, new Set(['alice', 'bob']));
+
+      const lastDay = result.day_totals[result.day_totals.length - 1]!;
+      expect(lastDay.day).toBe('2026-03-02');
+      expect(lastDay.monthly_active_users).toBe(1); // only bob
+    });
+
+    it('computes monthly_active_chat_users as distinct chat users over trailing 28-day window', () => {
+      const records = [
+        makeUser('alice', 1, '2026-02-01', { used_chat: true }),
+        makeUser('bob', 2, '2026-02-10', { used_chat: true }),
+        makeUser('charlie', 3, '2026-02-15', { used_chat: false }),
+        makeUser('alice', 1, '2026-02-20', { used_chat: true }), // repeated alice — still 1 distinct
+      ];
+      const result = aggregateTeamMetrics(
+        records,
+        new Set(['alice', 'bob', 'charlie'])
+      );
+
+      const lastDay = result.day_totals.find(d => d.day === '2026-02-20')!;
+      // alice + bob = 2 distinct chat users in window (charlie didn't use chat)
+      expect(lastDay.monthly_active_chat_users).toBe(2);
+    });
+
+    it('computes monthly_active_agent_users as distinct agent users over trailing 28-day window', () => {
+      const records = [
+        makeUser('alice', 1, '2026-02-01', { used_agent: true }),
+        makeUser('bob', 2, '2026-02-10', { used_agent: false }),
+        makeUser('charlie', 3, '2026-02-15', { used_agent: true }),
+        makeUser('charlie', 3, '2026-02-20', { used_agent: true }), // distinct = 1 for charlie
+      ];
+      const result = aggregateTeamMetrics(
+        records,
+        new Set(['alice', 'bob', 'charlie'])
+      );
+
+      const lastDay = result.day_totals.find(d => d.day === '2026-02-20')!;
+      // alice + charlie = 2 distinct agent users in window
+      expect(lastDay.monthly_active_agent_users).toBe(2);
+    });
+
+    it('counts each distinct user only once even if active on multiple days in the window', () => {
+      const records = [
+        makeUser('alice', 1, '2026-02-01'),
+        makeUser('alice', 1, '2026-02-02'),
+        makeUser('alice', 1, '2026-02-03'),
+      ];
+      const result = aggregateTeamMetrics(records, new Set(['alice']));
+      const day3 = result.day_totals.find(d => d.day === '2026-02-03')!;
+
+      expect(day3.weekly_active_users).toBe(1);
+      expect(day3.monthly_active_users).toBe(1);
+    });
+
+    it('handles case-insensitive user_login for distinct counting', () => {
+      const records = [
+        makeUser('Alice', 1, '2026-02-01'),
+        makeUser('ALICE', 1, '2026-02-02'), // same user, different casing
+      ];
+      const result = aggregateTeamMetrics(records, new Set(['alice']));
+      const day2 = result.day_totals.find(d => d.day === '2026-02-02')!;
+
+      // 'Alice' and 'ALICE' collapse to 1 distinct user
+      expect(day2.weekly_active_users).toBe(1);
+      expect(day2.monthly_active_users).toBe(1);
+    });
+  });
 });
