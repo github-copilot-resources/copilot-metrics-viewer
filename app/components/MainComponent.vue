@@ -14,7 +14,7 @@
       </v-btn>
 
       <v-btn
-        v-if="!signInRequired"
+        v-if="!signInRequired && isUsageAdmin"
         icon
         title="Admin panel"
         @click="showAdminPanel = true"
@@ -539,6 +539,7 @@ export default defineNuxtComponent({
       showDateRange: false,
       showAdminPanel: false,
       billingEnabled: true,
+      isUsageAdmin: true,
       config: null as ReturnType<typeof useRuntimeConfig> | null,
       holidayOptions: {
         excludeHolidays: false,
@@ -614,6 +615,7 @@ export default defineNuxtComponent({
     try {
       const probe = await $fetch<{ isUsageAdmin: boolean; billingEnabled?: boolean }>('/api/auth/usage-admin');
       this.billingEnabled = probe?.billingEnabled !== false;
+      this.isUsageAdmin = !!probe?.isUsageAdmin;
       const shouldShowBilling = !this.billingEnabled || !!probe?.isUsageAdmin;
       if (shouldShowBilling && !this.tabItems.includes('billing')) {
         // Insert just before 'api response' (or at the end if that tab is hidden)

@@ -180,13 +180,25 @@
                     <v-col cols="12" sm="4">
                       <div class="text-caption">Total spend</div>
                       <div class="text-h4 font-weight-bold text-cyan-darken-2">
-                        {{ data.spend.totalAmount.toLocaleString(undefined, { style: 'currency', currency: 'USD' }) }}
+                        {{ (data.spend.totalGrossAmount || data.spend.totalAmount).toLocaleString(undefined, { style: 'currency', currency: 'USD' }) }}
+                      </div>
+                      <div
+                        v-if="hasDiscount"
+                        class="text-caption text-medium-emphasis mt-1"
+                      >
+                        {{ data.spend.totalAmount.toLocaleString(undefined, { style: 'currency', currency: 'USD' }) }} net after discounts
                       </div>
                     </v-col>
                     <v-col cols="12" sm="4">
-                      <div class="text-caption">Credits billed</div>
+                      <div class="text-caption">Credits used</div>
                       <div class="text-h5">
-                        {{ data.spend.totalQuantity.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                        {{ (data.spend.totalGrossQuantity || data.spend.totalQuantity).toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                      </div>
+                      <div
+                        v-if="hasDiscount"
+                        class="text-caption text-medium-emphasis mt-1"
+                      >
+                        {{ data.spend.totalQuantity.toLocaleString(undefined, { maximumFractionDigits: 2 }) }} billed
                       </div>
                     </v-col>
                     <v-col cols="12" sm="4">
@@ -198,15 +210,15 @@
                     <thead>
                       <tr>
                         <th class="text-left">Model</th>
-                        <th class="text-right">Credits</th>
+                        <th class="text-right">Credits used</th>
                         <th class="text-right">Spend</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="m in data.spend.byModel" :key="m.model">
                         <td>{{ m.model }}</td>
-                        <td class="text-right">{{ m.quantity.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}</td>
-                        <td class="text-right">{{ m.amount.toLocaleString(undefined, { style: 'currency', currency: 'USD' }) }}</td>
+                        <td class="text-right">{{ (m.grossQuantity || m.quantity).toLocaleString(undefined, { maximumFractionDigits: 2 }) }}</td>
+                        <td class="text-right">{{ (m.grossAmount || m.amount).toLocaleString(undefined, { style: 'currency', currency: 'USD' }) }}</td>
                       </tr>
                     </tbody>
                   </v-table>
@@ -355,7 +367,9 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 interface MyUsageSpend {
   totalAmount: number;
   totalQuantity: number;
-  byModel: { model: string; amount: number; quantity: number }[];
+  totalGrossAmount: number;
+  totalGrossQuantity: number;
+  byModel: { model: string; amount: number; quantity: number; grossAmount: number; grossQuantity: number }[];
   timePeriod?: { year?: number; month?: number; day?: number };
   enterprise?: string;
 }
@@ -417,6 +431,17 @@ export default defineComponent({
       if (tp.month) parts.push(String(tp.month).padStart(2, '0'));
       if (tp.day) parts.push(String(tp.day).padStart(2, '0'));
       return parts.length ? parts.join('-') : 'Current billing period';
+    });
+
+    // True when the plan actually discounts spend (gross > net). Standalone
+    // orgs on Copilot Free / trial return net=0 on every row; without gross
+    // fields the tiles would read "0 credits used, $0 spend" even for users
+    // who consumed thousands of credits (issue #398).
+    const hasDiscount = computed(() => {
+      const sp = data.value?.spend;
+      if (!sp) return false;
+      return (sp.totalGrossAmount || 0) > (sp.totalAmount || 0) + 0.005
+          || (sp.totalGrossQuantity || 0) > (sp.totalQuantity || 0) + 0.005;
     });
 
     const topModel = computed(() => {
@@ -602,6 +627,7 @@ export default defineComponent({
 
     return {
       data, pending, error, initials, topIde, topModel, cliTotals, spendPeriodLabel,
+      hasDiscount,
       aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,
       dailySpendChartData, dailySpendChartOptions, dailySpendTotalLabel,
       dailyTokensChartData, dailyTokensChartOptions, dailyTokensTotalLabel,

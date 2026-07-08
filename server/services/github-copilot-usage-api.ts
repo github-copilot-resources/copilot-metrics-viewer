@@ -995,9 +995,18 @@ export async function fetchLatestUserReport(
   // Merge: use first report as base, combine user_totals AND day_totals from all files.
   // The 28-day report file already contains per-day per-user rows (`day_totals`),
   // so consumers can render a day-by-day chart without a separate 1-day fetch.
+  //
+  // For large orgs GitHub time-partitions the report across multiple files, and
+  // the SAME user appears in every file with per-file `user_totals` covering only
+  // that file's date subset. Naively flatMap'ing `user_totals` would produce
+  // duplicate rows per user and inflate the user count (issue #398). When we
+  // have more than one file, re-derive `user_totals` from the merged day_totals
+  // using the same aggregator we use for the arbitrary-date-range path.
   const merged: UserReport = { ...reports[0]! };
-  merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
   merged.day_totals = reports.flatMap(r => r.day_totals ?? []);
+  merged.user_totals = reports.length > 1
+    ? aggregateUserDayRecords(merged.day_totals)
+    : reports.flatMap(r => r.user_totals ?? []);
 
   return merged;
 }
@@ -1020,9 +1029,13 @@ export async function fetchUserReportForDate(
     download_links.map(url => downloadUserReport(url))
   );
 
+  // Same dedup logic as fetchLatestUserReport — a single day can still be
+  // sharded across files for very large orgs.
   const merged: UserReport = { ...reports[0]! };
-  merged.user_totals = reports.flatMap(r => r.user_totals ?? []);
   merged.day_totals = reports.flatMap(r => r.day_totals ?? []);
+  merged.user_totals = reports.length > 1
+    ? aggregateUserDayRecords(merged.day_totals)
+    : reports.flatMap(r => r.user_totals ?? []);
 
   return merged;
 }
