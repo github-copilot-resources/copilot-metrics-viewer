@@ -81,8 +81,8 @@
           >
             <div class="text-body-2">
               <strong>Two credit numbers, two sources.</strong>
-              The <em>AI credits used</em> tile above reflects the selected date
-              range and comes from the Copilot Metrics API. The
+              The credits KPI tile above reflects the selected date range and
+              comes from the Copilot Metrics API. The
               <em>Your AI credit spend</em> card is always <strong>month-to-date</strong>,
               pulled live from the GitHub Billing API and independent of the
               date-range picker — so the two values will not match exactly.
