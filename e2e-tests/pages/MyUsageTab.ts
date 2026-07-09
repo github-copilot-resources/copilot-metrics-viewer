@@ -18,7 +18,7 @@ export class MyUsageTab {
         this.activeDaysLabel = page.getByText("Active days", { exact: true });
         this.interactionsLabel = page.getByText("Interactions", { exact: true });
         this.acceptedLinesLabel = page.getByText("Accepted lines", { exact: true });
-        this.aiCreditsLabel = page.getByText("AI credits used", { exact: true });
+        this.aiCreditsLabel = page.getByTestId("my-usage-ai-credits-label");
         // The signed-in user heading — text-h6 inside MyUsageViewer.vue
         this.userLoginHeading = page.locator(".v-main .text-h6").first();
     }
