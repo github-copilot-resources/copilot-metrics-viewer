@@ -69,6 +69,26 @@
             CLI activity and/or AI credit spend, which are reported separately.
           </v-alert>
 
+          <!-- Tab-level note: two independent data sources may report different
+               credit numbers because they use different time windows and pipelines.
+               See docs on the tiles themselves for source/window details. -->
+          <v-alert
+            v-if="data.spend"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mx-3 mb-3"
+          >
+            <div class="text-body-2">
+              <strong>Two credit numbers, two sources.</strong>
+              The <em>AI credits used</em> tile above reflects the selected date
+              range and comes from the Copilot Metrics API. The
+              <em>Your AI credit spend</em> card is always <strong>month-to-date</strong>,
+              pulled live from the GitHub Billing API and independent of the
+              date-range picker — so the two values will not match exactly.
+            </div>
+          </v-alert>
+
           <v-row v-if="data.totals" dense class="px-3">
             <v-col cols="12" sm="6" md="3">
               <v-card variant="tonal" color="indigo" class="h-100">
@@ -106,7 +126,20 @@
             <v-col cols="12" sm="6" md="3">
               <v-card variant="tonal" color="cyan-darken-2" class="h-100">
                 <v-card-text>
-                  <div class="text-caption">AI credits used</div>
+                  <div class="text-caption d-flex align-center" data-testid="my-usage-ai-credits-label">
+                    AI credits used
+                    <v-tooltip location="top" max-width="280">
+                      <template #activator="{ props: tipProps }">
+                        <v-icon v-bind="tipProps" size="14" class="ml-1" color="cyan-darken-2">mdi-information-outline</v-icon>
+                      </template>
+                      <span>
+                        From the Copilot Metrics API (users report) — reflects
+                        the currently selected date range. May differ from the
+                        billing "Credits used" figure below, which is month-to-date
+                        and comes from a different pipeline.
+                      </span>
+                    </v-tooltip>
+                  </div>
                   <div class="text-h4 font-weight-bold">
                     <template v-if="typeof data.totals.ai_credits_used === 'number'">
                       {{ data.totals.ai_credits_used.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
@@ -114,6 +147,9 @@
                     <template v-else>
                       <span class="text-disabled" title="GitHub has not reported AI credits for this period">—</span>
                     </template>
+                  </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    Metrics API · selected range
                   </div>
                 </v-card-text>
               </v-card>
@@ -170,11 +206,14 @@
               <v-card v-if="data.spend" variant="outlined" class="border-cyan">
                 <v-card-title class="text-subtitle-1 d-flex align-center">
                   <v-icon size="small" class="mr-1" color="cyan-darken-2">mdi-cash-multiple</v-icon>
-                  Your AI credit spend
+                  Your AI credit spend (month-to-date)
                   <span class="text-caption text-medium-emphasis ml-2">
                     {{ spendPeriodLabel }}<template v-if="data.spend.enterprise"> · enterprise {{ data.spend.enterprise }}</template>
                   </span>
                 </v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Source: GitHub Billing API (<code>ai_credit/usage</code>) · always current month · independent of the date-range picker above
+                </v-card-subtitle>
                 <v-card-text>
                   <v-row dense>
                     <v-col cols="12" sm="4">
