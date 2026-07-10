@@ -83,6 +83,38 @@ describe('resolveWindow', () => {
   it('rejects day without month', () => {
     expect(() => resolveWindow({ year: 2026, day: 5 })).toThrow(/day without month/i);
   });
+
+  it('accepts since+until as a custom range with empty timePeriod', () => {
+    const w = resolveWindow({ since: '2026-06-01', until: '2026-06-30' });
+    expect(w.startDate).toBe('2026-06-01');
+    expect(w.endDate).toBe('2026-06-30');
+    expect(w.timePeriod).toEqual({});
+  });
+
+  it('range mode takes precedence over year/month/day', () => {
+    const w = resolveWindow({
+      year: 2020, month: 1, day: 1,
+      since: '2026-06-15', until: '2026-06-20',
+    });
+    expect(w.startDate).toBe('2026-06-15');
+    expect(w.endDate).toBe('2026-06-20');
+    expect(w.timePeriod).toEqual({});
+  });
+
+  it('rejects since without until (and vice versa)', () => {
+    expect(() => resolveWindow({ since: '2026-06-01' })).toThrow(/both.*since.*until/i);
+    expect(() => resolveWindow({ until: '2026-06-30' })).toThrow(/both.*since.*until/i);
+  });
+
+  it('rejects malformed ISO dates in since/until', () => {
+    expect(() => resolveWindow({ since: '2026/06/01', until: '2026-06-30' })).toThrow(/YYYY-MM-DD/i);
+    expect(() => resolveWindow({ since: '2026-06-01', until: '06-30-2026' })).toThrow(/YYYY-MM-DD/i);
+  });
+
+  it('rejects since > until', () => {
+    expect(() => resolveWindow({ since: '2026-07-01', until: '2026-06-01' }))
+      .toThrow(/since.*<=.*until/i);
+  });
 });
 
 describe('decideSource', () => {

@@ -66,17 +66,45 @@ export interface AggregateFilters {
 }
 
 /**
- * Resolve `?year=&month=&day=` query params into an inclusive date window.
- * Mirrors how GitHub's billing endpoint interprets partial specifications:
- *   - year+month+day → that one day
- *   - year+month     → entire calendar month
- *   - year           → entire calendar year
- *   - none           → current calendar month (server "today" in UTC)
+ * Resolve `?year=&month=&day=` OR `?since=&until=` query params into an
+ * inclusive date window. Mirrors how GitHub's billing endpoint interprets
+ * partial specifications:
+ *   - since+until      → arbitrary range (DB-only; live API can't serve it)
+ *   - year+month+day   → that one day
+ *   - year+month       → entire calendar month
+ *   - year             → entire calendar year
+ *   - none             → current calendar month (server "today" in UTC)
  *
- * Throws on invalid input (out-of-range month/day) so the handler surfaces
- * a clean 400 instead of producing an empty/wrong window.
+ * `since/until` takes priority over year/month/day when both are supplied.
+ * When since/until is used, `timePeriod` is returned empty so the client
+ * knows the window is a custom range (not one of GitHub's standard buckets).
+ *
+ * Throws on invalid input (out-of-range month/day, malformed ISO dates,
+ * since > until) so the handler surfaces a clean 400.
  */
-export function resolveWindow(input: { year?: number; month?: number; day?: number }): BillingWindow {
+export function resolveWindow(input: {
+  year?: number;
+  month?: number;
+  day?: number;
+  since?: string;
+  until?: string;
+}): BillingWindow {
+  // Custom range takes precedence — used by the Billing tab's global
+  // date-range picker (Month view unchecked). DB path only.
+  if (input.since || input.until) {
+    if (!input.since || !input.until) {
+      throw new Error('Both `since` and `until` must be provided together');
+    }
+    const iso = /^\d{4}-\d{2}-\d{2}$/;
+    if (!iso.test(input.since) || !iso.test(input.until)) {
+      throw new Error('Invalid since/until — must be YYYY-MM-DD');
+    }
+    if (input.since > input.until) {
+      throw new Error(`since (${input.since}) must be <= until (${input.until})`);
+    }
+    return { startDate: input.since, endDate: input.until, timePeriod: {} };
+  }
+
   const now = new Date();
   const y = input.year ?? now.getUTCFullYear();
   const m = input.month ?? (input.year ? undefined : now.getUTCMonth() + 1);

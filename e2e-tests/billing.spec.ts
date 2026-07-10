@@ -68,23 +68,13 @@ test.describe('Billing tab', () => {
         await expect(dashboard.page.getByRole('columnheader', { name: 'Product' })).toBeVisible();
     });
 
-    test('date-range bar is hidden on the billing tab', tag, async () => {
+    test('date-range bar is visible on the billing tab (drives DB-backed ranges when Month view is unchecked)', tag, async () => {
         await dashboard.gotoBillingTab();
-        // The DateRangeBar is rendered with a `.date-range-bar` class and is
-        // gated v-show on `tab !== 'billing'` in MainComponent.vue.
-        const bar = dashboard.page.locator('.v-locale-provider').filter({
-            hasText: 'date range'
-        });
-        // The bar may not even be in the DOM; the more reliable check is the
-        // absence of its visible "Date range" / since-until inputs. Use a
-        // not-visible assertion on the calendar icon.
-        const calendarBtns = dashboard.page.getByRole('button', { name: /calendar/i });
-        // Either no calendar buttons, or none are visible.
-        if (await calendarBtns.count() > 0) {
-            await expect(calendarBtns.first()).toBeHidden();
-        }
-        // Silence the unused locator warning — assert nothing on `bar` directly.
-        expect(bar).toBeTruthy();
+        // As of the Month-view toggle change, the global DateRangeSelector is
+        // shown on the Billing tab so admins can filter DB-backed billing data
+        // to an arbitrary range (uncheck Month view above the tab to enable).
+        const monthViewCheckbox = dashboard.page.getByLabel('Month view', { exact: true });
+        await expect(monthViewCheckbox).toBeVisible();
     });
 
     test('billing tab renders per-user breakdown table and top spenders chart', tag, async () => {

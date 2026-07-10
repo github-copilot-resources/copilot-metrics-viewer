@@ -91,10 +91,13 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
 
   if (dbEnterprise) {
     try {
+      const hasCustomRange = !!(query.since || query.until);
       const window = resolveWindow({
         year: query.year ? Number(query.year) : undefined,
         month: query.month ? Number(query.month) : undefined,
         day: query.day ? Number(query.day) : undefined,
+        since: query.since ? String(query.since) : undefined,
+        until: query.until ? String(query.until) : undefined,
       });
       const decision = await decideSource(dbEnterprise, window.startDate, window.endDate);
       if (decision.source === 'db') {
@@ -110,14 +113,37 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       }
       setResponseHeader(event, 'X-Data-Source', 'live');
       setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
+      // Live GitHub API can't serve custom ranges — same 409 as /api/billing-credits.
+      if (hasCustomRange) {
+        throw createError({
+          statusCode: 409,
+          statusMessage:
+            `No ingested billing data covers ${window.startDate} → ${window.endDate}. ` +
+            `Enable Month view above or run the Billing CSV ingest in the Admin Panel.`,
+          data: { reason: 'range-requires-db', window },
+        });
+      }
     } catch (e) {
-      if (e instanceof Error && /Invalid|day without month/i.test(e.message)) {
+      const httpErr = e as { statusCode?: number };
+      if (httpErr && typeof httpErr.statusCode === 'number') throw e;
+      if (e instanceof Error && /Invalid|day without month|must be|since/i.test(e.message)) {
         throw createError({ statusCode: 400, statusMessage: e.message });
       }
       setResponseHeader(event, 'X-Data-Source', 'live');
       setResponseHeader(event, 'X-Data-Source-Reason',
         `db read failed: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  // Custom date ranges without a DB target (plain org scope) — same 409.
+  if ((query.since || query.until) && !dbEnterprise) {
+    throw createError({
+      statusCode: 409,
+      statusMessage:
+        `Custom date ranges are served from the local database (enterprise-scoped only). ` +
+        `Set NUXT_BILLING_ENTERPRISE or enable Month view.`,
+      data: { reason: 'range-requires-db' },
+    });
   }
 
   // No fallback to NUXT_GITHUB_TOKEN: GitHub rejects fine-grained PATs and
