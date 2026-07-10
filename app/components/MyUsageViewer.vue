@@ -505,7 +505,7 @@ export default defineComponent({
     // from the local billing_credit_usage table for a custom range.
     const spendCardTitle = computed(() =>
       data.value?.spend?.source === 'db'
-        ? 'AI credit spend (selected range)'
+        ? 'Your AI credit spend (selected range)'
         : 'Your AI credit spend (month-to-date)'
     );
     const spendSourceCaption = computed(() =>
