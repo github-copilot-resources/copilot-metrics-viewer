@@ -359,6 +359,7 @@
               <MyUsageViewer
                 :key="userDetailLogin"
                 :query-params="userDetailQueryParams"
+                :date-range-description="dateRangeDescription"
               />
             </v-card-text>
           </v-card>
