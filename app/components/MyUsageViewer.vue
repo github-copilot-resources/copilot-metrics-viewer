@@ -218,13 +218,13 @@
               <v-card v-if="data.spend" variant="outlined" class="border-cyan">
                 <v-card-title class="text-subtitle-1 d-flex align-center">
                   <v-icon size="small" class="mr-1" color="cyan-darken-2">mdi-cash-multiple</v-icon>
-                  Your AI credit spend (month-to-date)
+                  {{ spendCardTitle }}
                   <span class="text-caption text-medium-emphasis ml-2">
                     {{ spendPeriodLabel }}<template v-if="data.spend.enterprise"> · enterprise {{ data.spend.enterprise }}</template>
                   </span>
                 </v-card-title>
                 <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
-                  Source: GitHub Billing API (<code>ai_credit/usage</code>) · always current month · independent of the date-range picker above
+                  {{ spendSourceCaption }}
                 </v-card-subtitle>
                 <v-card-text>
                   <v-row dense>
@@ -428,6 +428,9 @@ interface MyUsageSpend {
   byModel: { model: string; amount: number; quantity: number; grossAmount: number; grossQuantity: number }[];
   timePeriod?: { year?: number; month?: number; day?: number };
   enterprise?: string;
+  source?: 'live' | 'db';
+  since?: string;
+  until?: string;
 }
 
 interface MyUsageResponse {
@@ -480,7 +483,15 @@ export default defineComponent({
     });
 
     const spendPeriodLabel = computed(() => {
-      const tp = data.value?.spend?.timePeriod;
+      const sp = data.value?.spend;
+      if (!sp) return 'Current billing period';
+      // DB-served range (custom since/until) — prefer parent's human label,
+      // fall back to since → until.
+      if (sp.source === 'db') {
+        if (props.dateRangeDescription) return props.dateRangeDescription;
+        if (sp.since && sp.until) return `${sp.since} → ${sp.until}`;
+      }
+      const tp = sp.timePeriod;
       if (!tp) return 'Current billing period';
       const parts: string[] = [];
       if (tp.year) parts.push(String(tp.year));
@@ -488,6 +499,20 @@ export default defineComponent({
       if (tp.day) parts.push(String(tp.day).padStart(2, '0'));
       return parts.length ? parts.join('-') : 'Current billing period';
     });
+
+    // Human label + source description for the spend card. Adapts to whether
+    // the spend was served from live GitHub Billing API (month-to-date) or
+    // from the local billing_credit_usage table for a custom range.
+    const spendCardTitle = computed(() =>
+      data.value?.spend?.source === 'db'
+        ? 'AI credit spend (selected range)'
+        : 'Your AI credit spend (month-to-date)'
+    );
+    const spendSourceCaption = computed(() =>
+      data.value?.spend?.source === 'db'
+        ? 'Source: local billing_credit_usage (CSV ingest) · aggregated for the dashboard date range'
+        : 'Source: GitHub Billing API (ai_credit/usage) · always current month · independent of the date-range picker above'
+    );
 
     // Human label for the Metrics API window used by the tiles/CLI card/etc.
     // Prefer the parent-provided `dateRangeDescription` (e.g. "Over the last
@@ -696,6 +721,7 @@ export default defineComponent({
 
     return {
       data, pending, error, initials, topIde, topModel, cliTotals, spendPeriodLabel,
+      spendCardTitle, spendSourceCaption,
       rangeLabel,
       hasDiscount,
       aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,

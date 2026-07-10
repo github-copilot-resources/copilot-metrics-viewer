@@ -33,6 +33,11 @@ import {
 } from '../services/github-copilot-usage-api';
 import { getUserDayMetricsByDateRange } from '../storage/user-day-metrics-storage';
 import { isDbConfigured } from '../storage/db';
+import {
+  aggregateForBilling,
+  decideSource,
+  resolveWindow,
+} from '../services/billing-credit-reader';
 import { buildBillingApiUrl } from '../utils/billing-url';
 import { aggregateBillingSpend, type BillingUsageItem } from '../utils/billing-spend-aggregator';
 import { isUsageAdminForEvent } from '../utils/usage-admin';
@@ -65,6 +70,15 @@ export interface MyUsageSpend {
   timePeriod?: { year?: number; month?: number; day?: number };
   /** Enterprise slug the billing call queried (echoed for the UI footnote). */
   enterprise?: string;
+  /**
+   * When the response was served from the local billing_credit_usage table
+   * (custom since/until range), these fields describe the actual window.
+   * When absent, the response came from the live GitHub Billing API and
+   * `timePeriod` describes the window instead.
+   */
+  source?: 'live' | 'db';
+  since?: string;
+  until?: string;
 }
 
 interface MyUsageResponse {
@@ -185,19 +199,36 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
     // exercisable in mock mode / Playwright (no live billing endpoint needed).
     // Values are anonymized — derived from realistic SKU/model mixes scaled
     // down for the fixture user.
-    const mockSpend: MyUsageSpend = {
-      totalAmount: 18.42,
-      totalQuantity: 1842.0,
-      totalGrossAmount: 20.46,
-      totalGrossQuantity: 2046.0,
-      timePeriod: { year: 2026, month: 6 },
-      enterprise: 'mocked-enterprise',
-      byModel: [
-        { model: 'claude-sonnet-4.5', amount: 9.87, quantity: 987.0, grossAmount: 10.97, grossQuantity: 1097.0 },
-        { model: 'gpt-5.3-codex',     amount: 5.41, quantity: 541.0, grossAmount: 6.01,  grossQuantity: 601.0 },
-        { model: 'claude-haiku-4.5',  amount: 3.14, quantity: 314.0, grossAmount: 3.48,  grossQuantity: 348.0 },
-      ],
-    };
+    const mockSpend: MyUsageSpend = (options.since || options.until)
+      ? {
+          totalAmount: 9.11,
+          totalQuantity: 911.0,
+          totalGrossAmount: 10.12,
+          totalGrossQuantity: 1012.0,
+          enterprise: 'mocked-enterprise',
+          source: 'db',
+          since: options.since,
+          until: options.until,
+          byModel: [
+            { model: 'claude-sonnet-4.5', amount: 4.88, quantity: 488.0, grossAmount: 5.42, grossQuantity: 542.0 },
+            { model: 'gpt-5.3-codex',     amount: 2.67, quantity: 267.0, grossAmount: 2.97, grossQuantity: 297.0 },
+            { model: 'claude-haiku-4.5',  amount: 1.56, quantity: 156.0, grossAmount: 1.73, grossQuantity: 173.0 },
+          ],
+        }
+      : {
+          totalAmount: 18.42,
+          totalQuantity: 1842.0,
+          totalGrossAmount: 20.46,
+          totalGrossQuantity: 2046.0,
+          timePeriod: { year: 2026, month: 6 },
+          enterprise: 'mocked-enterprise',
+          source: 'live',
+          byModel: [
+            { model: 'claude-sonnet-4.5', amount: 9.87, quantity: 987.0, grossAmount: 10.97, grossQuantity: 1097.0 },
+            { model: 'gpt-5.3-codex',     amount: 5.41, quantity: 541.0, grossAmount: 6.01,  grossQuantity: 601.0 },
+            { model: 'claude-haiku-4.5',  amount: 3.14, quantity: 314.0, grossAmount: 3.48,  grossQuantity: 348.0 },
+          ],
+        };
 
     return { ...responseShell, totals, dayRecords, spend: mockSpend };
   }
@@ -310,9 +341,56 @@ async function fetchSelfSpend(
 ): Promise<{ data: MyUsageSpend } | { warning: string } | null> {
   const config = useRuntimeConfig(event);
   const billingToken = ((config.githubBillingToken as string | undefined) || '').trim();
-  if (!billingToken) return null;
-
   const billingEnterprise = ((config.billingEnterprise as string | undefined) || '').trim();
+
+  // ── DB-first path when a custom date range is set ────────────────────────
+  // The live billing API only supports single day / whole month / whole year
+  // windows, so arbitrary since/until ranges must come from ingested rows in
+  // billing_credit_usage. Same DB gate as /api/billing-credits: enterprise
+  // scope OR org scope with NUXT_BILLING_ENTERPRISE override.
+  const hasCustomRange = !!(options.since || options.until);
+  if (hasCustomRange) {
+    const dbEnterprise = billingEnterprise
+      || (options.scope === 'enterprise' ? (options.githubEnt || '') : '')
+      || '';
+    if (dbEnterprise && isDbConfigured()) {
+      try {
+        const window = resolveWindow({
+          since: options.since,
+          until: options.until,
+        });
+        const decision = await decideSource(dbEnterprise, window.startDate, window.endDate);
+        if (decision.source === 'db') {
+          const agg = await aggregateForBilling(dbEnterprise, window, { user: myLogin });
+          const spend = aggregateBillingSpend(agg.usageItems);
+          return {
+            data: {
+              ...spend,
+              enterprise: dbEnterprise,
+              source: 'db',
+              since: window.startDate,
+              until: window.endDate,
+            },
+          };
+        }
+        // DB doesn't cover the range and live API can't serve a custom range.
+        return {
+          warning:
+            `No ingested billing data covers ${window.startDate} → ${window.endDate}. ` +
+            `Run the Billing CSV ingest in the Admin Panel to import data for this range.`,
+        };
+      } catch (e) {
+        const msg = (e as { message?: string })?.message || String(e);
+        return { warning: `DB spend lookup failed: ${msg}` };
+      }
+    }
+    // No enterprise → can't serve custom range from anywhere; skip silently
+    // rather than falling back to a misleading month-to-date live call.
+    return null;
+  }
+
+  // ── Live current-month path ──────────────────────────────────────────────
+  if (!billingToken) return null;
   const baseUrl = (config.githubApiBaseUrl as string | undefined) || 'https://api.github.com';
 
   let url: string;
@@ -349,6 +427,7 @@ async function fetchSelfSpend(
         byModel,
         timePeriod: resp.timePeriod,
         enterprise: resp.enterprise || billingEnterprise || undefined,
+        source: 'live',
       },
     };
   } catch (error: unknown) {
