@@ -118,18 +118,27 @@
                 <div class="text-h5 font-weight-bold">
                   {{ totalGrossQty.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
                 </div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Billing API · {{ periodLabel || 'current month' }}
+                </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="green" min-width="180">
               <v-card-text>
                 <div class="text-caption">Gross cost (USD)</div>
                 <div class="text-h5 font-weight-bold">${{ totalGrossAmount.toFixed(2) }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Billing API · {{ periodLabel || 'current month' }}
+                </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="indigo" min-width="180">
               <v-card-text>
                 <div class="text-caption">Net cost (USD)</div>
                 <div class="text-h5 font-weight-bold">${{ totalNetAmount.toFixed(2) }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Billing API · {{ periodLabel || 'current month' }}
+                </div>
               </v-card-text>
             </v-card>
           </div>
@@ -165,6 +174,9 @@
                     (loaded {{ loadedLoginsCount }} of {{ perUserRows.length }} users<span v-if="loadedLoginsCount < perUserRows.length">; sort by $ or page through to load more</span>)
                   </span>
                 </v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Source: Billing API (<code>ai_credit/usage</code> per user) · {{ periodLabel || 'current month' }}
+                </v-card-subtitle>
                 <v-card-text>
                   <div v-if="topSpendersChartData" style="height: 280px">
                     <Bar :data="topSpendersChartData" :options="topSpendersChartOptions" />
@@ -184,6 +196,9 @@
                     (prompt + output)
                   </span>
                 </v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Source: Copilot Metrics API (<code>totals_by_cli.token_usage</code>) · rolling last 28 days · <strong>not linked to the billing month picker</strong>
+                </v-card-subtitle>
                 <v-card-text>
                   <div v-if="topTokensChartData" style="height: 280px">
                     <Bar :data="topTokensChartData" :options="topTokensChartOptions" />
@@ -207,6 +222,10 @@
                 />
               </span>
             </v-card-title>
+            <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+              Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API (rolling last 28 days).
+              <strong>Credits</strong>, <strong>Gross $</strong>, <strong>Net $</strong>, and <strong>Models</strong> come from the Billing API for {{ periodLabel || 'the current month' }}.
+            </v-card-subtitle>
             <v-data-table
               :items="perUserRows"
               :headers="perUserHeaders"
@@ -292,6 +311,9 @@
 
           <v-card variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">Raw billing line items</v-card-title>
+            <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+              Source: Billing API (<code>ai_credit/usage</code>) · {{ periodLabel || 'current month' }} · one aggregate row per product × SKU × model × user
+            </v-card-subtitle>
             <v-data-table
               :items="items"
               :headers="headers"
