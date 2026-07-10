@@ -251,7 +251,7 @@
                   </span>
                 </v-card-title>
                 <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
-                  Source: Copilot Metrics API (<code>totals_by_cli.token_usage</code>) · rolling last 28 days · <strong>not linked to the billing month picker</strong>
+                  Source: Copilot Metrics API (<code>totals_by_cli.token_usage</code>) · {{ dateRangeDescription || 'last 28 days' }}
                 </v-card-subtitle>
                 <v-card-text>
                   <div v-if="topTokensChartData" style="height: 280px">
@@ -277,7 +277,7 @@
               </span>
             </v-card-title>
             <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
-              Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API (rolling last 28 days).
+              Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API for {{ dateRangeDescription || 'the last 28 days' }}.
               <strong>Credits</strong>, <strong>Gross $</strong>, <strong>Net $</strong>, and <strong>Models</strong> come from the Billing API for {{ rangeLabel }}.
             </v-card-subtitle>
             <v-data-table
