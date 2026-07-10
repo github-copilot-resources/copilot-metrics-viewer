@@ -22,6 +22,7 @@
             hide-details
             color="indigo"
             class="mb-1"
+            data-testid="billing-month-view-toggle"
           >
             <template #append>
               <v-tooltip location="top" max-width="320">
@@ -48,6 +49,7 @@
               hide-details
               variant="outlined"
               prepend-inner-icon="mdi-calendar-month"
+              data-testid="billing-month-picker"
             />
             <div class="d-flex justify-space-between mt-1">
               <v-btn
@@ -70,7 +72,7 @@
               >Next</v-btn>
             </div>
           </template>
-          <div v-else class="text-caption text-medium-emphasis">
+          <div v-else class="text-caption text-medium-emphasis" data-testid="billing-range-caption">
             Using dashboard date range: <strong>{{ dateRangeDescription || 'default' }}</strong>
           </div>
         </div>
