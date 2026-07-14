@@ -28,6 +28,7 @@
 
 import { Options } from '@/model/Options';
 import { requireUsageAdmin } from '../utils/usage-admin';
+import { emitAuditEvent } from '../utils/audit';
 import { buildBillingApiUrl } from '../utils/billing-url';
 import type { BillingCreditsResponse, BillingUsageItem } from './billing-credits.get';
 import {
@@ -81,6 +82,23 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       statusMessage: `Too many logins (${requestedLogins.length}); cap is ${MAX_LOGINS_PER_CALL} per call. Split the request into multiple pages.`,
     });
   }
+
+  await emitAuditEvent('billing.per_user.viewed', {
+    action: 'view',
+    outcome: 'allow',
+    target: options.githubOrg || options.githubEnt || 'unknown',
+    detail: {
+      scope: options.scope,
+      requestedLogins,
+      requestedCount: requestedLogins.length,
+      year: query.year,
+      month: query.month,
+      day: query.day,
+      model: query.model,
+      product: query.product,
+      costCenterId: query.cost_center_id,
+    },
+  }, event);
 
   // ── DB-first read path (Phase B) ───────────────────────────────────────────
   // Same coverage check as /api/billing-credits: if a completed CSV ingest

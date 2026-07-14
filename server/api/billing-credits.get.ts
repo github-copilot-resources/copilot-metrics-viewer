@@ -32,6 +32,7 @@
 
 import { Options } from '@/model/Options';
 import { requireUsageAdmin } from '../utils/usage-admin';
+import { emitAuditEvent } from '../utils/audit';
 import { buildBillingApiUrl } from '../utils/billing-url';
 import {
   decideSource,
@@ -88,6 +89,21 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   // exercise the tab without configuring NUXT_USAGE_ADMINS.
   if (!options.isDataMocked) {
     await requireUsageAdmin(event);
+    await emitAuditEvent('billing.viewed', {
+      action: 'view',
+      outcome: 'allow',
+      target: options.githubOrg || options.githubEnt || 'unknown',
+      detail: {
+        scope: options.scope,
+        year: query.year,
+        month: query.month,
+        day: query.day,
+        model: query.model,
+        product: query.product,
+        costCenterId: query.cost_center_id,
+        user: query.user,
+      },
+    }, event);
   }
 
   // ── Mock mode ──────────────────────────────────────────────────────────────

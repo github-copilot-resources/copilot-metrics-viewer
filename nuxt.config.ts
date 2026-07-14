@@ -125,6 +125,7 @@ export default defineNuxtConfig({
     // Server-only admin allowlist for the per-user billing breakdown tab
     // (NUXT_USAGE_ADMINS). Closed-by-default: empty list = nobody is admin.
     usageAdmins: '',
+    auditLogEnabled: process.env.NUXT_AUDIT_LOG_ENABLED || 'false',
     public: {
       isDataMocked: false,  // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
