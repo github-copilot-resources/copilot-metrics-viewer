@@ -26,6 +26,7 @@ import { fetchAllTeamMembers } from './seats';
 import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
 import { getSessionLoginForFilter, isUsageAdminForEvent } from '../utils/usage-admin';
+import type { QueryObject } from 'ufo';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,6 +41,13 @@ interface UserMetricsPagination {
   offset: number;
 }
 
+type UserMetricsQuery = QueryObject & {
+  page?: string;
+  pageSize?: string;
+  per_page?: string;
+  limit?: string;
+};
+
 function parsePositiveInt(value: unknown): number | undefined {
   const raw = Array.isArray(value) ? value[0] : value;
   const parsed = typeof raw === 'string' || typeof raw === 'number'
@@ -48,7 +56,7 @@ function parsePositiveInt(value: unknown): number | undefined {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function getPagination(query: ReturnType<typeof getQuery>): UserMetricsPagination {
+function getPagination(query: UserMetricsQuery): UserMetricsPagination {
   const page = parsePositiveInt(query.page) ?? 1;
   const requestedPageSize = parsePositiveInt(query.pageSize)
     ?? parsePositiveInt(query.per_page)
@@ -154,7 +162,7 @@ function filterDaysByDateRange(records: UserDayRecord[], since?: string, until?:
 
 export default defineEventHandler(async (event) => {
   const logger = console;
-  const query = getQuery(event);
+  const query = getQuery(event) as UserMetricsQuery;
   const options = Options.fromQuery(query);
   const pagination = getPagination(query);
 
