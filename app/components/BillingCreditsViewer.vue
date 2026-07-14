@@ -257,9 +257,14 @@
                   <div v-if="topTokensChartData" style="height: 280px">
                     <Bar :data="topTokensChartData" :options="topTokensChartOptions" />
                   </div>
-                  <v-alert v-else type="info" variant="tonal" density="compact">
-                    No per-user CLI token usage available — load the User Metrics tab
-                    once so token data is fetched, then revisit.
+                  <v-alert
+                    v-else
+                    type="info"
+                    variant="tonal"
+                    density="compact"
+                    data-testid="billing-top-token-users-empty-state"
+                  >
+                    No CLI token usage was reported for any user in this period.
                   </v-alert>
                 </v-card-text>
               </v-card>
