@@ -22,6 +22,7 @@ import {
   decideSource,
   aggregateForBilling,
   aggregateForBillingByUser,
+  aggregateTopBillingUsers,
   subtractRanges,
   findBillingCsvGaps,
 } from '../server/services/billing-credit-reader';
@@ -316,6 +317,31 @@ describe('aggregateForBillingByUser', () => {
     expect(sql).not.toContain('DROP TABLE');
     expect(sql).not.toContain(evilModel);
     expect(params).toContain(evilModel);
+  });
+});
+
+describe('aggregateTopBillingUsers', () => {
+  it('ranks the top users across the full enterprise dataset without a login filter', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { username: 'zoe', credits: 70, gross_amount: 7, net_amount: 7, models: 2 },
+        { username: 'alice', credits: 50, gross_amount: 5, net_amount: 5, models: 1 },
+      ],
+    });
+
+    const resp = await aggregateTopBillingUsers('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, { limit: 2 });
+
+    expect(resp.users.map(u => u.user)).toEqual(['zoe', 'alice']);
+    expect(resp.users[0]).toMatchObject({ credits: 70, grossAmount: 7, netAmount: 7, models: 2 });
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/GROUP BY username/);
+    expect(sql).toMatch(/ORDER BY SUM\(net_amount\) DESC/);
+    expect(sql).toMatch(/LIMIT \$4/);
+    expect(sql).not.toMatch(/LOWER\(username\) = ANY/);
+    expect(params).toEqual(['ent', '2026-06-01', '2026-06-30', 2]);
   });
 });
 
