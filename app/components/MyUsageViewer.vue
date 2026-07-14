@@ -122,7 +122,23 @@
             <v-col cols="12" sm="6" md="3">
               <v-card variant="tonal" color="deep-purple" class="h-100">
                 <v-card-text>
-                  <div class="text-caption">Accepted lines</div>
+                  <div class="text-caption d-flex align-center">
+                    Accepted lines
+                    <v-tooltip location="top" max-width="280">
+                      <template #activator="{ props: tipProps }">
+                        <v-icon
+                          v-bind="tipProps"
+                          data-testid="my-usage-accepted-lines-tooltip"
+                          size="14"
+                          class="ml-1"
+                          color="deep-purple"
+                        >
+                          mdi-information-outline
+                        </v-icon>
+                      </template>
+                      <span>Lines added from accepted completions and agent edits. Chat / ask-only usage adds no lines, so this can be 0 even with many interactions.</span>
+                    </v-tooltip>
+                  </div>
                   <div class="text-h4 font-weight-bold">
                     {{ data.totals.loc_added_sum.toLocaleString() }}
                   </div>
