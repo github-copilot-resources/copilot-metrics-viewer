@@ -7,6 +7,7 @@
         class="ai-chat-fab"
         color="indigo"
         icon
+        aria-label="Open AI metrics assistant"
         size="large"
         elevation="6"
         style="position: fixed; bottom: 24px; right: 24px; z-index: 2147483647;"
@@ -31,15 +32,15 @@
           AI Metrics Assistant
         </v-toolbar-title>
         <v-spacer />
-        <v-btn v-if="userToken" icon size="small" variant="text" @click="clearUserToken" title="Disconnect token">
+        <v-btn v-if="userToken" icon size="small" variant="text" aria-label="Disconnect personal token" @click="clearUserToken" title="Disconnect token">
           <v-icon size="small">mdi-key-remove</v-icon>
           <v-tooltip activator="parent" :z-index="2147483647" location="bottom">Disconnect personal token</v-tooltip>
         </v-btn>
-        <v-btn icon size="small" variant="text" @click="clearConversation">
+        <v-btn icon size="small" variant="text" aria-label="Clear conversation" @click="clearConversation">
           <v-icon size="small">mdi-delete-outline</v-icon>
           <v-tooltip activator="parent" :z-index="2147483647" location="bottom">Clear conversation</v-tooltip>
         </v-btn>
-        <v-btn icon size="small" variant="text" @click="isOpen = false">
+        <v-btn icon size="small" variant="text" aria-label="Close AI metrics assistant" @click="isOpen = false">
           <v-icon size="small">mdi-close</v-icon>
         </v-btn>
       </v-toolbar>
@@ -185,6 +186,7 @@
           <template #append-inner>
             <v-btn
               icon
+              aria-label="Send message"
               size="small"
               variant="text"
               color="indigo"
