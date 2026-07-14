@@ -11,6 +11,7 @@
  */
 
 import { Options } from '@/model/Options';
+import type { H3Event, EventHandlerRequest } from 'h3';
 import {
   aggregateUserDayRecords,
   fetchLatestUserReport,
@@ -24,10 +25,75 @@ import { isDbConfigured } from '../storage/db';
 import { fetchAllTeamMembers } from './seats';
 import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
+import { getSessionLoginForFilter, isUsageAdminForEvent } from '../utils/usage-admin';
+import type { QueryObject } from 'ufo';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersEnt28Day from '../../public/mock-data/new-api/enterprise-users-28-day-report.json';
+
+const DEFAULT_USER_METRICS_PAGE_SIZE = 500;
+const MAX_USER_METRICS_PAGE_SIZE = 500;
+
+interface UserMetricsPagination {
+  page: number;
+  pageSize: number;
+  offset: number;
+}
+
+type UserMetricsQuery = QueryObject & {
+  page?: string;
+  pageSize?: string;
+  per_page?: string;
+  limit?: string;
+};
+
+function parsePositiveInt(value: unknown): number | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = typeof raw === 'string' || typeof raw === 'number'
+    ? Number.parseInt(String(raw), 10)
+    : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function getPagination(query: UserMetricsQuery): UserMetricsPagination {
+  const page = parsePositiveInt(query.page) ?? 1;
+  const requestedPageSize = parsePositiveInt(query.pageSize)
+    ?? parsePositiveInt(query.per_page)
+    ?? parsePositiveInt(query.limit)
+    ?? DEFAULT_USER_METRICS_PAGE_SIZE;
+  const pageSize = Math.min(requestedPageSize, MAX_USER_METRICS_PAGE_SIZE);
+  return {
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize,
+  };
+}
+
+function applyPage<T>(rows: T[], pagination: UserMetricsPagination): T[] {
+  return rows.slice(pagination.offset, pagination.offset + pagination.pageSize);
+}
+
+function writePaginationHeaders(
+  event: H3Event<EventHandlerRequest>,
+  pagination: UserMetricsPagination,
+  totalUsers: number
+) {
+  if (typeof setResponseHeader !== 'function') return;
+  setResponseHeader(event, 'X-User-Metrics-Page', String(pagination.page));
+  setResponseHeader(event, 'X-User-Metrics-Page-Size', String(pagination.pageSize));
+  setResponseHeader(event, 'X-User-Metrics-Total-Count', String(totalUsers));
+  setResponseHeader(event, 'X-User-Metrics-Total-Pages', String(Math.max(1, Math.ceil(totalUsers / pagination.pageSize))));
+}
+
+async function getSelfFilterLogin(event: H3Event<EventHandlerRequest>): Promise<string | undefined> {
+  try {
+    if (await isUsageAdminForEvent(event)) return undefined;
+    return (await getSessionLoginForFilter(event)) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * If the request is for a team scope, resolve team members and filter
@@ -96,8 +162,9 @@ function filterDaysByDateRange(records: UserDayRecord[], since?: string, until?:
 
 export default defineEventHandler(async (event) => {
   const logger = console;
-  const query = getQuery(event);
+  const query = getQuery(event) as UserMetricsQuery;
   const options = Options.fromQuery(query);
+  const pagination = getPagination(query);
 
   // GDPR / issue #398 — non-admins may only query teams they belong to.
   // No-op for admins, PAT-mode operators, and queries without ?githubTeam.
@@ -127,7 +194,9 @@ export default defineEventHandler(async (event) => {
       const members = await filterByTeamIfNeeded(userTotals, options, new Headers());
       userTotals = members;
     }
-    return restrictUserRowsToSelf(event, userTotals, { isMocked: true });
+    const visibleRows = await restrictUserRowsToSelf(event, userTotals, { isMocked: true });
+    writePaginationHeaders(event, pagination, visibleRows.length);
+    return applyPage(visibleRows, pagination);
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────
@@ -145,11 +214,23 @@ export default defineEventHandler(async (event) => {
     try {
       const scope = options.scope || 'organization';
       const identifier = options.githubOrg || options.githubEnt || '';
-      const stored = await getUserMetricsByDateRange(scope, identifier, options.since, options.until);
+      const selfFilterLogin = isTeamScope ? undefined : await getSelfFilterLogin(event);
+      const storagePage = isTeamScope ? undefined : {
+        limit: selfFilterLogin ? 1 : pagination.pageSize,
+        offset: selfFilterLogin ? 0 : pagination.offset,
+        ...(selfFilterLogin ? { userLogin: selfFilterLogin } : {}),
+      };
+      const stored = await getUserMetricsByDateRange(scope, identifier, options.since, options.until, storagePage);
       if (stored) {
         const filtered = await filterByTeamIfNeeded(stored.userTotals, options, event.context.headers);
-        logger.info(`Returning ${filtered.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay})`);
-        return restrictUserRowsToSelf(event, filtered);
+        const visibleRows = await restrictUserRowsToSelf(event, filtered);
+        const totalUsers = isTeamScope || stored.totalUsers === undefined ? visibleRows.length : stored.totalUsers;
+        const pageRows = isTeamScope || stored.totalUsers === undefined
+          ? applyPage(visibleRows, pagination)
+          : visibleRows;
+        writePaginationHeaders(event, pagination, totalUsers);
+        logger.info(`Returning ${pageRows.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay}; page ${pagination.page}, size ${pagination.pageSize}, total ${totalUsers})`);
+        return pageRows;
       }
       logger.info('No user metrics in storage yet, attempting live fetch');
     } catch (err) {
@@ -220,8 +301,11 @@ export default defineEventHandler(async (event) => {
     }
 
     const filtered = await filterByTeamIfNeeded(userTotals, options, event.context.headers);
-    logger.info(`Returned ${filtered.length} user records for ${scope}:${identifier} (${userTotals.length} before team filter)`);
-    return restrictUserRowsToSelf(event, filtered);
+    const visibleRows = await restrictUserRowsToSelf(event, filtered);
+    const pageRows = applyPage(visibleRows, pagination);
+    writePaginationHeaders(event, pagination, visibleRows.length);
+    logger.info(`Returned ${pageRows.length} user records for ${scope}:${identifier} (${userTotals.length} before team filter; page ${pagination.page}, size ${pagination.pageSize}, total ${visibleRows.length})`);
+    return pageRows;
 
   } catch (error: unknown) {
     logger.error('Error fetching user metrics:', error);

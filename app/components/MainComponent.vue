@@ -806,7 +806,7 @@ export default defineNuxtComponent({
       immediate: false,
       query: computed(() => {
         const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
-        return options.toParams();
+        return { ...options.toParams(), page: '1', pageSize: '500' };
       })
     });
 
