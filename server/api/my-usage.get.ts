@@ -41,6 +41,7 @@ import {
 import { buildBillingApiUrl } from '../utils/billing-url';
 import { aggregateBillingSpend, type BillingUsageItem } from '../utils/billing-spend-aggregator';
 import { isUsageAdminForEvent } from '../utils/usage-admin';
+import { emitAuditEvent } from '../utils/audit';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,6 +165,15 @@ export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
       myLogin = requestedLogin;
       myEmail = undefined;
       viewingAsAdmin = true;
+      await emitAuditEvent('user_data.viewed', {
+        action: 'view',
+        outcome: 'allow',
+        target: requestedLogin,
+        detail: {
+          scope: options.scope,
+          requestedLogin,
+        },
+      }, event);
     }
   }
 
