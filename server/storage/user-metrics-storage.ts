@@ -16,6 +16,19 @@ import { aggregateUserDayRecords } from '../services/github-copilot-usage-api';
 import { baseScope } from './user-day-metrics-storage';
 import { getPool } from './db';
 
+export interface UserMetricsPageOptions {
+  limit: number;
+  offset: number;
+  userLogin?: string;
+}
+
+export interface StoredUserMetricsResult {
+  reportStartDay: string;
+  reportEndDay: string;
+  userTotals: UserTotals[];
+  totalUsers?: number;
+}
+
 /**
  * Aggregated user-metrics statistics for one stored window (calendar month).
  */
@@ -58,10 +71,11 @@ export async function getUserMetricsByDateRange(
   scope: string,
   scopeIdentifier: string,
   since?: string,
-  until?: string
-): Promise<{ reportStartDay: string; reportEndDay: string; userTotals: UserTotals[] } | null> {
+  until?: string,
+  page?: UserMetricsPageOptions
+): Promise<StoredUserMetricsResult | null> {
   if (!since && !until) {
-    return getLatestUserMetrics(scope, scopeIdentifier);
+    return getLatestUserMetrics(scope, scopeIdentifier, page);
   }
 
   const pool = getPool();
@@ -78,12 +92,53 @@ export async function getUserMetricsByDateRange(
     values.push(until);
     conditions.push(`metrics_date <= $${values.length}`);
   }
+  if (page?.userLogin) {
+    values.push(page.userLogin);
+    conditions.push(`user_login = $${values.length}`);
+  }
 
-  const { rows } = await pool.query(
-    `SELECT data FROM user_day_metrics WHERE ${conditions.join(' AND ')}`,
-    values
-  );
-  if (rows.length === 0) return null;
+  const whereClause = conditions.join(' AND ');
+  const totalUsers = page
+    ? Number((await pool.query(
+        `SELECT COUNT(DISTINCT user_login) AS total_users
+         FROM user_day_metrics
+         WHERE ${whereClause}`,
+        values
+      )).rows[0]?.total_users ?? 0)
+    : undefined;
+
+  const rows = page
+    ? (await pool.query(
+        `WITH selected_users AS (
+           SELECT user_login
+           FROM user_day_metrics
+           WHERE ${whereClause}
+           GROUP BY user_login
+           ORDER BY user_login ASC
+           LIMIT $${values.length + 1} OFFSET $${values.length + 2}
+         )
+         SELECT udm.data
+         FROM user_day_metrics udm
+         JOIN selected_users su ON su.user_login = udm.user_login
+         WHERE ${conditions.map((condition) => `udm.${condition}`).join(' AND ')}
+         ORDER BY udm.user_login ASC, udm.metrics_date ASC`,
+        [...values, page.limit, page.offset]
+      )).rows
+    : (await pool.query(
+        `SELECT data FROM user_day_metrics WHERE ${whereClause}`,
+        values
+      )).rows;
+  if (rows.length === 0) {
+    if (page && totalUsers !== undefined) {
+      return {
+        reportStartDay: since ?? '',
+        reportEndDay: until ?? '',
+        userTotals: [],
+        totalUsers,
+      };
+    }
+    return null;
+  }
 
   const records: UserDayRecord[] = rows.map(r => r.data);
   const sortedDays = records.map(r => r.day).filter(Boolean).sort();
@@ -91,6 +146,7 @@ export async function getUserMetricsByDateRange(
     reportStartDay: since ?? sortedDays[0] ?? '',
     reportEndDay: until ?? sortedDays[sortedDays.length - 1] ?? '',
     userTotals: aggregateUserDayRecords(records),
+    totalUsers,
   };
 }
 
@@ -100,8 +156,9 @@ export async function getUserMetricsByDateRange(
  */
 export async function getLatestUserMetrics(
   scope: string,
-  scopeIdentifier: string
-): Promise<{ reportStartDay: string; reportEndDay: string; userTotals: UserTotals[] } | null> {
+  scopeIdentifier: string,
+  page?: UserMetricsPageOptions
+): Promise<StoredUserMetricsResult | null> {
   const pool = getPool();
   const normalizedScope = baseScope(scope);
 
@@ -118,19 +175,64 @@ export async function getLatestUserMetrics(
   const minDate = new Date(new Date(maxDate).getTime() - (LATEST_WINDOW_DAYS - 1) * 24 * 60 * 60 * 1000)
     .toISOString().slice(0, 10);
 
-  const { rows } = await pool.query(
-    `SELECT data FROM user_day_metrics
-     WHERE scope = $1 AND identifier = $2
-       AND metrics_date BETWEEN $3 AND $4`,
-    [normalizedScope, scopeIdentifier, minDate, maxDate]
-  );
-  if (rows.length === 0) return null;
+  const totalUsers = page
+    ? Number((await pool.query(
+        `SELECT COUNT(DISTINCT user_login) AS total_users FROM user_day_metrics
+         WHERE scope = $1 AND identifier = $2
+           AND metrics_date BETWEEN $3 AND $4
+           ${page.userLogin ? 'AND user_login = $5' : ''}`,
+        page.userLogin
+          ? [normalizedScope, scopeIdentifier, minDate, maxDate, page.userLogin]
+          : [normalizedScope, scopeIdentifier, minDate, maxDate]
+      )).rows[0]?.total_users ?? 0)
+    : undefined;
+
+  const rows = page
+    ? (await pool.query(
+        `WITH selected_users AS (
+           SELECT user_login
+           FROM user_day_metrics
+           WHERE scope = $1 AND identifier = $2
+             AND metrics_date BETWEEN $3 AND $4
+             ${page.userLogin ? 'AND user_login = $5' : ''}
+           GROUP BY user_login
+           ORDER BY user_login ASC
+           LIMIT $${page.userLogin ? '6' : '5'} OFFSET $${page.userLogin ? '7' : '6'}
+         )
+         SELECT udm.data
+         FROM user_day_metrics udm
+         JOIN selected_users su ON su.user_login = udm.user_login
+         WHERE udm.scope = $1 AND udm.identifier = $2
+           AND udm.metrics_date BETWEEN $3 AND $4
+         ORDER BY udm.user_login ASC, udm.metrics_date ASC`,
+        page.userLogin
+          ? [normalizedScope, scopeIdentifier, minDate, maxDate, page.userLogin, page.limit, page.offset]
+          : [normalizedScope, scopeIdentifier, minDate, maxDate, page.limit, page.offset]
+      )).rows
+    : (await pool.query(
+        `SELECT data FROM user_day_metrics
+         WHERE scope = $1 AND identifier = $2
+           AND metrics_date BETWEEN $3 AND $4`,
+        [normalizedScope, scopeIdentifier, minDate, maxDate]
+      )).rows;
+  if (rows.length === 0) {
+    if (page && totalUsers !== undefined) {
+      return {
+        reportStartDay: minDate,
+        reportEndDay: maxDate,
+        userTotals: [],
+        totalUsers,
+      };
+    }
+    return null;
+  }
 
   const records: UserDayRecord[] = rows.map(r => r.data);
   return {
     reportStartDay: minDate,
     reportEndDay: maxDate,
     userTotals: aggregateUserDayRecords(records),
+    totalUsers,
   };
 }
 

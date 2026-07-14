@@ -542,7 +542,7 @@ describe('/api/user-metrics handler – historical mode fallback', () => {
     const result = await handler(makeEvent(false))
 
     expect(result).toEqual(stored.userTotals)
-    expect(mockGetUserMetricsByDateRange).toHaveBeenCalledWith('organization', 'test-org', undefined, undefined)
+    expect(mockGetUserMetricsByDateRange).toHaveBeenCalledWith('organization', 'test-org', undefined, undefined, { limit: 500, offset: 0 })
   })
 
   it('passes since/until params to storage when date range is specified', async () => {
@@ -566,7 +566,7 @@ describe('/api/user-metrics handler – historical mode fallback', () => {
       const result = await handler(makeEvent(false))
 
       expect(result).toEqual(stored.userTotals)
-      expect(mockGetUserMetricsByDateRange).toHaveBeenCalledWith('organization', 'test-org', '2026-06-01', '2026-06-12')
+      expect(mockGetUserMetricsByDateRange).toHaveBeenCalledWith('organization', 'test-org', '2026-06-01', '2026-06-12', { limit: 500, offset: 0 })
     } finally {
       ;(globalThis as any).getQuery = ORIGINAL_GET_QUERY
     }
@@ -721,6 +721,58 @@ describe('/api/user-metrics handler – team filtering', () => {
     expect(Array.isArray(result)).toBe(true)
     expect(result).toHaveLength(2) // both octocat and octokitten
     expect(mockFetchAllTeamMembers).not.toHaveBeenCalled()
+  })
+
+  it('caps unpaginated org responses at the server default page size', async () => {
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'organization',
+      githubOrg: 'test-org',
+    })
+
+    const manyUsers = Array.from({ length: 501 }, (_, i) => ({
+      ...SAMPLE_USER_REPORT.user_totals[0],
+      login: `user-${String(i + 1).padStart(3, '0')}`,
+      user_id: i + 1,
+    }))
+    mockGetUserMetricsByDateRange.mockResolvedValue({
+      reportStartDay: '2026-03-05',
+      reportEndDay: '2026-04-01',
+      userTotals: manyUsers,
+    })
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = await handler(makeEvent(false))
+
+    expect(Array.isArray(result)).toBe(true)
+    expect(result).toHaveLength(500)
+    expect((result as any[])[0].login).toBe('user-001')
+    expect((result as any[])[499].login).toBe('user-500')
+  })
+
+  it('returns the requested user metrics page when page and pageSize are provided', async () => {
+    ;(globalThis as any).getQuery = () => ({
+      scope: 'organization',
+      githubOrg: 'test-org',
+      page: '2',
+      pageSize: '2',
+    })
+
+    const users = Array.from({ length: 5 }, (_, i) => ({
+      ...SAMPLE_USER_REPORT.user_totals[0],
+      login: `user-${i + 1}`,
+      user_id: i + 1,
+    }))
+    mockGetUserMetricsByDateRange.mockResolvedValue({
+      reportStartDay: '2026-03-05',
+      reportEndDay: '2026-04-01',
+      userTotals: users,
+    })
+
+    const { default: handler } = await import('../server/api/user-metrics')
+    const result = await handler(makeEvent(false))
+
+    expect(Array.isArray(result)).toBe(true)
+    expect((result as any[]).map(u => u.login)).toEqual(['user-3', 'user-4'])
   })
 
   it('throws 503 for team scope without auth in historical mode', async () => {
