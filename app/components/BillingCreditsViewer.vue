@@ -168,30 +168,66 @@
           <div class="d-flex flex-wrap gap-3 pa-3">
             <v-card variant="tonal" color="cyan-darken-2" min-width="180">
               <v-card-text>
-                <div class="text-caption">Total credits</div>
+                <div class="text-caption d-flex align-center">
+                  Total credits
+                  <v-tooltip location="top" max-width="320">
+                    <template #activator="{ props: tipProps }">
+                      <v-icon v-bind="tipProps" size="14" class="ml-1" color="cyan-darken-2">mdi-information-outline</v-icon>
+                    </template>
+                    <span>
+                      From {{ billingSourceLabel }} for {{ rangeLabel }}.
+                      Credits use the same definition as the per-user table:
+                      net billed quantity plus discounted quantity.
+                    </span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h5 font-weight-bold">
-                  {{ totalGrossQty.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                  {{ totalCredits.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
                 </div>
                 <div class="text-caption text-medium-emphasis mt-1">
-                  Billing API · {{ rangeLabel }}
+                  {{ billingSourceLabel }} · {{ rangeLabel }}
                 </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="green" min-width="180">
               <v-card-text>
-                <div class="text-caption">Gross cost (USD)</div>
+                <div class="text-caption d-flex align-center">
+                  Gross cost (USD)
+                  <v-tooltip location="top" max-width="320">
+                    <template #activator="{ props: tipProps }">
+                      <v-icon v-bind="tipProps" size="14" class="ml-1" color="green">mdi-information-outline</v-icon>
+                    </template>
+                    <span>
+                      From {{ billingSourceLabel }} for {{ rangeLabel }}.
+                      Gross cost is the list-price USD amount before discounts
+                      or credits are applied.
+                    </span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h5 font-weight-bold">${{ totalGrossAmount.toFixed(2) }}</div>
                 <div class="text-caption text-medium-emphasis mt-1">
-                  Billing API · {{ rangeLabel }}
+                  {{ billingSourceLabel }} · {{ rangeLabel }}
                 </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="indigo" min-width="180">
               <v-card-text>
-                <div class="text-caption">Net cost (USD)</div>
+                <div class="text-caption d-flex align-center">
+                  Net cost (USD)
+                  <v-tooltip location="top" max-width="320">
+                    <template #activator="{ props: tipProps }">
+                      <v-icon v-bind="tipProps" size="14" class="ml-1" color="indigo">mdi-information-outline</v-icon>
+                    </template>
+                    <span>
+                      From {{ billingSourceLabel }} for {{ rangeLabel }}.
+                      Net cost is the USD amount after discounts are applied —
+                      the amount billed for the selected window.
+                    </span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h5 font-weight-bold">${{ totalNetAmount.toFixed(2) }}</div>
                 <div class="text-caption text-medium-emphasis mt-1">
-                  Billing API · {{ rangeLabel }}
+                  {{ billingSourceLabel }} · {{ rangeLabel }}
                 </div>
               </v-card-text>
             </v-card>
@@ -396,6 +432,7 @@ import {
   Legend,
 } from 'chart.js';
 import { PALETTE } from '@/utils/chartPlugins';
+import { billingCreditsUsed, sumBillingCreditsUsed } from '@/utils/billingCredits';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
 import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
 
@@ -557,8 +594,7 @@ export default defineComponent({
               if (!u) continue;
               const key = u.toLowerCase();
               const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
-              prev.credits += Number.isFinite(it.netQuantity) ? it.netQuantity : 0;
-              prev.credits += Number.isFinite(it.discountQuantity) ? it.discountQuantity : 0;
+              prev.credits += billingCreditsUsed(it);
               prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
               prev.netAmount += Number.isFinite(it.netAmount) ? it.netAmount : 0;
               if (it.model) prev.models.add(it.model);
@@ -613,9 +649,7 @@ export default defineComponent({
       return '';
     });
 
-    const totalGrossQty = computed(() =>
-      items.value.reduce((s, i) => s + (i.grossQuantity || 0), 0)
-    );
+    const totalCredits = computed(() => sumBillingCreditsUsed(items.value));
     const totalGrossAmount = computed(() =>
       items.value.reduce((s, i) => s + (i.grossAmount || 0), 0)
     );
@@ -675,8 +709,7 @@ export default defineComponent({
         if (!u) continue;
         const key = u.toLowerCase();
         const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
-        prev.credits += Number.isFinite(it.netQuantity) ? it.netQuantity : 0;
-        prev.credits += Number.isFinite(it.discountQuantity) ? it.discountQuantity : 0;
+        prev.credits += billingCreditsUsed(it);
         prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
         prev.netAmount += Number.isFinite(it.netAmount) ? it.netAmount : 0;
         if (it.model) prev.models.add(it.model);
@@ -792,6 +825,9 @@ export default defineComponent({
     };
 
     const dataSourceBadge = computed(() => buildDataSourceBadge(dataSource.value));
+    const billingSourceLabel = computed(() =>
+      dataSource.value.source === 'db' ? 'Billing CSV ingest' : 'GitHub Billing API'
+    );
 
     // Human label for the window covered by the current billing fetch,
     // used in every card/table subtitle so the source+range is unambiguous.
@@ -828,13 +864,13 @@ export default defineComponent({
       data, pending, error, items, periodLabel,
       selectedMonth, currentMonthIso, shiftMonth, isCurrentMonth,
       monthView, rangeLabel,
-      totalGrossQty, totalGrossAmount, totalNetAmount,
+      totalCredits, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserHeaders,
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
-      dataSourceBadge,
+      dataSourceBadge, billingSourceLabel,
       userDetailLogin, userDetailQueryParams, openUserDetail,
     };
   },
