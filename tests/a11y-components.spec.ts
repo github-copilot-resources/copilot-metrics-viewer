@@ -6,13 +6,24 @@ import { join } from 'node:path';
 const componentsDir = join(process.cwd(), 'app/components');
 
 function stripNonVisibleButtonContent(template: string): string {
-  return template
-    .replace(/<v-icon\b[\s\S]*?<\/v-icon>/g, '')
-    .replace(/<v-tooltip\b[\s\S]*?<\/v-tooltip>/g, '')
-    .replace(/<template\b[\s\S]*?<\/template>/g, '')
-    .replace(/<[^>]+>/g, '')
-    .replace(/{{[\s\S]*?}}/g, '')
-    .trim();
+  let out = template;
+  const patterns = [
+    /<v-icon\b[\s\S]*?<\/v-icon>/g,
+    /<v-tooltip\b[\s\S]*?<\/v-tooltip>/g,
+    /<template\b[\s\S]*?<\/template>/g,
+    /<[^>]+>/g,
+    /{{[\s\S]*?}}/g,
+  ];
+
+  for (const pattern of patterns) {
+    let prev: string;
+    do {
+      prev = out;
+      out = out.replace(pattern, '');
+    } while (out !== prev);
+  }
+
+  return out.trim();
 }
 
 function findIconOnlyButtonsWithoutAriaLabel(source: string): string[] {
