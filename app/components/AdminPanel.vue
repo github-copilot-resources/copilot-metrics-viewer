@@ -5,7 +5,7 @@
         <v-icon color="primary">mdi-shield-crown</v-icon>
         Admin Panel
         <v-spacer />
-        <v-btn icon variant="text" size="small" title="Close" @click="isOpen = false">
+        <v-btn icon variant="text" size="small" title="Close" aria-label="Close admin panel" @click="isOpen = false">
           <v-icon>mdi-close</v-icon>
         </v-btn>
       </v-card-title>
@@ -249,6 +249,7 @@
                     variant="text"
                     icon
                     title="Retry this date"
+                    aria-label="Retry this date"
                     :loading="retryingDate === f.metricsDate"
                     :disabled="!!busyAction"
                     @click="retryOne(f.metricsDate)"
@@ -431,6 +432,7 @@
                     variant="text"
                     density="compact"
                     title="Dismiss this row (kept in DB so gap-mode coverage still works)"
+                    aria-label="Dismiss billing job row"
                     @click="dismissBillingJob(j.id)"
                   />
                 </td>
