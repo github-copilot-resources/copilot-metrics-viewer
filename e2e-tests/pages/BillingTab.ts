@@ -12,6 +12,9 @@ export class BillingTab {
     readonly netCostLabel: Locator;
     readonly dataTable: Locator;
     readonly heading: Locator;
+    readonly monthViewToggle: Locator;
+    readonly monthPicker: Locator;
+    readonly rangeCaption: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -20,6 +23,11 @@ export class BillingTab {
         this.netCostLabel = page.getByText("Net cost (USD)", { exact: true });
         this.dataTable = page.locator(".v-data-table").first();
         this.heading = page.getByText("AI Credit Billing");
+        // v-checkbox renders an <input type=checkbox> inside a wrapper carrying
+        // data-testid. Reach the input so .check()/.uncheck()/.isChecked() work.
+        this.monthViewToggle = page.getByTestId("billing-month-view-toggle").locator("input[type=checkbox]");
+        this.monthPicker = page.getByTestId("billing-month-picker");
+        this.rangeCaption = page.getByTestId("billing-range-caption");
     }
 
     async expectVisible() {

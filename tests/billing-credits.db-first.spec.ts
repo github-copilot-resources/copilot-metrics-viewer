@@ -57,7 +57,10 @@ vi.mock('../server/services/billing-credit-reader', () => ({
   decideSource: (...a: any[]) => mockDecide(...a),
   aggregateForBilling: (...a: any[]) => mockAggregate(...a),
   aggregateForBillingByUser: (...a: any[]) => mockAggregateByUser(...a),
-  resolveWindow: (input: { year?: number; month?: number; day?: number }) => {
+  resolveWindow: (input: { year?: number; month?: number; day?: number; since?: string; until?: string }) => {
+    if (input.since && input.until) {
+      return { startDate: input.since, endDate: input.until, timePeriod: {} };
+    }
     const y = input.year ?? 2026;
     const m = input.month ?? 6;
     return {
@@ -154,6 +157,63 @@ describe('GET /api/billing-credits — DB-first branch', () => {
     await billingHandler({} as any);
 
     expect(mockDecide).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 range-requires-db when a since/until range is not covered by any ingest job', async () => {
+    setQuery({
+      scope: 'enterprise', githubEnt: 'ent-x',
+      since: '2026-05-01', until: '2026-06-15',
+    });
+    mockDecide.mockResolvedValueOnce({
+      source: 'live', reason: 'no completed ingest job covers window',
+      lastIngestAt: null, jobId: null,
+    });
+
+    let caught: any = null;
+    try { await billingHandler({} as any); } catch (e) { caught = e; }
+
+    expect(caught).toBeTruthy();
+    expect(caught.statusCode).toBe(409);
+    expect(caught.data?.reason).toBe('range-requires-db');
+    expect(caught.message).toMatch(/2026-05-01.*2026-06-15/);
+    // Live GitHub API MUST NOT be attempted for custom ranges.
+    expect(((globalThis as any).$fetch as any).mock.calls).toHaveLength(0);
+  });
+
+  it('serves a since/until range from DB when covered', async () => {
+    setQuery({
+      scope: 'enterprise', githubEnt: 'ent-x',
+      since: '2026-05-01', until: '2026-06-15',
+    });
+    mockDecide.mockResolvedValueOnce({
+      source: 'db', reason: 'covered by job #11', lastIngestAt: null, jobId: 11,
+    });
+    mockAggregate.mockResolvedValueOnce({
+      timePeriod: {}, enterprise: 'ent-x', usageItems: [],
+    });
+
+    await billingHandler({} as any);
+
+    expect(mockDecide).toHaveBeenCalledWith('ent-x', '2026-05-01', '2026-06-15');
+    expect(mockAggregate).toHaveBeenCalled();
+    expect(getHeader('X-Data-Source')).toBe('db');
+  });
+
+  it('rejects since/until on org-scoped calls with 409 range-requires-db', async () => {
+    setConfig({ billingEnterprise: '', githubBillingToken: 'tok' });
+    setQuery({
+      scope: 'organization', githubOrg: 'org-y',
+      since: '2026-05-01', until: '2026-06-15',
+    });
+
+    let caught: any = null;
+    try { await billingHandler({} as any); } catch (e) { caught = e; }
+
+    expect(caught).toBeTruthy();
+    expect(caught.statusCode).toBe(409);
+    expect(caught.data?.reason).toBe('range-requires-db');
+    expect(mockDecide).not.toHaveBeenCalled();
+    expect(((globalThis as any).$fetch as any).mock.calls).toHaveLength(0);
   });
 });
 

@@ -14,35 +14,66 @@
             enterprise billing endpoint when available.
           </div>
         </div>
-        <div style="min-width: 200px;">
-          <v-text-field
-            v-model="selectedMonth"
-            label="Billing month"
-            type="month"
+        <div style="min-width: 260px;">
+          <v-checkbox
+            v-model="monthView"
+            label="Month view"
             density="compact"
             hide-details
-            variant="outlined"
-            prepend-inner-icon="mdi-calendar-month"
-          />
-          <div class="d-flex justify-space-between mt-1">
-            <v-btn
-              size="x-small"
-              variant="text"
-              prepend-icon="mdi-chevron-left"
-              @click="shiftMonth(-1)"
-            >Prev</v-btn>
-            <v-btn
-              size="x-small"
-              variant="text"
-              @click="selectedMonth = currentMonthIso"
-            >This month</v-btn>
-            <v-btn
-              size="x-small"
-              variant="text"
-              append-icon="mdi-chevron-right"
-              :disabled="selectedMonth >= currentMonthIso"
-              @click="shiftMonth(1)"
-            >Next</v-btn>
+            color="indigo"
+            class="mb-1"
+            data-testid="billing-month-view-toggle"
+          >
+            <template #append>
+              <v-tooltip location="top" max-width="320">
+                <template #activator="{ props: tipProps }">
+                  <v-icon v-bind="tipProps" size="16" color="grey">mdi-information-outline</v-icon>
+                </template>
+                <span>
+                  When enabled, use the month picker below and query the live
+                  GitHub Billing API (which only supports a single day or a
+                  whole calendar month). When disabled, the dashboard-wide
+                  date-range picker at the top drives this tab — but that
+                  requires the Billing CSV to have been ingested for the
+                  selected range via the Admin Panel.
+                </span>
+              </v-tooltip>
+            </template>
+          </v-checkbox>
+          <template v-if="monthView">
+            <v-text-field
+              v-model="selectedMonth"
+              label="Billing month"
+              type="month"
+              density="compact"
+              hide-details
+              variant="outlined"
+              prepend-inner-icon="mdi-calendar-month"
+              data-testid="billing-month-picker"
+            />
+            <div class="d-flex justify-space-between mt-1">
+              <v-btn
+                size="x-small"
+                variant="text"
+                prepend-icon="mdi-chevron-left"
+                @click="shiftMonth(-1)"
+              >Prev</v-btn>
+              <v-btn
+                size="x-small"
+                variant="text"
+                @click="selectedMonth = currentMonthIso"
+              >This month</v-btn>
+              <v-btn
+                size="x-small"
+                variant="text"
+                append-icon="mdi-chevron-right"
+                :disabled="selectedMonth >= currentMonthIso"
+                @click="shiftMonth(1)"
+              >Next</v-btn>
+            </div>
+          </template>
+          <div v-else class="text-caption text-medium-emphasis" data-testid="billing-range-caption">
+            Using dashboard date range: <strong>{{ dateRangeDescription || 'default' }}</strong>
           </div>
         </div>
       </div>
@@ -66,15 +97,32 @@
             <code>manage_billing:enterprise</code> (for enterprise scope).
             Fine-grained PATs and GitHub Apps are not supported by these endpoints.
           </div>
+          <div v-else-if="errorReason === 'range-requires-db'" class="mt-2 text-caption">
+            The dashboard-wide date range doesn't align with a single calendar month, so this
+            tab must serve it from the local database. No CSV ingest job covers the requested
+            range yet. Either:
+            <ul class="ml-4 mt-1">
+              <li>Enable <strong>Month view</strong> above to query the live GitHub Billing API for a specific month, or</li>
+              <li>Run the <strong>Billing CSV ingest</strong> in the Admin Panel to import data for {{ dateRangeDescription || 'this range' }}.</li>
+            </ul>
+          </div>
         </v-alert>
 
         <v-alert v-else-if="!items.length" type="info" density="compact" class="ma-3">
           <div>
             No billing data returned for {{ data?.organization || data?.enterprise }}
-            <span v-if="periodLabel">in <strong>{{ periodLabel }}</strong></span>
+            <span v-if="!monthView && dateRangeDescription">
+              for <strong>{{ dateRangeDescription }}</strong>
+            </span>
+            <span v-else-if="periodLabel">in <strong>{{ periodLabel }}</strong></span>
             <span v-else>in this period</span>.
           </div>
-          <div v-if="!isCurrentMonth" class="mt-2 text-caption">
+          <div v-if="!monthView" class="mt-2 text-caption">
+            Enable <strong>Month view</strong> above to query the live GitHub Billing API for
+            a specific calendar month, or run the <strong>Billing CSV ingest</strong> in the
+            Admin Panel to import billing data for the selected range.
+          </div>
+          <div v-else-if="!isCurrentMonth" class="mt-2 text-caption">
             GitHub's live billing API typically only returns data for the
             <strong>current calendar month</strong>. Historical months populate
             here once the <em>Billing CSV ingest</em> in the Admin Panel has
@@ -85,7 +133,7 @@
 
         <template v-else>
           <v-alert
-            v-if="periodLabel"
+            v-if="monthView ? periodLabel : dateRangeDescription"
             type="info"
             variant="tonal"
             density="compact"
@@ -93,10 +141,16 @@
             icon="mdi-calendar-range"
           >
             <div class="d-flex flex-wrap align-center gap-2">
-              <span>
+              <span v-if="monthView">
                 Showing billing usage for <strong>{{ periodLabel }}</strong>.
                 Use the <em>Billing month</em> picker above to view a different
                 month. GitHub retains roughly 90 days of detail.
+              </span>
+              <span v-else>
+                Showing billing usage for <strong>{{ dateRangeDescription }}</strong>
+                (dashboard date range). This range is served from the local
+                database (Billing CSV ingest) — uncheck <em>Month view</em>
+                only when the desired range has been ingested via the Admin Panel.
               </span>
               <v-chip
                 v-if="dataSourceBadge"
@@ -118,18 +172,27 @@
                 <div class="text-h5 font-weight-bold">
                   {{ totalGrossQty.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
                 </div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Billing API · {{ rangeLabel }}
+                </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="green" min-width="180">
               <v-card-text>
                 <div class="text-caption">Gross cost (USD)</div>
                 <div class="text-h5 font-weight-bold">${{ totalGrossAmount.toFixed(2) }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Billing API · {{ rangeLabel }}
+                </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="indigo" min-width="180">
               <v-card-text>
                 <div class="text-caption">Net cost (USD)</div>
                 <div class="text-h5 font-weight-bold">${{ totalNetAmount.toFixed(2) }}</div>
+                <div class="text-caption text-medium-emphasis mt-1">
+                  Billing API · {{ rangeLabel }}
+                </div>
               </v-card-text>
             </v-card>
           </div>
@@ -165,6 +228,9 @@
                     (loaded {{ loadedLoginsCount }} of {{ perUserRows.length }} users<span v-if="loadedLoginsCount < perUserRows.length">; sort by $ or page through to load more</span>)
                   </span>
                 </v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Source: Billing API (<code>ai_credit/usage</code> per user) · {{ rangeLabel }}
+                </v-card-subtitle>
                 <v-card-text>
                   <div v-if="topSpendersChartData" style="height: 280px">
                     <Bar :data="topSpendersChartData" :options="topSpendersChartOptions" />
@@ -184,6 +250,9 @@
                     (prompt + output)
                   </span>
                 </v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Source: Copilot Metrics API (<code>totals_by_cli.token_usage</code>) · {{ dateRangeDescription || 'last 28 days' }}
+                </v-card-subtitle>
                 <v-card-text>
                   <div v-if="topTokensChartData" style="height: 280px">
                     <Bar :data="topTokensChartData" :options="topTokensChartOptions" />
@@ -207,6 +276,10 @@
                 />
               </span>
             </v-card-title>
+            <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+              Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API for {{ dateRangeDescription || 'the last 28 days' }}.
+              <strong>Credits</strong>, <strong>Gross $</strong>, <strong>Net $</strong>, and <strong>Models</strong> come from the Billing API for {{ rangeLabel }}.
+            </v-card-subtitle>
             <v-data-table
               :items="perUserRows"
               :headers="perUserHeaders"
@@ -286,12 +359,16 @@
               <MyUsageViewer
                 :key="userDetailLogin"
                 :query-params="userDetailQueryParams"
+                :date-range-description="dateRangeDescription"
               />
             </v-card-text>
           </v-card>
 
           <v-card variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">Raw billing line items</v-card-title>
+            <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+              Source: Billing API (<code>ai_credit/usage</code>) · {{ rangeLabel }} · one aggregate row per product × SKU × model × user
+            </v-card-subtitle>
             <v-data-table
               :items="items"
               :headers="headers"
@@ -338,6 +415,7 @@ export default defineComponent({
   components: { Bar, MyUsageViewer },
   props: {
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
+    dateRangeDescription: { type: String, default: '' },
   },
   async setup(props) {
     // ── Billing month selector ─────────────────────────────────────────────
@@ -365,17 +443,35 @@ export default defineComponent({
 
     const isCurrentMonth = computed(() => selectedMonth.value === currentMonthIso.value);
 
-    // Merge picker state into the parent-provided queryParams. We only
-    // override year/month when the user has picked something other than the
-    // current month — keeps the default behavior identical to before.
+    // ── Month view toggle ─────────────────────────────────────────────────
+    // Default = true (matches historical behavior: month picker drives the
+    // fetch, ignores the dashboard-wide date-range picker). When false, the
+    // dashboard's since/until is forwarded and the server serves DB-only.
+    const monthView = ref<boolean>(true);
+
+    // Merge picker state into the parent-provided queryParams.
+    // - monthView=true:  strip any since/until from the parent and inject
+    //                    year/month from the month picker (live-API-compatible)
+    // - monthView=false: forward the parent's since/until as-is; do NOT
+    //                    inject year/month (server routes to DB path)
     const billingQuery = computed<Record<string, string>>(() => {
-      const merged: Record<string, string> = { ...props.queryParams };
-      const [y, m] = selectedMonth.value.split('-');
-      if (y && m) {
-        merged.year = y;
-        merged.month = String(Number(m));
+      const parent = { ...(props.queryParams || {}) };
+      if (monthView.value) {
+        // Strip parent since/until so they don't collide with the month picker
+        delete parent.since;
+        delete parent.until;
+        const [y, m] = selectedMonth.value.split('-');
+        if (y && m) {
+          parent.year = y;
+          parent.month = String(Number(m));
+        }
+        return parent;
       }
-      return merged;
+      // Range mode — drop any year/month/day the parent might carry
+      delete parent.year;
+      delete parent.month;
+      delete parent.day;
+      return parent;
     });
 
     const dataSource = ref<{ source: 'db' | 'live' | null; syncedAt: string | null; reason: string | null }>({
@@ -422,9 +518,9 @@ export default defineComponent({
     const loadedLogins = reactive(new Set<string>());
     const perUserLoading = ref(false);
 
-    // When the user switches month, drop cached per-user roll-ups so the
-    // visible page re-fetches against the new window.
-    watch(selectedMonth, () => {
+    // When the user switches month or toggles month view, drop cached
+    // per-user roll-ups so the visible page re-fetches against the new window.
+    watch([selectedMonth, monthView, () => props.queryParams.since, () => props.queryParams.until], () => {
       billingByLogin.clear();
       loadedLogins.clear();
     });
@@ -439,12 +535,21 @@ export default defineComponent({
         // Chunk to the endpoint's per-call cap (50).
         for (let i = 0; i < needed.length; i += 50) {
           const chunk = needed.slice(i, i + 50);
-          const qp: Record<string, string> = { ...(props.queryParams || {}), logins: chunk.join(',') };
-          const [y, m] = selectedMonth.value.split('-');
-          if (y && m) {
-            qp.year = y;
-            qp.month = String(Number(m));
+          const parent = { ...(props.queryParams || {}) };
+          if (monthView.value) {
+            delete parent.since;
+            delete parent.until;
+            const [y, m] = selectedMonth.value.split('-');
+            if (y && m) {
+              parent.year = y;
+              parent.month = String(Number(m));
+            }
+          } else {
+            delete parent.year;
+            delete parent.month;
+            delete parent.day;
           }
+          const qp: Record<string, string> = { ...parent, logins: chunk.join(',') };
           try {
             const resp = await $fetch<BillingCreditsResponse>('/api/billing-credits-by-user', { query: qp });
             for (const it of resp.usageItems ?? []) {
@@ -580,11 +685,13 @@ export default defineComponent({
       }
     });
 
-    // Distinguish "our admin gate" 403 from "GitHub billing API" 403, since the
-    // remediation steps are very different.
-    const errorReason = computed<'usage-admin' | 'github-pat-scope' | 'other' | null>(() => {
-      const err = error.value as { statusCode?: number; statusMessage?: string; data?: { message?: string } } | null;
-      if (!err || err.statusCode !== 403) return null;
+    // Distinguish "our admin gate" 403 from "GitHub billing API" 403 from
+    // "custom range with no ingest coverage" 409, since remediation differs.
+    const errorReason = computed<'usage-admin' | 'github-pat-scope' | 'range-requires-db' | 'other' | null>(() => {
+      const err = error.value as { statusCode?: number; statusMessage?: string; data?: { message?: string; reason?: string } } | null;
+      if (!err) return null;
+      if (err.statusCode === 409 && err.data?.reason === 'range-requires-db') return 'range-requires-db';
+      if (err.statusCode !== 403) return null;
       const msg = (err.statusMessage || '') + ' ' + (err.data?.message || '');
       if (msg.includes('NUXT_USAGE_ADMINS')) return 'usage-admin';
       if (/personal access token|administration|manage_billing|insufficient/i.test(msg)) return 'github-pat-scope';
@@ -686,6 +793,16 @@ export default defineComponent({
 
     const dataSourceBadge = computed(() => buildDataSourceBadge(dataSource.value));
 
+    // Human label for the window covered by the current billing fetch,
+    // used in every card/table subtitle so the source+range is unambiguous.
+    // Month view → the month/day the picker resolves to (via `periodLabel`).
+    // Range view → the dashboard-wide date-range description (e.g.
+    //              "From 6/23/2026 to 7/8/2026 (16 days)").
+    const rangeLabel = computed(() => {
+      if (monthView.value) return periodLabel.value || 'current month';
+      return props.dateRangeDescription || 'the selected date range';
+    });
+
     // ── Admin drill-down: click a username → show inline User insights ──────
     // Billing tab is already admin-gated, so we don't add a second check here.
     // The /api/my-usage endpoint enforces its own `requireUsageAdmin` when
@@ -710,6 +827,7 @@ export default defineComponent({
     return {
       data, pending, error, items, periodLabel,
       selectedMonth, currentMonthIso, shiftMonth, isCurrentMonth,
+      monthView, rangeLabel,
       totalGrossQty, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserHeaders,

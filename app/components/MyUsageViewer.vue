@@ -81,8 +81,8 @@
           >
             <div class="text-body-2">
               <strong>Two credit numbers, two sources.</strong>
-              The <em>AI credits used</em> tile above reflects the selected date
-              range and comes from the Copilot Metrics API. The
+              The <em>AI credits used</em> tile above covers {{ rangeLabel }}
+              and comes from the Copilot Metrics API. The
               <em>Your AI credit spend</em> card is always <strong>month-to-date</strong>,
               pulled live from the GitHub Billing API and independent of the
               date-range picker — so the two values will not match exactly.
@@ -100,6 +100,9 @@
                       {{ data.totals.ai_adoption_phase.phase }}
                     </v-chip>
                   </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    Metrics API · {{ rangeLabel }}
+                  </div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -110,6 +113,9 @@
                   <div class="text-h4 font-weight-bold">
                     {{ data.totals.user_initiated_interaction_count.toLocaleString() }}
                   </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    Metrics API · {{ rangeLabel }}
+                  </div>
                 </v-card-text>
               </v-card>
             </v-col>
@@ -119,6 +125,9 @@
                   <div class="text-caption">Accepted lines</div>
                   <div class="text-h4 font-weight-bold">
                     {{ data.totals.loc_added_sum.toLocaleString() }}
+                  </div>
+                  <div class="text-caption text-medium-emphasis mt-1">
+                    Metrics API · {{ rangeLabel }}
                   </div>
                 </v-card-text>
               </v-card>
@@ -133,9 +142,9 @@
                         <v-icon v-bind="tipProps" size="14" class="ml-1" color="cyan-darken-2">mdi-information-outline</v-icon>
                       </template>
                       <span>
-                        From the Copilot Metrics API (users report) — reflects
-                        the currently selected date range. May differ from the
-                        billing "Credits used" figure below, which is month-to-date
+                        From the Copilot Metrics API (users report) — covers
+                        {{ rangeLabel }}. May differ from the billing
+                        "Credits used" figure below, which is month-to-date
                         and comes from a different pipeline.
                       </span>
                     </v-tooltip>
@@ -149,7 +158,7 @@
                     </template>
                   </div>
                   <div class="text-caption text-medium-emphasis mt-1">
-                    Metrics API · selected range
+                    Metrics API · {{ rangeLabel }}
                   </div>
                 </v-card-text>
               </v-card>
@@ -169,6 +178,9 @@
                     v{{ cliTotals.last_known_cli_version.cli_version }}
                   </v-chip>
                 </v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Source: Copilot Metrics API (<code>totals_by_cli</code>) · {{ rangeLabel }}
+                </v-card-subtitle>
                 <v-card-text>
                   <v-row dense>
                     <v-col cols="6" md="3">
@@ -206,13 +218,13 @@
               <v-card v-if="data.spend" variant="outlined" class="border-cyan">
                 <v-card-title class="text-subtitle-1 d-flex align-center">
                   <v-icon size="small" class="mr-1" color="cyan-darken-2">mdi-cash-multiple</v-icon>
-                  Your AI credit spend (month-to-date)
+                  {{ spendCardTitle }}
                   <span class="text-caption text-medium-emphasis ml-2">
                     {{ spendPeriodLabel }}<template v-if="data.spend.enterprise"> · enterprise {{ data.spend.enterprise }}</template>
                   </span>
                 </v-card-title>
                 <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
-                  Source: GitHub Billing API (<code>ai_credit/usage</code>) · always current month · independent of the date-range picker above
+                  {{ spendSourceCaption }}
                 </v-card-subtitle>
                 <v-card-text>
                   <v-row dense>
@@ -277,6 +289,9 @@
             <v-col v-if="topIde" cols="12" :md="chartColumns === '2' ? 6 : 12">
               <v-card variant="outlined" class="h-100">
                 <v-card-title class="text-subtitle-1">Top IDE</v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Metrics API · {{ rangeLabel }}
+                </v-card-subtitle>
                 <v-card-text>
                   <strong>{{ topIde.ide }}</strong> —
                   {{ topIde.user_initiated_interaction_count.toLocaleString() }} interactions
@@ -295,6 +310,9 @@
             <v-col v-if="topModel" cols="12" :md="chartColumns === '2' ? 6 : 12">
               <v-card variant="outlined" class="h-100">
                 <v-card-title class="text-subtitle-1">Top model</v-card-title>
+                <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
+                  Metrics API · {{ rangeLabel }}
+                </v-card-subtitle>
                 <v-card-text>
                   <strong>{{ topModel.model }}</strong> ({{ topModel.feature }}) —
                   {{ topModel.user_initiated_interaction_count.toLocaleString() }} interactions
@@ -320,8 +338,7 @@
                     <Bar :data="aiCreditsChartData" :options="aiCreditsChartOptions" />
                   </div>
                   <div class="text-caption text-medium-emphasis mt-1">
-                    Source: <code>ai_credits_used</code> on the users-1-day report
-                    (populated by GitHub since 2026-06-19).
+                    Source: Copilot Metrics API (<code>ai_credits_used</code> on the users-1-day report) · {{ rangeLabel }}
                   </div>
                 </v-card-text>
               </v-card>
@@ -350,7 +367,7 @@
                     <Bar :data="dailySpendChartData" :options="dailySpendChartOptions" />
                   </div>
                   <div class="text-caption text-medium-emphasis mt-1">
-                    Derived as <code>ai_credits_used × price-per-credit</code>. Price taken from your
+                    Derived from Metrics API <code>ai_credits_used</code> × price-per-credit · {{ rangeLabel }}. Price taken from your
                     billing spend response when available, otherwise the GitHub list price ($0.01/credit).
                   </div>
                 </v-card-text>
@@ -373,7 +390,7 @@
                     <Bar :data="dailyTokensChartData" :options="dailyTokensChartOptions" />
                   </div>
                   <div class="text-caption text-medium-emphasis mt-1">
-                    Source: <code>totals_by_cli.token_usage</code> on the users-1-day report.
+                    Source: Copilot Metrics API (<code>totals_by_cli.token_usage</code> on the users-1-day report) · {{ rangeLabel }}.
                     Only CLI tokens are exposed per-day today — IDE token usage is not broken down by day.
                   </div>
                 </v-card-text>
@@ -411,6 +428,9 @@ interface MyUsageSpend {
   byModel: { model: string; amount: number; quantity: number; grossAmount: number; grossQuantity: number }[];
   timePeriod?: { year?: number; month?: number; day?: number };
   enterprise?: string;
+  source?: 'live' | 'db';
+  since?: string;
+  until?: string;
 }
 
 interface MyUsageResponse {
@@ -463,13 +483,48 @@ export default defineComponent({
     });
 
     const spendPeriodLabel = computed(() => {
-      const tp = data.value?.spend?.timePeriod;
+      const sp = data.value?.spend;
+      if (!sp) return 'Current billing period';
+      // DB-served range (custom since/until) — prefer parent's human label,
+      // fall back to since → until.
+      if (sp.source === 'db') {
+        if (props.dateRangeDescription) return props.dateRangeDescription;
+        if (sp.since && sp.until) return `${sp.since} → ${sp.until}`;
+      }
+      const tp = sp.timePeriod;
       if (!tp) return 'Current billing period';
       const parts: string[] = [];
       if (tp.year) parts.push(String(tp.year));
       if (tp.month) parts.push(String(tp.month).padStart(2, '0'));
       if (tp.day) parts.push(String(tp.day).padStart(2, '0'));
       return parts.length ? parts.join('-') : 'Current billing period';
+    });
+
+    // Human label + source description for the spend card. Adapts to whether
+    // the spend was served from live GitHub Billing API (month-to-date) or
+    // from the local billing_credit_usage table for a custom range.
+    const spendCardTitle = computed(() =>
+      data.value?.spend?.source === 'db'
+        ? 'Your AI credit spend (selected range)'
+        : 'Your AI credit spend (month-to-date)'
+    );
+    const spendSourceCaption = computed(() =>
+      data.value?.spend?.source === 'db'
+        ? 'Source: local billing_credit_usage (CSV ingest) · aggregated for the dashboard date range'
+        : 'Source: GitHub Billing API (ai_credit/usage) · always current month · independent of the date-range picker above'
+    );
+
+    // Human label for the Metrics API window used by the tiles/CLI card/etc.
+    // Prefer the parent-provided `dateRangeDescription` (e.g. "Over the last
+    // 28 days" or a specific picker range). Otherwise fall back to the actual
+    // reportStartDay → reportEndDay returned by /api/my-usage. Only if both
+    // are missing do we say "last 28 days" as a last resort.
+    const rangeLabel = computed(() => {
+      if (props.dateRangeDescription) return props.dateRangeDescription;
+      const start = data.value?.reportStartDay;
+      const end = data.value?.reportEndDay;
+      if (start && end) return `${start} → ${end}`;
+      return 'last 28 days';
     });
 
     // True when the plan actually discounts spend (gross > net). Standalone
@@ -666,6 +721,8 @@ export default defineComponent({
 
     return {
       data, pending, error, initials, topIde, topModel, cliTotals, spendPeriodLabel,
+      spendCardTitle, spendSourceCaption,
+      rangeLabel,
       hasDiscount,
       aiCreditsChartData, aiCreditsChartOptions, aiCreditsTotalLabel, aiCreditsDayCount,
       dailySpendChartData, dailySpendChartOptions, dailySpendTotalLabel,

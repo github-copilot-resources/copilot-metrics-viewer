@@ -155,7 +155,7 @@
 
     <!-- Date Range Selector - shown only when calendar icon toggled -->
     <DateRangeSelector 
-      v-show="showDateRange && tab !== 'seat analysis' && tab !== 'billing' && !signInRequired" 
+      v-show="showDateRange && tab !== 'seat analysis' && !signInRequired" 
       :loading="isLoading"
       :min-date="dataRange?.earliest"
       :max-date="dataRange?.latest"
@@ -261,7 +261,8 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             />
             <BillingCreditsViewer
               v-if="item === 'billing' && billingEnabled"
-              :query-params="seatsQueryParams"
+              :query-params="myUsageQueryParams"
+              :date-range-description="dateRangeDescription"
             />
             <BillingNotConfigured v-else-if="item === 'billing'" />
             <ApiResponse

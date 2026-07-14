@@ -114,10 +114,13 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
 
   if (dbEnterprise) {
     try {
+      const hasCustomRange = !!(query.since || query.until);
       const window = resolveWindow({
         year: query.year ? Number(query.year) : undefined,
         month: query.month ? Number(query.month) : undefined,
         day: query.day ? Number(query.day) : undefined,
+        since: query.since ? String(query.since) : undefined,
+        until: query.until ? String(query.until) : undefined,
       });
       const decision = await decideSource(dbEnterprise, window.startDate, window.endDate);
       if (decision.source === 'db') {
@@ -138,9 +141,30 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       // Record why so curl users can see in the response headers.
       setResponseHeader(event, 'X-Data-Source', 'live');
       setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
+
+      // Custom date ranges (since/until) can't be served by the live GitHub
+      // API — it only supports single-day or whole-month lookups. Rather
+      // than silently return the wrong window, fail loudly so the client
+      // can surface the "enable Month view or run Billing CSV ingest" banner.
+      if (hasCustomRange) {
+        throw createError({
+          statusCode: 409,
+          statusMessage:
+            `No ingested billing data covers ${window.startDate} → ${window.endDate}. ` +
+            `The GitHub Billing API only accepts a single day or a whole calendar month, ` +
+            `so custom ranges must be served from the local database. ` +
+            `Enable Month view above to look at a specific calendar month, or run the ` +
+            `Billing CSV ingest in the Admin Panel to import billing data for this range.`,
+          data: { reason: 'range-requires-db', window },
+        });
+      }
     } catch (e) {
+      // Preserve typed HTTP errors thrown above (e.g. the 409 for uncovered
+      // ranges) — only convert bare Error/validation failures to 400.
+      const httpErr = e as { statusCode?: number };
+      if (httpErr && typeof httpErr.statusCode === 'number') throw e;
       // Resolve-window 400s shouldn't be swallowed — re-throw as a clean 400.
-      if (e instanceof Error && /Invalid|day without month/i.test(e.message)) {
+      if (e instanceof Error && /Invalid|day without month|must be|since/i.test(e.message)) {
         throw createError({ statusCode: 400, statusMessage: e.message });
       }
       // Any other DB-side error: fall through to the live path, but flag it
@@ -149,6 +173,21 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       setResponseHeader(event, 'X-Data-Source-Reason',
         `db read failed: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  // Custom date ranges require the DB path. If we couldn't resolve an
+  // enterprise for DB (e.g. plain org-scoped call without NUXT_BILLING_ENTERPRISE),
+  // reject with the same 409 rather than silently ignoring the range.
+  if ((query.since || query.until) && !dbEnterprise) {
+    throw createError({
+      statusCode: 409,
+      statusMessage:
+        `Custom date ranges on the Billing tab are served from the local database, ` +
+        `which is only populated for enterprise-scoped dashboards. ` +
+        `Set NUXT_BILLING_ENTERPRISE=<enterprise-slug> on the deployment, or ` +
+        `enable Month view above to look at a specific calendar month.`,
+      data: { reason: 'range-requires-db' },
+    });
   }
 
   // ── Token selection ────────────────────────────────────────────────────────

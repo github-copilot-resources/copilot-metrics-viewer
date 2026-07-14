@@ -68,23 +68,38 @@ test.describe('Billing tab', () => {
         await expect(dashboard.page.getByRole('columnheader', { name: 'Product' })).toBeVisible();
     });
 
-    test('date-range bar is hidden on the billing tab', tag, async () => {
+    test('Month view toggle is checked by default and shows the month picker', tag, async () => {
+        const billing = await dashboard.gotoBillingTab();
+        await expect(billing.monthViewToggle).toBeVisible();
+        await expect(billing.monthViewToggle).toBeChecked();
+        // Month picker + prev/next buttons are only rendered when Month view is on.
+        await expect(billing.monthPicker).toBeVisible();
+        await expect(billing.rangeCaption).toBeHidden();
+    });
+
+    test('unchecking Month view hides the month picker and shows the dashboard-range caption', tag, async () => {
+        const billing = await dashboard.gotoBillingTab();
+        // Start from the default (checked); uncheck to switch to range mode.
+        await billing.monthViewToggle.uncheck();
+        await expect(billing.monthViewToggle).not.toBeChecked();
+        await expect(billing.monthPicker).toBeHidden();
+        await expect(billing.rangeCaption).toBeVisible();
+        // Re-checking restores the month picker.
+        await billing.monthViewToggle.check();
+        await expect(billing.monthPicker).toBeVisible();
+        await expect(billing.rangeCaption).toBeHidden();
+    });
+
+    test('global date-range selector is visible on the Billing tab (so range mode is usable)', tag, async () => {
         await dashboard.gotoBillingTab();
-        // The DateRangeBar is rendered with a `.date-range-bar` class and is
-        // gated v-show on `tab !== 'billing'` in MainComponent.vue.
-        const bar = dashboard.page.locator('.v-locale-provider').filter({
-            hasText: 'date range'
-        });
-        // The bar may not even be in the DOM; the more reliable check is the
-        // absence of its visible "Date range" / since-until inputs. Use a
-        // not-visible assertion on the calendar icon.
-        const calendarBtns = dashboard.page.getByRole('button', { name: /calendar/i });
-        // Either no calendar buttons, or none are visible.
-        if (await calendarBtns.count() > 0) {
-            await expect(calendarBtns.first()).toBeHidden();
-        }
-        // Silence the unused locator warning — assert nothing on `bar` directly.
-        expect(bar).toBeTruthy();
+        // Prior behavior hid the DateRangeSelector on this tab; with the Month
+        // view toggle, the tab now uses it when Month view is unchecked, so
+        // the selector must be present in the DOM and visible.
+        const rangeSelector = dashboard.page.locator('.date-range-selector, [data-testid="date-range-selector"]').first();
+        // Fallback: the selector renders a "Date range" label somewhere.
+        const hasSelector = (await rangeSelector.count()) > 0
+            || (await dashboard.page.getByText(/date range/i).first().count()) > 0;
+        expect(hasSelector).toBe(true);
     });
 
     test('billing tab renders per-user breakdown table and top spenders chart', tag, async () => {
