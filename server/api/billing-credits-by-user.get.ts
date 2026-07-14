@@ -40,6 +40,7 @@ import mockBilling from '../../public/mock-data/billing-credits.json';
 
 const CONCURRENCY = 8;
 const MAX_LOGINS_PER_CALL = 50;
+const SORT_KEYS = new Set(['user', 'credits', 'grossAmount', 'netAmount', 'models']);
 
 export default defineEventHandler(async (event): Promise<BillingCreditsResponse> => {
   const logger = console;
@@ -65,16 +66,11 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   }
 
   const requestedLogins = parseLogins(query.logins);
+  const sortOptions = parseSortOptions(query);
   if (requestedLogins.length === 0) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Missing ?logins= query param. Pass a comma-separated list of GitHub logins (max 50 per call). Enumerate the seat list via /api/seats.',
-    });
-  }
-  if (requestedLogins.length > MAX_LOGINS_PER_CALL) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: `Too many logins (${requestedLogins.length}); cap is ${MAX_LOGINS_PER_CALL} per call. Split the request into multiple pages.`,
     });
   }
 
@@ -109,7 +105,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
         return await aggregateForBillingByUser(dbEnterprise, window, requestedLogins, {
           model: query.model ? String(query.model) : undefined,
           sku: query.sku ? String(query.sku) : undefined,
-        });
+        }, sortOptions);
       }
       setResponseHeader(event, 'X-Data-Source', 'live');
       setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
@@ -173,6 +169,13 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     throw createError({ statusCode: 400, statusMessage: String(err instanceof Error ? err.message : err) });
   }
 
+  if (requestedLogins.length > MAX_LOGINS_PER_CALL) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `Too many logins (${requestedLogins.length}); cap is ${MAX_LOGINS_PER_CALL} per live call. Use DB-backed billing CSV ingest for server-sorted pages across larger user lists.`,
+    });
+  }
+
   // Forward documented filter params (year/month/day/model/product/cost_center_id)
   const forwardParams: Record<string, string> = {};
   for (const key of ['year', 'month', 'day', 'model', 'product', 'cost_center_id']) {
@@ -228,11 +231,13 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     });
   }
 
+  const liveItems = sortAndPageLiveItems(tagged, sortOptions);
   return {
     timePeriod,
     organization: orgSlug,
     enterprise: entSlug,
-    usageItems: tagged,
+    users: Array.from(new Set(liveItems.map(it => it.user).filter((u): u is string => !!u))),
+    usageItems: liveItems,
   } as BillingCreditsResponse;
 });
 
@@ -242,4 +247,60 @@ function parseLogins(raw: unknown): string[] {
   return Array.from(new Set(
     str.split(',').map(s => s.trim()).filter(Boolean)
   ));
+}
+
+function parseSortOptions(query: Record<string, unknown>): { sortKey?: string; sortOrder?: 'asc' | 'desc'; offset?: number; limit?: number } {
+  const sortKey = typeof query.sortKey === 'string' && SORT_KEYS.has(query.sortKey) ? query.sortKey : undefined;
+  if (!sortKey) return {};
+  const sortOrder = query.sortOrder === 'desc' ? 'desc' : 'asc';
+  const page = Math.max(1, Number(query.page) || 1);
+  const itemsPerPage = Math.max(1, Math.min(50, Number(query.itemsPerPage) || 25));
+  return {
+    ...(sortKey ? { sortKey, sortOrder } : {}),
+    offset: (page - 1) * itemsPerPage,
+    limit: itemsPerPage,
+  };
+}
+
+function sortAndPageLiveItems(
+  items: BillingUsageItem[],
+  sort: { sortKey?: string; sortOrder?: 'asc' | 'desc'; offset?: number; limit?: number },
+): BillingUsageItem[] {
+  if (!sort.sortKey) return items;
+  const direction = sort.sortOrder === 'desc' ? -1 : 1;
+  const byUser = new Map<string, BillingUsageItem[]>();
+  for (const item of items) {
+    if (!item.user) continue;
+    const key = item.user.toLowerCase();
+    byUser.set(key, [...(byUser.get(key) || []), item]);
+  }
+  const users = [...byUser.entries()].sort(([a, aItems], [b, bItems]) => {
+    const av = userSortValue(a, aItems, sort.sortKey!);
+    const bv = userSortValue(b, bItems, sort.sortKey!);
+    const cmp = typeof av === 'string' || typeof bv === 'string'
+      ? String(av).localeCompare(String(bv))
+      : Number(av) - Number(bv);
+    if (cmp !== 0) return cmp * direction;
+    return a.localeCompare(b);
+  });
+  const offset = sort.offset ?? 0;
+  const limit = sort.limit ?? users.length;
+  const pageUsers = new Set(users.slice(offset, offset + limit).map(([u]) => u));
+  return items.filter(item => item.user && pageUsers.has(item.user.toLowerCase()));
+}
+
+function userSortValue(login: string, items: BillingUsageItem[], key: string): string | number {
+  switch (key) {
+    case 'credits':
+      return items.reduce((sum, item) => sum + (item.netQuantity || 0) + (item.discountQuantity || 0), 0);
+    case 'grossAmount':
+      return items.reduce((sum, item) => sum + (item.grossAmount || 0), 0);
+    case 'netAmount':
+      return items.reduce((sum, item) => sum + (item.netAmount || 0), 0);
+    case 'models':
+      return new Set(items.map(item => item.model).filter(Boolean)).size;
+    case 'user':
+    default:
+      return login;
+  }
 }
