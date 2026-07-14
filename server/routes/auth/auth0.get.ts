@@ -1,3 +1,7 @@
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('auth-auth0')
+
 export default defineOAuthAuth0EventHandler({
   async onSuccess(event, { user }) {
     const email: string = user.email || ''
@@ -18,7 +22,7 @@ export default defineOAuthAuth0EventHandler({
     return sendRedirect(event, defaultOrg ? getAppBaseURL(event) : appURL('/select-org', event))
   },
   onError(event, error) {
-    console.error('Auth0 OAuth error:', error)
+    logger.error('Auth0 OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })

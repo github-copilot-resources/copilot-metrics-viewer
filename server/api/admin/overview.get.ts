@@ -16,6 +16,9 @@ import { getPool, isDbConfigured } from '../../storage/db';
 import { getFailedSyncsForScope, getPendingSyncsForScope } from '../../storage/sync-storage';
 import { getSyncStats } from '../../services/sync-service';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('admin-overview')
 
 interface OverviewResponse {
   db: { connected: boolean; latencyMs?: number; error?: string };
@@ -159,7 +162,7 @@ export default defineEventHandler(async (event): Promise<OverviewResponse> => {
       lastAttemptAt: f.lastAttemptAt,
     }));
   } catch (err) {
-    console.warn('[admin/overview] Enrichment failed:', err);
+    logger.warn('Enrichment failed:', err);
   }
 
   return response;

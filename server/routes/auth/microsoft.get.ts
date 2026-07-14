@@ -1,3 +1,7 @@
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('auth-microsoft')
+
 export default defineOAuthMicrosoftEventHandler({
   async onSuccess(event, { user }) {
     const email: string = user.mail || user.userPrincipalName || ''
@@ -18,7 +22,7 @@ export default defineOAuthMicrosoftEventHandler({
     return sendRedirect(event, defaultOrg ? getAppBaseURL(event) : appURL('/select-org', event))
   },
   onError(event, error) {
-    console.error('Microsoft OAuth error:', error)
+    logger.error('Microsoft OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })
