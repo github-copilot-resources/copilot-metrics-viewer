@@ -17,6 +17,7 @@
 import { Options } from '@/model/Options';
 import { baseScope } from '../storage/user-day-metrics-storage';
 import { getPool } from '../storage/db';
+import { yesterdayIso, liveWindow, mockRange as buildMockRange } from '../utils/data-range-utils';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockOrgMetrics from '../../public/mock-data/new-api/organization-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,47 +34,6 @@ export interface DataRange {
   latest: string;
   /** Which mode produced this range. */
   mode: 'mock' | 'historical' | 'live';
-}
-
-/** Format a Date as YYYY-MM-DD (UTC). */
-function toIsoDay(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-/** ISO YYYY-MM-DD for yesterday (UTC). Shared between live and historical modes. */
-function yesterdayIso(): string {
-  const now = new Date();
-  return toIsoDay(new Date(now.getTime() - 24 * 60 * 60 * 1000));
-}
-
-/** Live-mode default window: the 28 days ending yesterday. */
-function liveWindow(): { earliest: string; latest: string } {
-  const latestIso = yesterdayIso();
-  const latest = new Date(`${latestIso}T00:00:00Z`);
-  // 28 days inclusive ending yesterday → start = latest - 27d
-  const earliest = new Date(latest.getTime() - 27 * 24 * 60 * 60 * 1000);
-  return { earliest: toIsoDay(earliest), latest: latestIso };
-}
-
-/** Extract every `day` (YYYY-MM-DD) field from a mock JSON `day_totals` array. */
-function collectMockDays(mockJson: unknown): string[] {
-  const json = mockJson as { day_totals?: Array<{ day?: string }> };
-  if (!Array.isArray(json.day_totals)) return [];
-  return json.day_totals
-    .map(r => r?.day)
-    .filter((d): d is string => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d));
-}
-
-function mockRange(scope: string): { earliest: string; latest: string } {
-  const isOrg = baseScope(scope || 'organization') === 'organization';
-  const days = isOrg
-    ? [...collectMockDays(mockOrgMetrics), ...collectMockDays(mockOrgUsers)]
-    : [...collectMockDays(mockEntMetrics), ...collectMockDays(mockEntUsers)];
-
-  if (days.length === 0) return liveWindow();
-  // YYYY-MM-DD strings sort lexicographically == chronologically
-  const sorted = days.slice().sort();
-  return { earliest: sorted[0]!, latest: sorted[sorted.length - 1]! };
 }
 
 async function historicalRange(
@@ -116,7 +76,7 @@ export default defineEventHandler(async (event): Promise<DataRange> => {
   const identifier = options.githubOrg || options.githubEnt || '';
 
   if (options.isDataMocked) {
-    return { ...mockRange(scope), mode: 'mock' };
+    return { ...buildMockRange(scope, mockOrgMetrics, mockEntMetrics, mockOrgUsers, mockEntUsers), mode: 'mock' };
   }
 
   // Whenever the DB is reachable and has data for this scope, use it.
