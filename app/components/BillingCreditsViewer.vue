@@ -439,6 +439,7 @@ import {
 } from 'chart.js';
 import { PALETTE } from '@/utils/chartPlugins';
 import { billingCreditsUsed, sumBillingCreditsUsed } from '@/utils/billingCredits';
+import { buildTopSpendersChartData } from '@/utils/billingTopSpenders';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
 import type { TopBillingUsersResponse } from '../../server/services/billing-credit-reader';
 import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
@@ -776,21 +777,10 @@ export default defineComponent({
     ];
 
     const topSpendersChartData = computed(() => {
-      // Server-side top-N from the full DB-backed billing dataset. Do not rank
-      // the lazy-loaded table rows here; that is only a partial client cache.
-      const withSpend = (topSpendersData.value?.users ?? []).filter(r => r.netAmount > 0);
-      if (withSpend.length === 0) return null;
-      return {
-        labels: withSpend.map(r => r.user),
-        datasets: [
-          {
-            label: 'Net spend (USD)',
-            data: withSpend.map(r => +r.netAmount.toFixed(2)),
-            backgroundColor: PALETTE?.[0]?.bg ?? '#3f51b5',
-            borderRadius: 4,
-          },
-        ],
-      };
+      // Server-side top-N from the full DB-backed billing dataset (PR #428).
+      // Fall back to gross when net is uniformly zero for fully-discounted plans (PR #429).
+      const users = topSpendersData.value?.users ?? [];
+      return buildTopSpendersChartData(users, PALETTE?.[0]?.bg ?? '#3f51b5');
     });
     const topSpendersCount = computed(() => topSpendersData.value?.users?.length || 10);
 
