@@ -65,6 +65,7 @@ export interface BillingCreditsResponse {
   enterprise?: string;
   user?: string;
   users?: string[];
+  unmatchedBillingUsernames?: string[];
   usageItems: BillingUsageItem[];
 }
 

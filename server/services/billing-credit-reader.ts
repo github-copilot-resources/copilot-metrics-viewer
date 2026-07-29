@@ -30,6 +30,11 @@
 
 import { getPool } from '../storage/db';
 import type { BillingCreditsResponse, BillingUsageItem } from '../api/billing-credits.get';
+import {
+  billingUsernamesForMetricsLogins,
+  normalizeBillingUsername,
+  parseBillingUserAliases,
+} from '../../shared/utils/billing-user-identity';
 
 export interface CoverageDecision {
   source: 'db' | 'live';
@@ -304,6 +309,8 @@ export async function aggregateForBillingByUser(
   }
 
   const pool = getPool();
+  const aliases = parseBillingUserAliases(process.env.NUXT_BILLING_USER_ALIASES);
+  const matchedBillingUsernames = billingUsernamesForMetricsLogins(logins, aliases);
 
   const conds: string[] = [
     'enterprise = $1',
@@ -314,7 +321,7 @@ export async function aggregateForBillingByUser(
     enterprise,
     window.startDate,
     window.endDate,
-    logins.map(l => l.toLowerCase()),
+    matchedBillingUsernames,
   ];
   const push = (col: string, val: string | undefined) => {
     if (val === undefined || val === '') return;
@@ -355,13 +362,31 @@ export async function aggregateForBillingByUser(
   const { rows } = await pool.query(sql, params);
   const usageItems: BillingUsageItem[] = rows.map(r => ({
     ...mapAggregateRowToItem(r),
-    user: r.username || undefined,
+    user: r.username ? normalizeBillingUsername(r.username, aliases) : undefined,
   }));
+
+  const unmatchedConds = [...conds];
+  const unmatchedParams = [...params];
+  unmatchedConds[2] = 'LOWER(username) <> ALL($4::text[])';
+  unmatchedConds.push('(quantity <> 0 OR gross_amount <> 0 OR net_amount <> 0)');
+  const unmatchedSql = `
+    SELECT DISTINCT username
+    FROM billing_credit_usage
+    WHERE ${unmatchedConds.join(' AND ')}
+      AND username IS NOT NULL
+      AND username <> ''
+    ORDER BY username
+  `;
+  const unmatchedResult = await pool.query(unmatchedSql, unmatchedParams);
+  const unmatchedBillingUsernames = (unmatchedResult?.rows ?? [])
+    .map((r: { username?: string }) => (r.username || '').trim())
+    .filter(Boolean);
 
   return {
     timePeriod: window.timePeriod,
     enterprise,
     users: Array.from(new Set(usageItems.map(it => it.user).filter((u): u is string => !!u))),
+    ...(unmatchedBillingUsernames.length ? { unmatchedBillingUsernames } : {}),
     usageItems,
   };
 }

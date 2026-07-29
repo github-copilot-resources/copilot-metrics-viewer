@@ -255,6 +255,42 @@
               are hidden until GitHub starts returning attributed data.
             </div>
           </v-alert>
+          <v-alert
+            v-if="unmatchedBillingUsernamesList.length > 0"
+            type="warning"
+            variant="tonal"
+            density="comfortable"
+            class="mx-3 mt-3 mb-2"
+            icon="mdi-account-question-outline"
+          >
+            <div class="font-weight-medium mb-1">
+              {{ unmatchedBillingUsernamesList.length }} billing username<span v-if="unmatchedBillingUsernamesList.length !== 1">s</span>
+              with spend did not match the loaded Metrics API logins
+            </div>
+            <div class="text-body-2 mb-2">
+              This can happen on EMU enterprises when GitHub's metrics and billing feeds use
+              different handles for the same person. Configure <code>NUXT_BILLING_USER_ALIASES</code>
+              to map billing usernames to metrics logins.
+            </div>
+            <v-expansion-panels variant="accordion">
+              <v-expansion-panel>
+                <v-expansion-panel-title class="text-body-2">
+                  Show unmatched billing usernames
+                </v-expansion-panel-title>
+                <v-expansion-panel-text>
+                  <v-chip
+                    v-for="username in unmatchedBillingUsernamesList"
+                    :key="username"
+                    size="small"
+                    variant="tonal"
+                    class="ma-1"
+                  >
+                    {{ username }}
+                  </v-chip>
+                </v-expansion-panel-text>
+              </v-expansion-panel>
+            </v-expansion-panels>
+          </v-alert>
           <v-row v-if="perUserRows.length > 0 && !noPerUserAttribution" dense class="px-3 mt-2">
             <v-col cols="12" md="6">
               <v-card variant="outlined">
@@ -594,6 +630,7 @@ export default defineComponent({
     interface BillingAgg { credits: number; grossAmount: number; netAmount: number; models: Set<string>; display: string }
     const billingByLogin = reactive(new Map<string, BillingAgg>());
     const loadedLogins = reactive(new Set<string>());
+    const unmatchedBillingUsernames = reactive(new Set<string>());
     const perUserLoading = ref(false);
     const perUserSearch = ref('');
 
@@ -602,6 +639,7 @@ export default defineComponent({
     watch([selectedMonth, monthView, () => props.queryParams.since, () => props.queryParams.until], () => {
       billingByLogin.clear();
       loadedLogins.clear();
+      unmatchedBillingUsernames.clear();
     });
 
     async function loadBillingForLogins(
@@ -641,10 +679,15 @@ export default defineComponent({
             for (const u of resp.users ?? []) {
               loadedLogins.add(u.toLowerCase());
             }
+            for (const username of resp.unmatchedBillingUsernames ?? []) {
+              const trimmed = username.trim();
+              if (trimmed) unmatchedBillingUsernames.add(trimmed);
+            }
             for (const it of resp.usageItems ?? []) {
               const u = (it.user || '').trim();
               if (!u) continue;
               const key = u.toLowerCase();
+              unmatchedBillingUsernames.delete(u);
               const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
               prev.credits += billingCreditsUsed(it);
               prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
@@ -742,6 +785,9 @@ export default defineComponent({
       void loadBillingForLogins(matchedLogins);
     });
     const loadedLoginsCount = computed(() => loadedLogins.size);
+    const unmatchedBillingUsernamesList = computed(() =>
+      [...unmatchedBillingUsernames].sort((a, b) => a.localeCompare(b))
+    );
 
     // True when we've loaded at least one page of users AND the aggregate
     // totals show non-zero spend AND zero per-user attribution has come back.
@@ -777,6 +823,10 @@ export default defineComponent({
         if (it.model) prev.models.add(it.model);
         billingByLogin.set(key, prev);
         loadedLogins.add(key);
+      }
+      for (const username of data.value?.unmatchedBillingUsernames ?? []) {
+        const trimmed = username.trim();
+        if (trimmed) unmatchedBillingUsernames.add(trimmed);
       }
     });
 
@@ -918,6 +968,7 @@ export default defineComponent({
       errorReason, headers,
       perUserRows, perUserHeaders, perUserSearch,
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
+      unmatchedBillingUsernamesList,
       topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount,
       topTokensChartData, topTokensChartOptions,
       dataSourceBadge, billingSourceLabel,
