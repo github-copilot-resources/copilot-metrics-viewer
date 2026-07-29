@@ -1,4 +1,5 @@
 import { createLogger } from '../../utils/logger'
+import { emitAuditEvent } from '../../utils/audit'
 
 const logger = createLogger('auth-google')
 
@@ -15,6 +16,13 @@ export default defineOAuthGoogleEventHandler({
         avatarUrl: user.picture
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.email,
+      detail: { provider: 'google' },
+    }, event)
 
     // If no default org is configured, let the user pick via the org picker
     const config = useRuntimeConfig(event)

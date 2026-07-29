@@ -1,4 +1,5 @@
 import { createLogger } from '../../utils/logger'
+import { emitAuditEvent } from '../../utils/audit'
 
 const logger = createLogger('auth-auth0')
 
@@ -16,6 +17,13 @@ export default defineOAuthAuth0EventHandler({
         avatarUrl: user.picture
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.nickname || email,
+      detail: { provider: 'auth0' },
+    }, event)
 
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt

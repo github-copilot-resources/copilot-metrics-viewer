@@ -1,4 +1,5 @@
 import { createLogger } from '../../utils/logger'
+import { emitAuditEvent } from '../../utils/audit'
 
 const logger = createLogger('auth-github')
 
@@ -32,6 +33,13 @@ export default defineOAuthGitHubEventHandler({
         expires_at: new Date(Date.now() + tokens.expires_in * 1000)
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.login,
+      detail: { provider: 'github' },
+    }, event)
 
     // If a default org/ent is pinned via env var, go straight to the home page.
     const defaultOrg = config.public.githubOrg || config.public.githubEnt

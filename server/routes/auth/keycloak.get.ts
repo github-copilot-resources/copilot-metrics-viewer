@@ -1,4 +1,5 @@
 import { createLogger } from '../../utils/logger'
+import { emitAuditEvent } from '../../utils/audit'
 
 const logger = createLogger('auth-keycloak')
 
@@ -16,6 +17,13 @@ export default defineOAuthKeycloakEventHandler({
         avatarUrl: ''
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.preferred_username || email,
+      detail: { provider: 'keycloak' },
+    }, event)
 
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
