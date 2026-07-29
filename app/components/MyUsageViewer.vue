@@ -541,9 +541,11 @@ export default defineComponent({
     const topModel = computed(() => {
       const models = data.value?.totals?.totals_by_model_feature;
       if (!models || models.length === 0) return null;
-      return [...models].sort((a, b) =>
+      return [...models].filter(mf =>
+        mf.model && !['others', 'unknown'].includes(mf.model.toLowerCase())
+      ).sort((a, b) =>
         b.user_initiated_interaction_count - a.user_initiated_interaction_count
-      )[0];
+      )[0] ?? null;
     });
 
     // Per-day ai_credits_used chart — only renders when GitHub returned the field
