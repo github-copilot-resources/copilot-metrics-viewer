@@ -65,6 +65,25 @@ export interface AggregateFilters {
   model?: string;
 }
 
+export interface TopBillingUser {
+  user: string;
+  credits: number;
+  grossAmount: number;
+  netAmount: number;
+  models: number;
+}
+
+export interface TopBillingUsersResponse {
+  timePeriod: { year?: number; month?: number; day?: number };
+  enterprise: string;
+  users: TopBillingUser[];
+}
+
+export interface TopBillingUsersOptions extends AggregateFilters {
+  limit?: number;
+  metric?: 'netAmount' | 'grossAmount' | 'credits';
+}
+
 /**
  * Resolve `?year=&month=&day=` OR `?since=&until=` query params into an
  * inclusive date window. Mirrors how GitHub's billing endpoint interprets
@@ -334,6 +353,70 @@ export async function aggregateForBillingByUser(
     timePeriod: window.timePeriod,
     enterprise,
     usageItems,
+  };
+}
+
+/**
+ * Global top-N billing users for the requested window. Unlike
+ * `aggregateForBillingByUser`, this intentionally has no login filter so the
+ * database can rank every attributed user in one grouped query.
+ */
+export async function aggregateTopBillingUsers(
+  enterprise: string,
+  window: BillingWindow,
+  options: TopBillingUsersOptions = {},
+): Promise<TopBillingUsersResponse> {
+  const pool = getPool();
+  const limit = Math.max(1, Math.min(Math.trunc(options.limit ?? 10), 50));
+  const metric = options.metric ?? 'netAmount';
+  const orderExpr = metric === 'grossAmount'
+    ? 'SUM(gross_amount)'
+    : metric === 'credits'
+      ? 'SUM(quantity)'
+      : 'SUM(net_amount)';
+
+  const conds: string[] = [
+    'enterprise = $1',
+    'date BETWEEN $2::date AND $3::date',
+    "COALESCE(username, '') <> ''",
+  ];
+  const params: unknown[] = [enterprise, window.startDate, window.endDate];
+  const push = (col: string, val: string | undefined) => {
+    if (val === undefined || val === '') return;
+    params.push(val);
+    conds.push(`${col} = $${params.length}`);
+  };
+  push('organization', options.organization);
+  push('repository', options.repository);
+  push('sku', options.sku);
+  push('model', options.model);
+  params.push(limit);
+
+  const sql = `
+    SELECT
+      username,
+      SUM(quantity)::float8        AS credits,
+      SUM(gross_amount)::float8    AS gross_amount,
+      SUM(net_amount)::float8      AS net_amount,
+      COUNT(DISTINCT NULLIF(model, ''))::int AS models
+    FROM billing_credit_usage
+    WHERE ${conds.join(' AND ')}
+    GROUP BY username
+    ORDER BY ${orderExpr} DESC, username ASC
+    LIMIT $${params.length}
+  `;
+
+  const { rows } = await pool.query(sql, params);
+  return {
+    timePeriod: window.timePeriod,
+    enterprise,
+    users: rows.map(r => ({
+      user: String(r.username),
+      credits: Number(r.credits || 0),
+      grossAmount: Number(r.gross_amount || 0),
+      netAmount: Number(r.net_amount || 0),
+      models: Number(r.models || 0),
+    })),
   };
 }
 
