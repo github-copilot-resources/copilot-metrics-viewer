@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-toolbar color="transparent" elevation="0" class="app-toolbar">
-      <v-btn icon>
+      <v-btn icon aria-label="GitHub Copilot Metrics Viewer home">
         <v-icon>mdi-github</v-icon>
       </v-btn>
 
@@ -9,7 +9,7 @@
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>
       <v-spacer />
 
-      <v-btn icon :title="showDateRange ? 'Hide date range' : 'Show date range'" @click="showDateRange = !showDateRange">
+      <v-btn icon :title="showDateRange ? 'Hide date range' : 'Show date range'" :aria-label="showDateRange ? 'Hide date range' : 'Show date range'" @click="showDateRange = !showDateRange">
         <v-icon>{{ showDateRange ? 'mdi-calendar-check' : 'mdi-calendar' }}</v-icon>
       </v-btn>
 
@@ -17,12 +17,13 @@
         v-if="!signInRequired && isUsageAdmin"
         icon
         title="Admin panel"
+        aria-label="Open admin panel"
         @click="showAdminPanel = true"
       >
         <v-icon>mdi-shield-crown</v-icon>
       </v-btn>
 
-      <v-btn icon :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
+      <v-btn icon :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'" :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'" @click="toggleTheme">
         <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
       </v-btn>
 
@@ -41,7 +42,7 @@
       </AuthState>
 
       <!-- PAT-mode info button: visible when auth is not required -->
-      <v-btn v-if="!isAuthRequired" icon title="Authentication info" @click="showAuthInfoDialog = true">
+      <v-btn v-if="!isAuthRequired" icon title="Authentication info" aria-label="Open authentication information" @click="showAuthInfoDialog = true">
         <v-icon>mdi-shield-account</v-icon>
       </v-btn>
 
