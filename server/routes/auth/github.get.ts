@@ -1,3 +1,7 @@
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('auth-github')
+
 export default defineOAuthGitHubEventHandler({
   config: {
     // Default scopes: read:user for profile, read:org for org membership (used by org picker).
@@ -63,7 +67,7 @@ export default defineOAuthGitHubEventHandler({
           return sendRedirect(event, appURL(`/orgs/${organizations[0]!.login}`, event))
         }
       } catch (err) {
-        console.error('Error fetching installations:', err)
+        logger.warn('Error fetching installations:', err)
         // Fall through to /select-org which shows a text input fallback.
       }
     }
@@ -72,7 +76,7 @@ export default defineOAuthGitHubEventHandler({
   },
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {
-    console.error('GitHub OAuth error:', error)
+    logger.error('GitHub OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   },
 })

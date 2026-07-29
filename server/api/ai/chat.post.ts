@@ -15,6 +15,9 @@ import { aiTools, buildSystemPrompt } from '../../services/ai-tools';
 import { executeTool, type ToolCallRequest } from '../../services/ai-tool-executor';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 import { generateMockChatResponse } from '../../services/ai-chat-mock';
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('ai-chat')
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant' | 'tool';
@@ -166,7 +169,7 @@ export default defineEventHandler(async (event) => {
       lastResponse = await callGitHubModels(githubToken, model, messages, aiTools);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error(`GitHub Models API error (round ${round}):`, message);
+      logger.error(`GitHub Models API error (round ${round}):`, error);
 
       if (message.includes('401') || message.includes('403') || message.includes('no_access')) {
         throw createError({
