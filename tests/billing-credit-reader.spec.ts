@@ -22,12 +22,14 @@ import {
   decideSource,
   aggregateForBilling,
   aggregateForBillingByUser,
+  aggregateTopBillingUsers,
   subtractRanges,
   findBillingCsvGaps,
 } from '../server/services/billing-credit-reader';
 
 beforeEach(() => {
   mockQuery.mockReset();
+  delete process.env.NUXT_BILLING_USER_ALIASES;
 });
 
 describe('resolveWindow', () => {
@@ -259,6 +261,51 @@ describe('aggregateForBillingByUser', () => {
     expect(mockQuery).not.toHaveBeenCalled();
   });
 
+  it('includes configured EMU billing aliases in the DB username filter and normalizes returned users', async () => {
+    process.env.NUXT_BILLING_USER_ALIASES = JSON.stringify({
+      readable_emu: 'opaquehash_emu',
+    });
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{
+          username: 'readable_emu',
+          product: 'copilot',
+          sku: 'copilot_ai_credit',
+          model: 'gpt-4o',
+          unit_type: 'credits',
+          price_per_unit: 0.01,
+          gross_quantity: 100,
+          gross_amount: 1,
+          discount_amount: 0,
+          net_amount: 1,
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['opaquehash_emu']);
+
+    expect(mockQuery.mock.calls[0]![1][3]).toEqual(['opaquehash_emu', 'readable_emu']);
+    expect(resp.usageItems[0]!.user).toBe('opaquehash_emu');
+  });
+
+  it('surfaces billing usernames with spend that are not matched by requested metrics logins or aliases', async () => {
+    process.env.NUXT_BILLING_USER_ALIASES = JSON.stringify({
+      readable_emu: 'opaquehash_emu',
+    });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ username: 'unmapped_emu' }] });
+
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['opaquehash_emu']);
+
+    expect(resp.unmatchedBillingUsernames).toEqual(['unmapped_emu']);
+    expect(mockQuery.mock.calls[1]![0]).toMatch(/LOWER\(username\) <> ALL/);
+  });
+
   it('groups by username and tags each item with the user field (case-insensitive match)', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -316,6 +363,51 @@ describe('aggregateForBillingByUser', () => {
     expect(sql).not.toContain('DROP TABLE');
     expect(sql).not.toContain(evilModel);
     expect(params).toContain(evilModel);
+  });
+
+  it('can order and page per-user aggregates by net spend descending', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['alice', 'bob', 'carol'], {}, {
+      sortKey: 'netAmount',
+      sortOrder: 'desc',
+      offset: 0,
+      limit: 2,
+    });
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/ORDER BY[\s\S]*SUM\(net_amount\)[\s\S]*DESC/i);
+    expect(sql).toMatch(/LIMIT \$\d+/);
+    expect(sql).toMatch(/OFFSET \$\d+/);
+    expect(params[3]).toEqual(['alice', 'bob', 'carol']);
+    expect(params).toContain(2);
+    expect(params).toContain(0);
+  });
+});
+
+describe('aggregateTopBillingUsers', () => {
+  it('ranks the top users across the full enterprise dataset without a login filter', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { username: 'zoe', credits: 70, gross_amount: 7, net_amount: 7, models: 2 },
+        { username: 'alice', credits: 50, gross_amount: 5, net_amount: 5, models: 1 },
+      ],
+    });
+
+    const resp = await aggregateTopBillingUsers('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, { limit: 2 });
+
+    expect(resp.users.map(u => u.user)).toEqual(['zoe', 'alice']);
+    expect(resp.users[0]).toMatchObject({ credits: 70, grossAmount: 7, netAmount: 7, models: 2 });
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/GROUP BY username/);
+    expect(sql).toMatch(/ORDER BY SUM\(net_amount\) DESC/);
+    expect(sql).toMatch(/LIMIT \$4/);
+    expect(sql).not.toMatch(/LOWER\(username\) = ANY/);
+    expect(params).toEqual(['ent', '2026-06-01', '2026-06-30', 2]);
   });
 });
 

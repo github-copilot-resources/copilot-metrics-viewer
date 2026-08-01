@@ -184,9 +184,9 @@
         <!-- Chart layout toggle -->
         <div class="d-flex justify-end mb-2">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-            <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-            <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+            <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
 
@@ -522,7 +522,8 @@ export default defineComponent({
       for (const day of data) {
         for (const mf of (day.totals_by_model_feature ?? [])) {
           if (mf.feature === 'code_completion') continue;
-          const key = mf.model ?? 'Unknown';
+          if (!mf.model || ['others', 'unknown'].includes(mf.model.toLowerCase())) continue;
+          const key = mf.model;
           modelTotals[key] = (modelTotals[key] ?? 0) + (mf.user_initiated_interaction_count ?? 0);
         }
       }

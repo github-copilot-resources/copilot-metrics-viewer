@@ -1,3 +1,8 @@
+import { createLogger } from '../../utils/logger'
+import { emitAuditEvent } from '../../utils/audit'
+
+const logger = createLogger('auth-google')
+
 export default defineOAuthGoogleEventHandler({
   async onSuccess(event, { user }) {
     if (!isUserAuthorized(event, { email: user.email })) {
@@ -12,6 +17,13 @@ export default defineOAuthGoogleEventHandler({
       }
     })
 
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.email,
+      detail: { provider: 'google' },
+    }, event)
+
     // If no default org is configured, let the user pick via the org picker
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
@@ -22,7 +34,7 @@ export default defineOAuthGoogleEventHandler({
     return sendRedirect(event, getAppBaseURL(event))
   },
   onError(event, error) {
-    console.error('Google OAuth error:', error)
+    logger.error('Google OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })
