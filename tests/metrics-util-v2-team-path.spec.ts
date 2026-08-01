@@ -40,11 +40,18 @@ let _mockQuery: Record<string, string> = {};
 
 const mockGetUserDayMetrics = vi.fn();
 const mockSaveUserDayBatch = vi.fn();
+const mockFetchLatestReport = vi.fn();
+const mockFetchRawUserDayRecords = vi.fn();
 
 vi.mock('../server/storage/user-day-metrics-storage', () => ({
   getUserDayMetricsByDateRange: (...args: any[]) => mockGetUserDayMetrics(...args),
   saveUserDayMetricsBatch: (...args: any[]) => mockSaveUserDayBatch(...args),
   hasUserDayMetricsForDate: vi.fn(async () => false),
+}));
+
+vi.mock('../server/services/github-copilot-usage-api', () => ({
+  fetchLatestReport: (...args: any[]) => mockFetchLatestReport(...args),
+  fetchRawUserDayRecords: (...args: any[]) => mockFetchRawUserDayRecords(...args),
 }));
 
 const mockFetchAllTeamMembers = vi.fn();
@@ -124,6 +131,48 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
       { login: 'octocat', id: 1 },
       { login: 'octokitten', id: 2 },
     ]);
+    mockFetchLatestReport.mockResolvedValue({
+      report_start_day: '2026-03-01',
+      report_end_day: '2026-03-28',
+      organization_id: '100001',
+      enterprise_id: '',
+      created_at: '2026-03-29T00:00:00.000Z',
+      day_totals: [
+        {
+          day: '2026-03-15',
+          organization_id: '100001',
+          enterprise_id: '',
+          daily_active_users: 2,
+          weekly_active_users: 2,
+          monthly_active_users: 2,
+          user_initiated_interaction_count: 0,
+          code_generation_activity_count: 0,
+          code_acceptance_activity_count: 0,
+          totals_by_ide: [],
+          totals_by_feature: [],
+          totals_by_language_feature: [],
+          totals_by_language_model: [],
+          totals_by_model_feature: [],
+          loc_suggested_to_add_sum: 0,
+          loc_suggested_to_delete_sum: 0,
+          loc_added_sum: 0,
+          loc_deleted_sum: 0,
+          pull_requests: {
+            total_created: 4,
+            total_reviewed: 5,
+            total_merged: 3,
+            total_suggestions: 2,
+            total_applied_suggestions: 1,
+            total_created_by_copilot: 1,
+            total_reviewed_by_copilot: 1,
+            total_merged_created_by_copilot: 1,
+            total_copilot_suggestions: 1,
+            total_copilot_applied_suggestions: 1,
+          },
+        },
+      ],
+    });
+    mockFetchRawUserDayRecords.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -179,5 +228,20 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     expect(result.reportData).toEqual([]);
     // DB should NOT be queried when team is empty
     expect(mockGetUserDayMetrics).not.toHaveBeenCalled();
+  });
+
+  it('includes pull request day_totals data in team reportData when available from report API', async () => {
+    mockGetUserDayMetrics.mockResolvedValue([
+      makeDayRecord('octocat', '2026-03-15'),
+      makeDayRecord('octokitten', '2026-03-15'),
+    ]);
+
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    const result = await getMetricsDataV2(makeEvent(true));
+
+    expect(result.reportData).toHaveLength(1);
+    expect(result.reportData[0]!.day).toBe('2026-03-15');
+    expect(result.reportData[0]!.pull_requests).toBeDefined();
+    expect(result.reportData[0]!.pull_requests?.total_created).toBe(4);
   });
 });
