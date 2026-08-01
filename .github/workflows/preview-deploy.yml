@@ -447,8 +447,8 @@ jobs:
             if (!prNumber) return;
             const action = '${{ github.event.action }}';
             const reason = action === 'closed' ? 'PR was merged/closed' : 'deploy label was removed';
-            const body = `## 🧹 Preview Apps Cleaned Up\n\n` +
-              `The preview apps have been removed (${reason}). The shared managed environment was retained for future deployments.`;
+            const body = `## 🧹 Shared Preview Apps Cleaned Up\n\n` +
+              `The shared preview apps have been removed (${reason}). The shared managed environment was retained for future deployments.`;
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
