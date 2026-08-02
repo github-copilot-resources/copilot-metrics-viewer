@@ -245,6 +245,40 @@ describe('GET /api/billing-credits-by-user — DB-first branch', () => {
     expect(getHeader('X-Data-Source')).toBe('db');
   });
 
+  it('forwards table sort and page options to the DB per-user aggregate', async () => {
+    setQuery({
+      scope: 'enterprise',
+      githubEnt: 'ent-x',
+      year: '2026',
+      month: '6',
+      logins: 'alice,bob,carol',
+      sortKey: 'netAmount',
+      sortOrder: 'desc',
+      page: '1',
+      itemsPerPage: '2',
+    });
+    mockDecide.mockResolvedValueOnce({ source: 'db', reason: 'covered', lastIngestAt: null, jobId: 9 });
+    mockAggregateByUser.mockResolvedValueOnce({
+      timePeriod: { year: 2026, month: 6 },
+      enterprise: 'ent-x',
+      users: ['carol', 'bob'],
+      usageItems: [],
+    });
+
+    const result = await byUserHandler({} as any);
+
+    const args = mockAggregateByUser.mock.calls[0]!;
+    expect(args[2]).toEqual(['alice', 'bob', 'carol']);
+    expect(args[4]).toEqual({
+      sortKey: 'netAmount',
+      sortOrder: 'desc',
+      offset: 0,
+      limit: 2,
+    });
+    expect(result.users).toEqual(['carol', 'bob']);
+    expect(((globalThis as any).$fetch as any).mock.calls).toHaveLength(0);
+  });
+
   it('falls through to fan-out when decideSource returns live', async () => {
     setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6', logins: 'alice' });
     mockDecide.mockResolvedValueOnce({ source: 'live', reason: 'not covered', lastIngestAt: null, jobId: null });

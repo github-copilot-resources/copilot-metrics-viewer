@@ -278,6 +278,7 @@ export async function aggregateForBillingByUser(
   window: BillingWindow,
   logins: string[],
   filters: AggregateFilters = {},
+  sort: AggregateByUserSortOptions = {},
 ): Promise<BillingCreditsResponse> {
   if (logins.length === 0) {
     return { timePeriod: window.timePeriod, enterprise, usageItems: [] };
@@ -306,6 +307,12 @@ export async function aggregateForBillingByUser(
   push('sku', filters.sku);
   push('model', filters.model);
 
+  const order = buildByUserOrder(sort);
+  if (sort.limit !== undefined) params.push(sort.limit);
+  const limitClause = sort.limit !== undefined ? `LIMIT $${params.length}` : '';
+  if (sort.offset !== undefined) params.push(sort.offset);
+  const offsetClause = sort.offset !== undefined ? `OFFSET $${params.length}` : '';
+
   const sql = `
     SELECT
       username,
@@ -321,7 +328,9 @@ export async function aggregateForBillingByUser(
     FROM billing_credit_usage
     WHERE ${conds.join(' AND ')}
     GROUP BY username, product, sku, model, unit_type
-    ORDER BY username, product, sku, model
+    ORDER BY ${order}, username, product, sku, model
+    ${limitClause}
+    ${offsetClause}
   `;
 
   const { rows } = await pool.query(sql, params);
@@ -333,8 +342,33 @@ export async function aggregateForBillingByUser(
   return {
     timePeriod: window.timePeriod,
     enterprise,
+    users: Array.from(new Set(usageItems.map(it => it.user).filter((u): u is string => !!u))),
     usageItems,
   };
+}
+
+export interface AggregateByUserSortOptions {
+  sortKey?: string;
+  sortOrder?: 'asc' | 'desc';
+  offset?: number;
+  limit?: number;
+}
+
+function buildByUserOrder(sort: AggregateByUserSortOptions): string {
+  const direction = sort.sortOrder === 'desc' ? 'DESC' : 'ASC';
+  switch (sort.sortKey) {
+    case 'credits':
+      return `SUM(quantity) ${direction}`;
+    case 'grossAmount':
+      return `SUM(gross_amount) ${direction}`;
+    case 'netAmount':
+      return `SUM(net_amount) ${direction}`;
+    case 'models':
+      return `COUNT(DISTINCT model) ${direction}`;
+    case 'user':
+    default:
+      return `LOWER(username) ${direction}`;
+  }
 }
 
 /**

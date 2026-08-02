@@ -317,6 +317,26 @@ describe('aggregateForBillingByUser', () => {
     expect(sql).not.toContain(evilModel);
     expect(params).toContain(evilModel);
   });
+
+  it('can order and page per-user aggregates by net spend descending', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['alice', 'bob', 'carol'], {}, {
+      sortKey: 'netAmount',
+      sortOrder: 'desc',
+      offset: 0,
+      limit: 2,
+    });
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/ORDER BY[\s\S]*SUM\(net_amount\)[\s\S]*DESC/i);
+    expect(sql).toMatch(/LIMIT \$\d+/);
+    expect(sql).toMatch(/OFFSET \$\d+/);
+    expect(params[3]).toEqual(['alice', 'bob', 'carol']);
+    expect(params).toContain(2);
+    expect(params).toContain(0);
+  });
 });
 
 describe('edge cases', () => {
