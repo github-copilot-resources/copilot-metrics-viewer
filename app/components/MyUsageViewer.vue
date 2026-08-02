@@ -42,9 +42,9 @@
           <!-- Chart layout toggle -->
           <div class="d-flex justify-end pa-3 pb-0">
             <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-              <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-              <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-              <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+              <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+              <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+              <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
             </v-btn-toggle>
           </div>
 
