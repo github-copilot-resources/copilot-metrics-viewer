@@ -396,6 +396,7 @@ import {
   Legend,
 } from 'chart.js';
 import { PALETTE } from '@/utils/chartPlugins';
+import { buildPerUserBillingLazyLoadRequest, type BillingTableOptions } from '@/utils/billingPerUserLazyLoad';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
 import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
 
@@ -525,16 +526,23 @@ export default defineComponent({
       loadedLogins.clear();
     });
 
-    async function loadBillingForLogins(logins: string[]): Promise<void> {
-      const needed = logins.filter(l => l && !loadedLogins.has(l.toLowerCase()));
+    async function loadBillingForLogins(
+      logins: string[],
+      sortQuery: Record<string, string> = {},
+      serverSorted = false,
+    ): Promise<void> {
+      const needed = serverSorted ? logins.filter(Boolean) : logins.filter(l => l && !loadedLogins.has(l.toLowerCase()));
       if (needed.length === 0) return;
       // Mark as "in-flight" up front so concurrent page changes don't double-fetch.
-      for (const l of needed) loadedLogins.add(l.toLowerCase());
+      if (!serverSorted) {
+        for (const l of needed) loadedLogins.add(l.toLowerCase());
+      }
       perUserLoading.value = true;
       try {
-        // Chunk to the endpoint's per-call cap (50).
-        for (let i = 0; i < needed.length; i += 50) {
-          const chunk = needed.slice(i, i + 50);
+        const chunks = serverSorted
+          ? [needed]
+          : Array.from({ length: Math.ceil(needed.length / 50) }, (_, i) => needed.slice(i * 50, i * 50 + 50));
+        for (const chunk of chunks) {
           const parent = { ...(props.queryParams || {}) };
           if (monthView.value) {
             delete parent.since;
@@ -549,9 +557,12 @@ export default defineComponent({
             delete parent.month;
             delete parent.day;
           }
-          const qp: Record<string, string> = { ...parent, logins: chunk.join(',') };
+          const qp: Record<string, string> = { ...parent, ...sortQuery, logins: chunk.join(',') };
           try {
             const resp = await $fetch<BillingCreditsResponse>('/api/billing-credits-by-user', { query: qp });
+            for (const u of resp.users ?? []) {
+              loadedLogins.add(u.toLowerCase());
+            }
             for (const it of resp.usageItems ?? []) {
               const u = (it.user || '').trim();
               if (!u) continue;
@@ -563,6 +574,7 @@ export default defineComponent({
               prev.netAmount += Number.isFinite(it.netAmount) ? it.netAmount : 0;
               if (it.model) prev.models.add(it.model);
               billingByLogin.set(key, prev);
+              loadedLogins.add(key);
             }
           } catch (err) {
             // Don't unmark — failed fetches stay "loaded" so we don't retry
@@ -578,12 +590,10 @@ export default defineComponent({
     // Called by v-data-table @update:options on initial mount, page change,
     // and sort change. We use page + itemsPerPage + the currently-sorted
     // `perUserRows` view to know which logins are visible.
-    function onTableOptions(opts: { page: number; itemsPerPage: number }): void {
-      const allRows = perUserRows.value;
-      if (allRows.length === 0) return;
-      const start = (opts.page - 1) * opts.itemsPerPage;
-      const visible = allRows.slice(start, start + opts.itemsPerPage).map(r => r.user);
-      void loadBillingForLogins(visible);
+    function onTableOptions(opts: BillingTableOptions): void {
+      const request = buildPerUserBillingLazyLoadRequest(perUserRows.value, opts);
+      if (request.logins.length === 0) return;
+      void loadBillingForLogins(request.logins, request.query, request.serverSorted);
     }
 
     const items = computed<BillingUsageItem[]>(() => data.value?.usageItems ?? []);
