@@ -216,7 +216,7 @@
 
 
     <div v-show="!apiError">
-      <v-progress-linear v-show="!metricsReady && !signInRequired" indeterminate color="indigo" />
+      <v-progress-linear v-show="showActiveTabLoading" indeterminate color="indigo" />
       <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || tab === 'my usage' || tab === 'billing' || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
@@ -321,7 +321,7 @@ import AiChatPanel from './AiChatPanel.vue'
 import AdminPanel from './AdminPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
-import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
+import { applyHiddenTabs, applyHistoricalModeFilter, shouldShowActiveTabLoading } from '@/utils/tabUtils';
 import { routeParamStr } from '@/utils/routeUtils';
 import { resolveDisplayName } from '#shared/utils/resolveDisplayName';
 
@@ -351,6 +351,15 @@ export default defineNuxtComponent({
     },
     showAnnouncementBanner(): boolean {
       return !!this.announcementMessage && !this.announcementDismissed;
+    },
+    showActiveTabLoading(): boolean {
+      return shouldShowActiveTabLoading({
+        tab: this.tab,
+        signInRequired: this.signInRequired,
+        metricsReady: this.metricsReady,
+        seatsReady: this.seatsReady,
+        userMetricsReady: this.userMetricsReady,
+      });
     },
   },
   methods: {
