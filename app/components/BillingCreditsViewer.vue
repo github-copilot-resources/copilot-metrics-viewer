@@ -280,9 +280,24 @@
               Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API for {{ dateRangeDescription || 'the last 28 days' }}.
               <strong>Credits</strong>, <strong>Gross $</strong>, <strong>Net $</strong>, and <strong>Models</strong> come from the Billing API for {{ rangeLabel }}.
             </v-card-subtitle>
+            <v-card-text class="pb-0">
+              <v-text-field
+                v-model="perUserSearch"
+                data-testid="billing-per-user-search"
+                label="Search users"
+                placeholder="Filter by username"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                density="compact"
+                variant="outlined"
+                hide-details
+              />
+            </v-card-text>
             <v-data-table
               :items="perUserRows"
               :headers="perUserHeaders"
+              :search="perUserSearch"
+              :filter-keys="['user']"
               density="compact"
               :items-per-page="25"
               :sort-by="[{ key: 'user', order: 'asc' }]"
@@ -517,6 +532,7 @@ export default defineComponent({
     const billingByLogin = reactive(new Map<string, BillingAgg>());
     const loadedLogins = reactive(new Set<string>());
     const perUserLoading = ref(false);
+    const perUserSearch = ref('');
 
     // When the user switches month or toggles month view, drop cached
     // per-user roll-ups so the visible page re-fetches against the new window.
@@ -576,10 +592,10 @@ export default defineComponent({
     }
 
     // Called by v-data-table @update:options on initial mount, page change,
-    // and sort change. We use page + itemsPerPage + the currently-sorted
-    // `perUserRows` view to know which logins are visible.
+    // and sort/search change. We use page + itemsPerPage + the currently
+    // searchable `perUserRows` view to know which logins are visible.
     function onTableOptions(opts: { page: number; itemsPerPage: number }): void {
-      const allRows = perUserRows.value;
+      const allRows = filteredPerUserRowsForLazyLoad.value;
       if (allRows.length === 0) return;
       const start = (opts.page - 1) * opts.itemsPerPage;
       const visible = allRows.slice(start, start + opts.itemsPerPage).map(r => r.user);
@@ -644,6 +660,17 @@ export default defineComponent({
           models: billing?.models.size || 0,
         };
       });
+    });
+    const filteredPerUserRowsForLazyLoad = computed<PerUserRow[]>(() => {
+      const query = perUserSearch.value.trim().toLocaleLowerCase();
+      if (!query) return perUserRows.value;
+      return perUserRows.value.filter(row => row.user.toLocaleLowerCase().includes(query));
+    });
+    watch(perUserSearch, () => {
+      const matchedLogins = filteredPerUserRowsForLazyLoad.value
+        .slice(0, 50)
+        .map(row => row.user);
+      void loadBillingForLogins(matchedLogins);
     });
     const loadedLoginsCount = computed(() => loadedLogins.size);
 
@@ -830,7 +857,7 @@ export default defineComponent({
       monthView, rangeLabel,
       totalGrossQty, totalGrossAmount, totalNetAmount,
       errorReason, headers,
-      perUserRows, perUserHeaders,
+      perUserRows, perUserHeaders, perUserSearch,
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
       topSpendersChartData, topSpendersChartOptions,
       topTokensChartData, topTokensChartOptions,
