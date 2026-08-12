@@ -396,6 +396,7 @@ import {
   Legend,
 } from 'chart.js';
 import { PALETTE } from '@/utils/chartPlugins';
+import { buildTopSpendersChartData } from '@/utils/billingTopSpenders';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
 import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
 
@@ -719,23 +720,7 @@ export default defineComponent({
     ];
 
     const topSpendersChartData = computed(() => {
-      // Sort by netAmount desc and drop $0 rows so enterprises with no
-      // per-user attribution (or pages we haven't lazy-loaded yet) don't
-      // render a chart full of zero bars labelled "top spenders".
-      const withSpend = perUserRows.value.filter(r => r.netAmount > 0);
-      if (withSpend.length === 0) return null;
-      const top = [...withSpend].sort((a, b) => b.netAmount - a.netAmount).slice(0, 10);
-      return {
-        labels: top.map(r => r.user),
-        datasets: [
-          {
-            label: 'Net spend (USD)',
-            data: top.map(r => +r.netAmount.toFixed(2)),
-            backgroundColor: PALETTE?.[0]?.bg ?? '#3f51b5',
-            borderRadius: 4,
-          },
-        ],
-      };
+      return buildTopSpendersChartData(perUserRows.value, PALETTE?.[0]?.bg ?? '#3f51b5');
     });
 
     const topSpendersChartOptions = {
