@@ -4,6 +4,9 @@
  */
 
 import { isDbConfigured } from '../storage/db';
+import { createLogger } from '../utils/logger';
+
+const logger = createLogger('db-init');
 
 export default defineNitroPlugin(async () => {
   if (!isDbConfigured()) return;
@@ -14,9 +17,9 @@ export default defineNitroPlugin(async () => {
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Initializing PostgreSQL schema (attempt ${attempt}/${maxRetries})...`);
+      logger.info(`Initializing PostgreSQL schema (attempt ${attempt}/${maxRetries})...`);
       await initSchema();
-      console.log('PostgreSQL schema ready');
+      logger.info('PostgreSQL schema ready');
       return;
     } catch (error: unknown) {
       const pgCode = error && typeof error === 'object' && 'code' in error ? (error as { code: string }).code : '';
@@ -25,10 +28,10 @@ export default defineNitroPlugin(async () => {
 
       if ((isStartingUp || isConnRefused) && attempt < maxRetries) {
         const delay = baseDelay * attempt;
-        console.log(`PostgreSQL not ready yet, retrying in ${delay / 1000}s...`);
+        logger.warn(`PostgreSQL not ready yet, retrying in ${delay / 1000}s...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       } else {
-        console.error('Failed to initialize PostgreSQL schema:', error);
+        logger.error('Failed to initialize PostgreSQL schema:', error);
         return;
       }
     }

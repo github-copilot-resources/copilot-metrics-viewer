@@ -69,6 +69,7 @@
                   v-bind="tooltipProps"
                   :to="`/orgs/${selectedOrg}`"
                   icon="mdi-open-in-new"
+                  aria-label="Switch to organization view"
                   variant="text"
                   size="small"
                   density="compact"
@@ -138,6 +139,7 @@
                   size="x-small"
                   icon
                   title="Deselect team"
+                  aria-label="Deselect team"
                   @click="selectedTeams = []"
                 >
                   <v-icon size="14">mdi-close</v-icon>
@@ -184,6 +186,7 @@
                   size="x-small"
                   icon
                   title="Clear filter"
+                  aria-label="Clear reporting hierarchy filter"
                   @click="onEntraSelect([], '', undefined)"
                 >
                   <v-icon size="14">mdi-close</v-icon>
@@ -235,9 +238,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-            <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-            <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+            <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
 
@@ -422,6 +425,7 @@
                   size="x-small"
                   icon
                   :title="`Remove ${card.teamName}`"
+                  :aria-label="`Remove ${card.teamName}`"
                   @click="selectedTeams = selectedTeams.filter(s => s !== card.slug)"
                 >
                   <v-icon size="14">mdi-close</v-icon>
@@ -448,9 +452,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-            <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-            <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+            <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
 

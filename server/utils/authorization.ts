@@ -11,6 +11,8 @@
  *  - NUXT_AUTHORIZED_EMAIL_DOMAINS comma-separated domains, e.g. "company.com,corp.org"
  */
 
+import { emitAuditEvent } from './audit';
+
 export interface AuthorizedIdentity {
   /** GitHub login or generic username (lowercase for comparison) */
   login?: string
@@ -79,5 +81,18 @@ export function isUserAuthorized(
   const config = useRuntimeConfig(event)
   const authorizedUsers = (config.authorizedUsers as string | undefined) ?? ''
   const authorizedEmailDomains = (config.authorizedEmailDomains as string | undefined) ?? ''
-  return checkAuthorization(identity, authorizedUsers, authorizedEmailDomains)
+  const allowed = checkAuthorization(identity, authorizedUsers, authorizedEmailDomains)
+  if (!allowed) {
+    void emitAuditEvent('auth.login.denied', {
+      action: 'login',
+      outcome: 'deny',
+      target: identity.login || identity.email || 'unknown',
+      detail: {
+        reason: 'allowlist',
+        hasAuthorizedUsers: !!authorizedUsers.trim(),
+        hasAuthorizedEmailDomains: !!authorizedEmailDomains.trim(),
+      },
+    }, event)
+  }
+  return allowed
 }

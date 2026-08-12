@@ -1,3 +1,8 @@
+import { createLogger } from '../../utils/logger'
+import { emitAuditEvent } from '../../utils/audit'
+
+const logger = createLogger('auth-keycloak')
+
 export default defineOAuthKeycloakEventHandler({
   async onSuccess(event, { user }) {
     const email: string = user.email || ''
@@ -13,12 +18,19 @@ export default defineOAuthKeycloakEventHandler({
       }
     })
 
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.preferred_username || email,
+      detail: { provider: 'keycloak' },
+    }, event)
+
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
     return sendRedirect(event, defaultOrg ? getAppBaseURL(event) : appURL('/select-org', event))
   },
   onError(event, error) {
-    console.error('Keycloak OAuth error:', error)
+    logger.error('Keycloak OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })
