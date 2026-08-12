@@ -1,3 +1,5 @@
+import { emitAuditEvent } from '../../utils/audit'
+
 export default defineOAuthKeycloakEventHandler({
   async onSuccess(event, { user }) {
     const email: string = user.email || ''
@@ -12,6 +14,13 @@ export default defineOAuthKeycloakEventHandler({
         avatarUrl: ''
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.preferred_username || email,
+      detail: { provider: 'keycloak' },
+    }, event)
 
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt

@@ -1,3 +1,5 @@
+import { emitAuditEvent } from '../../utils/audit'
+
 export default defineOAuthAuth0EventHandler({
   async onSuccess(event, { user }) {
     const email: string = user.email || ''
@@ -12,6 +14,13 @@ export default defineOAuthAuth0EventHandler({
         avatarUrl: user.picture
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.nickname || email,
+      detail: { provider: 'auth0' },
+    }, event)
 
     const config = useRuntimeConfig(event)
     const defaultOrg = config.public.githubOrg || config.public.githubEnt

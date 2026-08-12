@@ -1,3 +1,5 @@
+import { emitAuditEvent } from '../../utils/audit';
+
 export default defineOAuthGitHubEventHandler({
   config: {
     // Default scopes: read:user for profile, read:org for org membership (used by org picker).
@@ -28,6 +30,13 @@ export default defineOAuthGitHubEventHandler({
         expires_at: new Date(Date.now() + tokens.expires_in * 1000)
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.login,
+      detail: { provider: 'github' },
+    }, event)
 
     // If a default org/ent is pinned via env var, go straight to the home page.
     const defaultOrg = config.public.githubOrg || config.public.githubEnt

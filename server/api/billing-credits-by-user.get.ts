@@ -28,6 +28,7 @@
 
 import { Options } from '@/model/Options';
 import { requireUsageAdmin } from '../utils/usage-admin';
+import { emitAuditEvent } from '../utils/audit';
 import { buildBillingApiUrl } from '../utils/billing-url';
 import type { BillingCreditsResponse, BillingUsageItem } from './billing-credits.get';
 import {
@@ -35,6 +36,10 @@ import {
   resolveWindow,
   aggregateForBillingByUser,
 } from '../services/billing-credit-reader';
+import {
+  billingUsernamesForMetricsLogins,
+  parseBillingUserAliases,
+} from '../../shared/utils/billing-user-identity';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockBilling from '../../public/mock-data/billing-credits.json';
 
@@ -77,6 +82,23 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       statusMessage: `Too many logins (${requestedLogins.length}); cap is ${MAX_LOGINS_PER_CALL} per call. Split the request into multiple pages.`,
     });
   }
+
+  await emitAuditEvent('billing.per_user.viewed', {
+    action: 'view',
+    outcome: 'allow',
+    target: options.githubOrg || options.githubEnt || 'unknown',
+    detail: {
+      scope: options.scope,
+      requestedLogins,
+      requestedCount: requestedLogins.length,
+      year: query.year,
+      month: query.month,
+      day: query.day,
+      model: query.model,
+      product: query.product,
+      costCenterId: query.cost_center_id,
+    },
+  }, event);
 
   // ── DB-first read path (Phase B) ───────────────────────────────────────────
   // Same coverage check as /api/billing-credits: if a completed CSV ingest
@@ -189,13 +211,14 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   });
 
   const tagged: BillingUsageItem[] = [];
+  const aliases = parseBillingUserAliases(process.env.NUXT_BILLING_USER_ALIASES);
   let timePeriod: BillingCreditsResponse['timePeriod'] = { year: 0, month: 0 };
   let orgSlug: string | undefined;
   let entSlug: string | undefined;
   let failures = 0;
 
-  async function fetchOne(login: string): Promise<void> {
-    const params = new URLSearchParams({ ...forwardParams, user: login });
+  async function fetchOne(metricsLogin: string, billingUsername: string): Promise<void> {
+    const params = new URLSearchParams({ ...forwardParams, user: billingUsername });
     const url = `${apiUrl}?${params.toString()}`;
     try {
       const resp = await $fetch<BillingCreditsResponse>(url, { headers: billingHeaders });
@@ -203,23 +226,27 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       orgSlug = resp.organization || orgSlug;
       entSlug = resp.enterprise || entSlug;
       for (const it of resp.usageItems ?? []) {
-        tagged.push({ ...it, user: login });
+        tagged.push({ ...it, user: metricsLogin });
       }
     } catch (err) {
       failures++;
-      logger.warn(`billing-credits-by-user: ${login} fan-out failed`, err);
+      logger.warn(`billing-credits-by-user: ${billingUsername} fan-out failed`, err);
     }
   }
 
+  const fetchTargets = requestedLogins.flatMap(login =>
+    billingUsernamesForMetricsLogins([login], aliases).map(billingUsername => ({ login, billingUsername }))
+  );
+
   let cursor = 0;
   async function worker(): Promise<void> {
-    while (cursor < requestedLogins.length) {
+    while (cursor < fetchTargets.length) {
       const i = cursor++;
-      const login = requestedLogins[i];
-      if (login) await fetchOne(login);
+      const target = fetchTargets[i];
+      if (target) await fetchOne(target.login, target.billingUsername);
     }
   }
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, requestedLogins.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, fetchTargets.length) }, () => worker()));
 
   if (failures > 0 && tagged.length === 0) {
     throw createError({

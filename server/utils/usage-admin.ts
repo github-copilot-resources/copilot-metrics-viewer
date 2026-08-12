@@ -37,6 +37,7 @@
 
 import type { H3Event, EventHandlerRequest } from 'h3'
 import type { AuthorizedIdentity } from './authorization'
+import { emitAuditEvent } from './audit'
 
 /**
  * Pure check — accepts an explicit allowlist string so it can be unit-tested
@@ -135,11 +136,21 @@ export async function requireUsageAdmin(
 ): Promise<void> {
   const ok = await isUsageAdminForEvent(event)
   if (!ok) {
+    await emitAuditEvent('authz.admin.denied', {
+      action: 'usage-admin',
+      outcome: 'deny',
+      target: 'usage-admin',
+    }, event)
     throw createError({
       statusCode: 403,
       statusMessage: 'Forbidden: your account is not on the NUXT_USAGE_ADMINS allowlist.'
     })
   }
+  await emitAuditEvent('authz.admin.granted', {
+    action: 'usage-admin',
+    outcome: 'allow',
+    target: 'usage-admin',
+  }, event)
 }
 
 /**
@@ -157,4 +168,3 @@ export async function getSessionLoginForFilter(
   const user = session?.user as { login?: string } | undefined
   return user?.login || null
 }
-

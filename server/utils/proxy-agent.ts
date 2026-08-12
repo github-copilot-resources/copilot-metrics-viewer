@@ -42,12 +42,25 @@ export function initializeProxyAgent(exitOnError = false): ProxyAgent | null {
     });
 
     setGlobalDispatcher(proxyAgent);
-    console.info(`[proxy-agent] Proxy initialized: ${process.env.HTTP_PROXY}`);
+    console.info(`[proxy-agent] Proxy initialized: ${redactProxyCredentials(process.env.HTTP_PROXY)}`);
 
     return proxyAgent;
   } catch (error) {
     console.error('[proxy-agent] Failed to initialize proxy agent:', error);
     if (exitOnError) process.exit(1);
     throw error;
+  }
+}
+
+function redactProxyCredentials(proxyUrl: string): string {
+  try {
+    const parsed = new URL(proxyUrl);
+    if (parsed.username || parsed.password) {
+      parsed.username = '***';
+      parsed.password = '***';
+    }
+    return parsed.toString();
+  } catch {
+    return proxyUrl.replace(/\/\/([^/@:\s]+):([^/@\s]+)@/, '//***:***@');
   }
 }
