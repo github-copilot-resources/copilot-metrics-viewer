@@ -179,10 +179,11 @@ async function getTokenForInstallation(appId: string, privateKey: string, instal
 /**
  * Return a valid GitHub App installation token for the org/enterprise in the request.
  *
- * Org resolution order:
- *   1. githubOrg query param  2. githubEnt query param
- *   3. NUXT_PUBLIC_GITHUB_ORG config  4. NUXT_PUBLIC_GITHUB_ENT config
- *   5. Single installation auto-select
+ * Resolution respects the request/deployment scope so an enterprise-scoped
+ * request never resolves an organization installation (and vice-versa):
+ *   - enterprise scope: githubEnt query → NUXT_PUBLIC_GITHUB_ENT → githubOrg → NUXT_PUBLIC_GITHUB_ORG
+ *   - organization/unset scope: githubOrg query → NUXT_PUBLIC_GITHUB_ORG → githubEnt → NUXT_PUBLIC_GITHUB_ENT
+ *   - falls back to single-installation auto-select when nothing is specified
  */
 export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Promise<string> {
   const config = useRuntimeConfig(event)
@@ -193,7 +194,19 @@ export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Pr
   }
 
   const query = getQuery(event)
-  const targetOrg = (query.githubOrg || query.githubEnt || config.public.githubOrg || config.public.githubEnt) as string | undefined
+  const rawScope = (query.scope || config.public.scope) as string | undefined
+  const isEnterprise = rawScope === 'enterprise' || rawScope === 'team-enterprise'
+
+  const queryOrg = query.githubOrg as string | undefined
+  const queryEnt = query.githubEnt as string | undefined
+  const configOrg = config.public.githubOrg as string | undefined
+  const configEnt = config.public.githubEnt as string | undefined
+
+  // Prefer the identifier that matches the scope. Only fall back to the other
+  // scope's identifier when the preferred one is entirely absent.
+  const targetOrg = (isEnterprise
+    ? (queryEnt || configEnt || queryOrg || configOrg)
+    : (queryOrg || configOrg || queryEnt || configEnt)) || undefined
 
   const installations = await listAppInstallations(githubAppId, githubAppPrivateKey)
 
