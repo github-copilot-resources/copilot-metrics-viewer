@@ -60,4 +60,16 @@ describe('resolveDisplayName – URL params take priority over mock defaults', (
     });
     expect(result).toBe('Copilot Metrics Viewer | Enterprise : my-real-ent');
   });
+
+  test('uses the enterprise runtime config when both scope values are set', () => {
+    const result = resolveDisplayName({
+      urlOrg: '',
+      urlEnt: '',
+      isMockMode: false,
+      configOrg: 'cody-test-org',
+      configEnt: 'my-real-ent',
+      configScope: 'enterprise',
+    });
+    expect(result).toBe('Copilot Metrics Viewer | Enterprise : my-real-ent');
+  });
 });

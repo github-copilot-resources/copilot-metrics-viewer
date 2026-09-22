@@ -31,14 +31,19 @@ export function resolveDisplayName(opts: ResolveDisplayNameOpts): string {
     effectiveOrg = '';
     effectiveEnt = opts.urlEnt;
   } else {
-    effectiveOrg = opts.isMockMode ? 'octodemo' : (opts.configOrg || '');
-    effectiveEnt = opts.isMockMode ? '' : (opts.configEnt || '');
+    const isEnterprise = opts.configScope === 'enterprise' || (!opts.configOrg && !!opts.configEnt);
+    effectiveOrg = opts.isMockMode ? 'octodemo' : (isEnterprise ? '' : (opts.configOrg || ''));
+    effectiveEnt = opts.isMockMode ? '' : (isEnterprise ? (opts.configEnt || '') : '');
   }
+
+  // Derive scope from the identity actually being shown so the title never
+  // contradicts the org/ent it displays (e.g. URL org param + configScope='enterprise').
+  const effectiveScope = effectiveEnt ? 'enterprise' : 'organization';
 
   const base = getDisplayName({
     githubOrg: effectiveOrg,
     githubEnt: effectiveEnt,
-    scope: opts.configScope || 'organization',
+    scope: effectiveScope,
   });
 
   return opts.teamName ? `${base} | Team : ${opts.teamName}` : base;

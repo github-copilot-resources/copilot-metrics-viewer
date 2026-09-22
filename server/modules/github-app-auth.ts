@@ -15,7 +15,7 @@ const INSTALLATIONS_CACHE_TTL_SECONDS = 300 // re-list installations every 5 min
 export interface AppInstallation {
   id: number
   login: string
-  type: 'Organization' | 'User'
+  type: 'Organization' | 'User' | 'Enterprise'
 }
 
 // Per-installation token cache keyed by installation ID
@@ -95,7 +95,10 @@ export async function listAppInstallations(appId: string, privateKey: string): P
       let page = 1
 
       while (true) {
-        const page_items = await _fetch<Array<{ id: number; account: { login: string; type: string } }>>(
+        const page_items = await _fetch<Array<{
+          id: number
+          account?: { login?: string; slug?: string; type: string } | null
+        }>>(
           `${getGitHubApiBaseUrl()}/app/installations?per_page=100&page=${page}`,
           {
             headers: {
@@ -107,7 +110,10 @@ export async function listAppInstallations(appId: string, privateKey: string): P
           }
         )
         for (const item of page_items) {
-          all.push({ id: item.id, login: item.account.login, type: item.account.type as AppInstallation['type'] })
+          const identifier = item.account?.login ?? item.account?.slug
+          if (typeof identifier === 'string' && identifier) {
+            all.push({ id: item.id, login: identifier, type: item.account!.type as AppInstallation['type'] })
+          }
         }
         if (page_items.length < 100) break
         page++
@@ -193,7 +199,7 @@ export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Pr
 
   let installation: AppInstallation | undefined
   if (targetOrg) {
-    installation = installations.find(i => i.login.toLowerCase() === targetOrg.toLowerCase())
+    installation = installations.find(i => i.login?.toLowerCase() === targetOrg.toLowerCase())
     if (!installation) {
       throw new Error(`GitHub App is not installed on org/enterprise "${targetOrg}". Available: ${installations.map(i => i.login).join(', ')}`)
     }

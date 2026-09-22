@@ -42,9 +42,11 @@ export async function runSync() {
   const githubEnt = process.env.NUXT_PUBLIC_GITHUB_ENT;
   const daysBack = parseInt(process.env.SYNC_DAYS_BACK || '28', 10);
 
-  const identifier = githubOrg || githubEnt || '';
+  const identifier = scope === 'enterprise' ? githubEnt || '' : githubOrg || '';
   if (!identifier) {
-    logger.error('NUXT_PUBLIC_GITHUB_ORG or NUXT_PUBLIC_GITHUB_ENT must be set');
+    logger.error(scope === 'enterprise'
+      ? 'NUXT_PUBLIC_GITHUB_ENT must be set for enterprise sync'
+      : 'NUXT_PUBLIC_GITHUB_ORG must be set for organization sync');
     process.exit(1);
     return; // guard: allows tests to mock process.exit without continuing
   }

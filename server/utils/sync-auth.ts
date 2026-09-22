@@ -56,7 +56,7 @@ function buildAppJwt(appId: string, privateKey: string): string {
 async function getGitHubAppTokenForSync(appId: string, privateKey: string, targetOrg: string): Promise<string> {
   const installations = await listAppInstallations(appId, privateKey);
   
-  const installation = installations.find(i => i.login.toLowerCase() === targetOrg.toLowerCase());
+  const installation = installations.find(i => i.login?.toLowerCase() === targetOrg.toLowerCase());
   if (!installation) {
     throw new Error(
       `GitHub App is not installed on org/enterprise "${targetOrg}". ` +

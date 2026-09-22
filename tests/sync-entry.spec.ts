@@ -179,6 +179,18 @@ describe('sync-entry: happy path', () => {
     expect(identifier).toBe('test-ent');
   }));
 
+  it('uses the enterprise identifier when an organization variable is also set', withEnv({
+    NUXT_GITHUB_TOKEN: 'test-token-abc',
+    NUXT_PUBLIC_SCOPE: 'enterprise',
+    NUXT_PUBLIC_GITHUB_ORG: 'cody-test-org',
+    NUXT_PUBLIC_GITHUB_ENT: 'test-ent',
+  }, async () => {
+    await runSync();
+    const [scope, identifier] = mockSyncBulk.mock.calls[0]!;
+    expect(scope).toBe('enterprise');
+    expect(identifier).toBe('test-ent');
+  }));
+
   it('normalises team-organization scope to organization', withEnv({
     ...BASE_ENV,
     NUXT_PUBLIC_SCOPE: 'team-organization',
@@ -251,6 +263,16 @@ describe('sync-entry: missing env vars', () => {
   it('exits with code 1 when neither ORG nor ENT identifier is set', withEnv({
     NUXT_GITHUB_TOKEN: 'test-token-abc',
     NUXT_PUBLIC_SCOPE: 'organization',
+  }, async () => {
+    await runSync();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockSyncBulk).not.toHaveBeenCalled();
+  }));
+
+  it('exits with code 1 when scope=enterprise but only ORG is set (ENT missing)', withEnv({
+    NUXT_GITHUB_TOKEN: 'test-token-abc',
+    NUXT_PUBLIC_SCOPE: 'enterprise',
+    NUXT_PUBLIC_GITHUB_ORG: 'test-org',
   }, async () => {
     await runSync();
     expect(exitSpy).toHaveBeenCalledWith(1);
