@@ -362,6 +362,21 @@ Requirements:
 NUXT_GITHUB_BILLING_TOKEN=ghp_classic_pat_with_manage_billing_enterprise
 ````
 
+#### NUXT_BILLING_USE_USER_TOKEN
+
+Optional, default `false`. **Alternative to `NUXT_GITHUB_BILLING_TOKEN` for GitHub OAuth deployments.** When no billing PAT is set and this is `true`, the Billing tab and the My Usage spend card call the billing endpoints with the **signed-in user's own GitHub OAuth token**. GitHub then enforces that user's billing permissions (e.g. enterprise owner or billing manager), so no shared PAT is needed.
+
+Requirements:
+- Users sign in with GitHub (`NUXT_PUBLIC_USING_GITHUB_AUTH=true` or `NUXT_PUBLIC_AUTH_PROVIDERS=github`). Other identity providers carry no GitHub token, so billing stays in preview mode for them.
+- Use an **OAuth App** (GitHub App user tokens are not accepted by the billing endpoints) and request the billing scope in addition to the defaults:
+
+````
+NUXT_BILLING_USE_USER_TOKEN=true
+NUXT_OAUTH_GITHUB_CLIENT_SCOPE=read:user,read:enterprise,manage_billing:enterprise
+````
+
+`NUXT_GITHUB_BILLING_TOKEN` still takes precedence when set. Users who signed in before the scope was added must sign out and back in.
+
 #### NUXT_BILLING_ENTERPRISE
 
 Optional. **Set only when your organization's billing is consolidated under a GitHub enterprise.** When set, it forces billing calls to `/enterprises/{slug}/settings/billing/ai_credit/usage` regardless of the dashboard's scope.

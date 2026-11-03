@@ -33,6 +33,7 @@
 import { Options } from '@/model/Options';
 import { requireUsageAdmin } from '../utils/usage-admin';
 import { buildBillingApiUrl } from '../utils/billing-url';
+import { resolveBillingToken, NO_BILLING_CREDENTIAL_MESSAGE } from '../utils/billing-token';
 import {
   decideSource,
   resolveWindow,
@@ -196,11 +197,13 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   // the billing endpoints (the request returns a confusing 401/403). Require
   // an explicit classic PAT instead so the failure surfaces as a clean 503
   // with configuration instructions.
-  const billingToken = ((config.githubBillingToken as string | undefined) || '').trim();
+  // NUXT_GITHUB_BILLING_TOKEN first; optionally the signed-in user's own
+  // GitHub OAuth token (NUXT_BILLING_USE_USER_TOKEN=true).
+  const { token: billingToken } = await resolveBillingToken(event);
   if (!billingToken) {
     throw createError({
       statusCode: 503,
-      statusMessage: 'No billing credential configured — set NUXT_GITHUB_BILLING_TOKEN (classic PAT with manage_billing:enterprise scope; SSO-authorized).',
+      statusMessage: NO_BILLING_CREDENTIAL_MESSAGE,
     });
   }
 
