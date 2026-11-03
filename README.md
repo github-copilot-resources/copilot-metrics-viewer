@@ -377,6 +377,8 @@ NUXT_OAUTH_GITHUB_CLIENT_SCOPE=read:user,read:enterprise,manage_billing:enterpri
 
 `NUXT_GITHUB_BILLING_TOKEN` still takes precedence when set. Users who signed in before the scope was added must sign out and back in.
 
+The Billing tab is shown only to users whose token GitHub actually accepts on the billing endpoint (checked once per user and cached for 10 minutes). Everyone else does not see the tab, and the My Usage spend card is skipped silently. Combine this with a central metrics credential (GitHub App via `NUXT_GITHUB_APP_ID` / `NUXT_GITHUB_APP_PRIVATE_KEY`, or `NUXT_GITHUB_TOKEN`) so users without enterprise rights can still use the metrics tabs.
+
 #### NUXT_BILLING_ENTERPRISE
 
 Optional. **Set only when your organization's billing is consolidated under a GitHub enterprise.** When set, it forces billing calls to `/enterprises/{slug}/settings/billing/ai_credit/usage` regardless of the dashboard's scope.

@@ -1,12 +1,15 @@
 /**
  * GET /api/auth/usage-admin
  *
- * Returns `{ isUsageAdmin, billingEnabled, billingEnterprise }` for the current session.
+ * Returns `{ isUsageAdmin, billingEnabled, billingAccess, billingEnterprise }` for the current session.
  *
  * - `isUsageAdmin`     — whether the caller is on NUXT_USAGE_ADMINS
- * - `billingEnabled`   — whether a billing credential is available for this caller:
- *                        NUXT_GITHUB_BILLING_TOKEN, or (with NUXT_BILLING_USE_USER_TOKEN=true)
- *                        the caller's own GitHub OAuth token. Only the boolean is exposed.
+ * - `billingEnabled`   — whether the deployment has a billing mechanism configured:
+ *                        NUXT_GITHUB_BILLING_TOKEN or NUXT_BILLING_USE_USER_TOKEN=true.
+ *                        Only the boolean is exposed, never a token.
+ * - `billingAccess`    — whether THIS caller will get billing data. Always true with a
+ *                        billing PAT; in user-token mode only when GitHub accepts the
+ *                        caller's own token on the billing endpoint (probed, cached 10 min).
  * - `billingEnterprise` — NUXT_BILLING_ENTERPRISE if set (slug only — non-secret)
  *
  * Implemented as a dedicated endpoint (rather than baked into setUserSession
@@ -22,7 +25,7 @@
  */
 
 import { isUsageAdminForEvent } from '../../utils/usage-admin'
-import { resolveBillingToken } from '../../utils/billing-token'
+import { resolveBillingAccess } from '../../utils/billing-token'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event)
@@ -37,9 +40,9 @@ export default defineEventHandler(async (event) => {
   const envMocked = config.public?.isDataMocked === true
     || String(config.public?.isDataMocked) === 'true'
   if (envMocked) {
-    return { isUsageAdmin: true, billingEnabled: true, billingEnterprise }
+    return { isUsageAdmin: true, billingEnabled: true, billingAccess: true, billingEnterprise }
   }
   const isUsageAdmin = await isUsageAdminForEvent(event)
-  const billingEnabled = (await resolveBillingToken(event)).source !== 'none'
-  return { isUsageAdmin, billingEnabled, billingEnterprise }
+  const { configured: billingEnabled, access: billingAccess } = await resolveBillingAccess(event)
+  return { isUsageAdmin, billingEnabled, billingAccess, billingEnterprise }
 })

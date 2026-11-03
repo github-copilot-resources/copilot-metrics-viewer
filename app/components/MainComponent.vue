@@ -612,12 +612,16 @@ export default defineNuxtComponent({
     //     feature). This is a discoverability aid for operators of the
     //     dashboard who otherwise wouldn't know the tab exists.
     //   - billingEnabled === true   → admin-only (existing behavior); the tab
-    //     renders the real BillingCreditsViewer.
+    //     renders the real BillingCreditsViewer. With NUXT_BILLING_USE_USER_TOKEN
+    //     it additionally requires billingAccess (GitHub accepts the caller's token).
     try {
-      const probe = await $fetch<{ isUsageAdmin: boolean; billingEnabled?: boolean }>('/api/auth/usage-admin');
+      const probe = await $fetch<{ isUsageAdmin: boolean; billingEnabled?: boolean; billingAccess?: boolean }>('/api/auth/usage-admin');
       this.billingEnabled = probe?.billingEnabled !== false;
       this.isUsageAdmin = !!probe?.isUsageAdmin;
-      const shouldShowBilling = !this.billingEnabled || !!probe?.isUsageAdmin;
+      // billingAccess === false: billing is configured but this caller can't
+      // read it (user-token mode without GitHub billing rights) → hide the tab.
+      const shouldShowBilling = !this.billingEnabled
+        || (!!probe?.isUsageAdmin && probe?.billingAccess !== false);
       if (shouldShowBilling && !this.tabItems.includes('billing')) {
         // Insert just before 'api response' (or at the end if that tab is hidden)
         const apiIdx = this.tabItems.indexOf('api response');

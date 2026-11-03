@@ -39,7 +39,7 @@ import {
   resolveWindow,
 } from '../services/billing-credit-reader';
 import { buildBillingApiUrl } from '../utils/billing-url';
-import { resolveBillingToken } from '../utils/billing-token';
+import { resolveBillingToken, BILLING_DENIED_STATUSES } from '../utils/billing-token';
 import { aggregateBillingSpend, type BillingUsageItem } from '../utils/billing-spend-aggregator';
 import { isUsageAdminForEvent } from '../utils/usage-admin';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -341,7 +341,7 @@ async function fetchSelfSpend(
   options: Options
 ): Promise<{ data: MyUsageSpend } | { warning: string } | null> {
   const config = useRuntimeConfig(event);
-  const { token: billingToken } = await resolveBillingToken(event);
+  const { token: billingToken, source: billingSource } = await resolveBillingToken(event);
   const billingEnterprise = ((config.billingEnterprise as string | undefined) || '').trim();
 
   // ── DB-first path when a custom date range is set ────────────────────────
@@ -437,6 +437,9 @@ async function fetchSelfSpend(
     } : {};
     const status = err.statusCode || 0;
     const msg = err.data?.message || err.message || String(error);
+    // User-token mode: most users have no billing rights — GitHub's denial is
+    // expected, not an error worth showing. Skip the spend card silently.
+    if (billingSource === 'user' && BILLING_DENIED_STATUSES.has(status)) return null;
     // Surface as warning rather than failing the entire my-usage call.
     return { warning: `Billing fetch failed (${status}): ${msg}` };
   }
