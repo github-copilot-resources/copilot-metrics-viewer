@@ -15,7 +15,7 @@ const INSTALLATIONS_CACHE_TTL_SECONDS = 300 // re-list installations every 5 min
 export interface AppInstallation {
   id: number
   login: string
-  type: 'Organization' | 'User'
+  type: 'Organization' | 'User' | 'Enterprise'
 }
 
 // Per-installation token cache keyed by installation ID
@@ -95,7 +95,7 @@ export async function listAppInstallations(appId: string, privateKey: string): P
       let page = 1
 
       while (true) {
-        const page_items = await _fetch<Array<{ id: number; account: { login: string; type: string } }>>(
+        const page_items = await _fetch<Array<{ id: number; account: { login?: string; slug?: string; type?: string } | null; target_type?: string }>>(
           `${getGitHubApiBaseUrl()}/app/installations?per_page=100&page=${page}`,
           {
             headers: {
@@ -107,7 +107,12 @@ export async function listAppInstallations(appId: string, privateKey: string): P
           }
         )
         for (const item of page_items) {
-          all.push({ id: item.id, login: item.account.login, type: item.account.type as AppInstallation['type'] })
+          // Enterprise installations carry `account.slug` (no `login`) — match
+          // them by slug so NUXT_PUBLIC_GITHUB_ENT finds the installation.
+          const login = item.account?.login ?? item.account?.slug ?? ''
+          const type = item.account?.type ?? item.target_type ?? ''
+          if (!login) continue
+          all.push({ id: item.id, login, type: type as AppInstallation['type'] })
         }
         if (page_items.length < 100) break
         page++
