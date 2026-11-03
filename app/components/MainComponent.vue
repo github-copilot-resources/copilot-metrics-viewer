@@ -192,6 +192,18 @@
     >
       <div class="font-weight-medium">{{ apiError }}</div>
     </v-alert>
+    <!-- Seats errors are non-fatal: metrics stay visible (e.g. a GitHub App
+         with only the Enterprise Copilot metrics permission cannot read seats). -->
+    <v-alert
+      v-if="seatsWarning && !apiError && !signInRequired"
+      type="warning"
+      variant="tonal"
+      closable
+      class="mb-4"
+      @click:close="seatsWarning = undefined"
+    >
+      <div class="font-weight-medium">Seat data unavailable — {{ seatsWarning }}</div>
+    </v-alert>
     <AuthState>
       <template #default="{ loggedIn }">
         <div v-show="signInRequired" class="github-login-container">
@@ -454,31 +466,31 @@ export default defineNuxtComponent({
     },
     processError(error: H3Error) {
       console.error(error || 'No data returned from API');
+      const message = this.describeError(error);
+      if (message) this.apiError = message;
+    },
+    /** Human-readable message for an API error, or undefined when there is no status code. */
+    describeError(error: H3Error): string | undefined {
       // Check the status code of the error response
       if (error && error.statusCode) {
         switch (error.statusCode) {
           case 401:
-            this.apiError = '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
-            break;
+            return '401 Unauthorized access returned by GitHub API - check if your token in the .env (for local runs). Check PAT token and GitHub permissions.';
           case 404:
-            this.apiError = `404 Not Found - is the ${this.config?.public?.scope || ''} org:"${this.config?.public?.githubOrg || ''}" ent:"${this.config?.public?.githubEnt || ''}" team:"${this.config?.public?.githubTeam}" correct? ${error.message}`;
-            break;
+            return `404 Not Found - is the ${this.config?.public?.scope || ''} org:"${this.config?.public?.githubOrg || ''}" ent:"${this.config?.public?.githubEnt || ''}" team:"${this.config?.public?.githubTeam}" correct? ${error.message}`;
           case 422:
-            this.apiError = `422 Unprocessable Entity - Is the Copilot Metrics API enabled for the Org/Ent? When changing filters, try adjusting the "from" date.  ${error.message}`;
-            break;
+            return `422 Unprocessable Entity - Is the Copilot Metrics API enabled for the Org/Ent? When changing filters, try adjusting the "from" date.  ${error.message}`;
           case 500:
-            this.apiError = `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
-            break;
+            return `500 Internal Server Error - most likely a bug in the app. Error: ${error.message}`;
           case 403: {
             const ghMessage = (error as any)?.data?.message || error.message || '';
-            this.apiError = `403 Forbidden from GitHub: ${ghMessage}. Common causes: (1) classic PAT missing 'read:org' scope (required for seats and per-user metrics), (2) fine-grained PAT not supported for this endpoint, (3) account lacks org owner / billing manager / Copilot admin role, or (4) PAT not SSO-authorized for this org.`;
-            break;
+            return `403 Forbidden from GitHub: ${ghMessage}. Common causes: (1) classic PAT missing 'read:org' scope (required for seats and per-user metrics), (2) fine-grained PAT not supported for this endpoint, (3) account lacks org owner / billing manager / Copilot admin role, or (4) PAT not SSO-authorized for this org.`;
           }
           default:
-            this.apiError = `${error.statusCode} Error: ${error.message}`;
-            break;
+            return `${error.statusCode} Error: ${error.message}`;
         }
       }
+      return undefined;
     },
     /** Handle page navigation from SeatsAnalysisViewer paginator */
     async handleSeatsPageChange(page: number) {
@@ -536,6 +548,7 @@ export default defineNuxtComponent({
       userMetrics: [] as UserTotals[],
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
+      seatsWarning: undefined as string | undefined,
       announcementDismissed: false,
       showDateRange: false,
       showAdminPanel: false,
@@ -660,7 +673,10 @@ export default defineNuxtComponent({
         await executeSeats();
 
         if (seatsError.value) {
-          this.processError(seatsError.value as H3Error);
+          // Non-fatal: keep the metrics dashboard visible, show a warning instead.
+          console.warn('Seats fetch failed:', seatsError.value);
+          this.seatsWarning = this.describeError(seatsError.value as H3Error)
+            || String((seatsError.value as H3Error)?.message || seatsError.value);
         } else {
           const resp = seatsData.value as SeatsApiResponse | null;
           if (resp) {
