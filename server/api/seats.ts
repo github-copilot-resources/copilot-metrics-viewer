@@ -11,6 +11,7 @@ import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
 import { isUsageAdminForEvent } from '../utils/usage-admin';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
 import { deduplicateSeats, paginateSeats, normalizeTeamMember } from '../utils/seats-dedup';
+import { createSeatsFetcher, seatsFetchError } from '../utils/seats-token';
 import type { H3Event, EventHandlerRequest } from 'h3';
 
 /** UI page size cap — GitHub API max is 100, so 300 = 3 GitHub calls per page. */
@@ -263,6 +264,10 @@ export default defineEventHandler(async (event) => {
   // window — silently returning [] for the caller's "own data" view.
   const isOrgOnly = options.scope === 'organization' && !options.githubTeam && callerIsAdmin;
 
+  // Central credential first; with NUXT_SEATS_USE_USER_TOKEN=true a GitHub
+  // denial is retried once with the caller's own OAuth token.
+  const { fetchSeats } = await createSeatsFetcher(event, event.context.headers);
+
   if (isOrgOnly) {
     // Determine which GitHub pages cover the requested UI page window
     const offsetStart    = (uiPage - 1) * uiPerPage;
@@ -274,16 +279,11 @@ export default defineEventHandler(async (event) => {
     let firstResponse: { seats: unknown[]; total_seats: number };
     logger.info(`Fetching GitHub page ${ghPageStart} of seats for org scope (UI page ${uiPage})`);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      firstResponse = await ($fetch as any)(apiUrl, {
-        headers: event.context.headers,
-        params: { per_page: GITHUB_PER_PAGE, page: ghPageStart }
-      }) as { seats: unknown[]; total_seats: number };
+      firstResponse = await fetchSeats<{ seats: unknown[]; total_seats: number }>(
+        apiUrl, { per_page: GITHUB_PER_PAGE, page: ghPageStart });
     } catch (error: unknown) {
       logger.error('Error fetching seats data:', error);
-      const status = typeof error === 'object' && error && 'statusCode' in error
-        ? (error as { statusCode?: number }).statusCode : 500;
-      throw createError({ statusCode: status || 500, statusMessage: 'Error fetching seats data. Error: ' + String(error) });
+      throw seatsFetchError(error, event);
     }
 
     const totalSeats = firstResponse.total_seats;
@@ -294,10 +294,8 @@ export default defineEventHandler(async (event) => {
     let fetched: Seat[] = firstResponse.seats.map((item: unknown) => new Seat(item));
 
     for (let p = ghPageStart + 1; p <= safeGhPageEnd; p++) {
-      const resp = await ($fetch as any)(apiUrl, {
-        headers: event.context.headers,
-        params: { per_page: GITHUB_PER_PAGE, page: p }
-      }) as { seats: unknown[]; total_seats: number };
+      const resp = await fetchSeats<{ seats: unknown[]; total_seats: number }>(
+        apiUrl, { per_page: GITHUB_PER_PAGE, page: p });
       fetched = fetched.concat(resp.seats.map((item: unknown) => new Seat(item)));
     }
 
@@ -320,25 +318,19 @@ export default defineEventHandler(async (event) => {
   let firstResponse: { seats: unknown[]; total_seats: number };
   logger.info(`Fetching 1st page of seats data from ${apiUrl}`);
   try {
-    firstResponse = await ($fetch as any)(apiUrl, {
-      headers: event.context.headers,
-      params: { per_page: GITHUB_PER_PAGE, page: 1 }
-    }) as { seats: unknown[]; total_seats: number };
+    firstResponse = await fetchSeats<{ seats: unknown[]; total_seats: number }>(
+      apiUrl, { per_page: GITHUB_PER_PAGE, page: 1 });
   } catch (error: unknown) {
     logger.error('Error fetching seats data:', error);
-    const status = typeof error === 'object' && error && 'statusCode' in error
-      ? (error as { statusCode?: number }).statusCode : 500;
-    throw createError({ statusCode: status || 500, statusMessage: 'Error fetching seats data. Error: ' + String(error) });
+    throw seatsFetchError(error, event);
   }
 
   let seatsData = firstResponse.seats.map((item: unknown) => new Seat(item));
   const totalGhPages = Math.ceil(firstResponse.total_seats / GITHUB_PER_PAGE);
 
   for (let p = 2; p <= totalGhPages; p++) {
-    const resp = await ($fetch as any)(apiUrl, {
-      headers: event.context.headers,
-      params: { per_page: GITHUB_PER_PAGE, page: p }
-    }) as { seats: unknown[]; total_seats: number };
+    const resp = await fetchSeats<{ seats: unknown[]; total_seats: number }>(
+      apiUrl, { per_page: GITHUB_PER_PAGE, page: p });
     seatsData = seatsData.concat(resp.seats.map((item: unknown) => new Seat(item)));
   }
 

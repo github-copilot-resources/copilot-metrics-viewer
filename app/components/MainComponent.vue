@@ -673,10 +673,19 @@ export default defineNuxtComponent({
         await executeSeats();
 
         if (seatsError.value) {
-          // Non-fatal: keep the metrics dashboard visible, show a warning instead.
+          // Non-fatal: keep the metrics dashboard visible.
           console.warn('Seats fetch failed:', seatsError.value);
-          this.seatsWarning = this.describeError(seatsError.value as H3Error)
-            || String((seatsError.value as H3Error)?.message || seatsError.value);
+          const seatsErr = seatsError.value as H3Error & { data?: { reason?: string; data?: { reason?: string } } };
+          const reason = seatsErr?.data?.reason ?? seatsErr?.data?.data?.reason;
+          if (reason === 'seats-no-access') {
+            // NUXT_SEATS_USE_USER_TOKEN: GitHub denied both the central credential
+            // and this caller's own token — hide the tab instead of warning.
+            this.tabItems = this.tabItems.filter(t => t !== 'seat analysis');
+            if (this.tab === 'seat analysis') this.tab = this.tabItems[0] ?? '';
+          } else {
+            this.seatsWarning = this.describeError(seatsErr)
+              || String(seatsErr?.message || seatsError.value);
+          }
         } else {
           const resp = seatsData.value as SeatsApiResponse | null;
           if (resp) {

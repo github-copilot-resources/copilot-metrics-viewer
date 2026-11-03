@@ -379,6 +379,16 @@ NUXT_OAUTH_GITHUB_CLIENT_SCOPE=read:user,read:enterprise,manage_billing:enterpri
 
 The Billing tab is shown only to users whose token GitHub actually accepts on the billing endpoint (checked once per user and cached for 10 minutes). Everyone else does not see the tab, and the My Usage spend card is skipped silently. Combine this with a central metrics credential (GitHub App via `NUXT_GITHUB_APP_ID` / `NUXT_GITHUB_APP_PRIVATE_KEY`, or `NUXT_GITHUB_TOKEN`) so users without enterprise rights can still use the metrics tabs.
 
+#### NUXT_SEATS_USE_USER_TOKEN
+
+Optional, default `false`. GitHub's enterprise seats endpoint (`/enterprises/{enterprise}/copilot/billing/seats`) does **not** accept GitHub App installation tokens — there is no enterprise-level seats permission. With an enterprise GitHub App as the central credential, the Seat Analysis tab therefore fails with 403.
+
+When `true`, a 401/403/404 from the central credential (GitHub App or `NUXT_GITHUB_TOKEN`) is retried once with the **signed-in user's own GitHub OAuth token**. Enterprise owners and billing managers get the Seat Analysis tab; for everyone else GitHub denies the request and the tab is hidden. Requires GitHub sign-in with the `read:enterprise` scope (see `NUXT_OAUTH_GITHUB_CLIENT_SCOPE`).
+
+````
+NUXT_SEATS_USE_USER_TOKEN=true
+````
+
 #### NUXT_BILLING_ENTERPRISE
 
 Optional. **Set only when your organization's billing is consolidated under a GitHub enterprise.** When set, it forces billing calls to `/enterprises/{slug}/settings/billing/ai_credit/usage` regardless of the dashboard's scope.
