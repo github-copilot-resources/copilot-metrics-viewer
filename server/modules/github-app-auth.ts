@@ -10,6 +10,10 @@ import { $fetch as _ofetch } from 'ofetch'
 const _fetch: typeof _ofetch = typeof $fetch !== 'undefined' ? ($fetch as typeof _ofetch) : _ofetch
 
 const TOKEN_EXPIRY_BUFFER_SECONDS = 300 // refresh 5 min before expiry
+// GitHub rejects App JWTs with exp > 10 min ahead of its clock; backdate iat
+// and shorten exp so up to 60s local clock drift is tolerated.
+const JWT_CLOCK_DRIFT_SECONDS = 60
+const JWT_MAX_LIFETIME_SECONDS = 600
 const INSTALLATIONS_CACHE_TTL_SECONDS = 300 // re-list installations every 5 min
 
 export interface AppInstallation {
@@ -61,7 +65,11 @@ function buildAppJwt(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000)
   console.log('[github-app-auth] Building App JWT')
   try {
-    return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
+    return signJWT({
+      iss: appId,
+      iat: now - JWT_CLOCK_DRIFT_SECONDS,
+      exp: now + JWT_MAX_LIFETIME_SECONDS - JWT_CLOCK_DRIFT_SECONDS
+    }, privateKey)
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     throw new Error(`Failed to sign GitHub App JWT: ${msg}. Check NUXT_GITHUB_APP_PRIVATE_KEY is a valid PEM-encoded RSA private key.`)

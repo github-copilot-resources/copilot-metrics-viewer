@@ -35,4 +35,25 @@ describe('listAppInstallations', () => {
     ]);
     expect(fetchMock.mock.calls[0]![1].headers.Authorization).toMatch(/^Bearer /);
   });
+
+  it('signs a JWT that tolerates up to 60s clock drift against GitHub', async () => {
+    const fetchMock = (globalThis as any).$fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValueOnce([]);
+    vi.useFakeTimers();
+    // Jump past the installations cache TTL so a fresh JWT is signed.
+    vi.setSystemTime(Date.now() + 3600_000);
+    try {
+      await listAppInstallations('12345', pem);
+
+      const jwt = (fetchMock.mock.calls[0]![1].headers.Authorization as string).replace(/^Bearer /, '');
+      const payload = JSON.parse(Buffer.from(jwt.split('.')[1]!, 'base64url').toString());
+      const now = Math.floor(Date.now() / 1000);
+      // GitHub rejects exp > 10 min after its clock and iat in its future.
+      expect(payload.exp - now + 60).toBeLessThanOrEqual(600);
+      expect(now - payload.iat).toBeGreaterThanOrEqual(60);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
