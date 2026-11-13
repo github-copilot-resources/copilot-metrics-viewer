@@ -126,15 +126,18 @@
                     Accepted lines
                     <v-tooltip location="top" max-width="280">
                       <template #activator="{ props: tipProps }">
-                        <v-icon
+                        <v-btn
                           v-bind="tipProps"
                           data-testid="my-usage-accepted-lines-tooltip"
-                          size="14"
+                          aria-label="About accepted lines"
+                          icon
+                          size="x-small"
+                          variant="text"
                           class="ml-1"
                           color="deep-purple"
                         >
-                          mdi-information-outline
-                        </v-icon>
+                          <v-icon size="14">mdi-information-outline</v-icon>
+                        </v-btn>
                       </template>
                       <span>Lines added from accepted completions and agent edits. Chat / ask-only usage adds no lines, so this can be 0 even with many interactions.</span>
                     </v-tooltip>
