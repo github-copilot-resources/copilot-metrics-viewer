@@ -1,9 +1,7 @@
 <template>
   <div>
     <v-toolbar color="transparent" elevation="0" class="app-toolbar">
-      <v-btn icon aria-label="GitHub Copilot Metrics Viewer home">
-        <v-icon>mdi-github</v-icon>
-      </v-btn>
+      <v-icon class="mx-4" aria-hidden="true">mdi-github</v-icon>
 
       <v-toolbar-title class="toolbar-title">{{ displayName }}</v-toolbar-title>
       <h2 class="error-message"> {{ mockedDataMessage }} </h2>

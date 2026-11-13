@@ -1,5 +1,7 @@
-// @vitest-environment node
+// @vitest-environment nuxt
 import { describe, expect, it } from 'vitest';
+import { mountSuspended } from '@nuxt/test-utils/runtime';
+import { UserMetricsViewer } from '#components';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -45,6 +47,41 @@ function findIconOnlyButtonsWithoutAriaLabel(source: string): string[] {
 }
 
 describe('component accessibility', () => {
+  it('renders the activity filter as a named native toggle and exposes layout selection', async () => {
+    const wrapper = await mountSuspended(UserMetricsViewer, {
+      props: {
+        userMetrics: [{
+          login: 'synthetic-user', user_id: 100, total_active_days: 14,
+          user_initiated_interaction_count: 10, code_generation_activity_count: 10,
+          code_acceptance_activity_count: 5, loc_suggested_to_add_sum: 20,
+          loc_suggested_to_delete_sum: 0, loc_added_sum: 10, loc_deleted_sum: 0,
+        }],
+      },
+      global: {
+        stubs: {
+          VMain: { template: '<div><slot /></div>' },
+          Bar: true, Line: true, Doughnut: true,
+        },
+      },
+    });
+    try {
+      const chip = wrapper.get('button[aria-label^="Activity: High for synthetic-user"]');
+      expect(chip.text()).toContain('(High)');
+      expect(chip.attributes('aria-pressed')).toBe('false');
+      await chip.trigger('click');
+      expect(chip.attributes('aria-pressed')).toBe('true');
+      expect(wrapper.text()).toContain('synthetic-user — User Insights');
+      await chip.trigger('click');
+      expect(chip.attributes('aria-pressed')).toBe('false');
+      const single = wrapper.get('button[aria-label="Single column layout"]');
+      await single.trigger('click');
+      expect(single.attributes('aria-pressed')).toBe('true');
+      expect(wrapper.get('button[aria-label="Two column layout"]').attributes('aria-pressed')).toBe('false');
+    } finally {
+      wrapper.unmount();
+    }
+  });
+
   it('gives every icon-only v-btn an aria-label', () => {
     const failures = readdirSync(componentsDir)
       .filter(file => file.endsWith('.vue'))

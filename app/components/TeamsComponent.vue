@@ -238,9 +238,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-            <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-            <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+            <v-btn value="1" size="small" title="Single column" aria-label="Single column layout" :aria-pressed="chartColumns === '1'"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout" :aria-pressed="chartColumns === '2'"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width" aria-label="Full width layout" :aria-pressed="chartColumns === 'full'"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
 
@@ -452,9 +452,9 @@
       <v-container :fluid="chartColumns === 'full'" :class="['elevation-2 mt-1 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
         <div class="d-flex justify-end mb-3">
           <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-            <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-            <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-            <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+            <v-btn value="1" size="small" title="Single column" aria-label="Single column layout" :aria-pressed="chartColumns === '1'"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+            <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout" :aria-pressed="chartColumns === '2'"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+            <v-btn value="full" size="small" title="Full width" aria-label="Full width layout" :aria-pressed="chartColumns === 'full'"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
           </v-btn-toggle>
         </div>
 

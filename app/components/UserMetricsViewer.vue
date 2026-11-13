@@ -134,9 +134,9 @@
     <v-container v-if="userMetrics.length > 0" :fluid="chartColumns === 'full'" :class="['elevation-2 mt-2 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
       <div class="d-flex justify-end mb-2">
         <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-          <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-          <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-          <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+          <v-btn value="1" size="small" title="Single column" aria-label="Single column layout" :aria-pressed="chartColumns === '1'"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+          <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout" :aria-pressed="chartColumns === '2'"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+          <v-btn value="full" size="small" title="Full width" aria-label="Full width layout" :aria-pressed="chartColumns === 'full'"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
         </v-btn-toggle>
       </div>
       <v-row class="mt-0 mb-2">
@@ -260,6 +260,9 @@
             <tr>
               <td>
                 <v-chip
+                  tag="button"
+                  type="button"
+                  :aria-pressed="selectedUserLogin === item.login"
                   :color="selectedUserLogin === item.login ? 'indigo' : getActivityColor(item.total_active_days)"
                   :variant="selectedUserLogin === item.login ? 'elevated' : 'flat'"
                   size="small"
