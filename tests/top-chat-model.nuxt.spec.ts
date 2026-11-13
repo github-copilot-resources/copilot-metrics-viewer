@@ -1,6 +1,7 @@
 // @vitest-environment nuxt
 import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import type { VueWrapper } from '@vue/test-utils'
 import { ref } from 'vue'
 import MetricsViewer from '../app/components/MetricsViewer.vue'
 import MyUsageViewer from '../app/components/MyUsageViewer.vue'
@@ -75,8 +76,15 @@ const userTotals = (totals_by_model_feature: ReturnType<typeof modelFeature>[]):
 })
 
 describe('top chat model selection', () => {
+  const wrappers: VueWrapper[] = []
+  const global = { stubs: { VMain: { template: '<main><slot /></main>' } } }
+
   beforeEach(() => {
     mockUseFetch.mockReset()
+  })
+
+  afterEach(() => {
+    wrappers.splice(0).forEach(wrapper => wrapper.unmount())
   })
 
   it('MetricsViewer skips synthetic others bucket when picking the most used chat model', async () => {
@@ -97,6 +105,7 @@ describe('top chat model selection', () => {
         },
       },
     })
+    wrappers.push(wrapper)
 
     expect(wrapper.text()).toContain('gpt-4.1')
     expect(wrapper.text()).not.toContain('others')
@@ -123,8 +132,85 @@ describe('top chat model selection', () => {
         },
       },
     })
+    wrappers.push(wrapper)
 
     expect(wrapper.text()).toContain('claude-3.7-sonnet')
     expect(wrapper.text()).not.toContain('Unknown')
+  })
+
+  it.each(['others', 'OTHERS', 'Unknown', 'uNkNoWn', ''])(
+    'both viewers ignore the %j bucket without changing source metrics',
+    async bucket => {
+      const models = [
+        modelFeature('claude-3.7-sonnet', 3),
+        modelFeature(bucket, 100),
+        modelFeature('gpt-4.1', 25),
+      ]
+      const report = [reportDay(models)]
+      const totals = userTotals(models)
+      const snapshot = JSON.parse(JSON.stringify({ report, totals }))
+      mockUseFetch.mockResolvedValue({
+        data: ref({ user: { login: 'octocat' }, totals, dayRecords: [] }),
+        pending: ref(false),
+        error: ref(null),
+      })
+
+      const metrics = await mountSuspended(MetricsViewer, {
+        props: { metrics: [], reportData: report },
+        global,
+      })
+      wrappers.push(metrics)
+      const usage = await mountSuspended(MyUsageViewer, { global })
+      wrappers.push(usage)
+
+      const modelTile = metrics.findAll('.tiles-text')
+        .find(tile => tile.text().includes('Most used chat model'))
+      expect(modelTile?.find('.kpi-value').text()).toBe('gpt-4.1')
+      expect(usage.find('strong').text()).toBe('gpt-4.1')
+      expect({ report, totals }).toEqual(snapshot)
+    },
+  )
+
+  it.each([
+    { name: 'only synthetic buckets', models: [modelFeature('others', 100), modelFeature('Unknown', 90), modelFeature('', 80)] },
+    { name: 'no model rows', models: [] },
+  ])('both viewers safely handle $name', async ({ models }) => {
+    mockUseFetch.mockResolvedValue({
+      data: ref({ user: { login: 'octocat' }, totals: userTotals(models), dayRecords: [] }),
+      pending: ref(false),
+      error: ref(null),
+    })
+    const metrics = await mountSuspended(MetricsViewer, {
+      props: { metrics: [], reportData: [reportDay(models)] },
+      global,
+    })
+    wrappers.push(metrics)
+    const usage = await mountSuspended(MyUsageViewer, { global })
+    wrappers.push(usage)
+
+    const modelTile = metrics.findAll('.tiles-text')
+      .find(tile => tile.text().includes('Most used chat model'))
+    expect(modelTile?.find('.kpi-value').text()).toBe('—')
+    expect(usage.text()).not.toContain('Top model')
+    expect(usage.text()).toContain('Interactions')
+  })
+
+  it('MetricsViewer aggregates named models across days and chat modes, excluding completions', async () => {
+    const completion = { ...modelFeature('completion-only', 1000), feature: 'code_completion' }
+    const report = [
+      reportDay([modelFeature('others', 100), modelFeature('gpt-4.1', 20), modelFeature('claude-3.7-sonnet', 30), completion]),
+      { ...reportDay([{ ...modelFeature('gpt-4.1', 20), feature: 'chat_panel_agent_mode' }]), day: '2026-07-02' },
+    ]
+    const snapshot = JSON.parse(JSON.stringify(report))
+    const metrics = await mountSuspended(MetricsViewer, {
+      props: { metrics: [], reportData: report },
+      global,
+    })
+    wrappers.push(metrics)
+
+    const modelTile = metrics.findAll('.tiles-text')
+      .find(tile => tile.text().includes('Most used chat model'))
+    expect(modelTile?.find('.kpi-value').text()).toBe('gpt-4.1')
+    expect(report).toEqual(snapshot)
   })
 })
