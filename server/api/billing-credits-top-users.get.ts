@@ -4,6 +4,8 @@
  * Returns a global top-N per-user billing ranking from the local
  * billing_credit_usage table. This endpoint is intentionally DB-only in real
  * mode because GitHub's live AI-credit billing JSON cannot rank all users.
+ * Invalid windows return 400; unavailable DB coverage returns 409 without a
+ * live or per-user fallback.
  */
 
 import { Options } from '@/model/Options';
@@ -12,6 +14,7 @@ import {
   aggregateTopBillingUsers,
   decideSource,
   resolveWindow,
+  type BillingWindow,
   type TopBillingUsersResponse,
 } from '../services/billing-credit-reader';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -33,13 +36,21 @@ export default defineEventHandler(async (event): Promise<TopBillingUsersResponse
   const limit = parseLimit(query.limit);
   const metric = parseMetric(query.metric);
 
-  const window = resolveWindow({
-    year: query.year ? Number(query.year) : undefined,
-    month: query.month ? Number(query.month) : undefined,
-    day: query.day ? Number(query.day) : undefined,
-    since: query.since ? String(query.since) : undefined,
-    until: query.until ? String(query.until) : undefined,
-  });
+  let window: BillingWindow;
+  try {
+    window = resolveWindow({
+      year: query.year ? Number(query.year) : undefined,
+      month: query.month ? Number(query.month) : undefined,
+      day: query.day ? Number(query.day) : undefined,
+      since: query.since ? String(query.since) : undefined,
+      until: query.until ? String(query.until) : undefined,
+    });
+  } catch (error) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: error instanceof Error ? error.message : 'Invalid billing window',
+    });
+  }
 
   if (options.isDataMocked) {
     return topUsersFromMock(mockBilling as BillingCreditsResponse, limit, metric);

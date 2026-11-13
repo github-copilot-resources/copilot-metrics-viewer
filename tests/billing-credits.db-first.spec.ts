@@ -32,7 +32,7 @@ vi.hoisted(() => {
   (globalThis as any).$fetch = vi.fn();
 });
 
-function setQuery(q: Record<string, string>) { (globalThis as any).__test_query = q; }
+function setQuery(q: Record<string, string | undefined>) { (globalThis as any).__test_query = q; }
 function setConfig(c: Record<string, unknown>) { (globalThis as any).__test_config = c; }
 function getHeader(name: string): string | undefined {
   return ((globalThis as any).__test_response_headers || {})[name];
@@ -54,28 +54,21 @@ const mockDecide = vi.fn();
 const mockAggregate = vi.fn();
 const mockAggregateByUser = vi.fn();
 const mockAggregateTopUsers = vi.fn();
-vi.mock('../server/services/billing-credit-reader', () => ({
+vi.mock('../server/storage/db', () => ({
+  getPool: vi.fn(),
+}));
+vi.mock('../server/services/billing-credit-reader', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../server/services/billing-credit-reader')>(),
   decideSource: (...a: any[]) => mockDecide(...a),
   aggregateForBilling: (...a: any[]) => mockAggregate(...a),
   aggregateForBillingByUser: (...a: any[]) => mockAggregateByUser(...a),
   aggregateTopBillingUsers: (...a: any[]) => mockAggregateTopUsers(...a),
-  resolveWindow: (input: { year?: number; month?: number; day?: number; since?: string; until?: string }) => {
-    if (input.since && input.until) {
-      return { startDate: input.since, endDate: input.until, timePeriod: {} };
-    }
-    const y = input.year ?? 2026;
-    const m = input.month ?? 6;
-    return {
-      startDate: `${y}-${String(m).padStart(2, '0')}-01`,
-      endDate: `${y}-${String(m).padStart(2, '0')}-30`,
-      timePeriod: { year: y, month: m },
-    };
-  },
 }));
 
 import billingHandler from '../server/api/billing-credits.get';
 import byUserHandler from '../server/api/billing-credits-by-user.get';
 import topUsersHandler from '../server/api/billing-credits-top-users.get';
+import { requireUsageAdmin } from '../server/utils/usage-admin';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -269,6 +262,59 @@ describe('GET /api/billing-credits-by-user — DB-first branch', () => {
 });
 
 describe('GET /api/billing-credits-top-users — DB-only top-N branch', () => {
+  it.each([
+    { year: '2026', month: '13' },
+    { since: '2026-06-01' },
+    { since: '2026-06-30', until: '2026-06-01' },
+  ])('returns 400 for invalid billing windows: %j', async (window) => {
+    setQuery({ scope: 'enterprise', githubEnt: 'ent-x', ...window });
+
+    await expect(topUsersHandler({} as Parameters<typeof topUsersHandler>[0])).rejects.toMatchObject({ statusCode: 400 });
+    expect(mockDecide).not.toHaveBeenCalled();
+    expect(mockAggregateTopUsers).not.toHaveBeenCalled();
+  });
+
+  it('denies non-admins before consulting billing storage, without a per-user fallback', async () => {
+    setQuery({ scope: 'enterprise', githubEnt: 'ent-x' });
+    vi.mocked(requireUsageAdmin).mockRejectedValueOnce(Object.assign(new Error('Forbidden'), { statusCode: 403 }));
+
+    await expect(topUsersHandler({} as Parameters<typeof topUsersHandler>[0])).rejects.toMatchObject({ statusCode: 403 });
+    expect(mockDecide).not.toHaveBeenCalled();
+    expect(mockAggregateTopUsers).not.toHaveBeenCalled();
+    expect(mockAggregateByUser).not.toHaveBeenCalled();
+    expect(globalThis.$fetch).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { limit: '10000', metric: 'grossAmount', expectedLimit: 50, expectedMetric: 'grossAmount' },
+    { limit: '-3', metric: 'credits', expectedLimit: 1, expectedMetric: 'credits' },
+    { limit: 'not-a-number', metric: 'unsafe SQL', expectedLimit: 10, expectedMetric: 'netAmount' },
+  ])('bounds ranking options and forwards the selected range: %j', async ({ limit, metric, expectedLimit, expectedMetric }) => {
+    setConfig({ billingEnterprise: '', githubBillingToken: '' });
+    setQuery({
+      scope: 'enterprise', githubEnt: 'ent-x', since: '2026-06-02', until: '2026-06-14',
+      limit, metric, model: 'model-a', sku: 'sku-a',
+    });
+    mockDecide.mockResolvedValueOnce({ source: 'db', reason: 'covered', lastIngestAt: null, jobId: 10 });
+    mockAggregateTopUsers.mockResolvedValueOnce({ timePeriod: {}, enterprise: 'ent-x', users: [] });
+
+    expect((await topUsersHandler({} as Parameters<typeof topUsersHandler>[0])).users).toEqual([]);
+    expect(mockDecide).toHaveBeenCalledWith('ent-x', '2026-06-02', '2026-06-14');
+    expect(mockAggregateTopUsers).toHaveBeenCalledWith('ent-x', {
+      startDate: '2026-06-02', endDate: '2026-06-14', timePeriod: {},
+    }, { limit: expectedLimit, metric: expectedMetric, model: 'model-a', sku: 'sku-a' });
+    expect(globalThis.$fetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects organization scope without a configured billing enterprise', async () => {
+    setConfig({ billingEnterprise: '' });
+    setQuery({ scope: 'organization', githubOrg: 'org-y' });
+
+    await expect(topUsersHandler({} as Parameters<typeof topUsersHandler>[0])).rejects.toMatchObject({ statusCode: 409 });
+    expect(mockDecide).not.toHaveBeenCalled();
+    expect(mockAggregateTopUsers).not.toHaveBeenCalled();
+  });
+
   it('serves global top users from DB without requiring logins', async () => {
     setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6', limit: '2' });
     mockDecide.mockResolvedValueOnce({ source: 'db', reason: 'covered', lastIngestAt: null, jobId: 10 });
