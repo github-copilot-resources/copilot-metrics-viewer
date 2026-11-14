@@ -41,6 +41,50 @@ function sortMetricsDataResult(result: MetricsDataResult): MetricsDataResult {
   };
 }
 
+async function enrichTeamReportWithPullRequests(
+  report: OrgReport,
+  options: Options,
+  headers: Headers,
+  identifier: string,
+): Promise<OrgReport> {
+  if (!options.githubTeam || report.day_totals.length === 0) {
+    return report;
+  }
+
+  try {
+    const teamReport = await fetchLatestReport(
+      {
+        scope: options.scope!,
+        identifier,
+        teamSlug: options.githubTeam,
+        isMocked: options.isDataMocked,
+      },
+      headers,
+    );
+
+    const pullRequestsByDay = new Map(
+      (teamReport.day_totals || [])
+        .filter(day => day.pull_requests != null)
+        .map(day => [day.day, day.pull_requests] as const),
+    );
+
+    if (pullRequestsByDay.size === 0) {
+      return report;
+    }
+
+    return {
+      ...report,
+      day_totals: report.day_totals.map(day => {
+        const pullRequests = pullRequestsByDay.get(day.day);
+        return pullRequests ? { ...day, pull_requests: pullRequests } : day;
+      }),
+    };
+  } catch (error) {
+    console.info('Team pull request report data is unavailable; continuing without PR day_totals enrichment.', error);
+    return report;
+  }
+}
+
 /**
  * Returns true ONLY when USE_LEGACY_API is explicitly set to "true".
  * Default behavior is new API — no legacy calls unless opted in.
@@ -165,7 +209,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
         if (userDayRecords.length > 0) {
           logger.info(`Aggregating team metrics from ${userDayRecords.length} per-day user DB records`);
           const report = aggregateTeamMetrics(userDayRecords, teamLogins);
-          return buildFilteredResult(report, options);
+          const enrichedReport = await enrichTeamReportWithPullRequests(report, options, event.context.headers, identifier);
+          return buildFilteredResult(enrichedReport, options);
         }
 
         // No per-day data in DB — fetch from API, persist all user records, then aggregate
@@ -181,7 +226,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
           logger.error('Failed to store per-day user records:', err);
         }
         const report = aggregateTeamMetrics(liveUserDayRecords, teamLogins);
-        return buildFilteredResult(report, options);
+        const enrichedReport = await enrichTeamReportWithPullRequests(report, options, event.context.headers, identifier);
+        return buildFilteredResult(enrichedReport, options);
 
       } else {
         // Org/Enterprise path: serve pre-aggregated metrics from DB
@@ -253,7 +299,8 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     const userDayRecords = await fetchRawUserDayRecords(request, event.context.headers);
     logger.info(`Aggregating team metrics from ${userDayRecords.length} user-day records (${teamMembers.length} team members)`);
     const report = aggregateTeamMetrics(userDayRecords, teamLogins);
-    return buildFilteredResult(report, options);
+    const enrichedReport = await enrichTeamReportWithPullRequests(report, options, event.context.headers, identifier);
+    return buildFilteredResult(enrichedReport, options);
   }
 
   logger.info('Using new Copilot Metrics API (direct, no DB)');
