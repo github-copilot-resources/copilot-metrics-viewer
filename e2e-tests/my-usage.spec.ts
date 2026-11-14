@@ -1,7 +1,60 @@
 import { expect, test } from '@playwright/test';
 import { DashboardPage } from './pages/DashboardPage';
+import { MyUsageTab } from './pages/MyUsageTab';
 
 const tag = { tag: ['@org', '@my-usage'] };
+
+test.describe('Accepted lines explanation', () => {
+    const explanation = 'Lines added from accepted completions and agent edits. Chat / ask-only usage adds no lines, so this can be 0 even with many interactions.';
+
+    for (const lines of [0, 1234]) {
+        test(`explains accepted lines on hover and keyboard focus (${lines} lines)`, tag, async ({ page }, testInfo) => {
+            await page.route('**/api/my-usage?*', route => route.fulfill({
+                json: {
+                    user: { login: 'synthetic-tooltip-user' },
+                    totals: {
+                        total_active_days: 3,
+                        user_initiated_interaction_count: 42,
+                        loc_added_sum: lines,
+                        totals_by_ide: [],
+                        totals_by_model_feature: [],
+                    },
+                    dayRecords: [],
+                },
+            }));
+            await page.goto('/orgs/octo-demo-org?mock=true');
+            const dashboard = new DashboardPage(page);
+            await dashboard.expectMetricLabelsVisible();
+            await dashboard.gotoMyUsageTab();
+            const myUsage = new MyUsageTab(page);
+            await myUsage.expectShowsLogin('synthetic-tooltip-user');
+            await expect.poll(() => myUsage.readTile('Interactions')).toBe('42');
+            const expectedLines = lines === 0 ? /^0$/ : /^1[,\s]?234$/;
+            await expect.poll(async () => (await myUsage.readTile('Accepted lines')).trim()).toMatch(expectedLines);
+
+            const trigger = page.getByTestId('my-usage-accepted-lines-tooltip');
+            const tooltip = page.getByRole('tooltip').getByText(explanation, { exact: true });
+            await trigger.hover();
+            await expect(tooltip).toBeVisible();
+            await page.screenshot({ path: testInfo.outputPath('accepted-lines-hover.png'), animations: 'disabled' });
+            await page.mouse.move(0, 0);
+            await expect(tooltip).toBeHidden();
+
+            await trigger.focus();
+            await expect(trigger).toBeFocused();
+            await page.keyboard.press('Shift+Tab');
+            await page.keyboard.press('Tab');
+            await expect(trigger).toBeFocused();
+            await expect(trigger).toHaveRole('button');
+            await expect(trigger).toHaveAccessibleName('About accepted lines');
+            await expect(tooltip).toBeVisible();
+            await expect(trigger).toHaveAccessibleDescription(explanation);
+            await page.screenshot({ path: testInfo.outputPath('accepted-lines-keyboard.png'), animations: 'disabled' });
+            expect((await myUsage.readTile('Accepted lines')).trim()).toMatch(expectedLines);
+            expect((await myUsage.readTile('Interactions')).trim()).toBe('42');
+        });
+    }
+});
 
 test('named personal chart layouts preserve keyboard selection and rendered layout', async ({ page }) => {
     await page.goto('/orgs/octo-demo-org?mock=true');
