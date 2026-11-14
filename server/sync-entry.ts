@@ -42,9 +42,11 @@ export async function runSync() {
   const githubEnt = process.env.NUXT_PUBLIC_GITHUB_ENT;
   const daysBack = parseInt(process.env.SYNC_DAYS_BACK || '28', 10);
 
-  const identifier = githubOrg || githubEnt || '';
+  const identifier = scope === 'enterprise' ? githubEnt || '' : githubOrg || '';
   if (!identifier) {
-    logger.error('NUXT_PUBLIC_GITHUB_ORG or NUXT_PUBLIC_GITHUB_ENT must be set');
+    logger.error(scope === 'enterprise'
+      ? 'NUXT_PUBLIC_GITHUB_ENT must be set for enterprise sync'
+      : 'NUXT_PUBLIC_GITHUB_ORG must be set for organization sync');
     process.exit(1);
     return; // guard: allows tests to mock process.exit without continuing
   }
@@ -52,7 +54,7 @@ export async function runSync() {
   // Get authentication headers (supports both PAT and GitHub App)
   let headers: Headers;
   try {
-    headers = await getSyncAuthHeaders(logger, identifier);
+    headers = await getSyncAuthHeaders(logger, identifier, scope);
   } catch (error) {
     logger.error(error instanceof Error ? error.message : String(error));
     process.exit(1);

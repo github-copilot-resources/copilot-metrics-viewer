@@ -177,6 +177,19 @@ describe('sync-entry: happy path', () => {
     const [scope, identifier] = mockSyncBulk.mock.calls[0]!;
     expect(scope).toBe('enterprise');
     expect(identifier).toBe('test-ent');
+    expect(mockGetSyncAuthHeaders).toHaveBeenCalledWith(console, 'test-ent', 'enterprise');
+  }));
+
+  it('uses the enterprise identifier when an organization variable is also set', withEnv({
+    NUXT_GITHUB_TOKEN: 'test-token-abc',
+    NUXT_PUBLIC_SCOPE: 'enterprise',
+    NUXT_PUBLIC_GITHUB_ORG: 'test-org',
+    NUXT_PUBLIC_GITHUB_ENT: 'test-ent',
+  }, async () => {
+    await runSync();
+    const [scope, identifier] = mockSyncBulk.mock.calls[0]!;
+    expect(scope).toBe('enterprise');
+    expect(identifier).toBe('test-ent');
   }));
 
   it('normalises team-organization scope to organization', withEnv({
@@ -198,12 +211,13 @@ describe('sync-entry: happy path', () => {
     expect(scope).toBe('enterprise');
   }));
 
-  it('calls getSyncAuthHeaders with logger and identifier', withEnv(BASE_ENV, async () => {
+  it('calls getSyncAuthHeaders with logger, identifier, and scope', withEnv(BASE_ENV, async () => {
     await runSync();
     expect(mockGetSyncAuthHeaders).toHaveBeenCalledOnce();
-    const [logger, identifier] = mockGetSyncAuthHeaders.mock.calls[0]!;
+    const [logger, identifier, scope] = mockGetSyncAuthHeaders.mock.calls[0]!;
     expect(logger).toBe(console);
     expect(identifier).toBe('test-org');
+    expect(scope).toBe('organization');
   }));
 
   it('always calls closePool in the finally block', withEnv(BASE_ENV, async () => {
@@ -251,6 +265,16 @@ describe('sync-entry: missing env vars', () => {
   it('exits with code 1 when neither ORG nor ENT identifier is set', withEnv({
     NUXT_GITHUB_TOKEN: 'test-token-abc',
     NUXT_PUBLIC_SCOPE: 'organization',
+  }, async () => {
+    await runSync();
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockSyncBulk).not.toHaveBeenCalled();
+  }));
+
+  it('exits with code 1 when scope=enterprise but only ORG is set (ENT missing)', withEnv({
+    NUXT_GITHUB_TOKEN: 'test-token-abc',
+    NUXT_PUBLIC_SCOPE: 'enterprise',
+    NUXT_PUBLIC_GITHUB_ORG: 'test-org',
   }, async () => {
     await runSync();
     expect(exitSpy).toHaveBeenCalledWith(1);

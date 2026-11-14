@@ -312,6 +312,20 @@ The `NUXT_PUBLIC_SCOPE` environment variable in the `.env` file determines the d
 
 > **Note:** Legacy values `'team-organization'` and `'team-enterprise'` are still accepted and automatically normalized to `'organization'` and `'enterprise'` respectively for backward compatibility.
 
+GitHub App authentication resolves only installations matching the requested account
+type. Enterprise installations use the account's `slug` and the installation's
+`target_type`; organization installations use the account's `login`. Explicit
+request identifiers override deployment defaults, and enterprise requests do not
+fall back to an organization identifier. The standalone sync job likewise uses
+the identifier and installation type for its configured scope.
+
+Finding the installation does not grant additional permissions. GitHub App
+authentication errors are propagated rather than retried with a configured PAT
+or OAuth token. A report endpoint can still return 403 after successful
+installation-token creation; consult the
+[enterprise usage metrics API documentation](https://docs.github.com/en/rest/copilot/copilot-usage-metrics#get-copilot-enterprise-usage-metrics)
+for its authorization requirements.
+
 For example, if you want to target the API calls to an organization, you would set `NUXT_PUBLIC_SCOPE=organization` in the `.env` file.
 
 >[!INFO]

@@ -15,7 +15,7 @@ const INSTALLATIONS_CACHE_TTL_SECONDS = 300 // re-list installations every 5 min
 export interface AppInstallation {
   id: number
   login: string
-  type: 'Organization' | 'User'
+  type: 'Organization' | 'User' | 'Enterprise'
 }
 
 // Per-installation token cache keyed by installation ID
@@ -76,7 +76,7 @@ function getGitHubApiBaseUrl(): string {
 }
 
 /**
- * List all orgs/users the GitHub App is installed on.
+ * List all organization, user, and enterprise installations.
  * Paginates through all results and caches for INSTALLATIONS_CACHE_TTL_SECONDS.
  */
 export async function listAppInstallations(appId: string, privateKey: string): Promise<AppInstallation[]> {
@@ -95,7 +95,11 @@ export async function listAppInstallations(appId: string, privateKey: string): P
       let page = 1
 
       while (true) {
-        const page_items = await _fetch<Array<{ id: number; account: { login: string; type: string } }>>(
+        const page_items = await _fetch<Array<{
+          id: number
+          target_type?: string
+          account?: { login?: string; slug?: string; type?: string } | null
+        }>>(
           `${getGitHubApiBaseUrl()}/app/installations?per_page=100&page=${page}`,
           {
             headers: {
@@ -107,7 +111,13 @@ export async function listAppInstallations(appId: string, privateKey: string): P
           }
         )
         for (const item of page_items) {
-          all.push({ id: item.id, login: item.account.login, type: item.account.type as AppInstallation['type'] })
+          // Enterprise accounts have no login or type; target_type is on the installation.
+          const type = item.target_type ?? item.account?.type
+          const identifier = type === 'Enterprise' ? item.account?.slug : item.account?.login
+          if ((type === 'Organization' || type === 'User' || type === 'Enterprise')
+            && typeof identifier === 'string' && identifier.trim()) {
+            all.push({ id: item.id, login: identifier, type })
+          }
         }
         if (page_items.length < 100) break
         page++
@@ -173,10 +183,9 @@ async function getTokenForInstallation(appId: string, privateKey: string, instal
 /**
  * Return a valid GitHub App installation token for the org/enterprise in the request.
  *
- * Org resolution order:
- *   1. githubOrg query param  2. githubEnt query param
- *   3. NUXT_PUBLIC_GITHUB_ORG config  4. NUXT_PUBLIC_GITHUB_ENT config
- *   5. Single installation auto-select
+ * Explicit query scope/identifier takes precedence over deployment defaults.
+ * Only identifiers and installation types matching the scope are eligible.
+ * A single installation can be auto-selected if its type matches the scope.
  */
 export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Promise<string> {
   const config = useRuntimeConfig(event)
@@ -187,22 +196,41 @@ export async function getGitHubAppToken(event: H3Event<EventHandlerRequest>): Pr
   }
 
   const query = getQuery(event)
-  const targetOrg = (query.githubOrg || query.githubEnt || config.public.githubOrg || config.public.githubEnt) as string | undefined
+  for (const key of ['scope', 'githubOrg', 'githubEnt'] as const) {
+    if (query[key] !== undefined && typeof query[key] !== 'string') {
+      throw new Error(`Invalid ${key}: expected a single string.`)
+    }
+  }
+  const queryOrg = typeof query.githubOrg === 'string' ? query.githubOrg : undefined
+  const queryEnt = typeof query.githubEnt === 'string' ? query.githubEnt : undefined
+  const rawScope = query.scope || (queryOrg && !queryEnt ? 'organization'
+    : queryEnt && !queryOrg ? 'enterprise' : config.public.scope)
+  const isEnterprise = rawScope === 'enterprise' || rawScope === 'team-enterprise'
+  const installationType = isEnterprise ? 'Enterprise' : 'Organization'
+  const configOrg = config.public.githubOrg as string | undefined
+  const configEnt = config.public.githubEnt as string | undefined
+
+  const targetOrg = (isEnterprise
+    ? (queryEnt || configEnt)
+    : (queryOrg || configOrg)) || undefined
 
   const installations = await listAppInstallations(githubAppId, githubAppPrivateKey)
 
   let installation: AppInstallation | undefined
   if (targetOrg) {
-    installation = installations.find(i => i.login.toLowerCase() === targetOrg.toLowerCase())
+    installation = installations.find(i => i.type === installationType && i.login.toLowerCase() === targetOrg.toLowerCase())
     if (!installation) {
       throw new Error(`GitHub App is not installed on org/enterprise "${targetOrg}". Available: ${installations.map(i => i.login).join(', ')}`)
     }
   } else if (installations.length === 1) {
     installation = installations[0]!
+    if (installation.type !== installationType) {
+      throw new Error(`GitHub App has no ${installationType.toLowerCase()} installation matching the request scope.`)
+    }
   } else if (installations.length === 0) {
     throw new Error('GitHub App has no installations. Install the App on your org first.')
   } else {
-    throw new Error('Multiple GitHub App installations found. Set NUXT_PUBLIC_GITHUB_ORG or navigate to a specific org URL.')
+    throw new Error('Multiple GitHub App installations found. Set NUXT_PUBLIC_GITHUB_ORG or NUXT_PUBLIC_GITHUB_ENT, or navigate to a specific org/enterprise URL.')
   }
 
   return getTokenForInstallation(githubAppId, githubAppPrivateKey, installation.id)
