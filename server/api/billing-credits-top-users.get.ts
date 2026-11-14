@@ -6,6 +6,8 @@
  * mode because GitHub's live AI-credit billing JSON cannot rank all users.
  * Invalid windows return 400; unavailable DB coverage returns 409 without a
  * live or per-user fallback.
+ * `metric=auto` uses global net ranking, retrying global gross ranking when
+ * the net leaders are all zero. The response identifies the selected metric.
  */
 
 import { Options } from '@/model/Options';
@@ -15,6 +17,7 @@ import {
   decideSource,
   resolveWindow,
   type BillingWindow,
+  type TopBillingUsersOptions,
   type TopBillingUsersResponse,
 } from '../services/billing-credit-reader';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,16 +105,16 @@ function parseLimit(value: unknown): number {
   return Math.max(1, Math.min(Math.trunc(n), MAX_LIMIT));
 }
 
-function parseMetric(value: unknown): 'netAmount' | 'grossAmount' | 'credits' {
+function parseMetric(value: unknown): NonNullable<TopBillingUsersOptions['metric']> {
   const raw = Array.isArray(value) ? value[0] : value;
-  if (raw === 'grossAmount' || raw === 'credits') return raw;
+  if (raw === 'grossAmount' || raw === 'credits' || raw === 'auto') return raw;
   return 'netAmount';
 }
 
 function topUsersFromMock(
   mock: BillingCreditsResponse,
   limit: number,
-  metric: 'netAmount' | 'grossAmount' | 'credits',
+  metric: NonNullable<TopBillingUsersOptions['metric']>,
 ): TopBillingUsersResponse {
   const byUser = new Map<string, { user: string; credits: number; grossAmount: number; netAmount: number; models: Set<string> }>();
   for (const item of mock.usageItems ?? []) {
@@ -126,10 +129,13 @@ function topUsersFromMock(
     if (item.model) agg.models.add(item.model);
     byUser.set(key, agg);
   }
-  const metricKey = metric;
+  const metricKey = metric === 'auto'
+    ? ([...byUser.values()].some(user => user.netAmount !== 0) ? 'netAmount' : 'grossAmount')
+    : metric;
   return {
     timePeriod: mock.timePeriod,
     enterprise: mock.enterprise || '',
+    metric: byUser.size === 0 && metric === 'auto' ? 'netAmount' : metricKey,
     users: [...byUser.values()]
       .sort((a, b) => b[metricKey] - a[metricKey] || a.user.localeCompare(b.user))
       .slice(0, limit)

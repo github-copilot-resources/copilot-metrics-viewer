@@ -12,6 +12,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { newDb, DataType } from 'pg-mem';
 import type { Pool } from 'pg';
+import { createRequire } from 'node:module';
 
 const mockQuery = vi.fn();
 vi.mock('../server/storage/db', () => ({
@@ -348,19 +349,30 @@ describe('aggregateTopBillingUsers', () => {
 });
 
 describe('aggregateTopBillingUsers — executed SQL', () => {
-  let pool: Pool;
+  let pool: Pick<Pool, 'query' | 'end'>;
   const window = resolveWindow({ year: 2026, month: 6 });
 
   beforeEach(async () => {
-    const db = newDb();
-    db.public.registerEquivalentType({
-      name: 'float8', equivalentTo: DataType.float, isValid: () => true,
-    });
-    db.public.registerFunction({
-      name: 'nullif', args: [DataType.text, DataType.text], returns: DataType.text,
-      implementation: (a: string, b: string) => a === b ? null : a,
-    });
-    pool = new (db.adapters.createPg().Pool)() as Pool;
+    if (process.env.PR429_POSTGRES_TEST === '1') {
+      const PostgresClient = createRequire(import.meta.url)('pg/lib/client') as typeof import('pg').Client;
+      const client = new PostgresClient({
+        host: '127.0.0.1', port: 55429, user: 'pr429', password: 'synthetic-only',
+        database: 'pr429',
+      });
+      await client.connect();
+      pool = client;
+      await pool.query('DROP TABLE IF EXISTS billing_credit_usage');
+    } else {
+      const db = newDb();
+      db.public.registerEquivalentType({
+        name: 'float8', equivalentTo: DataType.float, isValid: () => true,
+      });
+      db.public.registerFunction({
+        name: 'nullif', args: [DataType.text, DataType.text], returns: DataType.text,
+        implementation: (a: string, b: string) => a === b ? null : a,
+      });
+      pool = new (db.adapters.createPg().Pool)() as Pool;
+    }
     await pool.query(`
       CREATE TABLE billing_credit_usage (
         enterprise TEXT NOT NULL, date DATE NOT NULL, username TEXT NOT NULL,
@@ -424,6 +436,50 @@ describe('aggregateTopBillingUsers — executed SQL', () => {
     expect(net.users.map(u => u.user)).not.toContain('user-0599');
     const gross = await aggregateTopBillingUsers('ent', window, { metric: 'grossAmount', limit: 1 });
     expect(gross.users[0]?.user).toBe('user-0599');
+  });
+  it('auto selects GLOBAL gross before top-K, not the zero-net top ten or first 500', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 0`);
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 999999 WHERE username = 'user-0599'`);
+    const result = await aggregateTopBillingUsers('ent', window, { metric: 'auto' });
+    expect(result.users[0]).toMatchObject({ user: 'user-0599', grossAmount: 999999, netAmount: 0 });
+    expect(result.metric).toBe('grossAmount');
+    expect(result.users).toHaveLength(10);
+    expect(result.users.map(u => u.user)).not.toContain('wrong-enterprise');
+    expect(result.users.map(u => u.user)).not.toContain('outside-before');
+  });
+
+  it('auto keeps positive net ranking even when gross is much larger elsewhere', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 0`);
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 1 WHERE username = 'user-0599'`);
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 999999 WHERE username = 'user-0000'`);
+    const result = await aggregateTopBillingUsers('ent', window, { metric: 'auto' });
+    expect(result.metric).toBe('netAmount');
+    expect(result.users[0]?.user).toBe('user-0599');
+    expect(result.users[0]?.netAmount).toBe(1);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('auto uses the same period/account/model/SKU scope and does not double count', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET model = 'boundary-model', net_amount = 0 WHERE username = 'boundary-user'`);
+    const result = await aggregateTopBillingUsers('ent', window, {
+      metric: 'auto', model: 'boundary-model', sku: 'sku-a',
+    });
+    expect(result.metric).toBe('grossAmount');
+    expect(result.users).toEqual([
+      { user: 'boundary-user', credits: 10, grossAmount: 2, netAmount: 0, models: 1 },
+    ]);
+  });
+
+  it('auto keeps empty results neutral and uses deterministic ties with a ten-user limit', async () => {
+    expect((await aggregateTopBillingUsers('ent', window, { metric: 'auto', sku: 'missing' }))).toMatchObject({
+      metric: 'netAmount', users: [],
+    });
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 0, net_amount = 0`);
+    const result = await aggregateTopBillingUsers('ent', window, { metric: 'auto' });
+    expect(result.users).toHaveLength(10);
+    expect(result.users.map(u => u.user)).toEqual([
+      'boundary-user', ...Array.from({ length: 9 }, (_, i) => `user-${String(i).padStart(4, '0')}`),
+    ]);
   });
 });
 

@@ -76,12 +76,13 @@ export interface TopBillingUser {
 export interface TopBillingUsersResponse {
   timePeriod: { year?: number; month?: number; day?: number };
   enterprise: string;
+  metric: 'netAmount' | 'grossAmount' | 'credits';
   users: TopBillingUser[];
 }
 
 export interface TopBillingUsersOptions extends AggregateFilters {
   limit?: number;
-  metric?: 'netAmount' | 'grossAmount' | 'credits';
+  metric?: TopBillingUsersResponse['metric'] | 'auto';
 }
 
 /**
@@ -366,6 +367,13 @@ export async function aggregateTopBillingUsers(
   window: BillingWindow,
   options: TopBillingUsersOptions = {},
 ): Promise<TopBillingUsersResponse> {
+  if (options.metric === 'auto') {
+    const net = await aggregateTopBillingUsers(enterprise, window, { ...options, metric: 'netAmount' });
+    // This is the globally ordered net ranking, never a page of the user table:
+    // any positive net spend in the permitted window must appear here.
+    if (net.users.length === 0 || net.users.some(user => user.netAmount !== 0)) return net;
+    return aggregateTopBillingUsers(enterprise, window, { ...options, metric: 'grossAmount' });
+  }
   const pool = getPool();
   const limit = Math.max(1, Math.min(Math.trunc(options.limit ?? 10), 50));
   const metric = options.metric ?? 'netAmount';
@@ -410,6 +418,7 @@ export async function aggregateTopBillingUsers(
   return {
     timePeriod: window.timePeriod,
     enterprise,
+    metric,
     users: rows.map(r => ({
       user: String(r.username),
       credits: Number(r.credits || 0),
