@@ -437,7 +437,6 @@ describe('aggregateTopBillingUsers — executed SQL', () => {
     const gross = await aggregateTopBillingUsers('ent', window, { metric: 'grossAmount', limit: 1 });
     expect(gross.users[0]?.user).toBe('user-0599');
   });
-
   it('auto selects GLOBAL gross before top-K, not the zero-net top ten or first 500', async () => {
     await pool.query(`UPDATE billing_credit_usage SET net_amount = 0`);
     await pool.query(`UPDATE billing_credit_usage SET gross_amount = 999999 WHERE username = 'user-0599'`);
