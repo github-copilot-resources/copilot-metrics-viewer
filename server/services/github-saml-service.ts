@@ -4,6 +4,10 @@
  * Results are cached per-org for 1 hour to avoid repeated GraphQL calls.
  */
 
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('saml-service')
+
 interface SamlCache {
   map: Map<string, string>
   expiry: number
@@ -86,7 +90,7 @@ export async function fetchSamlIdentities(
       const json = await resp.json() as GraphQLResponse
 
       if (json.errors?.length) {
-        console.warn(`[saml-service] GraphQL errors for org "${org}":`, json.errors.map(e => e.message))
+        logger.warn(`GraphQL errors for org "${org}":`, { errors: json.errors.map(e => e.message) })
         break
       }
 
@@ -102,7 +106,7 @@ export async function fetchSamlIdentities(
       after = ext.pageInfo.hasNextPage ? ext.pageInfo.endCursor : null
     } while (after)
   } catch (err) {
-    console.warn(`[saml-service] Failed to fetch SAML identities for org "${org}":`, err)
+    logger.warn(`Failed to fetch SAML identities for org "${org}":`, err)
   }
 
   samlCache.set(cacheKey, { map: nameIdToLogin, expiry: Date.now() + TTL_MS })

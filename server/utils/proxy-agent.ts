@@ -12,6 +12,9 @@
 
 import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import { readFileSync, existsSync } from 'fs';
+import { createLogger } from './logger';
+
+const logger = createLogger('proxy-agent');
 
 /**
  * Initializes a ProxyAgent from environment variables and sets it as the
@@ -42,12 +45,25 @@ export function initializeProxyAgent(exitOnError = false): ProxyAgent | null {
     });
 
     setGlobalDispatcher(proxyAgent);
-    console.info(`[proxy-agent] Proxy initialized: ${process.env.HTTP_PROXY}`);
+    logger.info(`Proxy initialized: ${redactProxyCredentials(process.env.HTTP_PROXY!)}`);
 
     return proxyAgent;
   } catch (error) {
-    console.error('[proxy-agent] Failed to initialize proxy agent:', error);
+    logger.error('Failed to initialize proxy agent:', error);
     if (exitOnError) process.exit(1);
     throw error;
+  }
+}
+
+function redactProxyCredentials(proxyUrl: string): string {
+  try {
+    const parsed = new URL(proxyUrl);
+    if (parsed.username || parsed.password) {
+      parsed.username = '***';
+      parsed.password = '***';
+    }
+    return parsed.toString();
+  } catch {
+    return proxyUrl.replace(/\/\/([^/@:\s]+):([^/@\s]+)@/, '//***:***@');
   }
 }

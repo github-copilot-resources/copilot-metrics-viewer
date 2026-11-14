@@ -1,3 +1,8 @@
+import { createLogger } from '../../utils/logger'
+import { emitAuditEvent } from '../../utils/audit'
+
+const logger = createLogger('auth-github')
+
 export default defineOAuthGitHubEventHandler({
   config: {
     // Default scopes: read:user for profile, read:org for org membership (used by org picker).
@@ -28,6 +33,13 @@ export default defineOAuthGitHubEventHandler({
         expires_at: new Date(Date.now() + tokens.expires_in * 1000)
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.login,
+      detail: { provider: 'github' },
+    }, event)
 
     // If a default org/ent is pinned via env var, go straight to the home page.
     const defaultOrg = config.public.githubOrg || config.public.githubEnt
@@ -63,7 +75,7 @@ export default defineOAuthGitHubEventHandler({
           return sendRedirect(event, appURL(`/orgs/${organizations[0]!.login}`, event))
         }
       } catch (err) {
-        console.error('Error fetching installations:', err)
+        logger.warn('Error fetching installations:', err)
         // Fall through to /select-org which shows a text input fallback.
       }
     }
@@ -72,7 +84,7 @@ export default defineOAuthGitHubEventHandler({
   },
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {
-    console.error('GitHub OAuth error:', error)
+    logger.error('GitHub OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   },
 })

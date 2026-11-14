@@ -53,10 +53,12 @@ vi.mock('../server/utils/usage-admin', () => ({
 const mockDecide = vi.fn();
 const mockAggregate = vi.fn();
 const mockAggregateByUser = vi.fn();
+const mockAggregateTopUsers = vi.fn();
 vi.mock('../server/services/billing-credit-reader', () => ({
   decideSource: (...a: any[]) => mockDecide(...a),
   aggregateForBilling: (...a: any[]) => mockAggregate(...a),
   aggregateForBillingByUser: (...a: any[]) => mockAggregateByUser(...a),
+  aggregateTopBillingUsers: (...a: any[]) => mockAggregateTopUsers(...a),
   resolveWindow: (input: { year?: number; month?: number; day?: number; since?: string; until?: string }) => {
     if (input.since && input.until) {
       return { startDate: input.since, endDate: input.until, timePeriod: {} };
@@ -73,6 +75,7 @@ vi.mock('../server/services/billing-credit-reader', () => ({
 
 import billingHandler from '../server/api/billing-credits.get';
 import byUserHandler from '../server/api/billing-credits-by-user.get';
+import topUsersHandler from '../server/api/billing-credits-top-users.get';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -245,6 +248,40 @@ describe('GET /api/billing-credits-by-user — DB-first branch', () => {
     expect(getHeader('X-Data-Source')).toBe('db');
   });
 
+  it('forwards table sort and page options to the DB per-user aggregate', async () => {
+    setQuery({
+      scope: 'enterprise',
+      githubEnt: 'ent-x',
+      year: '2026',
+      month: '6',
+      logins: 'alice,bob,carol',
+      sortKey: 'netAmount',
+      sortOrder: 'desc',
+      page: '1',
+      itemsPerPage: '2',
+    });
+    mockDecide.mockResolvedValueOnce({ source: 'db', reason: 'covered', lastIngestAt: null, jobId: 9 });
+    mockAggregateByUser.mockResolvedValueOnce({
+      timePeriod: { year: 2026, month: 6 },
+      enterprise: 'ent-x',
+      users: ['carol', 'bob'],
+      usageItems: [],
+    });
+
+    const result = await byUserHandler({} as any);
+
+    const args = mockAggregateByUser.mock.calls[0]!;
+    expect(args[2]).toEqual(['alice', 'bob', 'carol']);
+    expect(args[4]).toEqual({
+      sortKey: 'netAmount',
+      sortOrder: 'desc',
+      offset: 0,
+      limit: 2,
+    });
+    expect(result.users).toEqual(['carol', 'bob']);
+    expect(((globalThis as any).$fetch as any).mock.calls).toHaveLength(0);
+  });
+
   it('falls through to fan-out when decideSource returns live', async () => {
     setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6', logins: 'alice' });
     mockDecide.mockResolvedValueOnce({ source: 'live', reason: 'not covered', lastIngestAt: null, jobId: null });
@@ -262,5 +299,46 @@ describe('GET /api/billing-credits-by-user — DB-first branch', () => {
     expect(mockAggregateByUser).not.toHaveBeenCalled();
     expect(((globalThis as any).$fetch as any).mock.calls).toHaveLength(1);
     expect(result.usageItems[0]!.user).toBe('alice');
+  });
+});
+
+describe('GET /api/billing-credits-top-users — DB-only top-N branch', () => {
+  it('serves global top users from DB without requiring logins', async () => {
+    setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6', limit: '2' });
+    mockDecide.mockResolvedValueOnce({ source: 'db', reason: 'covered', lastIngestAt: null, jobId: 10 });
+    mockAggregateTopUsers.mockResolvedValueOnce({
+      timePeriod: { year: 2026, month: 6 },
+      enterprise: 'ent-x',
+      users: [
+        { user: 'zoe', credits: 70, grossAmount: 7, netAmount: 7, models: 2 },
+        { user: 'alice', credits: 50, grossAmount: 5, netAmount: 5, models: 1 },
+      ],
+    });
+
+    const result = await topUsersHandler({} as any);
+
+    expect(mockDecide).toHaveBeenCalledWith('ent-x', '2026-06-01', '2026-06-30');
+    expect(mockAggregateTopUsers).toHaveBeenCalledWith('ent-x', {
+      startDate: '2026-06-01',
+      endDate: '2026-06-30',
+      timePeriod: { year: 2026, month: 6 },
+    }, { limit: 2, metric: 'netAmount', model: undefined, sku: undefined });
+    expect(result.users.map(u => u.user)).toEqual(['zoe', 'alice']);
+    expect(getHeader('X-Data-Source')).toBe('db');
+  });
+
+  it('rejects top users when no DB ingest covers the requested window', async () => {
+    setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6' });
+    mockDecide.mockResolvedValueOnce({
+      source: 'live', reason: 'no completed ingest job covers window', lastIngestAt: null, jobId: null,
+    });
+
+    let caught: any = null;
+    try { await topUsersHandler({} as any); } catch (e) { caught = e; }
+
+    expect(caught).toBeTruthy();
+    expect(caught.statusCode).toBe(409);
+    expect(caught.data?.reason).toBe('top-users-requires-db');
+    expect(mockAggregateTopUsers).not.toHaveBeenCalled();
   });
 });

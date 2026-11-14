@@ -1,5 +1,6 @@
 import { createPrivateKey, createSign } from 'node:crypto'
 import type { H3Event, EventHandlerRequest } from 'h3'
+import { createLogger } from '../utils/logger'
 
 // ofetch fallback for standalone (non-Nitro) environments.
 // In Nitro the global `$fetch` is provided automatically, but this module is
@@ -11,6 +12,7 @@ const _fetch: typeof _ofetch = typeof $fetch !== 'undefined' ? ($fetch as typeof
 
 const TOKEN_EXPIRY_BUFFER_SECONDS = 300 // refresh 5 min before expiry
 const INSTALLATIONS_CACHE_TTL_SECONDS = 300 // re-list installations every 5 min
+const logger = createLogger('github-app-auth')
 
 export interface AppInstallation {
   id: number
@@ -59,7 +61,7 @@ function signJWT(payload: Record<string, unknown>, privateKeyPem: string): strin
 /** Build a short-lived JWT for GitHub App API calls. */
 function buildAppJwt(appId: string, privateKey: string): string {
   const now = Math.floor(Date.now() / 1000)
-  console.log('[github-app-auth] Building App JWT')
+  logger.debug('Building App JWT')
   try {
     return signJWT({ iss: appId, iat: now - 10, exp: now + 600 }, privateKey)
   } catch (err: unknown) {

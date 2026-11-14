@@ -134,9 +134,9 @@
     <v-container v-if="userMetrics.length > 0" :fluid="chartColumns === 'full'" :class="['elevation-2 mt-2 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
       <div class="d-flex justify-end mb-2">
         <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-          <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-          <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-          <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+          <v-btn value="1" size="small" title="Single column" aria-label="Single column layout"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+          <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+          <v-btn value="full" size="small" title="Full width" aria-label="Full width layout"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
         </v-btn-toggle>
       </div>
       <v-row class="mt-0 mb-2">
@@ -264,10 +264,12 @@
                   :variant="selectedUserLogin === item.login ? 'elevated' : 'flat'"
                   size="small"
                   style="cursor: pointer;"
-                  :title="selectedUserLogin === item.login ? 'Click to clear filter' : 'Click to filter charts'"
+                  :title="`Activity: ${getActivityLabel(item.total_active_days)} — ${item.total_active_days} active days. ${selectedUserLogin === item.login ? 'Click to clear filter' : 'Click to filter charts'}`"
+                  :aria-label="`Activity: ${getActivityLabel(item.total_active_days)} for ${item.login}, ${item.total_active_days} active days. ${selectedUserLogin === item.login ? 'Click to clear filter' : 'Click to filter charts'}`"
                   @click="toggleUserSelection(item.login)"
                 >
                   {{ item.login }}
+                  <span class="activity-band-label ml-1 text-caption">({{ getActivityLabel(item.total_active_days) }})</span>
                 </v-chip>
               </td>
               <td class="text-center">{{ item.total_active_days }}</td>
@@ -337,6 +339,7 @@
                   size="x-small"
                   variant="text"
                   :title="`View trend for ${item.login}`"
+                  :aria-label="`View trend for ${item.login}`"
                   @click="openUserTrend(item.login)"
                 >
                   <v-icon>mdi-chart-line</v-icon>
@@ -464,7 +467,7 @@
       <v-card>
         <v-card-title class="d-flex justify-space-between align-center">
           <span>Activity Trend — {{ trendLogin }}</span>
-          <v-btn icon variant="text" @click="trendDialog = false"><v-icon>mdi-close</v-icon></v-btn>
+          <v-btn icon variant="text" aria-label="Close activity trend dialog" @click="trendDialog = false"><v-icon>mdi-close</v-icon></v-btn>
         </v-card-title>
         <v-card-text>
           <div v-if="trendLoading" class="d-flex justify-center py-8">
@@ -859,6 +862,13 @@ export default defineComponent({
       if (activeDays >= 7) return 'info';
       if (activeDays >= 1) return 'warning';
       return 'error';
+    }
+
+    function getActivityLabel(activeDays: number): string {
+      if (activeDays >= 14) return 'High';
+      if (activeDays >= 7) return 'Medium';
+      if (activeDays >= 1) return 'Low';
+      return 'Inactive';
     }
 
     function adoptionPhaseColor(phaseNumber: number): string {
@@ -1263,6 +1273,7 @@ export default defineComponent({
       tableHeaders,
       getAcceptanceRate,
       getActivityColor,
+      getActivityLabel,
       getTopIde,
       getTopLanguage,
       adoptionPhaseColor,
@@ -1324,4 +1335,3 @@ export default defineComponent({
   },
 });
 </script>
-

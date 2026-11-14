@@ -88,6 +88,9 @@ export default defineNuxtConfig({
     // GitHub App credentials (alternative to PAT — works with any OAuth provider)
     githubAppId: '',            // NUXT_GITHUB_APP_ID — numeric App ID (preferred); GitHub also accepts the Client ID (NUXT_OAUTH_GITHUB_CLIENT_ID)
     githubAppPrivateKey: '',    // NUXT_GITHUB_APP_PRIVATE_KEY (PEM, \n-escaped)
+    logLevel: process.env.NUXT_LOG_LEVEL || 'info',
+    logFormat: process.env.NUXT_LOG_FORMAT || '',
+    logRequests: process.env.NUXT_LOG_REQUESTS || 'false',
     session: {
       // set to 6h - same as the GitHub token
       maxAge: 60 * 60 * 6,
@@ -125,6 +128,7 @@ export default defineNuxtConfig({
     // Server-only admin allowlist for the per-user billing breakdown tab
     // (NUXT_USAGE_ADMINS). Closed-by-default: empty list = nobody is admin.
     usageAdmins: '',
+    auditLogEnabled: process.env.NUXT_AUDIT_LOG_ENABLED || 'false',
     public: {
       isDataMocked: false,  // can be overridden by NUXT_PUBLIC_IS_DATA_MOCKED environment variable
       scope: 'organization',  // can be overridden by NUXT_PUBLIC_SCOPE environment variable
