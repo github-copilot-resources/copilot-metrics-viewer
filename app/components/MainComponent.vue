@@ -247,13 +247,21 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               @page-change="handleSeatsPageChange"
             />
             <UserMetricsViewer
-              v-if="item === 'user metrics'"
+              v-if="item === 'user metrics' && !userMetricsLoadError"
               :user-metrics="userMetrics"
               :date-range-description="dateRangeDescription"
               :user-metrics-history="userMetricsHistory"
               :query-params="seatsQueryParams"
               :session-email="sessionEmail"
             />
+            <v-alert
+              v-if="item === 'user metrics' && userMetricsLoadError"
+              type="error"
+              variant="tonal"
+              class="ma-4"
+            >
+              {{ userMetricsLoadError }}
+            </v-alert>
             <MyUsageViewer
               v-if="item === 'my usage'"
               :date-range-description="dateRangeDescription"
@@ -271,7 +279,7 @@ v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMet
           </v-card>
         </v-window-item>
         <v-alert
-          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics' && tab !== 'my usage' && tab !== 'billing') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
+          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics' && tab !== 'my usage' && tab !== 'billing') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && !userMetricsLoadError && userMetrics.length == 0 && tab === 'user metrics')"
           density="compact" text="No data available to display" title="No data" type="warning" />
       </v-window>
 
@@ -382,10 +390,7 @@ export default defineNuxtComponent({
       await this.fetchDataRange();
       await this.fetchMetrics();
       if (this.signInRequired) return;
-      const { execute: executeUserMetrics, data: userMetricsData } = this.userMetricsFetch;
-      await executeUserMetrics();
-      this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
-      this.userMetricsReady = true;
+      await this.fetchUserMetrics();
     },
     getDisplayTabName(itemName: string): string {
       return itemName;
@@ -411,14 +416,21 @@ export default defineNuxtComponent({
 
       // Re-fetch user metrics with updated date range
       if (this.signInRequired) return;
+      await this.fetchUserMetrics();
+    },
+    async fetchUserMetrics() {
+      this.userMetricsReady = false;
+      this.userMetricsLoadError = undefined;
       const { execute: executeUserMetrics, data: userMetricsData, error: userMetricsError } = this.userMetricsFetch;
       await executeUserMetrics();
       if (userMetricsError.value) {
-        console.warn('User metrics fetch failed:', userMetricsError.value);
+        const status = userMetricsError.value.statusCode;
+        const label = status === 500 ? '500 Internal Server Error' : status ? `${status} Error` : 'Request failed';
+        this.userMetricsLoadError = `${label} — Unable to load user metrics. Please apply the date range to try again.`;
       } else {
         this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
-        this.userMetricsReady = true;
       }
+      this.userMetricsReady = true;
     },
     async fetchMetrics() {
       if (this.signInRequired || !this.dateRange.since || !this.dateRange.until || this.isLoading) {
@@ -542,6 +554,7 @@ export default defineNuxtComponent({
       seatsPerPage:     300,
       seatsHistory:     [] as SeatHistoryEntry[],
       userMetricsReady: false,
+      userMetricsLoadError: undefined as string | undefined,
       userMetrics: [] as UserTotals[],
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
@@ -659,7 +672,6 @@ export default defineNuxtComponent({
       await this.fetchMetrics();
 
       const { data: seatsData, error: seatsError, execute: executeSeats } = this.seatsFetch;
-      const { data: userMetricsData, error: userMetricsError, execute: executeUserMetrics } = this.userMetricsFetch;
 
       if (!this.signInRequired) {
         await executeSeats();
@@ -677,15 +689,7 @@ export default defineNuxtComponent({
           this.seatsReady = true;
         }
 
-        await executeUserMetrics();
-
-        if (userMetricsError.value) {
-          // User metrics errors are non-fatal — log but don't block the UI
-          console.warn('User metrics fetch failed:', userMetricsError.value);
-        } else {
-          this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
-          this.userMetricsReady = true;
-        }
+        await this.fetchUserMetrics();
 
         // Fetch history data if historical mode is enabled
         const config = useRuntimeConfig();
