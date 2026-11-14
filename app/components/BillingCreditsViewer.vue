@@ -172,7 +172,17 @@
                   Total credits
                   <v-tooltip location="top" max-width="320">
                     <template #activator="{ props: tipProps }">
-                      <v-icon v-bind="tipProps" size="14" class="ml-1" color="cyan-darken-2">mdi-information-outline</v-icon>
+                      <v-btn
+                        v-bind="tipProps"
+                        aria-label="About total credits"
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="ml-1"
+                        color="cyan-darken-2"
+                      >
+                        <v-icon size="14">mdi-information-outline</v-icon>
+                      </v-btn>
                     </template>
                     <span>
                       From {{ billingSourceLabel }} for {{ rangeLabel }}.
@@ -195,7 +205,17 @@
                   Gross cost (USD)
                   <v-tooltip location="top" max-width="320">
                     <template #activator="{ props: tipProps }">
-                      <v-icon v-bind="tipProps" size="14" class="ml-1" color="green">mdi-information-outline</v-icon>
+                      <v-btn
+                        v-bind="tipProps"
+                        aria-label="About gross cost (usd)"
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="ml-1"
+                        color="green"
+                      >
+                        <v-icon size="14">mdi-information-outline</v-icon>
+                      </v-btn>
                     </template>
                     <span>
                       From {{ billingSourceLabel }} for {{ rangeLabel }}.
@@ -216,7 +236,17 @@
                   Net cost (USD)
                   <v-tooltip location="top" max-width="320">
                     <template #activator="{ props: tipProps }">
-                      <v-icon v-bind="tipProps" size="14" class="ml-1" color="indigo">mdi-information-outline</v-icon>
+                      <v-btn
+                        v-bind="tipProps"
+                        aria-label="About net cost (usd)"
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="ml-1"
+                        color="indigo"
+                      >
+                        <v-icon size="14">mdi-information-outline</v-icon>
+                      </v-btn>
                     </template>
                     <span>
                       From {{ billingSourceLabel }} for {{ rangeLabel }}.
