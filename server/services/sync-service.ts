@@ -24,6 +24,9 @@ import {
   markSyncFailed,
   getSyncStatus
 } from '../storage/sync-storage';
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('sync-service')
 
 export interface SyncRequest {
   scope: 'organization' | 'enterprise';
@@ -378,11 +381,11 @@ export async function syncGaps(
   const missingDates = await detectGaps(scope, identifier, startDate, endDate, teamSlug);
   
   if (missingDates.length === 0) {
-    console.log('No gaps detected, all dates already synced');
+    logger.info('No gaps detected, all dates already synced');
     return { results: [], gapsDetected: 0, outsideWindow: 0 };
   }
 
-  console.log(`Found ${missingDates.length} missing dates, attempting to fill...`);
+  logger.info(`Found ${missingDates.length} missing dates, attempting to fill...`);
 
   // First try bulk 28-day download (efficient for recent gaps)
   const bulkRequest: MetricsReportRequest = { scope, identifier, teamSlug };
@@ -407,7 +410,7 @@ export async function syncGaps(
 
   // Fill out-of-window gaps using the 1-day endpoint (one call per date)
   if (outOfWindowDates.length > 0) {
-    console.log(`${outOfWindowDates.length} gap(s) outside 28-day window — fetching via 1-day endpoint...`);
+    logger.info(`${outOfWindowDates.length} gap(s) outside 28-day window — fetching via 1-day endpoint...`);
     for (const date of outOfWindowDates) {
       const dayResult = await syncMetricsForDate({ scope, identifier, date, teamSlug, headers });
       results.push(dayResult);

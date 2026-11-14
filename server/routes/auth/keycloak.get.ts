@@ -1,3 +1,7 @@
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('auth-keycloak')
+
 export default defineOAuthKeycloakEventHandler({
   async onSuccess(event, { user }) {
     const email: string = user.email || ''
@@ -18,7 +22,7 @@ export default defineOAuthKeycloakEventHandler({
     return sendRedirect(event, defaultOrg ? getAppBaseURL(event) : appURL('/select-org', event))
   },
   onError(event, error) {
-    console.error('Keycloak OAuth error:', error)
+    logger.error('Keycloak OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })

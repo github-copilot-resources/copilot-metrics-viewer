@@ -1,3 +1,7 @@
+import { createLogger } from '../../utils/logger'
+
+const logger = createLogger('auth-google')
+
 export default defineOAuthGoogleEventHandler({
   async onSuccess(event, { user }) {
     if (!isUserAuthorized(event, { email: user.email })) {
@@ -22,7 +26,7 @@ export default defineOAuthGoogleEventHandler({
     return sendRedirect(event, getAppBaseURL(event))
   },
   onError(event, error) {
-    console.error('Google OAuth error:', error)
+    logger.error('Google OAuth error:', error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })

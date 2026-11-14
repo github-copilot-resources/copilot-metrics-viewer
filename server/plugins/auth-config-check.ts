@@ -1,3 +1,7 @@
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('auth-config-check')
+
 /**
  * Startup self-check for auth misconfiguration that could silently disable
  * issue-#398 user-data restriction.
@@ -33,8 +37,8 @@ export default defineNitroPlugin(() => {
     || process.env.NUXT_OAUTH_GITHUB_CLIENT_SECRET)
 
   if (oauthLooksConfigured && !authConfigured) {
-    console.warn(
-      '[auth-config-check] OAuth credentials appear to be configured ' +
+    logger.warn(
+      'OAuth credentials appear to be configured ' +
       '(NUXT_OAUTH_GITHUB_CLIENT_ID/SECRET) but none of ' +
       'NUXT_PUBLIC_USING_GITHUB_AUTH / NUXT_PUBLIC_REQUIRE_AUTH / ' +
       'NUXT_PUBLIC_IS_PUBLIC_APP / NUXT_PUBLIC_AUTH_PROVIDERS is set. ' +
