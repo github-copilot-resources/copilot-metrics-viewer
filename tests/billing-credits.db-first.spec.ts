@@ -286,6 +286,7 @@ describe('GET /api/billing-credits-top-users — DB-only top-N branch', () => {
   });
 
   it.each([
+    { limit: '10', metric: 'auto', expectedLimit: 10, expectedMetric: 'auto' },
     { limit: '10000', metric: 'grossAmount', expectedLimit: 50, expectedMetric: 'grossAmount' },
     { limit: '-3', metric: 'credits', expectedLimit: 1, expectedMetric: 'credits' },
     { limit: 'not-a-number', metric: 'unsafe SQL', expectedLimit: 10, expectedMetric: 'netAmount' },

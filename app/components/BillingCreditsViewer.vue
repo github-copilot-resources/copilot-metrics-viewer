@@ -215,15 +215,15 @@
               ({{ loadedLoginsCount }} of {{ perUserRows.length }} loaded).
               Some plans (typically pooled / fully-discounted enterprise
               billing) report spend at the enterprise level only and do not
-              tag individual users. Per-user charts and the breakdown table
-              are hidden until GitHub starts returning attributed data.
+              tag individual users. The token chart and breakdown table are
+              hidden; the global Billing CSV ranking below is independent.
             </div>
           </v-alert>
-          <v-row v-if="perUserRows.length > 0 && !noPerUserAttribution" dense class="px-3 mt-2">
+          <v-row dense class="px-3 mt-2">
             <v-col cols="12" md="6">
               <v-card variant="outlined">
                 <v-card-title class="text-subtitle-1">
-                  Top spenders by net cost
+                  Top spenders by {{ topSpendersMetric === 'grossAmount' ? 'gross' : 'net' }} cost
                   <span class="text-caption text-medium-emphasis ml-2">
                     (top {{ topSpendersCount }} globally)
                   </span>
@@ -237,13 +237,12 @@
                     <Bar :data="topSpendersChartData" :options="topSpendersChartOptions" />
                   </div>
                   <v-alert v-else type="info" variant="tonal" density="compact">
-                    Global top spenders are available after Billing CSV data has
-                    been ingested for this period.
+                    {{ topSpendersData ? 'No positive spend for this period.' : 'Global top spenders are available after Billing CSV data has been ingested for this period.' }}
                   </v-alert>
                 </v-card-text>
               </v-card>
             </v-col>
-            <v-col cols="12" md="6">
+            <v-col v-if="perUserRows.length > 0 && !noPerUserAttribution" cols="12" md="6">
               <v-card variant="outlined">
                 <v-card-title class="text-subtitle-1">
                   Top token users (CLI)
@@ -502,7 +501,7 @@ export default defineComponent({
     const topSpendersQuery = computed<Record<string, string>>(() => ({
       ...billingQuery.value,
       limit: '10',
-      metric: 'netAmount',
+      metric: 'auto',
     }));
     const {
       data: topSpendersData,
@@ -738,9 +737,10 @@ export default defineComponent({
       { title: 'Models', key: 'models', sortable: true, align: 'end' as const },
     ];
 
-    const topSpendersChartData = computed(() => {
-      return buildTopSpendersChartData(topSpendersData.value?.users ?? [], PALETTE?.[0]?.bg ?? '#3f51b5');
-    });
+    const topSpendersMetric = computed(() => topSpendersData.value?.metric === 'grossAmount' ? 'grossAmount' : 'netAmount');
+    const topSpendersChartData = computed(() => buildTopSpendersChartData(
+      topSpendersData.value?.users ?? [], PALETTE?.[0]?.bg ?? '#3f51b5', topSpendersMetric.value,
+    ));
     const topSpendersCount = computed(() => topSpendersData.value?.users?.length || 10);
 
     const topSpendersChartOptions = {
@@ -751,8 +751,8 @@ export default defineComponent({
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx: { parsed: { x: number } }) =>
-              ctx.parsed.x.toLocaleString(undefined, { style: 'currency', currency: 'USD' }),
+            label: (ctx: { dataset: { label?: string }; parsed: { x: number } }) =>
+              `${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}`,
           },
         },
       },
@@ -837,7 +837,7 @@ export default defineComponent({
       errorReason, headers,
       perUserRows, perUserHeaders,
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
-      topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount,
+      topSpendersData, topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount, topSpendersMetric,
       topTokensChartData, topTokensChartOptions,
       dataSourceBadge,
       userDetailLogin, userDetailQueryParams, openUserDetail,
