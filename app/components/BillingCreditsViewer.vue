@@ -225,19 +225,20 @@
                 <v-card-title class="text-subtitle-1">
                   Top spenders by net cost
                   <span class="text-caption text-medium-emphasis ml-2">
-                    (loaded {{ loadedLoginsCount }} of {{ perUserRows.length }} users<span v-if="loadedLoginsCount < perUserRows.length">; sort by $ or page through to load more</span>)
+                    (top {{ topSpendersCount }} globally)
                   </span>
                 </v-card-title>
                 <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
-                  Source: Billing API (<code>ai_credit/usage</code> per user) · {{ rangeLabel }}
+                  Source: Billing CSV database · {{ rangeLabel }}
                 </v-card-subtitle>
                 <v-card-text>
-                  <div v-if="topSpendersChartData" style="height: 280px">
+                  <v-progress-linear v-if="topSpendersPending" indeterminate color="indigo" class="mb-2" />
+                  <div v-else-if="topSpendersChartData" style="height: 280px">
                     <Bar :data="topSpendersChartData" :options="topSpendersChartOptions" />
                   </div>
                   <v-alert v-else type="info" variant="tonal" density="compact">
-                    No per-user spend loaded yet — page through the table below to
-                    populate billing for visible users.
+                    Global top spenders are available after Billing CSV data has
+                    been ingested for this period.
                   </v-alert>
                 </v-card-text>
               </v-card>
@@ -398,6 +399,7 @@ import {
 import { PALETTE } from '@/utils/chartPlugins';
 import { buildTopSpendersChartData } from '@/utils/billingTopSpenders';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
+import type { TopBillingUsersResponse } from '../../server/services/billing-credit-reader';
 import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -496,6 +498,23 @@ export default defineComponent({
         };
       },
     });
+
+    const topSpendersQuery = computed<Record<string, string>>(() => ({
+      ...billingQuery.value,
+      limit: '10',
+      metric: 'netAmount',
+    }));
+    const {
+      data: topSpendersData,
+      pending: topSpendersPending,
+    } = await useFetch<TopBillingUsersResponse>('/api/billing-credits-top-users', {
+      query: topSpendersQuery,
+      server: false,
+      watch: [topSpendersQuery],
+    }).catch(() => ({
+      data: { value: null },
+      pending: { value: false },
+    }));
 
     // Per-user token totals (and the canonical user list) come from
     // /api/user-metrics. We do NOT fan out billing on initial load — instead,
@@ -720,8 +739,9 @@ export default defineComponent({
     ];
 
     const topSpendersChartData = computed(() => {
-      return buildTopSpendersChartData(perUserRows.value, PALETTE?.[0]?.bg ?? '#3f51b5');
+      return buildTopSpendersChartData(topSpendersData.value?.users ?? [], PALETTE?.[0]?.bg ?? '#3f51b5');
     });
+    const topSpendersCount = computed(() => topSpendersData.value?.users?.length || 10);
 
     const topSpendersChartOptions = {
       responsive: true,
@@ -817,7 +837,7 @@ export default defineComponent({
       errorReason, headers,
       perUserRows, perUserHeaders,
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
-      topSpendersChartData, topSpendersChartOptions,
+      topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount,
       topTokensChartData, topTokensChartOptions,
       dataSourceBadge,
       userDetailLogin, userDetailQueryParams, openUserDetail,
