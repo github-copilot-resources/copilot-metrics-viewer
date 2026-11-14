@@ -54,7 +54,7 @@ export async function runSync() {
   // Get authentication headers (supports both PAT and GitHub App)
   let headers: Headers;
   try {
-    headers = await getSyncAuthHeaders(logger, identifier);
+    headers = await getSyncAuthHeaders(logger, identifier, scope);
   } catch (error) {
     logger.error(error instanceof Error ? error.message : String(error));
     process.exit(1);

@@ -53,10 +53,11 @@ function buildAppJwt(appId: string, privateKey: string): string {
 /**
  * Get a GitHub App installation token for the specified org/enterprise.
  */
-async function getGitHubAppTokenForSync(appId: string, privateKey: string, targetOrg: string): Promise<string> {
+async function getGitHubAppTokenForSync(appId: string, privateKey: string, targetOrg: string, scope: 'organization' | 'enterprise'): Promise<string> {
   const installations = await listAppInstallations(appId, privateKey);
   
-  const installation = installations.find(i => i.login?.toLowerCase() === targetOrg.toLowerCase());
+  const installationType = scope === 'enterprise' ? 'Enterprise' : 'Organization';
+  const installation = installations.find(i => i.type === installationType && i.login?.toLowerCase() === targetOrg.toLowerCase());
   if (!installation) {
     throw new Error(
       `GitHub App is not installed on org/enterprise "${targetOrg}". ` +
@@ -89,9 +90,10 @@ async function getGitHubAppTokenForSync(appId: string, privateKey: string, targe
  * 
  * @param logger - Logger instance for output
  * @param identifier - GitHub org or enterprise slug
+ * @param scope - Determines the eligible installation account type
  * @returns GitHub API headers with authentication
  */
-export async function getSyncAuthHeaders(logger: Console, identifier: string): Promise<Headers> {
+export async function getSyncAuthHeaders(logger: Console, identifier: string, scope: 'organization' | 'enterprise' = 'organization'): Promise<Headers> {
   const githubToken = process.env.NUXT_GITHUB_TOKEN;
   const githubAppId = process.env.NUXT_GITHUB_APP_ID;
   const githubAppPrivateKey = process.env.NUXT_GITHUB_APP_PRIVATE_KEY;
@@ -99,7 +101,7 @@ export async function getSyncAuthHeaders(logger: Console, identifier: string): P
   // Try GitHub App authentication first (preferred)
   if (githubAppId && githubAppPrivateKey) {
     logger.info('Using GitHub App authentication');
-    const token = await getGitHubAppTokenForSync(githubAppId, githubAppPrivateKey, identifier);
+    const token = await getGitHubAppTokenForSync(githubAppId, githubAppPrivateKey, identifier, scope);
     return new Headers({
       'Authorization': 'Bearer ' + token,
       'Accept': 'application/vnd.github+json',
