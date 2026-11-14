@@ -10,6 +10,17 @@ test.describe('Accessible activity controls', () => {
             [0, 'Inactive'], [1, 'Low'], [6, 'Low'], [7, 'Medium'],
             [13, 'Medium'], [14, 'High'], [28, 'High'],
         ] as const;
+        // The Docker app is built without historical mode. Model a historical
+        // deployment explicitly; mocking its endpoint alone does not enable it.
+        await page.route(/\/orgs\/octo-demo-org\?mock=true$/, async route => {
+            const response = await route.fetch();
+            const document = await response.text();
+            expect(document).toMatch(/\benableHistoricalMode:(?:true|false)\b/);
+            await route.fulfill({
+                response,
+                body: document.replace(/\benableHistoricalMode:(?:true|false)\b/, 'enableHistoricalMode:true'),
+            });
+        });
         await page.route(/\/api\/user-metrics(?:\?|$)/, async route => {
             const response = await route.fetch();
             const [user] = await response.json();
@@ -21,8 +32,12 @@ test.describe('Accessible activity controls', () => {
                 })),
             });
         });
+        let historyRequested = false;
+        let trendLogin: string | null = null;
         await page.route(/\/api\/user-metrics-history(?:\?|$)/, async route => {
             const login = new URL(route.request().url()).searchParams.get('login');
+            if (login) trendLogin = login;
+            else historyRequested = true;
             await route.fulfill({ json: login ? [] : [{
                 report_start_day: '2026-04-01', report_end_day: '2026-04-28',
                 total_users: bands.length, active_users: 4, avg_acceptance_rate: 10,
@@ -37,6 +52,7 @@ test.describe('Accessible activity controls', () => {
             await expect(chip).toBeVisible();
             await expect(chip).toContainText(`activity-${days} (${band})`);
         }
+        await expect.poll(() => historyRequested).toBe(true);
         const grayscale = await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' });
         const activityScreenshot = testInfo.outputPath('activity-bands-grayscale.png');
         await page.locator('.v-data-table').filter({ has: page.getByRole('button', { name: /^Activity: Inactive for activity-0,/ }) }).screenshot({ path: activityScreenshot, animations: 'disabled' });
@@ -59,6 +75,7 @@ test.describe('Accessible activity controls', () => {
         const trend = page.getByRole('button', { name: 'View trend for activity-14', exact: true });
         await trend.focus();
         await page.keyboard.press('Enter');
+        await expect.poll(() => trendLogin).toBe('activity-14');
         const dialog = page.getByRole('dialog');
         await expect(dialog).toContainText('Activity Trend — activity-14');
         const close = dialog.getByRole('button', { name: 'Close activity trend dialog' });
