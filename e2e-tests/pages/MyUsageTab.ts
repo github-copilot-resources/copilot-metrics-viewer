@@ -39,9 +39,9 @@ export class MyUsageTab {
 
     /** Read the numeric value rendered under a given tile caption. */
     async readTile(caption: string): Promise<string> {
-        const tile = this.page.locator(".v-card")
+        const tile = this.page.locator(".v-card-text")
             .filter({ has: this.page.getByText(caption, { exact: true }) })
-            .first();
+            .filter({ has: this.page.locator(".text-h4") });
         // The value sits in a `.text-h4` div within the tile.
         return (await tile.locator(".text-h4").first().textContent()) ?? "";
     }

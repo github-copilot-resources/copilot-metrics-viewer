@@ -42,9 +42,9 @@
           <!-- Chart layout toggle -->
           <div class="d-flex justify-end pa-3 pb-0">
             <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-              <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-              <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-              <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+              <v-btn value="1" size="small" title="Single column" aria-label="Single column layout" :aria-pressed="chartColumns === '1'"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+              <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout" :aria-pressed="chartColumns === '2'"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+              <v-btn value="full" size="small" title="Full width" aria-label="Full width layout" :aria-pressed="chartColumns === 'full'"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
             </v-btn-toggle>
           </div>
 
@@ -122,7 +122,26 @@
             <v-col cols="12" sm="6" md="3">
               <v-card variant="tonal" color="deep-purple" class="h-100">
                 <v-card-text>
-                  <div class="text-caption">Accepted lines</div>
+                  <div class="text-caption d-flex align-center">
+                    Accepted lines
+                    <v-tooltip location="top" max-width="280">
+                      <template #activator="{ props: tipProps }">
+                        <v-btn
+                          v-bind="tipProps"
+                          data-testid="my-usage-accepted-lines-tooltip"
+                          aria-label="About accepted lines"
+                          icon
+                          size="x-small"
+                          variant="text"
+                          class="ml-1"
+                          color="deep-purple"
+                        >
+                          <v-icon size="14">mdi-information-outline</v-icon>
+                        </v-btn>
+                      </template>
+                      <span>Lines added from accepted completions and agent edits. Chat / ask-only usage adds no lines, so this can be 0 even with many interactions.</span>
+                    </v-tooltip>
+                  </div>
                   <div class="text-h4 font-weight-bold">
                     {{ data.totals.loc_added_sum.toLocaleString() }}
                   </div>
@@ -541,9 +560,11 @@ export default defineComponent({
     const topModel = computed(() => {
       const models = data.value?.totals?.totals_by_model_feature;
       if (!models || models.length === 0) return null;
-      return [...models].sort((a, b) =>
+      return [...models].filter(mf =>
+        mf.model && !['others', 'unknown'].includes(mf.model.toLowerCase())
+      ).sort((a, b) =>
         b.user_initiated_interaction_count - a.user_initiated_interaction_count
-      )[0];
+      )[0] ?? null;
     });
 
     // Per-day ai_credits_used chart — only renders when GitHub returned the field
