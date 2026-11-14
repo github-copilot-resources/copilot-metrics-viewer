@@ -22,3 +22,29 @@ export function applyHiddenTabs(tabItems: string[], hiddenTabsConfig: string): s
 export function applyHistoricalModeFilter(tabItems: string[], _enableHistoricalMode: boolean | string): string[] {
     return tabItems;
 }
+
+export interface ActiveTabLoadingState {
+    tab: string | null;
+    signInRequired: boolean;
+    metricsReady: boolean;
+    seatsReady: boolean;
+    userMetricsReady: boolean;
+}
+
+/**
+ * Returns whether the shared loading indicator should be visible for the
+ * currently active tab.
+ */
+export function shouldShowActiveTabLoading(state: ActiveTabLoadingState): boolean {
+    if (state.signInRequired) return false;
+
+    if (state.tab === 'seat analysis') {
+        return !state.seatsReady;
+    }
+
+    if (state.tab === 'user metrics') {
+        return !state.userMetricsReady;
+    }
+
+    return !state.metricsReady;
+}
