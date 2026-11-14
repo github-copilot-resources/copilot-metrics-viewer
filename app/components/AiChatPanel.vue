@@ -243,6 +243,7 @@ const tokenSetupNeeded = ref(false);
 const tokenErrorMessage = ref('');
 const userTokenInput = ref('');
 const userToken = ref('');
+let conversationVersion = 0;
 
 // Restore user token from sessionStorage
 if (import.meta.client) {
@@ -253,7 +254,9 @@ if (import.meta.client) {
 const suggestedQuestions = computed(() => getSuggestedQuestions(props.currentTab));
 
 function clearConversation() {
+  conversationVersion++;
   messages.value = [];
+  isLoading.value = false;
   errorMessage.value = '';
   tokenSetupNeeded.value = false;
 }
@@ -285,15 +288,17 @@ function askQuestion(question: string) {
 async function sendMessage() {
   const question = inputText.value.trim();
   if (!question || isLoading.value) return;
+  const version = conversationVersion;
 
   inputText.value = '';
   errorMessage.value = '';
+  isLoading.value = true;
 
   // Add user message
   messages.value.push({ role: 'user', content: question });
   await scrollToBottom();
+  if (version !== conversationVersion) return;
 
-  isLoading.value = true;
   loadingText.value = 'Analyzing metrics...';
 
   try {
@@ -320,6 +325,7 @@ async function sendMessage() {
         },
       },
     });
+    if (version !== conversationVersion) return;
 
     const result = response as { answer: string; toolsUsed?: string[]; rounds?: number };
 
@@ -328,6 +334,7 @@ async function sendMessage() {
       content: result.answer,
     });
   } catch (error: unknown) {
+    if (version !== conversationVersion) return;
     const err = error as { statusCode?: number; statusMessage?: string; data?: { statusMessage?: string; data?: { code?: string; message?: string } }; message?: string };
     const errorCode = err.data?.data?.code || err.statusMessage;
     const errorMsg = err.data?.data?.message || err.data?.statusMessage || err.message || 'An error occurred';
@@ -341,8 +348,10 @@ async function sendMessage() {
       errorMessage.value = errorMsg;
     }
   } finally {
-    isLoading.value = false;
-    await scrollToBottom();
+    if (version === conversationVersion) {
+      isLoading.value = false;
+      await scrollToBottom();
+    }
   }
 }
 
