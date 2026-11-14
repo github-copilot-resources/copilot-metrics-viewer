@@ -56,6 +56,34 @@ test.describe('Accepted lines explanation', () => {
     }
 });
 
+test('named personal chart layouts preserve keyboard selection and rendered layout', async ({ page }) => {
+    await page.goto('/orgs/octo-demo-org?mock=true');
+    const dashboard = new DashboardPage(page);
+    await dashboard.expectMetricLabelsVisible();
+    await dashboard.gotoMyUsageTab();
+    const panel = page.locator('.v-window-item--active');
+    const single = panel.getByRole('button', { name: 'Single column layout', exact: true });
+    const two = panel.getByRole('button', { name: 'Two column layout', exact: true });
+    const full = panel.getByRole('button', { name: 'Full width layout', exact: true });
+    const container = panel.locator('.v-container').filter({ has: page.getByRole('button', { name: 'Single column layout', exact: true }) });
+    await single.focus();
+    await page.keyboard.press('Enter');
+    await expect(single).toHaveAttribute('aria-pressed', 'true');
+    await expect(two).toHaveAttribute('aria-pressed', 'false');
+    await expect(container.locator('.v-col-md-6')).toHaveCount(0);
+    await page.keyboard.press('Tab');
+    await expect(two).toBeFocused();
+    await page.keyboard.press('Space');
+    await expect(two).toHaveAttribute('aria-pressed', 'true');
+    await expect(single).toHaveAttribute('aria-pressed', 'false');
+    await expect(container.locator('.v-col-md-6').first()).toBeVisible();
+    await page.keyboard.press('Tab');
+    await expect(full).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(full).toHaveAttribute('aria-pressed', 'true');
+    await expect(container).toHaveClass(/v-container--fluid/);
+});
+
 /**
  * Mock-mode bypass: when NUXT_PUBLIC_IS_DATA_MOCKED=true the /api/my-usage
  * endpoint falls back to the fixture user "octocat" so the tab is exercisable
