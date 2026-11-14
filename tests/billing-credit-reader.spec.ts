@@ -9,7 +9,9 @@
  * without needing a real Postgres in CI.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { newDb, DataType } from 'pg-mem';
+import type { Pool } from 'pg';
 
 const mockQuery = vi.fn();
 vi.mock('../server/storage/db', () => ({
@@ -22,6 +24,7 @@ import {
   decideSource,
   aggregateForBilling,
   aggregateForBillingByUser,
+  aggregateTopBillingUsers,
   subtractRanges,
   findBillingCsvGaps,
 } from '../server/services/billing-credit-reader';
@@ -316,6 +319,111 @@ describe('aggregateForBillingByUser', () => {
     expect(sql).not.toContain('DROP TABLE');
     expect(sql).not.toContain(evilModel);
     expect(params).toContain(evilModel);
+  });
+});
+
+describe('aggregateTopBillingUsers', () => {
+  it('ranks the top users across the full enterprise dataset without a login filter', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { username: 'zoe', credits: 70, gross_amount: 7, net_amount: 7, models: 2 },
+        { username: 'alice', credits: 50, gross_amount: 5, net_amount: 5, models: 1 },
+      ],
+    });
+
+    const resp = await aggregateTopBillingUsers('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, { limit: 2 });
+
+    expect(resp.users.map(u => u.user)).toEqual(['zoe', 'alice']);
+    expect(resp.users[0]).toMatchObject({ credits: 70, grossAmount: 7, netAmount: 7, models: 2 });
+
+    const [sql, params] = mockQuery.mock.calls[0]!;
+    expect(sql).toMatch(/GROUP BY username/);
+    expect(sql).toMatch(/ORDER BY SUM\(net_amount\) DESC/);
+    expect(sql).toMatch(/LIMIT \$4/);
+    expect(sql).not.toMatch(/LOWER\(username\) = ANY/);
+    expect(params).toEqual(['ent', '2026-06-01', '2026-06-30', 2]);
+  });
+});
+
+describe('aggregateTopBillingUsers — executed SQL', () => {
+  let pool: Pool;
+  const window = resolveWindow({ year: 2026, month: 6 });
+
+  beforeEach(async () => {
+    const db = newDb();
+    db.public.registerEquivalentType({
+      name: 'float8', equivalentTo: DataType.float, isValid: () => true,
+    });
+    db.public.registerFunction({
+      name: 'nullif', args: [DataType.text, DataType.text], returns: DataType.text,
+      implementation: (a: string, b: string) => a === b ? null : a,
+    });
+    pool = new (db.adapters.createPg().Pool)() as Pool;
+    await pool.query(`
+      CREATE TABLE billing_credit_usage (
+        enterprise TEXT NOT NULL, date DATE NOT NULL, username TEXT NOT NULL,
+        organization TEXT NOT NULL DEFAULT '', repository TEXT NOT NULL DEFAULT '',
+        sku TEXT NOT NULL DEFAULT 'sku-a', model TEXT NOT NULL DEFAULT 'model-a',
+        quantity NUMERIC(20,6) NOT NULL, gross_amount NUMERIC(20,6) NOT NULL,
+        net_amount NUMERIC(20,6) NOT NULL
+      )
+    `);
+    mockQuery.mockImplementation((sql: string, params: unknown[]) => pool.query(sql, params));
+    const values: unknown[] = [];
+    const rows = Array.from({ length: 600 }, (_, i) => {
+      const net = i === 599 ? 9000 : i;
+      values.push('ent', '2026-06-15', `user-${String(i).padStart(4, '0')}`, net * 10, net * 2, net);
+      return `(${Array.from({ length: 6 }, (_v, j) => `$${i * 6 + j + 1}`).join(',')})`;
+    });
+    await pool.query(`
+      INSERT INTO billing_credit_usage (enterprise, date, username, quantity, gross_amount, net_amount)
+      VALUES ${rows.join(',')}
+    `, values);
+    await pool.query(`
+      INSERT INTO billing_credit_usage (enterprise, date, username, quantity, gross_amount, net_amount)
+      VALUES ('other-ent', '2026-06-15', 'wrong-enterprise', 999999, 999999, 999999),
+             ('ent', '2026-05-31', 'outside-before', 999999, 999999, 999999),
+             ('ent', '2026-07-01', 'outside-after', 999999, 999999, 999999),
+             ('ent', '2026-06-15', '', 999999, 999999, 999999),
+             ('ent', '2026-06-01', 'boundary-user', 5, 1, 0.5),
+             ('ent', '2026-06-30', 'boundary-user', 5, 1, 0.5)
+    `);
+  });
+
+  afterEach(async () => { await pool?.end(); });
+
+  it('ranks the full 600-user roster before limiting, including an outlier beyond the first 500', async () => {
+    const result = await aggregateTopBillingUsers('ent', window);
+    expect(result.users.map(u => u.user)).toEqual([
+      'user-0599', 'user-0598', 'user-0597', 'user-0596', 'user-0595',
+      'user-0594', 'user-0593', 'user-0592', 'user-0591', 'user-0590',
+    ]);
+    expect(result.users[0]).toEqual({
+      user: 'user-0599', credits: 90000, grossAmount: 18000, netAmount: 9000, models: 1,
+    });
+    expect(result.enterprise).toBe('ent');
+  });
+
+  it('applies inclusive dates and model/SKU filters before aggregating and ranking', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET model = 'boundary-model' WHERE username = 'boundary-user'`);
+    const result = await aggregateTopBillingUsers('ent', window, { model: 'boundary-model', sku: 'sku-a' });
+    expect(result.users).toEqual([
+      { user: 'boundary-user', credits: 10, grossAmount: 2, netAmount: 1, models: 1 },
+    ]);
+    expect((await aggregateTopBillingUsers('ent', window, { sku: 'missing' })).users).toEqual([]);
+  });
+
+  it('preserves zero-net results without silently substituting gross ranking', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 0`);
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 999999 WHERE username = 'user-0599'`);
+    const net = await aggregateTopBillingUsers('ent', window);
+    expect(net.users).toHaveLength(10);
+    expect(net.users.every(u => u.netAmount === 0)).toBe(true);
+    expect(net.users.map(u => u.user)).not.toContain('user-0599');
+    const gross = await aggregateTopBillingUsers('ent', window, { metric: 'grossAmount', limit: 1 });
+    expect(gross.users[0]?.user).toBe('user-0599');
   });
 });
 
