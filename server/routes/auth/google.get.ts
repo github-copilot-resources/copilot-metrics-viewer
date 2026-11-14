@@ -1,3 +1,5 @@
+import { emitAuditEvent } from '../../utils/audit'
+
 export default defineOAuthGoogleEventHandler({
   async onSuccess(event, { user }) {
     if (!isUserAuthorized(event, { email: user.email })) {
@@ -11,6 +13,13 @@ export default defineOAuthGoogleEventHandler({
         avatarUrl: user.picture
       }
     })
+
+    await emitAuditEvent('auth.login.success', {
+      action: 'login',
+      outcome: 'allow',
+      target: user.email,
+      detail: { provider: 'google' },
+    }, event)
 
     // If no default org is configured, let the user pick via the org picker
     const config = useRuntimeConfig(event)

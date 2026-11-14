@@ -8,6 +8,7 @@ import { clearFailedSyncsForScope, getFailedSyncsForScope } from '../../storage/
 import { Options } from '@/model/Options';
 import { isMockMode } from '../../services/github-copilot-usage-api-mock';
 import { requireUsageAdmin } from '../../utils/usage-admin';
+import { emitAuditEvent } from '../../utils/audit';
 import {
   createBillingCsvJob,
   cancelInFlightBillingCsvJobs,
@@ -55,6 +56,20 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 401, statusMessage: 'Authorization header required' });
     }
 
+    const identifier = options.githubOrg || options.githubEnt || 'unknown';
+    await emitAuditEvent('admin.sync.triggered', {
+      action,
+      outcome: 'allow',
+      target: identifier,
+      detail: {
+        scope: options.scope,
+        team: options.githubTeam,
+        date,
+        since: options.since,
+        until: options.until,
+      },
+    }, event);
+
     // Handle different sync actions
     switch (action) {
       case 'sync-date': {
@@ -66,7 +81,7 @@ export default defineEventHandler(async (event) => {
         logger.info(`Syncing metrics for ${date}`);
         const result = await syncMetricsForDate({
           scope: options.scope!,
-          identifier: options.githubOrg || options.githubEnt || 'unknown',
+          identifier,
           date,
           teamSlug: options.githubTeam,
           headers
@@ -84,7 +99,7 @@ export default defineEventHandler(async (event) => {
         logger.info(`Syncing metrics from ${options.since} to ${options.until}`);
         const results = await syncMetricsForDateRange(
           options.scope!,
-          options.githubOrg || options.githubEnt || 'unknown',
+          identifier,
           options.since,
           options.until,
           headers,
@@ -112,7 +127,7 @@ export default defineEventHandler(async (event) => {
         logger.info(`Syncing gaps from ${options.since} to ${options.until}`);
         const { results, gapsDetected, outsideWindow } = await syncGaps(
           options.scope!,
-          options.githubOrg || options.githubEnt || 'unknown',
+          identifier,
           options.since,
           options.until,
           headers,
@@ -138,7 +153,7 @@ export default defineEventHandler(async (event) => {
         logger.info(`Running bulk sync for ${options.scope}:${options.githubOrg || options.githubEnt}`);
         const bulkResult = await syncBulk(
           options.scope!,
-          options.githubOrg || options.githubEnt || 'unknown',
+          identifier,
           headers,
           options.githubTeam
         );
@@ -151,7 +166,6 @@ export default defineEventHandler(async (event) => {
 
       case 'retry-failed': {
         // Re-attempt every sync_status row in 'failed' state for this scope.
-        const identifier = options.githubOrg || options.githubEnt || 'unknown';
         const failed = await getFailedSyncsForScope(options.scope!, identifier, options.githubTeam);
 
         if (failed.length === 0) {
@@ -239,6 +253,17 @@ export default defineEventHandler(async (event) => {
           }
           throw e;
         }
+
+        await emitAuditEvent('admin.billing_csv.triggered', {
+          action,
+          outcome: 'allow',
+          target: enterprise,
+          detail: {
+            jobId: job.id,
+            startDate,
+            endDate,
+          },
+        }, event);
 
         // Fire-and-forget. The ingester catches all errors and records them
         // on the job row; we just need to make sure unhandled rejections
