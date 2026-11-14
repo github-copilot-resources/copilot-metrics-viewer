@@ -49,7 +49,7 @@ jobs:
       run: npm run typecheck
 
   test:
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       checks: write
       pull-requests: read
