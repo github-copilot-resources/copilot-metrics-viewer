@@ -1,6 +1,30 @@
 import { expect, test } from '@playwright/test'
 import { DashboardPage } from './pages/DashboardPage'
 
+test('named assistant controls open, send, clear and close by keyboard', async ({ page }) => {
+  await page.goto('/orgs/octo-demo-org?mock=true')
+  await new DashboardPage(page).expectMetricLabelsVisible()
+  await page.getByRole('button', { name: 'Open AI metrics assistant', exact: true }).focus()
+  await page.keyboard.press('Enter')
+  const card = page.locator('.ai-chat-card')
+  await expect(card).toBeVisible()
+  const send = card.getByRole('button', { name: 'Send message', exact: true })
+  await expect(send).toBeDisabled()
+  await card.getByRole('textbox').fill('Summarize synthetic mock usage')
+  await expect(send).toBeEnabled()
+  await send.focus()
+  await page.keyboard.press('Space')
+  await expect(card.locator('.ai-chat-message-user')).toContainText('Summarize synthetic mock usage')
+  await expect(card.locator('.ai-chat-message-assistant')).toBeVisible()
+  await card.getByRole('button', { name: 'Clear conversation', exact: true }).focus()
+  await page.keyboard.press('Enter')
+  await expect(card.locator('.ai-chat-message-user')).toHaveCount(0)
+  await expect(card.locator('.ai-chat-suggestions')).toBeVisible()
+  await card.getByRole('button', { name: 'Close AI metrics assistant', exact: true }).focus()
+  await page.keyboard.press('Space')
+  await expect(card).not.toBeVisible()
+})
+
 test.describe('AI Chat Panel', () => {
   test.describe.configure({ mode: 'serial' })
 
