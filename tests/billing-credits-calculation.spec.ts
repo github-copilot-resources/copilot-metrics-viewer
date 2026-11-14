@@ -2,6 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { billingCreditsUsed, sumBillingCreditsUsed } from '../app/utils/billingCredits';
 
 describe('billing credit quantity calculations', () => {
+  it('keeps discounted consumption separate from money and pooled allowance', () => {
+    const fullyDiscounted = {
+      netQuantity: 0, discountQuantity: 125.5,
+      grossAmount: 1.255, netAmount: 0, total_monthly_quota: 10000,
+    };
+    expect(billingCreditsUsed(fullyDiscounted)).toBe(125.5);
+    expect(sumBillingCreditsUsed([fullyDiscounted, fullyDiscounted])).toBe(251);
+  });
+
+  it('handles zero, missing and non-finite quantities without inventing consumption', () => {
+    expect(sumBillingCreditsUsed(null)).toBe(0);
+    expect(sumBillingCreditsUsed([])).toBe(0);
+    expect(billingCreditsUsed({ netQuantity: 0, discountQuantity: 0 })).toBe(0);
+    expect(billingCreditsUsed({ netQuantity: null })).toBe(0);
+    expect(billingCreditsUsed({ netQuantity: NaN, discountQuantity: Infinity })).toBe(0);
+    expect(billingCreditsUsed({ netQuantity: -Infinity, discountQuantity: 2.5 })).toBe(2.5);
+  });
+
   it('uses one credits definition for aggregate tiles and per-user rows', () => {
     const usageItems = [
       { user: 'octo-a', netQuantity: 8, discountQuantity: 2, grossQuantity: 10 },

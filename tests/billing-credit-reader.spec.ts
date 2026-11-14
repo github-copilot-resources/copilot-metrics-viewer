@@ -10,6 +10,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { DataType, newDb } from 'pg-mem';
+import { parseBillingCsv } from '../server/services/billing-csv-parser';
 
 const mockQuery = vi.fn();
 vi.mock('../server/storage/db', () => ({
@@ -157,6 +159,56 @@ describe('decideSource', () => {
 });
 
 describe('aggregateForBilling', () => {
+  it('keeps CSV native units and month boundaries, without adding repeated monthly allowance', async () => {
+    const header = 'date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,total_monthly_quota,organization,repository,cost_center_name,aic_quantity,aic_gross_amount';
+    const csv = [
+      header,
+      '2026-06-01,synthetic-a,copilot,copilot_premium_request,model-a,3,requests,0.04,0.12,0.12,0,10000,synthetic-org,,,125.5,1.255',
+      '2026-06-02,synthetic-b,copilot,copilot_ai_credit,model-b,10,credits,0.01,0.1,0.025,0.075,10000,synthetic-org,,,10,0.1',
+      '2026-06-03,synthetic-zero,copilot,copilot_ai_credit,model-b,0,credits,0.01,0,0,0,10000,synthetic-org,,,0,0',
+      '2026-05-01,synthetic-a,copilot,copilot_ai_credit,model-b,500,credits,0.01,5,0,5,10000,synthetic-org,,,500,5',
+    ].join('\n');
+    const parsed = parseBillingCsv(csv);
+    expect(parsed[0]!.aic_quantity).toBe(125.5);
+    const db = newDb();
+    db.public.registerEquivalentType({
+      name: 'float8', equivalentTo: DataType.float, isValid: () => true,
+    });
+    const pool = new (db.adapters.createPg().Pool)();
+    await pool.query(`CREATE TABLE billing_credit_usage (
+      enterprise text, date date, username text, product text, sku text, model text,
+      unit_type text, applied_cost_per_quantity float, quantity float,
+      gross_amount float, discount_amount float, net_amount float,
+      aic_quantity float, total_monthly_quota float
+    )`);
+    for (const row of parsed) {
+      await pool.query('INSERT INTO billing_credit_usage VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)', [
+        'synthetic-ent', row.date, row.username, row.product, row.sku, row.model, row.unit_type,
+        row.applied_cost_per_quantity, row.quantity, row.gross_amount, row.discount_amount,
+        row.net_amount, row.aic_quantity, row.total_monthly_quota,
+      ]);
+    }
+    mockQuery.mockImplementation((sql: string, params: unknown[]) => pool.query(sql, params));
+    try {
+      const window = resolveWindow({ year: 2026, month: 6 });
+      const response = await aggregateForBilling('synthetic-ent', window);
+      const credits = response.usageItems.find(item => item.unitType === 'credits')!;
+      const requests = response.usageItems.find(item => item.unitType === 'requests')!;
+      expect(credits.grossQuantity).toBe(10);
+      expect(credits.netQuantity).toBeCloseTo(7.5);
+      expect(credits.discountQuantity).toBeCloseTo(2.5);
+      expect(requests.grossQuantity).toBe(3);
+      expect(requests.netQuantity).toBe(0);
+      expect(requests.discountQuantity).toBe(3);
+      // The reader exposes native requests, not the separate aic_quantity.
+      // A presentation layer must not assume every returned unit is credits.
+      expect(requests.unitType).toBe('requests');
+      expect(response.timePeriod).toEqual({ year: 2026, month: 6 });
+    } finally {
+      await pool.end();
+    }
+  });
+
   it('emits a single grouped row mapped to the BillingUsageItem shape', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{
