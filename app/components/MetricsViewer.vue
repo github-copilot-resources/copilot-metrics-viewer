@@ -522,7 +522,8 @@ export default defineComponent({
       for (const day of data) {
         for (const mf of (day.totals_by_model_feature ?? [])) {
           if (mf.feature === 'code_completion') continue;
-          const key = mf.model ?? 'Unknown';
+          if (!mf.model || ['others', 'unknown'].includes(mf.model.toLowerCase())) continue;
+          const key = mf.model;
           modelTotals[key] = (modelTotals[key] ?? 0) + (mf.user_initiated_interaction_count ?? 0);
         }
       }
