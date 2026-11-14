@@ -1,15 +1,31 @@
 import { expect, test } from '@playwright/test';
-import type { Chart } from 'chart.js';
-import type { ComponentInternalInstance } from 'vue';
 import type { TopBillingUsersResponse } from '../server/services/billing-credit-reader';
 
-type ChartCanvas = HTMLCanvasElement & {
-  __vueParentComponent: ComponentInternalInstance & { exposed: { chart: { value: Chart } } };
+type ChartText = { text: string; x: number; y: number };
+type ChartTestWindow = Window & {
+  __billingChartText: WeakMap<HTMLCanvasElement, ChartText[]>;
 };
 
 test.describe('Global billing spend metric', { tag: ['@org', '@billing'] }, () => {
   for (const metric of ['netAmount', 'grossAmount'] as const) {
     test(`renders ${metric} outlier and metric-aware tooltip without changing the user count`, async ({ page }) => {
+      await page.addInitScript(() => {
+        const state = window as unknown as ChartTestWindow;
+        state.__billingChartText = new WeakMap();
+        const fillText = CanvasRenderingContext2D.prototype.fillText;
+        CanvasRenderingContext2D.prototype.fillText = function (...args) {
+          const transform = this.getTransform();
+          const [, x, y] = args;
+          const entries = state.__billingChartText.get(this.canvas) ?? [];
+          entries.push({
+            text: String(args[0]),
+            x: transform.a * x + transform.c * y + transform.e,
+            y: transform.b * x + transform.d * y + transform.f,
+          });
+          state.__billingChartText.set(this.canvas, entries);
+          return fillText.apply(this, args);
+        };
+      });
       const users = Array.from({ length: 600 }, (_, i) => ({
         user: `user-${String(i).padStart(4, '0')}`,
         grossAmount: i === 599 ? 999999 : i,
@@ -61,26 +77,31 @@ test.describe('Global billing spend metric', { tag: ['@org', '@billing'] }, () =
       await expect(card).toContainText('top 10 globally');
       const canvas = card.locator('canvas');
       await expect(canvas).toBeVisible();
+      await canvas.scrollIntoViewIfNeeded();
       await expect(page.getByText('(25 of 600 loaded)', { exact: true })).toBeVisible();
       await expect(page.getByText('Total credits', { exact: true }).locator('..')).toContainText('6,000');
 
-      const chart = await canvas.evaluate((element) => {
-        const chart = (element as ChartCanvas).__vueParentComponent.exposed.chart.value;
-        const position = chart.getDatasetMeta(0).data[0]!.tooltipPosition(true);
-        chart.tooltip!.setActiveElements([{ datasetIndex: 0, index: 0 }], position);
-        chart.update();
+      await expect.poll(() => canvas.evaluate(element => {
+        const entries = (window as unknown as ChartTestWindow).__billingChartText.get(element as HTMLCanvasElement) ?? [];
+        return [...new Set(entries.filter(entry => entry.text.startsWith('user-')).map(entry => entry.text))];
+      })).toEqual(topUsers.users.map(user => user.user));
+      const hover = await canvas.evaluate(element => {
+        const entries = (window as unknown as ChartTestWindow).__billingChartText.get(element as HTMLCanvasElement) ?? [];
+        const first = entries.find(entry => entry.text.startsWith('user-'));
+        if (!first) throw new Error('Chart has not drawn its ranked users');
+        const rect = element.getBoundingClientRect();
         return {
-          labels: chart.data.labels,
-          datasetLabel: chart.data.datasets[0]!.label,
-          values: chart.data.datasets[0]!.data,
-          tooltip: chart.tooltip!.body.map(body => body.lines).flat().join(' '),
+          x: rect.left + rect.width * 0.6,
+          y: rect.top + first.y * rect.height / (element as HTMLCanvasElement).height,
         };
       });
-      expect(chart.labels).toEqual(topUsers.users.map(user => user.user));
-      expect(chart.values).toEqual(topUsers.users.map(user => user[metric]));
-      expect(chart.datasetLabel).toBe(`${metricLabel === 'gross' ? 'Gross' : 'Net'} spend (USD)`);
-      expect(chart.tooltip).toContain(chart.datasetLabel);
-      expect(chart.labels).toHaveLength(10);
+      await page.mouse.move(hover.x, hover.y);
+      const datasetLabel = `${metricLabel === 'gross' ? 'Gross' : 'Net'} spend (USD)`;
+      const amount = topUsers.users[0]![metric].toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      await expect.poll(() => canvas.evaluate(element =>
+        ((window as unknown as ChartTestWindow).__billingChartText.get(element as HTMLCanvasElement) ?? [])
+          .map(entry => entry.text),
+      )).toContain(`${datasetLabel}: ${amount}`);
       if (process.env.PR429_SCREENSHOTS) {
         await card.screenshot({ path: `${process.env.PR429_SCREENSHOTS}/${metricLabel}-outlier-chart.png` });
         await page.screenshot({ path: `${process.env.PR429_SCREENSHOTS}/${metricLabel}-outlier-dashboard.png`, fullPage: true });
