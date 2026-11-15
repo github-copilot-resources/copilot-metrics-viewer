@@ -28,6 +28,10 @@ export interface BillingCreditRow {
   aic_quantity: number;
   aic_gross_amount: number;
   total_monthly_quota: number;
+  input: number;
+  output: number;
+  cache_read: number;
+  cache_write: number;
 }
 
 const UPSERT_COLUMNS = [
@@ -36,6 +40,7 @@ const UPSERT_COLUMNS = [
   'unit_type', 'applied_cost_per_quantity', 'quantity',
   'gross_amount', 'net_amount', 'discount_amount',
   'aic_quantity', 'aic_gross_amount', 'total_monthly_quota',
+  'input', 'output', 'cache_read', 'cache_write',
 ] as const;
 
 /**
@@ -50,7 +55,8 @@ const UPSERT_COLUMNS = [
  * `unit_type` variants. Postgres rejects such batches with
  * `ON CONFLICT DO UPDATE command cannot affect row a second time`, so we
  * collapse them in-memory first:
- *   - Numeric columns are SUMmed (quantity, *_amount, aic_*, total_monthly_quota)
+ *   - Numeric columns are SUMmed (quantity, *_amount, aic_*, total_monthly_quota,
+ *     input, output, cache_read, cache_write)
  *   - applied_cost_per_quantity takes MAX (peak price for the period)
  *   - cost_center_name takes the first non-empty value (cost-center detail is
  *     surfaced via a dedicated billing.cost_center_name=… filter when needed;
@@ -66,7 +72,7 @@ export async function upsertBillingCreditRows(rows: BillingCreditRow[]): Promise
 
   const pool = getPool();
 
-  // Build a flat parameter list — 18 params per row.
+  // Build a flat parameter list.
   const valuesSql: string[] = [];
   const params: unknown[] = [];
   rows.forEach((row, i) => {
@@ -79,6 +85,7 @@ export async function upsertBillingCreditRows(rows: BillingCreditRow[]): Promise
       row.unit_type, row.applied_cost_per_quantity, row.quantity,
       row.gross_amount, row.net_amount, row.discount_amount,
       row.aic_quantity, row.aic_gross_amount, row.total_monthly_quota,
+      row.input, row.output, row.cache_read, row.cache_write,
     );
   });
 
@@ -127,6 +134,10 @@ export function collapseByPrimaryKey(rows: BillingCreditRow[]): BillingCreditRow
     existing.aic_quantity        += r.aic_quantity;
     existing.aic_gross_amount    += r.aic_gross_amount;
     existing.total_monthly_quota += r.total_monthly_quota;
+    existing.input              += r.input;
+    existing.output             += r.output;
+    existing.cache_read         += r.cache_read;
+    existing.cache_write        += r.cache_write;
     if (r.applied_cost_per_quantity > existing.applied_cost_per_quantity) {
       existing.applied_cost_per_quantity = r.applied_cost_per_quantity;
     }

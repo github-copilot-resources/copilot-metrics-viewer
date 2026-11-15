@@ -41,6 +41,46 @@ describe('parseCsvLine', () => {
   });
 });
 
+describe('parseBillingCsv — reported token header with synthetic values', () => {
+  // Header: issue #461 reporter; field meanings: GitHub billing-reports docs.
+  // All values are synthetic, not a captured GitHub report. Decimals exercise
+  // the existing finite-number contract, not a claim about emitted token units.
+  const csv = readFileSync(resolve(__dirname, 'fixtures', 'billing-token-usage.synthetic.csv'), 'utf8');
+  const [header, line] = csv.trim().split('\n') as [string, string];
+  const tokens = { input: 9007199254740991, output: 123.4567891, cache_read: 0, cache_write: 789 };
+
+  it('preserves all four raw token fields under the exact reported 21-column header', () => {
+    expect(parseBillingCsv(csv)[0]).toMatchObject(tokens);
+  });
+
+  it('defaults absent legacy token fields and empty token cells to zero', () => {
+    const legacyHeader = header.split(',').slice(0, 17).join(',');
+    const legacyLine = line.split(',').slice(0, 17).join(',');
+    const zeros = { input: 0, output: 0, cache_read: 0, cache_write: 0 };
+    expect(parseBillingCsv(`${legacyHeader}\n${legacyLine}`)[0]).toMatchObject(zeros);
+    expect(parseBillingCsv(`${header}\n${legacyLine},,,,`)[0]).toMatchObject(zeros);
+  });
+
+  it('maps optional fields by name after unknown extra columns and reordered tokens', () => {
+    const h = header.split(',').slice(0, 17).join(',');
+    const r = line.split(',').slice(0, 17).join(',');
+    expect(parseBillingCsv(`${h},future,cache_write,input,other,output,cache_read\n${r},ignored,789,9007199254740991,ignored,123.4567891,0`)[0]).toMatchObject(tokens);
+    expect(parseBillingCsv(`${h},output\n${r},7`)[0]).toMatchObject({
+      input: 0, output: 7, cache_read: 0, cache_write: 0,
+    });
+  });
+
+  it.each(['input', 'output', 'cache_read', 'cache_write'])('rejects malformed present %s values', field => {
+    const cells = line.split(',');
+    cells[header.split(',').indexOf(field)] = 'not-a-number';
+    expect(() => parseBillingCsv(`${header}\n${cells.join(',')}`)).toThrow(`Column "${field}": cannot parse "not-a-number" as number`);
+  });
+
+  it('rejects a row missing a declared token cell rather than silently zeroing it', () => {
+    expect(() => parseBillingCsv(`${header}\n${line.split(',').slice(0, 20).join(',')}`)).toThrow(BillingCsvParseError);
+  });
+});
+
 describe('parseBillingCsv — synthetic edge cases', () => {
   const HEADER = '"date","username","product","sku","model","quantity","unit_type","applied_cost_per_quantity","gross_amount","discount_amount","net_amount","total_monthly_quota","organization","repository","cost_center_name","aic_quantity","aic_gross_amount"';
 
