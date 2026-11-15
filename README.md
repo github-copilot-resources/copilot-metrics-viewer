@@ -110,7 +110,9 @@ Visible to every authenticated user when any auth provider is configured (`NUXT_
 </p>
 
 ### Billing (admin)
-Aggregate AI credit billing breakdown by model, SKU, cost center, and repository — pulled from the GitHub Billing API (`/organizations/{org}/settings/billing/ai_credit/usage` and `/enterprises/{ent}/settings/billing/ai_credit/usage`). Also includes a **per-user breakdown table** that joins the org's user list with each user's billing spend (lazy-loaded one page at a time), with "Top spenders by net cost" and "Top CLI token users" charts.
+Aggregate AI credit billing breakdown by model, SKU, cost center, and repository — pulled from the GitHub Billing API (`/organizations/{org}/settings/billing/ai_credit/usage` and `/enterprises/{ent}/settings/billing/ai_credit/usage`). Also includes a **per-user breakdown table** that joins the org's user list with each user's billing spend (lazy-loaded one page at a time), with "Top spenders" and "Top CLI token users" charts.
+
+**Global Top spenders:** the admin-only Billing CSV ranking covers the entire configured billing enterprise and selected period, independently of the lazy-loaded table or metrics roster. It ranks the top ten by net cost; fully discounted periods with zero net leaders are re-ranked globally by gross cost. The heading and tooltips identify the selected metric. Empty or zero-spend periods show no bars. This requires ingested CSV coverage; live billing and individual user pages are never substituted for a global ranking. The API's `metric=auto` opts into this behavior and returns the selected `metric`; explicit `netAmount`, `grossAmount`, and `credits` rankings retain their meaning.
 
 **Visibility:**
 1. **When `NUXT_GITHUB_BILLING_TOKEN` is *not* configured** — the tab is shown to every dashboard user, but renders only a configuration-help placeholder (no data is fetched). This is a discoverability aid so operators learn the feature exists.
