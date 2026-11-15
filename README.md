@@ -258,6 +258,14 @@ The language breakdown analysis tab also displays a table showing the Accepted P
 
 4. **No Activity in the Last 7 Days (including never used seats):** A table to display seats that have had no activity in the past 7 days, ordered by the date of last activity. Seats that were used earlier are displayed at the top.
 
+### Permitted seat page export
+
+In **Permitted seat details**, **Export current page (CSV)** downloads only the rows currently displayed, in their current table sort order. Changing the page changes the exported rows; an empty page disables the action. The file includes exactly the seven visible columns: S.No, Login, GitHub ID, Assigning team, Assigned time (including the displayed plan), Last Activity At, and Last Activity Editor. Row numbering retains the page offset.
+
+The export uses the already-loaded, permission-filtered page without additional requests or access changes. It does **not** export all seats, other pages, hidden fields, anonymous summary totals, or other dashboard tables. Untrusted text is CSV-escaped; text beginning with `=`, `+`, `-`, or `@` (including whitespace/control prefixes) is prefixed with an apostrophe to prevent spreadsheet formula evaluation. Numeric zero is preserved.
+
+This is a partial export feature, not a resolution of [#448](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues/448): other table exports and authoritative filtering of departed enterprise members remain outstanding. Exporting a page does not independently verify current enterprise membership.
+
 ## Advanced Features
 
 ### Flexible Date Range Selection

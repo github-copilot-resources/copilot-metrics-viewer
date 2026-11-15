@@ -1,5 +1,35 @@
 import type { Metrics } from '@/model/Metrics';
 import type { CopilotMetrics } from '@/model/Copilot_Metrics';
+import type { Seat } from '@/model/Seat';
+
+function seatCSVCell(value: string | number | null | undefined): string {
+  let text = String(value ?? '');
+  // Quote escaping alone does not stop spreadsheets from evaluating formulas.
+  if (typeof value === 'string' && /^[\s\p{Cc}\p{Cf}]*[=+\-@]/u.test(text)) {
+    text = `'${text}`;
+  }
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/** Serialize only the supplied, displayed seat page; never fetch or expand it. */
+export function convertSeatPageToCSV(seats: readonly Seat[], firstRow = 1): string {
+  if (seats.length === 0) return '';
+
+  const headers = [
+    'S.No', 'Login', 'GitHub ID', 'Assigning team', 'Assigned time',
+    'Last Activity At', 'Last Activity Editor',
+  ];
+  const rows = seats.map((seat, index) => [
+    firstRow + index,
+    seat.login,
+    seat.id,
+    seat.team,
+    [seat.created_at, seat.plan_type].filter(value => value != null && value !== '').join(' '),
+    seat.last_activity_at,
+    seat.last_activity_editor,
+  ].map(seatCSVCell).join(','));
+  return [headers.join(','), ...rows].join('\r\n');
+}
 
 /**
  * Converts metrics data to CSV format
