@@ -149,6 +149,11 @@ CSV ingestion supports the legacy 17-column prefix and preserves the optional `i
 
 The isolated real-PostgreSQL regression suite runs with `npm test -- --run --config tests/billing-token-storage.config.ts` (requires Docker and `postgres:16-alpine`; uses an owned container and random loopback port).
 
+The separate [authoritative roster storage foundation](docs/roster-foundation.md)
+documents complete-only user-report coverage and versioned current GitHub team
+membership (24-hour freshness). It is an internal prerequisite for bounded billing
+sorting, not a new billing UI/API; virtual reports-to membership remains unavailable.
+
 When the cache covers the selected window, the Billing tab serves data from the DB and shows a small "Source: local cache" chip with the last-synced timestamp. When the window is partially or not covered, it falls back to the live API automatically.
 
 **Triggering an ingest** (admin panel → Billing CSV ingest):
