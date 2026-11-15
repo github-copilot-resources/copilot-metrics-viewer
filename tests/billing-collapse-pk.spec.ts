@@ -43,11 +43,26 @@ function row(over: Partial<BillingCreditRow> = {}): BillingCreditRow {
     aic_quantity: 10,
     aic_gross_amount: 0.4,
     total_monthly_quota: 1000,
+    input: 0,
+    output: 0,
+    cache_read: 0,
+    cache_write: 0,
     ...over,
   };
 }
 
 describe('collapseByPrimaryKey', () => {
+  it('independently sums raw token fields only within the existing key', () => {
+    const a = row({ username: '', input: 10, output: 0.25, cache_read: 30, cache_write: 40 });
+    const b = row({ username: '', input: 1, output: 0.5, cache_read: 3, cache_write: 4 });
+    const other = row({ username: '', model: 'synthetic-other', input: 100 });
+    const result = collapseByPrimaryKey([a, b, other]);
+    expect(result).toHaveLength(2);
+    expect(result.find(r => r.model === a.model)).toMatchObject({
+      input: 11, output: 0.75, cache_read: 33, cache_write: 44,
+    });
+    expect(a.input).toBe(10);
+  });
   it('passes through a single-row batch unchanged', () => {
     const r = row();
     expect(collapseByPrimaryKey([r])).toEqual([r]);

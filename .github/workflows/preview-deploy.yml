@@ -438,14 +438,6 @@ jobs:
             --yes \
             || true
 
-      - name: Delete managed environment
-        run: |
-          az containerapp env delete \
-            --name ${{ env.PREVIEW_ENV_NAME }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --yes \
-            || true
-
       - name: Comment on PR about cleanup
         if: ${{ env.PR_NUMBER != '' }}
         uses: actions/github-script@v7
@@ -455,8 +447,8 @@ jobs:
             if (!prNumber) return;
             const action = '${{ github.event.action }}';
             const reason = action === 'closed' ? 'PR was merged/closed' : 'deploy label was removed';
-            const body = `## 🧹 Preview Environment Cleaned Up\n\n` +
-              `The preview environment has been removed (${reason}).`;
+            const body = `## 🧹 Shared Preview Apps Cleaned Up\n\n` +
+              `The shared preview apps have been removed (${reason}). The shared managed environment was retained for future deployments.`;
             github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,

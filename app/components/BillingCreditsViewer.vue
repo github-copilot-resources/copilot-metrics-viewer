@@ -168,30 +168,96 @@
           <div class="d-flex flex-wrap gap-3 pa-3">
             <v-card variant="tonal" color="cyan-darken-2" min-width="180">
               <v-card-text>
-                <div class="text-caption">Total credits</div>
+                <div class="text-caption d-flex align-center">
+                  Total credits
+                  <v-tooltip location="top" max-width="320">
+                    <template #activator="{ props: tipProps }">
+                      <v-btn
+                        v-bind="tipProps"
+                        aria-label="About total credits"
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="ml-1"
+                        color="cyan-darken-2"
+                      >
+                        <v-icon size="14">mdi-information-outline</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>
+                      From {{ billingSourceLabel }} for {{ rangeLabel }}.
+                      Credits use the same definition as the per-user table:
+                      net billed quantity plus discounted quantity.
+                    </span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h5 font-weight-bold">
-                  {{ totalGrossQty.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                  {{ totalCredits.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
                 </div>
                 <div class="text-caption text-medium-emphasis mt-1">
-                  Billing API · {{ rangeLabel }}
+                  {{ billingSourceLabel }} · {{ rangeLabel }}
                 </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="green" min-width="180">
               <v-card-text>
-                <div class="text-caption">Gross cost (USD)</div>
+                <div class="text-caption d-flex align-center">
+                  Gross cost (USD)
+                  <v-tooltip location="top" max-width="320">
+                    <template #activator="{ props: tipProps }">
+                      <v-btn
+                        v-bind="tipProps"
+                        aria-label="About gross cost (usd)"
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="ml-1"
+                        color="green"
+                      >
+                        <v-icon size="14">mdi-information-outline</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>
+                      From {{ billingSourceLabel }} for {{ rangeLabel }}.
+                      Gross cost is the list-price USD amount before discounts
+                      or credits are applied.
+                    </span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h5 font-weight-bold">${{ totalGrossAmount.toFixed(2) }}</div>
                 <div class="text-caption text-medium-emphasis mt-1">
-                  Billing API · {{ rangeLabel }}
+                  {{ billingSourceLabel }} · {{ rangeLabel }}
                 </div>
               </v-card-text>
             </v-card>
             <v-card variant="tonal" color="indigo" min-width="180">
               <v-card-text>
-                <div class="text-caption">Net cost (USD)</div>
+                <div class="text-caption d-flex align-center">
+                  Net cost (USD)
+                  <v-tooltip location="top" max-width="320">
+                    <template #activator="{ props: tipProps }">
+                      <v-btn
+                        v-bind="tipProps"
+                        aria-label="About net cost (usd)"
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="ml-1"
+                        color="indigo"
+                      >
+                        <v-icon size="14">mdi-information-outline</v-icon>
+                      </v-btn>
+                    </template>
+                    <span>
+                      From {{ billingSourceLabel }} for {{ rangeLabel }}.
+                      Net cost is the USD amount after discounts are applied —
+                      the amount billed for the selected window.
+                    </span>
+                  </v-tooltip>
+                </div>
                 <div class="text-h5 font-weight-bold">${{ totalNetAmount.toFixed(2) }}</div>
                 <div class="text-caption text-medium-emphasis mt-1">
-                  Billing API · {{ rangeLabel }}
+                  {{ billingSourceLabel }} · {{ rangeLabel }}
                 </div>
               </v-card-text>
             </v-card>
@@ -215,70 +281,34 @@
               ({{ loadedLoginsCount }} of {{ perUserRows.length }} loaded).
               Some plans (typically pooled / fully-discounted enterprise
               billing) report spend at the enterprise level only and do not
-              tag individual users. Per-user charts and the breakdown table
-              are hidden until GitHub starts returning attributed data.
+              tag individual users. The token chart and breakdown table are
+              hidden; the global Billing CSV ranking below is independent.
             </div>
           </v-alert>
-          <v-alert
-            v-if="unmatchedBillingUsernamesList.length > 0"
-            type="warning"
-            variant="tonal"
-            density="comfortable"
-            class="mx-3 mt-3 mb-2"
-            icon="mdi-account-question-outline"
-          >
-            <div class="font-weight-medium mb-1">
-              {{ unmatchedBillingUsernamesList.length }} billing username<span v-if="unmatchedBillingUsernamesList.length !== 1">s</span>
-              with spend did not match the loaded Metrics API logins
-            </div>
-            <div class="text-body-2 mb-2">
-              This can happen on EMU enterprises when GitHub's metrics and billing feeds use
-              different handles for the same person. Configure <code>NUXT_BILLING_USER_ALIASES</code>
-              to map billing usernames to metrics logins.
-            </div>
-            <v-expansion-panels variant="accordion">
-              <v-expansion-panel>
-                <v-expansion-panel-title class="text-body-2">
-                  Show unmatched billing usernames
-                </v-expansion-panel-title>
-                <v-expansion-panel-text>
-                  <v-chip
-                    v-for="username in unmatchedBillingUsernamesList"
-                    :key="username"
-                    size="small"
-                    variant="tonal"
-                    class="ma-1"
-                  >
-                    {{ username }}
-                  </v-chip>
-                </v-expansion-panel-text>
-              </v-expansion-panel>
-            </v-expansion-panels>
-          </v-alert>
-          <v-row v-if="perUserRows.length > 0 && !noPerUserAttribution" dense class="px-3 mt-2">
+          <v-row dense class="px-3 mt-2">
             <v-col cols="12" md="6">
               <v-card variant="outlined">
                 <v-card-title class="text-subtitle-1">
-                  Top spenders by net cost
+                  Top spenders by {{ topSpendersMetric === 'grossAmount' ? 'gross' : 'net' }} cost
                   <span class="text-caption text-medium-emphasis ml-2">
-                    (loaded {{ loadedLoginsCount }} of {{ perUserRows.length }} users<span v-if="loadedLoginsCount < perUserRows.length">; sort by $ or page through to load more</span>)
+                    (top {{ topSpendersCount }} globally)
                   </span>
                 </v-card-title>
                 <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
-                  Source: Billing API (<code>ai_credit/usage</code> per user) · {{ rangeLabel }}
+                  Source: Billing CSV database · {{ rangeLabel }}
                 </v-card-subtitle>
                 <v-card-text>
-                  <div v-if="topSpendersChartData" style="height: 280px">
+                  <v-progress-linear v-if="topSpendersPending" indeterminate color="indigo" class="mb-2" />
+                  <div v-else-if="topSpendersChartData" style="height: 280px">
                     <Bar :data="topSpendersChartData" :options="topSpendersChartOptions" />
                   </div>
                   <v-alert v-else type="info" variant="tonal" density="compact">
-                    No per-user spend loaded yet — page through the table below to
-                    populate billing for visible users.
+                    {{ topSpendersData ? 'No positive spend for this period.' : 'Global top spenders are available after Billing CSV data has been ingested for this period.' }}
                   </v-alert>
                 </v-card-text>
               </v-card>
             </v-col>
-            <v-col cols="12" md="6">
+            <v-col v-if="perUserRows.length > 0 && !noPerUserAttribution" cols="12" md="6">
               <v-card variant="outlined">
                 <v-card-title class="text-subtitle-1">
                   Top token users (CLI)
@@ -293,9 +323,14 @@
                   <div v-if="topTokensChartData" style="height: 280px">
                     <Bar :data="topTokensChartData" :options="topTokensChartOptions" />
                   </div>
-                  <v-alert v-else type="info" variant="tonal" density="compact">
-                    No per-user CLI token usage available — load the User Metrics tab
-                    once so token data is fetched, then revisit.
+                  <v-alert
+                    v-else
+                    type="info"
+                    variant="tonal"
+                    density="compact"
+                    data-testid="billing-top-token-users-empty-state"
+                  >
+                    No CLI token usage was reported for any user in this period.
                   </v-alert>
                 </v-card-text>
               </v-card>
@@ -432,7 +467,10 @@ import {
   Legend,
 } from 'chart.js';
 import { PALETTE } from '@/utils/chartPlugins';
+import { buildTopSpendersChartData } from '@/utils/billingTopSpenders';
+import { billingCreditsUsed, sumBillingCreditsUsed } from '@/utils/billingCredits';
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
+import type { TopBillingUsersResponse } from '../../server/services/billing-credit-reader';
 import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -532,6 +570,23 @@ export default defineComponent({
       },
     });
 
+    const topSpendersQuery = computed<Record<string, string>>(() => ({
+      ...billingQuery.value,
+      limit: '10',
+      metric: 'auto',
+    }));
+    const {
+      data: topSpendersData,
+      pending: topSpendersPending,
+    } = await useFetch<TopBillingUsersResponse>('/api/billing-credits-top-users', {
+      query: topSpendersQuery,
+      server: false,
+      watch: [topSpendersQuery],
+    }).catch(() => ({
+      data: { value: null },
+      pending: { value: false },
+    }));
+
     // Per-user token totals (and the canonical user list) come from
     // /api/user-metrics. We do NOT fan out billing on initial load — instead,
     // the per-user table emits @update:options with the visible page's logins
@@ -552,7 +607,6 @@ export default defineComponent({
     interface BillingAgg { credits: number; grossAmount: number; netAmount: number; models: Set<string>; display: string }
     const billingByLogin = reactive(new Map<string, BillingAgg>());
     const loadedLogins = reactive(new Set<string>());
-    const unmatchedBillingUsernames = reactive(new Set<string>());
     const perUserLoading = ref(false);
 
     // When the user switches month or toggles month view, drop cached
@@ -560,7 +614,6 @@ export default defineComponent({
     watch([selectedMonth, monthView, () => props.queryParams.since, () => props.queryParams.until], () => {
       billingByLogin.clear();
       loadedLogins.clear();
-      unmatchedBillingUsernames.clear();
     });
 
     async function loadBillingForLogins(logins: string[]): Promise<void> {
@@ -590,18 +643,12 @@ export default defineComponent({
           const qp: Record<string, string> = { ...parent, logins: chunk.join(',') };
           try {
             const resp = await $fetch<BillingCreditsResponse>('/api/billing-credits-by-user', { query: qp });
-            for (const username of resp.unmatchedBillingUsernames ?? []) {
-              const trimmed = username.trim();
-              if (trimmed) unmatchedBillingUsernames.add(trimmed);
-            }
             for (const it of resp.usageItems ?? []) {
               const u = (it.user || '').trim();
               if (!u) continue;
               const key = u.toLowerCase();
-              unmatchedBillingUsernames.delete(u);
               const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
-              prev.credits += Number.isFinite(it.netQuantity) ? it.netQuantity : 0;
-              prev.credits += Number.isFinite(it.discountQuantity) ? it.discountQuantity : 0;
+              prev.credits += billingCreditsUsed(it);
               prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
               prev.netAmount += Number.isFinite(it.netAmount) ? it.netAmount : 0;
               if (it.model) prev.models.add(it.model);
@@ -656,9 +703,7 @@ export default defineComponent({
       return '';
     });
 
-    const totalGrossQty = computed(() =>
-      items.value.reduce((s, i) => s + (i.grossQuantity || 0), 0)
-    );
+    const totalCredits = computed(() => sumBillingCreditsUsed(items.value));
     const totalGrossAmount = computed(() =>
       items.value.reduce((s, i) => s + (i.grossAmount || 0), 0)
     );
@@ -689,9 +734,6 @@ export default defineComponent({
       });
     });
     const loadedLoginsCount = computed(() => loadedLogins.size);
-    const unmatchedBillingUsernamesList = computed(() =>
-      [...unmatchedBillingUsernames].sort((a, b) => a.localeCompare(b))
-    );
 
     // True when we've loaded at least one page of users AND the aggregate
     // totals show non-zero spend AND zero per-user attribution has come back.
@@ -721,17 +763,12 @@ export default defineComponent({
         if (!u) continue;
         const key = u.toLowerCase();
         const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
-        prev.credits += Number.isFinite(it.netQuantity) ? it.netQuantity : 0;
-        prev.credits += Number.isFinite(it.discountQuantity) ? it.discountQuantity : 0;
+        prev.credits += billingCreditsUsed(it);
         prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
         prev.netAmount += Number.isFinite(it.netAmount) ? it.netAmount : 0;
         if (it.model) prev.models.add(it.model);
         billingByLogin.set(key, prev);
         loadedLogins.add(key);
-      }
-      for (const username of data.value?.unmatchedBillingUsernames ?? []) {
-        const trimmed = username.trim();
-        if (trimmed) unmatchedBillingUsernames.add(trimmed);
       }
     });
 
@@ -768,25 +805,11 @@ export default defineComponent({
       { title: 'Models', key: 'models', sortable: true, align: 'end' as const },
     ];
 
-    const topSpendersChartData = computed(() => {
-      // Sort by netAmount desc and drop $0 rows so enterprises with no
-      // per-user attribution (or pages we haven't lazy-loaded yet) don't
-      // render a chart full of zero bars labelled "top spenders".
-      const withSpend = perUserRows.value.filter(r => r.netAmount > 0);
-      if (withSpend.length === 0) return null;
-      const top = [...withSpend].sort((a, b) => b.netAmount - a.netAmount).slice(0, 10);
-      return {
-        labels: top.map(r => r.user),
-        datasets: [
-          {
-            label: 'Net spend (USD)',
-            data: top.map(r => +r.netAmount.toFixed(2)),
-            backgroundColor: PALETTE?.[0]?.bg ?? '#3f51b5',
-            borderRadius: 4,
-          },
-        ],
-      };
-    });
+    const topSpendersMetric = computed(() => topSpendersData.value?.metric === 'grossAmount' ? 'grossAmount' : 'netAmount');
+    const topSpendersChartData = computed(() => buildTopSpendersChartData(
+      topSpendersData.value?.users ?? [], PALETTE?.[0]?.bg ?? '#3f51b5', topSpendersMetric.value,
+    ));
+    const topSpendersCount = computed(() => topSpendersData.value?.users?.length || 10);
 
     const topSpendersChartOptions = {
       responsive: true,
@@ -796,8 +819,8 @@ export default defineComponent({
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx: { parsed: { x: number } }) =>
-              ctx.parsed.x.toLocaleString(undefined, { style: 'currency', currency: 'USD' }),
+            label: (ctx: { dataset: { label?: string }; parsed: { x: number } }) =>
+              `${ctx.dataset.label}: ${ctx.parsed.x.toLocaleString(undefined, { style: 'currency', currency: 'USD' })}`,
           },
         },
       },
@@ -842,6 +865,9 @@ export default defineComponent({
     };
 
     const dataSourceBadge = computed(() => buildDataSourceBadge(dataSource.value));
+    const billingSourceLabel = computed(() =>
+      dataSource.value.source === 'db' ? 'Billing CSV ingest' : 'GitHub Billing API'
+    );
 
     // Human label for the window covered by the current billing fetch,
     // used in every card/table subtitle so the source+range is unambiguous.
@@ -878,14 +904,13 @@ export default defineComponent({
       data, pending, error, items, periodLabel,
       selectedMonth, currentMonthIso, shiftMonth, isCurrentMonth,
       monthView, rangeLabel,
-      totalGrossQty, totalGrossAmount, totalNetAmount,
+      totalCredits, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserHeaders,
       perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
-      unmatchedBillingUsernamesList,
-      topSpendersChartData, topSpendersChartOptions,
+      topSpendersData, topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount, topSpendersMetric,
       topTokensChartData, topTokensChartOptions,
-      dataSourceBadge,
+      dataSourceBadge, billingSourceLabel,
       userDetailLogin, userDetailQueryParams, openUserDetail,
     };
   },

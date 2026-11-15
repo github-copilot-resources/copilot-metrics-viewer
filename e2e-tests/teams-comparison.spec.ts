@@ -3,6 +3,30 @@ import { DashboardPage } from './pages/DashboardPage';
 
 const tag = { tag: ['@teams-comparison'] };
 
+test('named team removal controls preserve the remaining comparison selection', async ({ page }) => {
+    await page.goto('/orgs/mocked-org?mock=true');
+    const dashboard = new DashboardPage(page);
+    await dashboard.expectMetricLabelsVisible();
+    await dashboard.gotoTeamsTab();
+    const dropdown = page.getByRole('combobox').first();
+    await dropdown.click();
+    const options = page.getByRole('listbox');
+    await options.getByText('The A Team', { exact: true }).click();
+    await options.getByText('Development Team', { exact: true }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByText('Comparison', { exact: true })).toBeVisible();
+    const remove = page.getByRole('button', { name: 'Remove The A Team', exact: true });
+    await remove.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('Deep Dive', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Navigate to detailed metrics for Development Team', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Remove The A Team', exact: true })).toHaveCount(0);
+    const deselect = page.getByRole('button', { name: 'Deselect team', exact: true });
+    await deselect.focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByText('No Team Selected', { exact: true })).toBeVisible();
+});
+
 test.describe('Teams Comparison tests', () => {
     test.describe.configure({ mode: 'serial' });
 

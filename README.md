@@ -110,7 +110,9 @@ Visible to every authenticated user when any auth provider is configured (`NUXT_
 </p>
 
 ### Billing (admin)
-Aggregate AI credit billing breakdown by model, SKU, cost center, and repository — pulled from the GitHub Billing API (`/organizations/{org}/settings/billing/ai_credit/usage` and `/enterprises/{ent}/settings/billing/ai_credit/usage`). Also includes a **per-user breakdown table** that joins the org's user list with each user's billing spend (lazy-loaded one page at a time), with "Top spenders by net cost" and "Top CLI token users" charts.
+Aggregate AI credit billing breakdown by model, SKU, cost center, and repository — pulled from the GitHub Billing API (`/organizations/{org}/settings/billing/ai_credit/usage` and `/enterprises/{ent}/settings/billing/ai_credit/usage`). Also includes a **per-user breakdown table** that joins the org's user list with each user's billing spend (lazy-loaded one page at a time), with "Top spenders" and "Top CLI token users" charts.
+
+**Global Top spenders:** the admin-only Billing CSV ranking covers the entire configured billing enterprise and selected period, independently of the lazy-loaded table or metrics roster. It ranks the top ten by net cost; fully discounted periods with zero net leaders are re-ranked globally by gross cost. The heading and tooltips identify the selected metric. Empty or zero-spend periods show no bars. This requires ingested CSV coverage; live billing and individual user pages are never substituted for a global ranking. The API's `metric=auto` opts into this behavior and returns the selected `metric`; explicit `netAmount`, `grossAmount`, and `credits` rankings retain their meaning.
 
 **Visibility:**
 1. **When `NUXT_GITHUB_BILLING_TOKEN` is *not* configured** — the tab is shown to every dashboard user, but renders only a configuration-help placeholder (no data is fetched). This is a discoverability aid so operators learn the feature exists.
@@ -142,6 +144,10 @@ No user selected → the section shows an info banner explaining the feature. Cl
 #### Billing CSV Ingest (local cache, multi-month windows)
 
 The live billing endpoints cap windows at ~31 days and rate-limit aggressively. For longer historical analysis, the dashboard can pull GitHub's **enterprise billing CSV exports** into a local Postgres table, then serve the Billing tab from the cache.
+
+CSV ingestion supports the legacy 17-column prefix and preserves the optional `input`, `output`, `cache_read`, and `cache_write` token counts [documented by GitHub](https://docs.github.com/en/billing/reference/billing-reports). Optional columns are mapped by name after the required prefix; unknown extra columns remain tolerated. Missing optional headers and empty numeric cells default to zero; malformed present numeric cells fail ingestion through its existing error reporting. Values follow the existing finite JavaScript-number parser contract, without token/currency conversions, and are stored as PostgreSQL `NUMERIC` without fixed-scale rounding. Schema upgrades are additive; previously discarded tokens require re-ingestion to recover. This does not add token visualizations or change other billing totals.
+
+The isolated real-PostgreSQL regression suite runs with `npm test -- --run --config tests/billing-token-storage.config.ts` (requires Docker and `postgres:16-alpine`; uses an owned container and random loopback port).
 
 When the cache covers the selected window, the Billing tab serves data from the DB and shows a small "Source: local cache" chip with the last-synced timestamp. When the window is partially or not covered, it falls back to the live API automatically.
 
@@ -489,6 +495,16 @@ Row-level scoping only applies when the allowlist is set. With an empty allowlis
 | Billing tab (token unset) | ⚙️ configuration-help placeholder | ⚙️ configuration-help placeholder |
 
 The filter is enforced **server-side** — non-admin requests never receive other users' data over the wire. On the Teams tab, KPI tiles automatically switch to aggregate signals (rather than derived-from-user-rows) when the caller is row-restricted, so team totals still render correctly.
+
+Seat and User Metrics KPI tiles use fixed-size anonymous summaries for the authorized
+scope/team (and user-metrics date window), independently of permitted detail rows.
+Seat pagination still counts only permitted rows. When a live organization seat request
+resolves only a page, **Total Assigned** uses the provider's total; never-used and
+inactivity totals display **Unavailable**, not page/self counts. Missing summaries also
+display **Unavailable**. No additional full-seat fetch is made for these tiles.
+`/api/user-metrics` remains an array; its anonymous counts and weighted acceptance-rate
+inputs are carried in `x-copilot-user-summary`. Tables, searches and detail charts
+remain restricted to permitted users.
 
 ##### Auth-mode matrix for Billing & My Usage tabs
 

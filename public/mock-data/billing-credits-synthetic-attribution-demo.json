@@ -1,0 +1,90 @@
+{
+  "timePeriod": { "year": 2026, "month": 6 },
+  "enterprise": "octo-demo-ent",
+  "usageItems": [
+    {
+      "product": "Copilot",
+      "sku": "synthetic_ai_credit_demo",
+      "model": "Demo model A",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 1250.25,
+      "grossAmount": 12.5025,
+      "discountQuantity": 1250.25,
+      "discountAmount": 12.5025,
+      "netQuantity": 0,
+      "netAmount": 0,
+      "user": "monalisa"
+    },
+    {
+      "product": "Copilot",
+      "sku": "synthetic_ai_credit_demo",
+      "model": "Demo model B",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 975,
+      "grossAmount": 9.75,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 975,
+      "netAmount": 9.75,
+      "user": "defunkt"
+    },
+    {
+      "product": "Copilot",
+      "sku": "synthetic_ai_credit_demo",
+      "model": "Demo model C",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 400,
+      "grossAmount": 4,
+      "discountQuantity": 200,
+      "discountAmount": 2,
+      "netQuantity": 200,
+      "netAmount": 2,
+      "user": "codertocat"
+    },
+    {
+      "product": "Copilot",
+      "sku": "synthetic_ai_credit_demo",
+      "model": "Demo model D",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 0,
+      "grossAmount": 0,
+      "discountQuantity": 0,
+      "discountAmount": 0,
+      "netQuantity": 0,
+      "netAmount": 0,
+      "user": "octocat"
+    },
+    {
+      "product": "Copilot",
+      "sku": "synthetic_ai_credit_demo",
+      "model": "Demo model E",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 1800,
+      "grossAmount": 18,
+      "discountQuantity": 1800,
+      "discountAmount": 18,
+      "netQuantity": 0,
+      "netAmount": 0,
+      "user": "octokitten"
+    },
+    {
+      "product": "Copilot",
+      "sku": "synthetic_ai_credit_demo",
+      "model": "Demo model F",
+      "unitType": "ai-credits",
+      "pricePerUnit": 0.01,
+      "grossQuantity": 325.5,
+      "grossAmount": 3.255,
+      "discountQuantity": 162.75,
+      "discountAmount": 1.6275,
+      "netQuantity": 162.75,
+      "netAmount": 1.6275,
+      "user": "hubot"
+    }
+  ]
+}
