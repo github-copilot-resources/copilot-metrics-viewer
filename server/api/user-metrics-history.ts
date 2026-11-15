@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * GET /api/user-metrics-history
  *
@@ -20,7 +22,7 @@ import { isDbConfigured } from '../storage/db';
 import { isUsageAdminForEvent, getSessionLoginForFilter } from '../utils/usage-admin';
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
+  const logger = createLogger('user-metrics-history', event.context);
 
   if (!isDbConfigured()) {
     throw createError({
@@ -56,13 +58,13 @@ export default defineEventHandler(async (event) => {
       }
       // Per-user time series
       const series = await getUserTimeSeries(scope, identifier, login);
-      logger.info(`Returning ${series.length} time-series entries for user "${login}" in ${scope}:${identifier}`);
+      logger.info('Returning user time-series entries', { count: series.length });
       return series;
     }
 
     // Aggregate snapshot history
     const history = await getUserMetricsHistory(scope, identifier);
-    logger.info(`Returning ${history.length} user-metrics history entries for ${scope}:${identifier}`);
+    logger.info('Returning user-metrics history entries', { count: history.length });
     return history;
   } catch (error: unknown) {
     // Re-throw H3 errors (createError) — e.g. the 403 above MUST surface.

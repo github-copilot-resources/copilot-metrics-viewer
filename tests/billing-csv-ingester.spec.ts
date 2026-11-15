@@ -167,8 +167,9 @@ describe('runBillingCsvIngester — happy path', () => {
     expect(result.status).toBe('completed');
     expect(result.rowsIngested).toBe(1);
     expect(result.downloadUrlCount).toBe(1);
-    expect(mockDeleteRange).toHaveBeenCalledWith('acme-ent', '2026-05-27', '2026-06-26');
+    expect(mockDeleteRange).toHaveBeenCalledWith('acme-ent', '2026-05-27', '2026-06-26', fakeClient);
     expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpsert.mock.calls[0]![1]).toBe(fakeClient);
     expect(mockUpsert.mock.calls[0]![0]).toHaveLength(1);
     expect(mockUpsert.mock.calls[0]![0][0]).toMatchObject({
       enterprise: 'acme-ent',

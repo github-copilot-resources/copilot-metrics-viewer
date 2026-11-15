@@ -1,3 +1,4 @@
+import { createLogger } from '../utils/logger';
 import type { CopilotMetrics } from "@/model/Copilot_Metrics";
 import type { ReportDayTotals } from '../services/github-copilot-usage-api';
 import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
@@ -45,7 +46,7 @@ export default defineEventHandler(async (event) => {
     const stats = calculateGitHubStats(metricsData, reportData || []);
     return stats;
   } catch (error) {
-    const logger = console;
+    const logger = createLogger('github-stats', event.context);
     logger.error('Error in github-stats endpoint:', error);
     throw createError({ statusCode: 500, statusMessage: 'Error fetching metrics data: ' + (error instanceof Error ? error.message : String(error)) });
   }

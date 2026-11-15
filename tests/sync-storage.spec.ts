@@ -124,6 +124,39 @@ describe('Sync Service & Storage', () => {
   });
 
   describe('syncBulk', () => {
+    it.each(['info', 'silent'])('keeps foundation sync failures classified and private at %s level', async logLevel => {
+      const sentinel = 'SYNTHETIC_FOUNDATION_DO_NOT_LOG';
+      vi.stubGlobal('useRuntimeConfig', () => ({ logLevel, logFormat: 'json' }));
+      const lines: string[] = [];
+      const spies = (['info', 'warn', 'error'] as const).map(method => vi.spyOn(console, method).mockImplementation((...args: unknown[]) => {
+        lines.push(args.map(arg => typeof arg === 'string' ? arg : JSON.stringify(arg)).join(' '));
+      }));
+      try {
+        const failure = Object.assign(new Error(sentinel), { statusCode: 503, code: 'ECONNRESET' });
+        vi.mocked(syncTeamMembership).mockRejectedValueOnce(failure);
+        vi.mocked(syncUserUsage).mockRejectedValueOnce(failure);
+        expect((await syncBulk('organization', sentinel, TEST_HEADERS, sentinel)).success).toBe(true);
+        vi.mocked(syncUserUsage).mockRejectedValueOnce(failure);
+        expect((await syncMetricsForDate({
+          scope: 'organization', identifier: sentinel, date: '2026-02-15', headers: TEST_HEADERS,
+        })).success).toBe(true);
+        expect(lines.join('\n')).not.toContain(sentinel);
+        if (logLevel === 'silent') {
+          expect(lines).toEqual([]);
+        } else {
+          const records = lines.map(line => JSON.parse(line));
+          expect(records.filter(record => record.level === 'warn')).toEqual([
+            expect.objectContaining({ tag: 'sync-service', message: 'Team membership publication failed (non-fatal); existing freshness policy still applies' }),
+            expect.objectContaining({ tag: 'sync-service', name: 'Error', code: 'ECONNRESET', statusCode: 503 }),
+            expect.objectContaining({ tag: 'sync-service', name: 'Error', code: 'ECONNRESET', statusCode: 503 }),
+          ]);
+        }
+      } finally {
+        spies.forEach(spy => spy.mockRestore());
+        vi.unstubAllGlobals();
+      }
+    });
+
     it('never promotes aggregate success into user coverage on bulk or daily backfill failures', async () => {
       vi.mocked(syncUserUsage).mockRejectedValueOnce(new Error('synthetic incomplete report'));
       expect((await syncBulk('organization', 'test-org', TEST_HEADERS)).success).toBe(true);

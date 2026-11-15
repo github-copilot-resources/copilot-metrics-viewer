@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * GET /api/billing-credits — admin only
  *
@@ -77,7 +79,7 @@ export interface BillingCreditsResponse {
 export { buildBillingApiUrl } from '../utils/billing-url';
 
 export default defineEventHandler(async (event): Promise<BillingCreditsResponse> => {
-  const logger = console;
+  const logger = createLogger('billing-credits', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
   const config = useRuntimeConfig(event);
@@ -236,7 +238,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     ? `${apiUrl}?${new URLSearchParams(forwardParams).toString()}`
     : apiUrl;
 
-  logger.info(`Fetching billing credits from ${apiUrl}${billingEnterprise ? ' (NUXT_BILLING_ENTERPRISE override)' : ''}`);
+  logger.info(`Fetching billing credits${billingEnterprise ? ' (NUXT_BILLING_ENTERPRISE override)' : ''}`);
 
   try {
     // Build headers explicitly — the billing API requires X-GitHub-Api-Version
