@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * GET /api/seats-history
  *
@@ -14,7 +16,7 @@ import { getSeatsHistorySummary } from '../storage/seats-storage';
 import { isDbConfigured } from '../storage/db';
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
+  const logger = createLogger('seats-history', event.context);
 
   if (!isDbConfigured()) {
     throw createError({
@@ -34,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const history = await getSeatsHistorySummary(scope, identifier);
-    logger.info(`Returning ${history.length} seat history entries for ${scope}:${identifier}`);
+    logger.info('Returning seat history entries', { count: history.length });
     return history;
   } catch (error: unknown) {
     logger.error('Error fetching seats history:', error);

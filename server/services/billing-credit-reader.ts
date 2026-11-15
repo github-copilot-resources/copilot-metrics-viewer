@@ -30,6 +30,11 @@
 
 import { getPool } from '../storage/db';
 import type { BillingCreditsResponse, BillingUsageItem } from '../api/billing-credits.get';
+import {
+  billingUsernamesForMetricsLogins,
+  normalizeBillingUsername,
+  parseBillingUserAliases,
+} from '../../shared/utils/billing-user-identity';
 
 export interface CoverageDecision {
   source: 'db' | 'live';
@@ -304,6 +309,8 @@ export async function aggregateForBillingByUser(
   }
 
   const pool = getPool();
+  const aliases = parseBillingUserAliases(process.env.NUXT_BILLING_USER_ALIASES);
+  const matchedBillingUsernames = billingUsernamesForMetricsLogins(logins, aliases);
 
   const conds: string[] = [
     'enterprise = $1',
@@ -314,7 +321,7 @@ export async function aggregateForBillingByUser(
     enterprise,
     window.startDate,
     window.endDate,
-    logins.map(l => l.toLowerCase()),
+    matchedBillingUsernames,
   ];
   const push = (col: string, val: string | undefined) => {
     if (val === undefined || val === '') return;
@@ -347,12 +354,14 @@ export async function aggregateForBillingByUser(
   const { rows } = await pool.query(sql, params);
   const usageItems: BillingUsageItem[] = rows.map(r => ({
     ...mapAggregateRowToItem(r),
-    user: r.username || undefined,
+    user: r.username ? normalizeBillingUsername(r.username, aliases) : undefined,
   }));
 
   return {
     timePeriod: window.timePeriod,
     enterprise,
+    // A requested page is not an authoritative metrics roster.
+    identityReconciliation: 'unknown',
     usageItems,
   };
 }

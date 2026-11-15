@@ -4,6 +4,8 @@ import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
 import { Options } from '@/model/Options';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
 import { isMockMode } from '../services/github-copilot-usage-api-mock';
+import { createLogger } from '../utils/logger';
+
 
 function sortMetricsByDay<T extends { day: string }>(metrics: T[]): T[] {
     return [...metrics].sort((left, right) => left.day.localeCompare(right.day));
@@ -11,7 +13,7 @@ function sortMetricsByDay<T extends { day: string }>(metrics: T[]): T[] {
 
 export default defineEventHandler(async (event) => {
 
-    const logger = console;
+    const logger = createLogger('metrics', event.context);
 
     try {
         // GDPR / issue #398 — gate team-filtered queries by membership for non-admins.

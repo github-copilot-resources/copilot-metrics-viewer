@@ -44,6 +44,26 @@ Review available [Nuxt Deployment Options](https://nuxt.com/deploy).
 >[!WARNING]
 > Copilot Metrics Viewer requires a backend, hence it cannot be deployed as a purely static web app.
 
+### Logging and request correlation
+
+Request logs contain method, pathname (never query strings), status, duration and
+request ID. `x-request-id` is echoed for IDs containing 1–128 ASCII letters,
+digits, `.`, `_`, `:`, or `-`; absent, repeated or invalid values get a new UUID.
+IDs are assigned before authentication, including for errors and skipped probes.
+HTTP handler errors include the same ID; standalone background work has module
+tags rather than a request ID.
+
+Logs intentionally exclude raw headers, bodies, upstream payloads, proxy URLs,
+and error messages/stacks/causes. Error events retain their operation, error type
+and available numeric status or supported system error code. Additional fields
+are allowlisted operational metadata, not arbitrary objects. Use aggregate
+counts rather than personal identifiers. Callers must keep message text
+developer-controlled: never interpolate tokens, upstream errors or user data,
+including requested dates, ranges, and organization/enterprise/team identifiers.
+Sync logs identify the operation and retain aggregate counts and safe error
+classification; request-scoped logs also retain the request ID.
+`silent` suppresses all application logs, even with request logging enabled.
+
 ## Authentication
 
 The Metrics Viewer supports two modes:
@@ -412,6 +432,9 @@ If these are not set, the sync container logs `Billing CSV ingest skipped` and e
 | `NUXT_PUBLIC_GITHUB_ORG` | GitHub organization slug | For org scope |
 | `NUXT_PUBLIC_GITHUB_ENT` | GitHub enterprise slug | For enterprise scope |
 | `NUXT_SESSION_PASSWORD` | Session encryption key (min 32 chars) | Yes |
+| `NUXT_LOG_LEVEL` | `silent`, `error`, `warn`, `info` (default), or `debug`. Applies to the web server and standalone sync job; set at runtime and restart. | Optional |
+| `NUXT_LOG_FORMAT` | `json` or `pretty`; defaults to single-line JSON in production and readable tagged output in development. | Optional |
+| `NUXT_LOG_REQUESTS` | `true` logs completed requests at `info`; otherwise requests are logged only at `debug`. Health probes and static assets are skipped. Level filtering still applies. | Optional |
 | `DATABASE_URL` | PostgreSQL connection string. **Setting this alone enables historical mode** (DB-backed reads, `/api/*-history` endpoints, Teams tab). | Historical mode only |
 | `SYNC_DAYS_BACK` | Days to sync (default: 1 for daily, 28 for bulk) | Sync only |
 | `NUXT_GITHUB_BILLING_TOKEN` | Classic PAT with `manage_billing:enterprise` (SSO-authorized) used by `/api/billing-credits*` and the async CSV ingest. | Billing |

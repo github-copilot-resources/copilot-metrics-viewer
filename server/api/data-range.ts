@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * Data-range API endpoint
  * GET /api/data-range
@@ -69,7 +71,7 @@ async function historicalRange(
 }
 
 export default defineEventHandler(async (event): Promise<DataRange> => {
-  const logger = console;
+  const logger = createLogger('data-range', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
   const scope = options.scope || 'organization';
