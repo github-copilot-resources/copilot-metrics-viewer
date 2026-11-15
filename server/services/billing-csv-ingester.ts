@@ -263,6 +263,10 @@ async function runChunk(input: ChunkInput): Promise<ChunkResult> {
     aic_quantity: r.aic_quantity,
     aic_gross_amount: r.aic_gross_amount,
     total_monthly_quota: r.total_monthly_quota,
+    input: r.input,
+    output: r.output,
+    cache_read: r.cache_read,
+    cache_write: r.cache_write,
   }));
 
   await transactional(async () => {

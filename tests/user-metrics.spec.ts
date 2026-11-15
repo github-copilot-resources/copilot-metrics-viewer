@@ -472,6 +472,7 @@ describe('User report payload field names match real GitHub API', () => {
 // full Nitro/H3 runtime.
 
 // Install Nitro global stubs before the handler module is loaded.
+vi.stubGlobal('setHeader', vi.fn());
 (globalThis as any).defineEventHandler = (h: any) => h
 ;(globalThis as any).createError = ({ statusCode, statusMessage }: { statusCode: number; statusMessage: string }) => {
   const err: any = new Error(statusMessage)

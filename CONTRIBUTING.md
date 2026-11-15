@@ -2,12 +2,12 @@
 
 [fork]: https://github.com/github-copilot-resources/copilot-metrics-viewer/fork
 [pr]: https://github.com/github-copilot-resources/copilot-metrics-viewer/compare
-[style]: https://github.com/github-copilot-resources/copilot-metrics-viewer/blob/main/.eslintrc.js
+[style]: https://github.com/github-copilot-resources/copilot-metrics-viewer/blob/main/eslint.config.mjs
 [code-of-conduct]: CODE_OF_CONDUCT.md
 
 Hi there! We're thrilled that you'd like to contribute to this project. Your help is essential for keeping it great.
 
-Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) to the public under the [project's open source license](LICENSE.md).
+Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) to the public under the [project's open source license](LICENSE.txt).
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
 

@@ -1,15 +1,155 @@
 import { expect, test } from '@playwright/test';
 import { DashboardPage } from './pages/DashboardPage';
+import type { BillingUsageItem } from '../server/api/billing-credits.get';
 
 const tag = { tag: ['@org', '@billing'] };
+
+test.describe('Billing credit semantics with synthetic inputs', () => {
+    const scenarios = [
+        { name: 'partial discounts', quantities: [[8, 2], [0, 5], [0, 0]], credits: ['10', '5', '0'], total: '15', gross: '$4.00', net: '$2.00' },
+        { name: 'fully discounted', quantities: [[0, 10], [0, 5], [0, 0]], credits: ['10', '5', '0'], total: '15', gross: '$4.00', net: '$0.00' },
+        { name: 'zero consumption', quantities: [[0, 0], [0, 0], [0, 0]], credits: ['0', '0', '0'], total: '0', gross: '$0.00', net: '$0.00' },
+    ];
+    const logins = ['synthetic-a', 'synthetic-b', 'synthetic-zero'];
+    const explanations = [
+        ['Total credits', /net billed quantity plus discounted quantity/],
+        ['Gross cost (USD)', /list-price USD amount before discounts/],
+        ['Net cost (USD)', /USD amount after discounts are applied/],
+    ] as const;
+
+    for (const scenario of scenarios) {
+        test(`${scenario.name}: tiles, lazy user rows, source and hover tooltips reconcile`, tag, async ({ page }) => {
+            const items: BillingUsageItem[] = scenario.quantities.map(([net = 0, discount = 0], i) => ({
+                product: i === 1 ? 'coding_agent' : 'copilot',
+                sku: i === 1 ? 'coding_agent_ai_credit' : 'copilot_ai_credit',
+                model: `synthetic-model-${i}`, unitType: 'credits', pricePerUnit: 0.1,
+                grossQuantity: net + discount + (net + discount !== 0 ? 1 : 0),
+                grossAmount: net + discount === 0 ? 0 : i === 0 ? 3 : 1,
+                discountQuantity: discount,
+                discountAmount: net === 0 ? (net + discount === 0 ? 0 : i === 0 ? 3 : 1) : 1,
+                netQuantity: net, netAmount: net === 0 ? 0 : 2, user: logins[i],
+            }));
+            await page.route('**/*', async route => {
+                const url = new URL(route.request().url());
+                if (url.origin !== new URL(test.info().project.use.baseURL as string).origin) return route.abort();
+                const fulfill = (body: unknown, headers = {}) => route.fulfill({
+                    status: 200, contentType: 'application/json', headers, body: JSON.stringify(body),
+                });
+                if (url.pathname === '/api/user-metrics') {
+                    return fulfill(logins.map(login => ({ login, totals_by_cli: { token_usage: { prompt_tokens_sum: 1000, output_tokens_sum: 500 } } })));
+                }
+                if (url.pathname === '/api/billing-credits' || url.pathname === '/api/billing-credits-by-user') {
+                    const timePeriod = { year: Number(url.searchParams.get('year')), month: Number(url.searchParams.get('month')) };
+                    const usageItems = url.pathname.endsWith('-by-user')
+                        ? items.filter(item => (url.searchParams.get('logins') || '').split(',').includes(item.user!))
+                        : items.map(item => ({ ...item, user: undefined }));
+                    return fulfill({ timePeriod, usageItems }, {
+                        'x-data-source': scenario.name === 'partial discounts' ? 'live' : 'db',
+                    });
+                }
+                return route.continue();
+            });
+            await page.goto('/orgs/synthetic-org?mock=true');
+            await page.getByRole('tab', { name: 'billing', exact: true }).click();
+            const tile = (name: string) => page.locator('.v-card').filter({
+                has: page.getByText(name, { exact: true }),
+            }).filter({ has: page.locator('.text-h5') }).last();
+            await expect(tile('Total credits').locator('.text-h5')).toHaveText(scenario.total);
+            await expect(tile('Gross cost (USD)').locator('.text-h5')).toHaveText(scenario.gross);
+            await expect(tile('Net cost (USD)').locator('.text-h5')).toHaveText(scenario.net);
+            const perUser = page.locator('.v-card').filter({
+                has: page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }),
+            }).last();
+            for (let i = 0; i < logins.length; i++) {
+                const row = perUser.getByRole('row').filter({ hasText: logins[i] });
+                await expect(row.locator('td').nth(1)).toHaveText(scenario.credits[i]!);
+                await expect(row.locator('td').nth(2)).toHaveText('1,500');
+            }
+            for (const [label, meaning] of explanations) {
+                await tile(label).locator('.v-icon').hover();
+                const content = page.getByRole('tooltip').filter({ hasText: meaning }).locator('.v-overlay__content');
+                await expect(content).toBeVisible();
+                await expect(content).toContainText(scenario.name === 'partial discounts' ? 'GitHub Billing API' : 'Billing CSV ingest');
+                const period = await tile(label).locator('.text-medium-emphasis').textContent();
+                await expect(content).toContainText(period!.split(' · ')[1]!);
+                await page.screenshot({
+                    animations: 'disabled',
+                    path: `${process.env.PR425_SCREENSHOT_DIR || test.info().outputDir}/${test.info().project.name}-${scenario.name.replaceAll(' ', '-')}-${label.split(' ')[0]!.toLowerCase()}-tooltip.png`,
+                });
+                await tile(label).locator('.text-h5').hover();
+                await expect(content).toBeHidden();
+            }
+            await expect(page.getByText('Loading billing data…', { exact: true })).toBeHidden();
+            await expect(page.getByText(/Failed to load billing/i)).toBeHidden();
+        });
+    }
+
+    test('aggregate tooltips can be reached, dismissed and read again using only the keyboard', tag, async ({ page }) => {
+        await page.route('**/*', route => {
+            const url = new URL(route.request().url());
+            if (url.origin !== new URL(test.info().project.use.baseURL as string).origin) return route.abort();
+            if (url.pathname.startsWith('/api/billing-credits')) {
+                return route.fulfill({
+                    contentType: 'application/json', headers: { 'x-data-source': 'db' },
+                    body: JSON.stringify({ timePeriod: { year: 2026, month: 11 }, usageItems: [{
+                        product: 'copilot', sku: 'copilot_ai_credit', model: 'synthetic-model',
+                        unitType: 'credits', pricePerUnit: 0.1, grossQuantity: 11, grossAmount: 1.1,
+                        netQuantity: 8, discountQuantity: 2, discountAmount: 0.2, netAmount: 0.9,
+                    }] }),
+                });
+            }
+            if (url.pathname === '/api/user-metrics') {
+                return route.fulfill({ contentType: 'application/json', body: '[]' });
+            }
+            return route.continue();
+        });
+        await page.goto('/orgs/synthetic-org?mock=true');
+        await page.getByRole('tab', { name: 'billing', exact: true }).click();
+        for (const [label, meaning] of explanations) {
+            const tile = page.locator('.v-card').filter({ has: page.getByText(label, { exact: true }) })
+                .filter({ has: page.locator('.text-h5') }).last();
+            const activator = tile.locator('[aria-describedby]');
+            await expect(activator).toBeVisible();
+            let reached = false;
+            for (let i = 0; i < 60; i++) {
+                await page.keyboard.press('Tab');
+                if (await activator.evaluate(element => element === document.activeElement)) {
+                    reached = true;
+                    break;
+                }
+            }
+            expect(reached, `${label} tooltip must be in the native keyboard focus order`).toBe(true);
+            await expect(activator).toHaveRole('button');
+            await expect(activator).toHaveAccessibleName(`About ${label.toLowerCase()}`);
+            const content = page.getByRole('tooltip').filter({ hasText: meaning }).locator('.v-overlay__content');
+            await expect(content).toBeVisible();
+            await expect(content).toContainText('Billing CSV ingest');
+            const period = await tile.locator('.text-medium-emphasis').textContent();
+            await expect(content).toContainText(period!.split(' · ')[1]!);
+            await page.screenshot({
+                animations: 'disabled',
+                path: `${process.env.PR425_SCREENSHOT_DIR || test.info().outputDir}/${test.info().project.name}-${label.split(' ')[0]!.toLowerCase()}-keyboard-tooltip.png`,
+            });
+            await page.keyboard.press('Tab');
+            await expect(content).toBeHidden();
+            await page.keyboard.press('Shift+Tab');
+            await expect(activator).toBeFocused();
+            await expect(content).toBeVisible();
+            await page.keyboard.press('Tab');
+            await expect(content).toBeHidden();
+            await page.keyboard.press('Shift+Tab');
+        }
+    });
+});
 
 /**
  * Admin-only Billing tab. In mock mode the /api/auth/usage-admin probe and the
  * /api/billing-credits endpoint both bypass the NUXT_USAGE_ADMINS allowlist so
  * the tab can be exercised end-to-end without configuring OAuth.
  *
- * Mock fixture: public/mock-data/billing-credits.json (18 anonymised AI-credit
- * usage items captured from a live GitHub enterprise billing response).
+ * Aggregate mock: public/mock-data/billing-credits.json (synthetic AI-credit
+ * arithmetic and an unattributed live-shaped envelope). Per-user views use
+ * billing-credits-synthetic-attribution-demo.json, not verified live records.
  */
 test.describe('Billing tab', () => {
     test.describe.configure({ mode: 'serial' });
@@ -103,8 +243,7 @@ test.describe('Billing tab', () => {
     });
 
     test('billing tab renders per-user breakdown table and top spenders chart', tag, async () => {
-        // Mock billing fixture includes `user` attribution on >half of usage items
-        // so the per-user section should render. See public/mock-data/billing-credits.json.
+        // Per-user attribution comes from the separate, unverified synthetic demo.
         await dashboard.gotoBillingTab();
         const perUserTitle = dashboard.page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }).first();
         await expect(perUserTitle).toBeVisible();
