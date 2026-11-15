@@ -23,7 +23,8 @@
  *   - We DO require the column ORDER above, because GitHub's CSV is
  *     positional. If the header re-orders columns we throw — better to fail
  *     loudly than mis-map an `amount` column.
- *   - Unknown / extra columns past column 17 are ignored.
+ *   - Optional input, output, cache_read and cache_write columns after the
+ *     required prefix are mapped by name. Unknown extra columns are ignored.
  */
 
 export interface ParsedBillingRow {
@@ -44,19 +45,28 @@ export interface ParsedBillingRow {
   cost_center_name: string;
   aic_quantity: number;
   aic_gross_amount: number;
+  input: number;
+  output: number;
+  cache_read: number;
+  cache_write: number;
 }
 
-const EXPECTED_COLUMNS = [
+const REQUIRED_COLUMNS = [
   'date', 'username', 'product', 'sku', 'model', 'quantity', 'unit_type',
   'applied_cost_per_quantity', 'gross_amount', 'discount_amount',
   'net_amount', 'total_monthly_quota', 'organization', 'repository',
   'cost_center_name', 'aic_quantity', 'aic_gross_amount',
 ] as const;
 
+const EXPECTED_COLUMNS = [
+  ...REQUIRED_COLUMNS, 'input', 'output', 'cache_read', 'cache_write',
+] as const;
+
 const NUMERIC_COLUMNS = new Set([
   'quantity', 'applied_cost_per_quantity', 'gross_amount',
   'discount_amount', 'net_amount', 'total_monthly_quota',
   'aic_quantity', 'aic_gross_amount',
+  'input', 'output', 'cache_read', 'cache_write',
 ]);
 
 const BOM = '\uFEFF';
@@ -89,12 +99,12 @@ export function parseBillingCsv(csv: string): ParsedBillingRow[] {
   const out: ParsedBillingRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cells = parseCsvLine(lines[i]!);
-    if (cells.length < EXPECTED_COLUMNS.length) {
+    if (cells.length < REQUIRED_COLUMNS.length) {
       throw new BillingCsvParseError(
-        `Row ${i + 1}: expected at least ${EXPECTED_COLUMNS.length} columns, got ${cells.length}`,
+        `Row ${i + 1}: expected at least ${REQUIRED_COLUMNS.length} columns, got ${cells.length}`,
       );
     }
-    out.push(buildRow(cells));
+    out.push(buildRow(cells, header));
   }
   return out;
 }
@@ -102,8 +112,8 @@ export function parseBillingCsv(csv: string): ParsedBillingRow[] {
 function validateHeader(header: string[]): void {
   // We require the FIRST 17 columns to be exactly our expected set, in order.
   // Extra trailing columns are tolerated (future GitHub additions won't break us).
-  for (let i = 0; i < EXPECTED_COLUMNS.length; i++) {
-    const expected = EXPECTED_COLUMNS[i];
+  for (let i = 0; i < REQUIRED_COLUMNS.length; i++) {
+    const expected = REQUIRED_COLUMNS[i];
     const got = header[i];
     if (got !== expected) {
       throw new BillingCsvParseError(
@@ -114,9 +124,12 @@ function validateHeader(header: string[]): void {
   }
 }
 
-function buildRow(cells: string[]): ParsedBillingRow {
+function buildRow(cells: string[], header: string[]): ParsedBillingRow {
   const get = (col: typeof EXPECTED_COLUMNS[number]): string => {
-    const idx = EXPECTED_COLUMNS.indexOf(col);
+    const idx = header.indexOf(col);
+    if (idx >= cells.length) {
+      throw new BillingCsvParseError(`Column "${col}": missing cell`);
+    }
     return cells[idx] ?? '';
   };
   const num = (col: typeof EXPECTED_COLUMNS[number]): number => {
@@ -152,6 +165,10 @@ function buildRow(cells: string[]): ParsedBillingRow {
     cost_center_name: get('cost_center_name'),
     aic_quantity: num('aic_quantity'),
     aic_gross_amount: num('aic_gross_amount'),
+    input: num('input'),
+    output: num('output'),
+    cache_read: num('cache_read'),
+    cache_write: num('cache_write'),
   };
 }
 
