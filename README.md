@@ -490,6 +490,16 @@ Row-level scoping only applies when the allowlist is set. With an empty allowlis
 
 The filter is enforced **server-side** — non-admin requests never receive other users' data over the wire. On the Teams tab, KPI tiles automatically switch to aggregate signals (rather than derived-from-user-rows) when the caller is row-restricted, so team totals still render correctly.
 
+Seat and User Metrics KPI tiles use fixed-size anonymous summaries for the authorized
+scope/team (and user-metrics date window), independently of permitted detail rows.
+Seat pagination still counts only permitted rows. When a live organization seat request
+resolves only a page, **Total Assigned** uses the provider's total; never-used and
+inactivity totals display **Unavailable**, not page/self counts. Missing summaries also
+display **Unavailable**. No additional full-seat fetch is made for these tiles.
+`/api/user-metrics` remains an array; its anonymous counts and weighted acceptance-rate
+inputs are carried in `x-copilot-user-summary`. Tables, searches and detail charts
+remain restricted to permitted users.
+
 ##### Auth-mode matrix for Billing & My Usage tabs
 
 Metrics endpoints (User Metrics, My Usage, Seats) accept any token type. Billing endpoints accept ONLY a classic PAT (which is why they have their own dedicated env var).

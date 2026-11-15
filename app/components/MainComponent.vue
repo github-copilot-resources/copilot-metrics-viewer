@@ -238,6 +238,7 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <SeatsAnalysisViewer
               v-if="item === 'seat analysis'"
               :seats="seats"
+              :summary="seatsSummary"
               :total-seats-count="seatsTotalCount"
               :current-page="seatsCurrentPage"
               :total-pages="seatsTotalPages"
@@ -248,6 +249,7 @@ v-if="item === 'copilot chat'" :metrics="metrics"
             <UserMetricsViewer
               v-if="item === 'user metrics'"
               :user-metrics="userMetrics"
+              :summary="userSummary"
               :date-range-description="dateRangeDescription"
               :user-metrics-history="userMetricsHistory"
               :query-params="seatsQueryParams"
@@ -300,6 +302,8 @@ import type { ReportDayTotals, UserTotals } from '#server/services/github-copilo
 import type { SeatHistoryEntry } from '#server/storage/seats-storage';
 import type { UserMetricsHistoryEntry } from '#server/storage/user-metrics-storage';
 import type { H3Error } from 'h3'
+import { parseSeatsSummary, parseUserSummaryHeader, USER_SUMMARY_HEADER, type UserSummary } from '#shared/utils/anonymous-kpis';
+import { currentKpiResponse, kpiResponseKey } from '../utils/anonymousKpis';
 
 //Components
 import MetricsViewer from './MetricsViewer.vue'
@@ -323,6 +327,16 @@ import { useRoute } from 'vue-router';
 import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
 import { routeParamStr } from '@/utils/routeUtils';
 import { resolveDisplayName } from '#shared/utils/resolveDisplayName';
+
+interface UserMetricsPayload {
+  rows: UserTotals[];
+  summary: UserSummary | null;
+  requestKey: string;
+}
+interface SeatsPayload extends Omit<SeatsApiResponse, 'summary'> {
+  summary: ReturnType<typeof parseSeatsSummary>;
+  requestKey: string;
+}
 
 export default defineNuxtComponent({
   name: 'MainComponent',
@@ -364,7 +378,8 @@ export default defineNuxtComponent({
     logout() {
       const { clear } = useUserSession()
       this.metrics = [];
-      this.seats = [];
+      this.seatsFetch.clear();
+      this.userMetricsFetch.clear();
       clear();
     },
     async onAdminSynced() {
@@ -372,9 +387,8 @@ export default defineNuxtComponent({
       await this.fetchDataRange();
       await this.fetchMetrics();
       if (this.signInRequired) return;
-      const { execute: executeUserMetrics, data: userMetricsData } = this.userMetricsFetch;
+      const { execute: executeUserMetrics } = this.userMetricsFetch;
       await executeUserMetrics();
-      this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
       this.userMetricsReady = true;
     },
     getDisplayTabName(itemName: string): string {
@@ -401,12 +415,11 @@ export default defineNuxtComponent({
 
       // Re-fetch user metrics with updated date range
       if (this.signInRequired) return;
-      const { execute: executeUserMetrics, data: userMetricsData, error: userMetricsError } = this.userMetricsFetch;
+      const { execute: executeUserMetrics, error: userMetricsError } = this.userMetricsFetch;
       await executeUserMetrics();
       if (userMetricsError.value) {
         console.warn('User metrics fetch failed:', userMetricsError.value);
       } else {
-        this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
         this.userMetricsReady = true;
       }
     },
@@ -486,12 +499,9 @@ export default defineNuxtComponent({
       (this as any).seatsCurrentPage = page;
       await execute();
       if (!seatsError.value) {
-        const resp = seatsData.value as SeatsApiResponse | null;
+        const resp = seatsData.value;
         if (resp) {
-          this.seats            = resp.seats        || [];
-          this.seatsTotalCount  = resp.total_seats  || 0;
           this.seatsCurrentPage = resp.page         || page;
-          this.seatsTotalPages  = resp.total_pages  || 1;
         }
       }
     },
@@ -525,14 +535,10 @@ export default defineNuxtComponent({
       originalMetrics: [] as CopilotMetrics[],
       reportData: [] as ReportDayTotals[],
       seatsReady: false,
-      seats: [] as Seat[],
-      seatsTotalCount:  0,
       seatsCurrentPage: 1,
-      seatsTotalPages:  1,
       seatsPerPage:     300,
       seatsHistory:     [] as SeatHistoryEntry[],
       userMetricsReady: false,
-      userMetrics: [] as UserTotals[],
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
       announcementDismissed: false,
@@ -649,7 +655,7 @@ export default defineNuxtComponent({
       await this.fetchMetrics();
 
       const { data: seatsData, error: seatsError, execute: executeSeats } = this.seatsFetch;
-      const { data: userMetricsData, error: userMetricsError, execute: executeUserMetrics } = this.userMetricsFetch;
+      const { error: userMetricsError, execute: executeUserMetrics } = this.userMetricsFetch;
 
       if (!this.signInRequired) {
         await executeSeats();
@@ -657,12 +663,9 @@ export default defineNuxtComponent({
         if (seatsError.value) {
           this.processError(seatsError.value as H3Error);
         } else {
-          const resp = seatsData.value as SeatsApiResponse | null;
+          const resp = seatsData.value;
           if (resp) {
-            this.seats          = resp.seats          || [];
-            this.seatsTotalCount = resp.total_seats   || 0;
             this.seatsCurrentPage = resp.page         || 1;
-            this.seatsTotalPages  = resp.total_pages  || 1;
           }
           this.seatsReady = true;
         }
@@ -673,7 +676,6 @@ export default defineNuxtComponent({
           // User metrics errors are non-fatal — log but don't block the UI
           console.warn('User metrics fetch failed:', userMetricsError.value);
         } else {
-          this.userMetrics = (userMetricsData.value as UserTotals[]) || [];
           this.userMetricsReady = true;
         }
 
@@ -777,14 +779,32 @@ export default defineNuxtComponent({
       return isAuthRequired.value && !loggedIn.value;
     });
 
-    const seatsFetch = useFetch('/api/seats', {
+    const seatsQuery = computed(() => {
+      const options = Options.fromRoute(route.value);
+      return { ...options.toParams(), page: String(seatsCurrentPage.value), per_page: '300' };
+    });
+    const seatsFetch = useFetch<SeatsPayload>('/api/seats', {
       server: true,
       immediate: !signInRequired.value,
-      query: computed(() => {
-        const options = Options.fromRoute(route.value);
-        return { ...options.toParams(), page: String(seatsCurrentPage.value), per_page: '300' };
-      })
+      query: seatsQuery,
+      onResponse({ response, request }) {
+        if (!response.ok) return;
+        const payload = response._data as SeatsApiResponse;
+        let summary: ReturnType<typeof parseSeatsSummary> = null;
+        try {
+          summary = parseSeatsSummary(payload.summary);
+          if (!summary) console.warn('Scope-wide seat summary unavailable');
+        } catch {
+          console.warn('Invalid anonymous seat summary; scope-wide KPIs unavailable');
+        }
+        response._data = { ...payload, summary, requestKey: kpiResponseKey(request) } satisfies SeatsPayload;
+      },
     });
+    const currentSeats = computed(() => signInRequired.value ? null : currentKpiResponse(seatsFetch.data.value, seatsFetch.status.value, seatsQuery.value));
+    const seats = computed<Seat[]>(() => currentSeats.value?.seats ?? []);
+    const seatsSummary = computed(() => currentSeats.value?.summary ?? null);
+    const seatsTotalCount = computed(() => currentSeats.value?.total_seats ?? 0);
+    const seatsTotalPages = computed(() => currentSeats.value?.total_pages ?? 1);
 
     /** Scope + org/ent params forwarded to history endpoints and user-trend API */
     const seatsQueryParams = computed(() => {
@@ -800,14 +820,32 @@ export default defineNuxtComponent({
       return options.toParams();
     });
 
-    const userMetricsFetch = useFetch('/api/user-metrics', {
+    const userMetricsQuery = computed(() => {
+      const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
+      return options.toParams();
+    });
+    const userMetricsFetch = useFetch<UserMetricsPayload>('/api/user-metrics', {
       server: true,
       immediate: false,
-      query: computed(() => {
-        const options = Options.fromRoute(route.value, dateRange.value.since, dateRange.value.until);
-        return options.toParams();
-      })
+      query: userMetricsQuery,
+      onResponse({ response, request }) {
+        if (!response.ok) return;
+        if (!Array.isArray(response._data)) throw createError({ statusCode: 502, statusMessage: 'Invalid user metrics response' });
+        let summary: UserSummary | null = null;
+        try {
+          summary = parseUserSummaryHeader(response.headers.get(USER_SUMMARY_HEADER));
+          if (!summary) console.warn('Scope-wide user summary unavailable');
+        } catch {
+          console.warn('Invalid anonymous user summary; scope-wide KPIs unavailable');
+        }
+        response._data = {
+          rows: response._data as UserTotals[], summary, requestKey: kpiResponseKey(request),
+        } satisfies UserMetricsPayload;
+      },
     });
+    const currentUsers = computed(() => signInRequired.value ? null : currentKpiResponse(userMetricsFetch.data.value, userMetricsFetch.status.value, userMetricsQuery.value));
+    const userMetrics = computed(() => currentUsers.value?.rows ?? []);
+    const userSummary = computed(() => currentUsers.value?.summary ?? null);
 
     /** Available data range for the current scope — used to clamp the date picker. */
     const dataRange = ref<{ earliest: string; latest: string; mode: string } | null>(null);
@@ -875,6 +913,12 @@ export default defineNuxtComponent({
       user,
       seatsFetch,
       userMetricsFetch,
+      seats,
+      seatsSummary,
+      seatsTotalCount,
+      seatsTotalPages,
+      userMetrics,
+      userSummary,
       dateRange,
       isLoading,
       route,
