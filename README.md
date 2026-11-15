@@ -143,6 +143,10 @@ No user selected → the section shows an info banner explaining the feature. Cl
 
 The live billing endpoints cap windows at ~31 days and rate-limit aggressively. For longer historical analysis, the dashboard can pull GitHub's **enterprise billing CSV exports** into a local Postgres table, then serve the Billing tab from the cache.
 
+CSV ingestion supports the legacy 17-column prefix and preserves the optional `input`, `output`, `cache_read`, and `cache_write` token counts [documented by GitHub](https://docs.github.com/en/billing/reference/billing-reports). Optional columns are mapped by name after the required prefix; unknown extra columns remain tolerated. Missing optional headers and empty numeric cells default to zero; malformed present numeric cells fail ingestion through its existing error reporting. Values follow the existing finite JavaScript-number parser contract, without token/currency conversions, and are stored as PostgreSQL `NUMERIC` without fixed-scale rounding. Schema upgrades are additive; previously discarded tokens require re-ingestion to recover. This does not add token visualizations or change other billing totals.
+
+The isolated real-PostgreSQL regression suite runs with `npm test -- --run --config tests/billing-token-storage.config.ts` (requires Docker and `postgres:16-alpine`; uses an owned container and random loopback port).
+
 When the cache covers the selected window, the Billing tab serves data from the DB and shows a small "Source: local cache" chip with the last-synced timestamp. When the window is partially or not covered, it falls back to the live API automatically.
 
 **Triggering an ingest** (admin panel → Billing CSV ingest):
