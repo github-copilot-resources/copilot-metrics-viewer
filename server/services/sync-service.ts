@@ -8,10 +8,10 @@
  *     transformed CopilotMetrics (for UI consumption)
  */
 
-import { fetchLatestReport, fetchReportForDate, fetchRawUserDayRecords, fetchUserReportForDate, type MetricsReportRequest, type ReportDayTotals, type UserDayRecord } from './github-copilot-usage-api';
+import { fetchLatestReport, fetchReportForDate, type MetricsReportRequest, type ReportDayTotals } from './github-copilot-usage-api';
+import { syncTeamMembership, syncUserUsage } from './roster-foundation-sync';
 import { transformDayToMetrics } from './report-transformer';
 import { saveMetrics, hasMetrics } from '../storage/metrics-storage';
-import { saveUserDayMetricsBatch, hasUserDayMetricsForDate } from '../storage/user-day-metrics-storage';
 import { saveSeats, hasSeats, getLatestSeats } from '../storage/seats-storage';
 import { Seat } from '@/model/Seat';
 // ofetch fallback for standalone (non-Nitro) environments
@@ -46,6 +46,17 @@ export interface BulkSyncResult {
   savedDays: number;
   skippedDays: number;
   errors: Array<{ date: string; error: string }>;
+}
+
+async function syncMembershipIfNeeded(scope: 'organization' | 'enterprise', identifier: string, headers: HeadersInit, teamSlug?: string): Promise<void> {
+  if (!teamSlug) return;
+  try {
+    await syncTeamMembership({
+      scope, identifier, teamKind: teamSlug.startsWith('reports-to:') ? 'reports-to' : 'github', teamKey: teamSlug,
+    }, headers);
+  } catch {
+    console.warn('Team membership publication failed (non-fatal); existing freshness policy still applies');
+  }
 }
 
 /**
@@ -139,27 +150,12 @@ export async function syncBulk(
 
     // For org/enterprise scopes also persist per-day per-user records so that
     // team-level metrics can be derived from DB for any historical date range.
+    await syncMembershipIfNeeded(scope, identifier, headers, teamSlug);
     const isBaseScope = scope === 'organization' || scope === 'enterprise';
     if (isBaseScope) {
       try {
         logger.info(`Fetching per-user day records for ${scope}:${identifier}`);
-        const userDayRecords = await fetchRawUserDayRecords({ scope, identifier }, headers);
-
-        // Group by day so we check existence once per day before saving
-        const byDay = new Map<string, UserDayRecord[]>();
-        for (const record of userDayRecords) {
-          const existing = byDay.get(record.day) ?? [];
-          existing.push(record);
-          byDay.set(record.day, existing);
-        }
-
-        for (const [day, records] of byDay) {
-          const alreadyStored = await hasUserDayMetricsForDate(scope, identifier, day);
-          if (!alreadyStored) {
-            await saveUserDayMetricsBatch(scope, identifier, records);
-            logger.info(`Saved per-user day records for ${day} (${records.length} users)`);
-          }
-        }
+        await syncUserUsage({ scope, identifier }, headers);
       } catch (error) {
         // Per-user sync failure is non-fatal — aggregate metrics are already saved.
         const msg = error instanceof Error ? error.message : String(error);
@@ -197,19 +193,13 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
   }
 
   try {
+    await syncMembershipIfNeeded(scope, identifier, headers, teamSlug);
     // Helper to backfill per-user day records for a date. Idempotent — skips
     // if already stored. Non-fatal on errors.
     const backfillPerUser = async (): Promise<void> => {
       if (teamSlug) return;
       try {
-        const alreadyStored = await hasUserDayMetricsForDate(scope, identifier, date);
-        if (alreadyStored) return;
-        const userReport = await fetchUserReportForDate({ scope, identifier }, headers, date);
-        const dayRecords = (userReport.day_totals ?? []).filter(r => r.day === date);
-        if (dayRecords.length > 0) {
-          await saveUserDayMetricsBatch(scope, identifier, dayRecords);
-          logger.info(`Saved per-user day records for ${date} (${dayRecords.length} users)`);
-        }
+        await syncUserUsage({ scope, identifier }, headers, date);
       } catch (userErr) {
         const msg = userErr instanceof Error ? userErr.message : String(userErr);
         logger.warn(`Per-user day sync for ${date} failed (non-fatal): ${msg}`);

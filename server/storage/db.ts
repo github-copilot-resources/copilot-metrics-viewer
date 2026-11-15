@@ -6,6 +6,7 @@
  */
 
 import pg from 'pg';
+import { initRosterFoundationSchema } from './roster-foundation-schema';
 export { isDbConfigured } from './db-config';
 const { Pool } = pg;
 
@@ -54,6 +55,7 @@ export async function closePool(): Promise<void> {
  */
 export async function initSchema(): Promise<void> {
   const pool = getPool();
+  await initRosterFoundationSchema(pool);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS metrics (

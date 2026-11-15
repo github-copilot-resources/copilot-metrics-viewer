@@ -13,6 +13,7 @@ import { generateMockReport, mockRequestDownloadLinks } from '../server/services
 import { transformReportToMetrics, transformDayToMetrics } from '../server/services/report-transformer';
 import type { OrgReport, ReportDayTotals, MetricsReportRequest } from '../server/services/github-copilot-usage-api';
 import type { StoredMetrics } from '../server/storage/types';
+import { syncUserUsage, syncTeamMembership } from '../server/services/roster-foundation-sync';
 
 // Build a storage key for the in-memory mock (mirrors old key-value approach)
 function buildKey(scope: string, identifier: string, date: string, team?: string): string {
@@ -81,6 +82,11 @@ vi.mock('../server/storage/user-day-metrics-storage', () => ({
   hasUserDayMetricsForDate: vi.fn(async () => false),
 }));
 
+vi.mock('../server/services/roster-foundation-sync', () => ({
+  syncUserUsage: vi.fn(async () => {}),
+  syncTeamMembership: vi.fn(async () => ({ available: false, reason: 'membership-unavailable' })),
+}));
+
 vi.mock('../server/storage/seats-storage', () => ({
   saveSeats: vi.fn(async () => {}),
   hasSeats: vi.fn(async () => false),
@@ -118,6 +124,25 @@ describe('Sync Service & Storage', () => {
   });
 
   describe('syncBulk', () => {
+    it('never promotes aggregate success into user coverage on bulk or daily backfill failures', async () => {
+      vi.mocked(syncUserUsage).mockRejectedValueOnce(new Error('synthetic incomplete report'));
+      expect((await syncBulk('organization', 'test-org', TEST_HEADERS)).success).toBe(true);
+      expect(syncUserUsage).toHaveBeenCalledWith({ scope: 'organization', identifier: 'test-org' }, TEST_HEADERS);
+      vi.mocked(syncUserUsage).mockRejectedValueOnce(new Error('synthetic incomplete report'));
+      expect((await syncMetricsForDate({
+        scope: 'organization', identifier: 'test-org', date: '2026-02-15', headers: TEST_HEADERS,
+      })).success).toBe(true);
+      expect(syncUserUsage).toHaveBeenLastCalledWith({ scope: 'organization', identifier: 'test-org' }, TEST_HEADERS, '2026-02-15');
+    });
+
+    it('refreshes current team membership independently from full-base user coverage', async () => {
+      await syncBulk('organization', 'test-org', TEST_HEADERS, 'synthetic-team');
+      expect(syncTeamMembership).toHaveBeenCalledWith({
+        scope: 'organization', identifier: 'test-org', teamKind: 'github', teamKey: 'synthetic-team',
+      }, TEST_HEADERS);
+      expect(syncUserUsage).toHaveBeenCalledWith({ scope: 'organization', identifier: 'test-org' }, TEST_HEADERS);
+    });
+
     it('should download 28-day report and save all days', async () => {
       const result = await syncBulk('organization', 'test-org', TEST_HEADERS);
 
