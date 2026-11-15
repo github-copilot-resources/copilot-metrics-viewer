@@ -291,22 +291,20 @@
                full user list, billing $ lazy-loaded per visible v-data-table
                page from /api/billing-credits-by-user. -->
           <v-alert
-            v-if="perUserRows.length > 0 && noPerUserAttribution"
+            v-if="perUserRows.length > 0 && checkedUsersHaveNoSpend"
             type="info"
             variant="tonal"
             density="comfortable"
             class="mx-3 mt-3 mb-2"
             icon="mdi-account-off-outline"
+            data-testid="billing-checked-users-empty"
           >
-            <div class="font-weight-medium mb-1">No per-user attribution available for this enterprise</div>
+            <div class="font-weight-medium mb-1">No billing spend returned for successfully checked users</div>
             <div class="text-body-2">
-              The aggregate tiles above show real spend, but GitHub's billing
-              JSON returned zero items for every user we've fetched
-              ({{ loadedLoginsCount }} of {{ perUserRows.length }} loaded).
-              Some plans (typically pooled / fully-discounted enterprise
-              billing) report spend at the enterprise level only and do not
-              tag individual users. The token chart and breakdown table are
-              hidden; the global Billing CSV ranking below is independent.
+              Successfully checked users show zero for this billing period.
+              Other users remain unknown until their page is requested.
+              This does not establish enterprise-wide attribution or an identity mismatch.
+              Use the table pagination to check other users; Metrics API token data remains independent.
             </div>
           </v-alert>
           <v-row dense class="px-3 mt-2">
@@ -332,7 +330,7 @@
                 </v-card-text>
               </v-card>
             </v-col>
-            <v-col v-if="perUserRows.length > 0 && !noPerUserAttribution" cols="12" md="6">
+            <v-col v-if="perUserRows.length > 0" cols="12" md="6">
               <v-card variant="outlined">
                 <v-card-title class="text-subtitle-1">
                   Top token users (CLI)
@@ -361,7 +359,7 @@
             </v-col>
           </v-row>
 
-          <v-card v-if="perUserRows.length > 0 && !noPerUserAttribution" variant="outlined" class="ma-3">
+          <v-card v-if="perUserRows.length > 0" variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">
               Per-user breakdown
               <span class="text-caption text-medium-emphasis ml-2">
@@ -375,14 +373,20 @@
               Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API for {{ dateRangeDescription || 'the last 28 days' }}.
               <strong>Credits</strong>, <strong>Gross $</strong>, <strong>Net $</strong>, and <strong>Models</strong> come from the Billing API for {{ rangeLabel }}.
             </v-card-subtitle>
-            <v-data-table
-              :items="perUserRows"
+            <div class="text-caption px-4 pb-2" data-testid="billing-page-sort-note">
+              Billing columns sort only the current page (users grouped alphabetically), not enterprise spend.
+              User and Tokens sorts use the full Metrics API user list.
+            </div>
+            <v-data-table-server
+              :items="perUserPageRows"
+              :items-length="perUserRows.length"
               :headers="perUserHeaders"
               density="compact"
-              :items-per-page="25"
-              :sort-by="[{ key: 'user', order: 'asc' }]"
+              :page="tableOptions.page"
+              :items-per-page="tableOptions.itemsPerPage"
+              :items-per-page-options="[10, 25, 50]"
+              :sort-by="tableOptions.sortBy"
               @update:options="onTableOptions"
-              @update:current-items="onCurrentItems"
             >
               <template #[`item.user`]="{ item }">
                 <v-chip
@@ -395,13 +399,13 @@
                 >{{ (item as PerUserRow).user }}</v-chip>
               </template>
               <template #[`item.netAmount`]="{ item }">
-                {{ (item as PerUserRow).billingState === 'loaded' ? `$${(item as PerUserRow).netAmount.toFixed(2)}` : (item as PerUserRow).billingState }}
+                {{ (item as PerUserRow).billingState === 'loaded' ? `$${(item as PerUserRow).netAmount?.toFixed(2)}` : (item as PerUserRow).billingState }}
               </template>
               <template #[`item.grossAmount`]="{ item }">
-                {{ (item as PerUserRow).billingState === 'loaded' ? `$${(item as PerUserRow).grossAmount.toFixed(2)}` : (item as PerUserRow).billingState }}
+                {{ (item as PerUserRow).billingState === 'loaded' ? `$${(item as PerUserRow).grossAmount?.toFixed(2)}` : (item as PerUserRow).billingState }}
               </template>
               <template #[`item.credits`]="{ item }">
-                {{ (item as PerUserRow).billingState === 'loaded' ? (item as PerUserRow).credits.toLocaleString(undefined, { maximumFractionDigits: 2 }) : (item as PerUserRow).billingState }}
+                {{ (item as PerUserRow).billingState === 'loaded' ? (item as PerUserRow).credits?.toLocaleString(undefined, { maximumFractionDigits: 2 }) : (item as PerUserRow).billingState }}
               </template>
               <template #[`item.models`]="{ item }">
                 {{ (item as PerUserRow).billingState === 'loaded' ? (item as PerUserRow).models : (item as PerUserRow).billingState }}
@@ -411,14 +415,14 @@
                     ? (item as PerUserRow).tokens.toLocaleString()
                     : '—' }}
               </template>
-            </v-data-table>
+            </v-data-table-server>
           </v-card>
 
           <!-- Admin drill-down: inline "User insights" section.
                No user selected → info banner explaining the feature.
                User selected → MyUsageViewer for that user, remounted via :key. -->
           <v-card
-            v-if="perUserRows.length > 0 && !noPerUserAttribution"
+            v-if="perUserRows.length > 0"
             variant="outlined"
             class="ma-3"
             data-testid="user-insights-section"
@@ -506,11 +510,17 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 interface PerUserRow {
   user: string;
   billingState: 'loaded' | 'Unavailable' | 'Loading' | 'Not loaded';
-  credits: number;
-  grossAmount: number;
-  netAmount: number;
+  credits: number | null;
+  grossAmount: number | null;
+  netAmount: number | null;
   tokens: number;
-  models: number;
+  models: number | null;
+}
+
+interface TableOptions {
+  page: number;
+  itemsPerPage: number;
+  sortBy: { key: string; order?: boolean | 'asc' | 'desc' }[];
 }
 
 export default defineComponent({
@@ -618,7 +628,7 @@ export default defineComponent({
 
     // Per-user token totals (and the canonical user list) come from
     // /api/user-metrics. We do NOT fan out billing on initial load — instead,
-    // the per-user table emits @update:options with the visible page's logins
+    // the per-user table emits @update:options with explicit paging/sort intent
     // and we batch-fetch billing on demand. Failures are non-fatal (table
     // still renders with token data; $ columns show "—").
     const { data: userMetricsData } = await useFetch<{ login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[]>(
@@ -639,17 +649,25 @@ export default defineComponent({
     const inFlightLogins = reactive(new Set<string>());
     const perUserLoading = ref(false);
     const visibleLogins = ref<string[]>([]);
+    const tableOptions = ref<TableOptions>({
+      page: 1, itemsPerPage: 25, sortBy: [{ key: 'user', order: 'asc' }],
+    });
     let billingGeneration = 0;
 
     // When the user switches month or toggles month view, drop cached
     // per-user roll-ups so the visible page re-fetches against the new window.
-    watch(billingQuery, (query, previous) => {
+    watch([billingQuery, () => userMetricsData.value], ([query], [previous]) => {
+      if (query === previous) {
+        loadVisibleBillingPage();
+        return;
+      }
       billingGeneration++;
       billingByLogin.clear();
       loadedLogins.clear();
       failedLogins.clear();
       inFlightLogins.clear();
       perUserLoading.value = false;
+      tableOptions.value = { ...tableOptions.value, page: 1 };
       if (['scope', 'githubEnt', 'githubOrg', 'githubTeam', 'isDataMocked', 'users']
         .some(key => query[key] !== previous[key])) {
         visibleLogins.value = [];
@@ -657,7 +675,7 @@ export default defineComponent({
         userDetailLogin.value = null;
         return;
       }
-      void loadBillingForLogins(visibleLogins.value);
+      loadVisibleBillingPage();
     }, { deep: true });
 
     async function loadBillingForLogins(logins: string[]): Promise<void> {
@@ -709,29 +727,37 @@ export default defineComponent({
       void loadBillingForLogins(failed);
     }
 
-    function onCurrentItems(items: { raw: PerUserRow }[]): void {
-      visibleLogins.value = items.map(item => item.raw.user);
+    function compareRows(a: PerUserRow, b: PerUserRow, sorts: TableOptions['sortBy']): number {
+      for (const sort of sorts) {
+        if (sort.order === false) continue;
+        const av = a[sort.key as keyof PerUserRow];
+        const bv = b[sort.key as keyof PerUserRow];
+        // Unknown/failed/in-flight billing is never a numeric zero, in either direction.
+        if (av == null || bv == null) {
+          if (av !== bv) return av == null ? 1 : -1;
+          continue;
+        }
+        const comparison = typeof av === 'number' && typeof bv === 'number'
+          ? av - bv : String(av).localeCompare(String(bv));
+        if (comparison) return sort.order === 'desc' ? -comparison : comparison;
+      }
+      return a.user.localeCompare(b.user);
+    }
+
+    function loadVisibleBillingPage(): void {
+      visibleLogins.value = perUserPageRows.value.map(row => row.user);
       void loadBillingForLogins(visibleLogins.value);
     }
 
-    // Called by v-data-table @update:options on initial mount, page change,
-    // and sort change. We use page + itemsPerPage + the currently-sorted
-    // `perUserRows` view to know which logins are visible.
-    function onTableOptions(opts: { page: number; itemsPerPage: number; sortBy?: { key: string; order?: boolean | 'asc' | 'desc' }[] }): void {
-      const allRows = [...perUserRows.value];
-      if (allRows.length === 0) return;
-      for (const sort of [...(opts.sortBy ?? [])].reverse()) {
-        allRows.sort((a, b) => {
-          const av = a[sort.key as keyof PerUserRow];
-          const bv = b[sort.key as keyof PerUserRow];
-          const comparison = typeof av === 'number' && typeof bv === 'number'
-            ? av - bv : String(av).localeCompare(String(bv));
-          return sort.order === 'desc' ? -comparison : comparison;
-        });
-      }
-      const start = (opts.page - 1) * opts.itemsPerPage;
-      visibleLogins.value = (opts.itemsPerPage < 0 ? allRows : allRows.slice(start, start + opts.itemsPerPage)).map(r => r.user);
-      void loadBillingForLogins(visibleLogins.value);
+    // Billing responses may reorder a page, but cannot select another batch.
+    // Only table intent, roster changes, retry, or window invalidation loads billing.
+    function onTableOptions(opts: Omit<TableOptions, 'sortBy'> & { sortBy?: TableOptions['sortBy'] }): void {
+      tableOptions.value = {
+        page: opts.page,
+        itemsPerPage: [10, 25, 50].includes(opts.itemsPerPage) ? opts.itemsPerPage : 25,
+        sortBy: opts.sortBy ?? [],
+      };
+      loadVisibleBillingPage();
     }
 
     const items = computed<BillingUsageItem[]>(() => data.value?.usageItems ?? []);
@@ -785,24 +811,24 @@ export default defineComponent({
           billingState: loadedLogins.has(key) ? 'loaded'
             : failedLogins.has(key) ? 'Unavailable'
             : inFlightLogins.has(key) ? 'Loading' : 'Not loaded',
-          credits: billing?.credits || 0,
-          grossAmount: billing?.grossAmount || 0,
-          netAmount: billing?.netAmount || 0,
+          credits: loadedLogins.has(key) ? billing?.credits ?? 0 : null,
+          grossAmount: loadedLogins.has(key) ? billing?.grossAmount ?? 0 : null,
+          netAmount: loadedLogins.has(key) ? billing?.netAmount ?? 0 : null,
           tokens,
-          models: billing?.models.size || 0,
+          models: loadedLogins.has(key) ? billing?.models.size ?? 0 : null,
         };
       });
     });
+    const perUserPageRows = computed(() => {
+      const { page, itemsPerPage, sortBy } = tableOptions.value;
+      const metricsSort = sortBy.filter(sort => sort.key === 'user' || sort.key === 'tokens');
+      const allRows = [...perUserRows.value].sort((a, b) => compareRows(a, b, metricsSort));
+      const start = (page - 1) * itemsPerPage;
+      return allRows.slice(start, start + itemsPerPage).sort((a, b) => compareRows(a, b, sortBy));
+    });
     const loadedLoginsCount = computed(() => loadedLogins.size);
 
-    // True when we've loaded at least one page of users AND the aggregate
-    // totals show non-zero spend AND zero per-user attribution has come back.
-    // This is the common state for pooled / fully-discounted enterprise plans
-    // where GitHub's billing JSON does not tag items with a user, so the
-    // per-user breakdown would otherwise render N rows of $0 with no
-    // explanation of why. When true we suppress the per-user table + charts
-    // and surface an explanatory alert instead.
-    const noPerUserAttribution = computed(() => {
+    const checkedUsersHaveNoSpend = computed(() => {
       if (loadedLogins.size === 0 || failedLogins.size > 0 || inFlightLogins.size > 0) return false;
       if (totalGrossAmount.value <= 0) return false;
       for (const agg of billingByLogin.values()) {
@@ -966,8 +992,8 @@ export default defineComponent({
       monthView, rangeLabel,
       totalCredits, totalGrossAmount, totalNetAmount,
       errorReason, headers,
-      perUserRows, perUserHeaders,
-      perUserLoading, loadedLoginsCount, onTableOptions, onCurrentItems, noPerUserAttribution,
+      perUserRows, perUserPageRows, perUserHeaders, tableOptions,
+      perUserLoading, loadedLoginsCount, onTableOptions, checkedUsersHaveNoSpend,
       failedLogins, retryBilling,
       topSpendersData, topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount, topSpendersMetric,
       topTokensChartData, topTokensChartOptions,
