@@ -33,6 +33,7 @@ import {
 
 beforeEach(() => {
   mockQuery.mockReset();
+  delete process.env.NUXT_BILLING_USER_ALIASES;
 });
 
 describe('resolveWindow', () => {
@@ -312,6 +313,52 @@ describe('aggregateForBillingByUser', () => {
     }, []);
     expect(resp.usageItems).toEqual([]);
     expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it('includes configured EMU billing aliases in the DB username filter and normalizes returned users', async () => {
+    process.env.NUXT_BILLING_USER_ALIASES = JSON.stringify({
+      readable_emu: 'opaquehash_emu',
+    });
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{
+          username: 'readable_emu',
+          product: 'copilot',
+          sku: 'copilot_ai_credit',
+          model: 'gpt-4o',
+          unit_type: 'credits',
+          price_per_unit: 0.01,
+          gross_quantity: 100,
+          gross_amount: 1,
+          discount_amount: 0,
+          net_amount: 1,
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['opaquehash_emu']);
+
+    expect(mockQuery.mock.calls[0]![1][3]).toEqual(['opaquehash_emu', 'readable_emu']);
+    expect(resp.usageItems[0]!.user).toBe('opaquehash_emu');
+  });
+
+  it('leaves reconciliation unknown and never queries off-page billing identities', async () => {
+    process.env.NUXT_BILLING_USER_ALIASES = JSON.stringify({
+      readable_emu: 'opaquehash_emu',
+    });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ username: 'unmapped_emu' }] });
+
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['opaquehash_emu']);
+
+    expect(resp).not.toHaveProperty('unmatchedBillingUsernames');
+    expect(resp.identityReconciliation).toBe('unknown');
+    expect(mockQuery).toHaveBeenCalledTimes(1);
   });
 
   it('groups by username and tags each item with the user field (case-insensitive match)', async () => {

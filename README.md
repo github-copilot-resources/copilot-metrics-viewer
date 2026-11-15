@@ -127,7 +127,15 @@ Aggregate AI credit billing breakdown by model, SKU, cost center, and repository
 
 Not sure which one applies to you? Call `GET /orgs/<your-org>` and look at the `enterprise` field — `null` means standalone, an object with a `slug` means enterprise-owned (use that slug).
 
-**Per-user attribution caveat:** the per-user breakdown depends on GitHub tagging each billing item with a `user`. Some enterprise plans (typically fully-pooled / centrally-billed) return only enterprise-level aggregates, in which case every user appears at $0 in the per-user table; the Billing tab surfaces an explanatory alert in that state. The My Usage tab and the User Metrics `ai_credits_used` column are independent of this and still work.
+**Per-user attribution caveat:** per-user billing depends on attributable billing rows. If successfully checked users have no spend while the aggregate has spend, the Billing tab explains only that checked batch: successful empty results are zero, while unvisited users remain unknown and failures show unavailable. The table, pagination, token chart, and user insights remain available; an empty batch does not establish enterprise-wide non-attribution, an identity mismatch, or a billing-plan diagnosis. The My Usage tab and the User Metrics `ai_credits_used` column are independent of this and still work.
+
+**Bounded per-user loading and sorting:** each explicit page/sort action checks only that page (10, 25, or 50 users), reusing successfully loaded results for the current billing window. Billing columns (Credits, Gross $, Net $, Models) sort **within the current alphabetically grouped page**, not across the enterprise or a partially loaded cache. User and Tokens sorts use the full Metrics API user list. Billing responses cannot advance through unvisited pages automatically. This does not implement global spend-sorted pagination; the separate Billing CSV top-spenders chart remains independent.
+
+**EMU identity aliases:** GitHub-supplied opaque billing usernames can differ from Metrics API logins. Operators may set the server-only `NUXT_BILLING_USER_ALIASES` to a JSON object mapping **billing username → metrics login**, for example `{"opaque_fake":"fake-user"}`. Use only independently verified mappings; no handle guessing or client-provided mapping is supported. Keys and values are trimmed and case-insensitive; multiple billing keys may resolve to one login. Direct and aliased billing lines are counted once each. Chains, cycles, conflicting case-normalized keys, and malformed/non-string entries fail explicitly with a service error rather than showing zero. The mapping is deployment-wide, so all configured billing scopes must use the same verified identities; do not share a mapping across scopes where a handle has different owners.
+
+Per-user responses check only requested logins and aliases, **not** an authoritative enterprise roster. `identityReconciliation: "unknown"` does not assert that absent rows or off-page users are unmatched. No global unmatched usernames/count is returned. The UI distinguishes failed/not-yet-loaded billing from a successful zero; upstream partial failures are errors, not partial totals. Existing admin-only billing access, team membership checks, and self-row restrictions on metrics are unchanged. A future bounded authoritative-roster contract is needed for complete reconciliation.
+
+The isolated identity SQL/HTTP suite uses an owned disposable Postgres container: `npm test -- --run --config tests/billing-identity.config.ts` (Docker required; never uses the application database).
 
 #### Admin drill-down — inline User insights per user
 
@@ -482,7 +490,7 @@ NUXT_USAGE_ADMINS=alice,bob@company.com
 > [!NOTE]
 > When `NUXT_GITHUB_BILLING_TOKEN` is unset, the Billing tab is shown to all users (admin or not) but renders a configuration-help placeholder instead of fetching data; the `NUXT_USAGE_ADMINS` gate only applies once the token is configured.
 
-The Billing tab exposes aggregate breakdowns (model / SKU / cost center) and an admin per-user breakdown. Per-user attribution depends on GitHub tagging each item with a `user`; some enterprise plans return only enterprise-level aggregates, in which case the per-user table is hidden behind an explanatory alert. The User Metrics `ai_credits_used` column and the My Usage spend card are independent of this.
+The Billing tab exposes aggregate breakdowns (model / SKU / cost center) and an admin per-user breakdown. Per-user attribution depends on attributable billing rows; an empty checked batch is explained without hiding the table or diagnosing enterprise-wide attribution. Other pages remain reachable and unknown until requested. The User Metrics `ai_credits_used` column and the My Usage spend card are independent of this.
 
 ##### What non-admins see (only when `NUXT_USAGE_ADMINS` is populated)
 
