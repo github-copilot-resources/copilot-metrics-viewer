@@ -158,6 +158,7 @@ test('date reload hides old totals while pending and denied next scope cannot re
   await page.goto('/orgs/synthetic-denied-org?mock=true');
   await dashboard.expectMetricLabelsVisible();
   await dashboard.userMetricsTabLink.click();
-  await expect(metrics.totalUsersValue).toHaveText('Unavailable');
+  await expect(page.getByText(/403 Error — Unable to load user metrics/)).toBeVisible();
+  await expect(metrics.totalUsersValue).toHaveCount(0);
   await expect(page.getByRole('cell', { name: 'synthetic-self', exact: true })).toHaveCount(0);
 });

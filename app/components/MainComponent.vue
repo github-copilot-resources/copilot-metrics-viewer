@@ -215,7 +215,7 @@
 
 
     <div v-show="!apiError">
-      <v-progress-linear v-show="!metricsReady && !signInRequired" indeterminate color="indigo" />
+      <v-progress-linear v-show="showActiveTabLoading" indeterminate color="indigo" />
       <v-window v-show="(metricsReady && metrics.length) || (seatsReady && tab === 'seat analysis') || (userMetricsReady && tab === 'user metrics') || tab === 'my usage' || tab === 'billing' || (metricsReady && reportData.length > 0 && (tab === 'languages' || tab === 'editors'))" v-model="tab">
         <v-window-item v-for="item in tabItems" :key="item" :value="item">
           <v-card flat>
@@ -247,7 +247,7 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               @page-change="handleSeatsPageChange"
             />
             <UserMetricsViewer
-              v-if="item === 'user metrics'"
+              v-if="item === 'user metrics' && !userMetricsLoadError"
               :user-metrics="userMetrics"
               :summary="userSummary"
               :date-range-description="dateRangeDescription"
@@ -255,6 +255,14 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               :query-params="seatsQueryParams"
               :session-email="sessionEmail"
             />
+            <v-alert
+              v-if="item === 'user metrics' && userMetricsLoadError"
+              type="error"
+              variant="tonal"
+              class="ma-4"
+            >
+              {{ userMetricsLoadError }}
+            </v-alert>
             <MyUsageViewer
               v-if="item === 'my usage'"
               :date-range-description="dateRangeDescription"
@@ -272,7 +280,7 @@ v-if="item === 'api response'" :metrics="metrics" :original-metrics="originalMet
           </v-card>
         </v-window-item>
         <v-alert
-          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics' && tab !== 'my usage' && tab !== 'billing') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && userMetrics.length == 0 && tab === 'user metrics')"
+          v-show="(metricsReady && metrics.length == 0 && tab !== 'seat analysis' && tab !== 'user metrics' && tab !== 'my usage' && tab !== 'billing') || (seatsReady && seats.length == 0 && tab === 'seat analysis') || (userMetricsReady && !userMetricsLoadError && userMetrics.length == 0 && tab === 'user metrics')"
           density="compact" text="No data available to display" title="No data" type="warning" />
       </v-window>
 
@@ -324,7 +332,7 @@ import AiChatPanel from './AiChatPanel.vue'
 import AdminPanel from './AdminPanel.vue'
 import { Options } from '@/model/Options';
 import { useRoute } from 'vue-router';
-import { applyHiddenTabs, applyHistoricalModeFilter } from '@/utils/tabUtils';
+import { applyHiddenTabs, applyHistoricalModeFilter, shouldShowActiveTabLoading } from '@/utils/tabUtils';
 import { routeParamStr } from '@/utils/routeUtils';
 import { resolveDisplayName } from '#shared/utils/resolveDisplayName';
 
@@ -365,6 +373,15 @@ export default defineNuxtComponent({
     showAnnouncementBanner(): boolean {
       return !!this.announcementMessage && !this.announcementDismissed;
     },
+    showActiveTabLoading(): boolean {
+      return shouldShowActiveTabLoading({
+        tab: this.tab,
+        signInRequired: this.signInRequired,
+        metricsReady: this.metricsReady,
+        seatsReady: this.seatsReady,
+        userMetricsReady: this.userMetricsReady,
+      });
+    },
   },
   methods: {
     dismissAnnouncement() {
@@ -387,9 +404,7 @@ export default defineNuxtComponent({
       await this.fetchDataRange();
       await this.fetchMetrics();
       if (this.signInRequired) return;
-      const { execute: executeUserMetrics } = this.userMetricsFetch;
-      await executeUserMetrics();
-      this.userMetricsReady = true;
+      await this.fetchUserMetrics();
     },
     getDisplayTabName(itemName: string): string {
       return itemName;
@@ -415,13 +430,19 @@ export default defineNuxtComponent({
 
       // Re-fetch user metrics with updated date range
       if (this.signInRequired) return;
+      await this.fetchUserMetrics();
+    },
+    async fetchUserMetrics() {
+      this.userMetricsReady = false;
+      this.userMetricsLoadError = undefined;
       const { execute: executeUserMetrics, error: userMetricsError } = this.userMetricsFetch;
       await executeUserMetrics();
       if (userMetricsError.value) {
-        console.warn('User metrics fetch failed:', userMetricsError.value);
-      } else {
-        this.userMetricsReady = true;
+        const status = userMetricsError.value.statusCode;
+        const label = status === 500 ? '500 Internal Server Error' : status ? `${status} Error` : 'Request failed';
+        this.userMetricsLoadError = `${label} — Unable to load user metrics. Please apply the date range to try again.`;
       }
+      this.userMetricsReady = true;
     },
     async fetchMetrics() {
       if (this.signInRequired || !this.dateRange.since || !this.dateRange.until || this.isLoading) {
@@ -539,6 +560,7 @@ export default defineNuxtComponent({
       seatsPerPage:     300,
       seatsHistory:     [] as SeatHistoryEntry[],
       userMetricsReady: false,
+      userMetricsLoadError: undefined as string | undefined,
       userMetricsHistory: [] as UserMetricsHistoryEntry[],
       apiError: undefined as string | undefined,
       announcementDismissed: false,
@@ -655,7 +677,6 @@ export default defineNuxtComponent({
       await this.fetchMetrics();
 
       const { data: seatsData, error: seatsError, execute: executeSeats } = this.seatsFetch;
-      const { error: userMetricsError, execute: executeUserMetrics } = this.userMetricsFetch;
 
       if (!this.signInRequired) {
         await executeSeats();
@@ -670,14 +691,7 @@ export default defineNuxtComponent({
           this.seatsReady = true;
         }
 
-        await executeUserMetrics();
-
-        if (userMetricsError.value) {
-          // User metrics errors are non-fatal — log but don't block the UI
-          console.warn('User metrics fetch failed:', userMetricsError.value);
-        } else {
-          this.userMetricsReady = true;
-        }
+        await this.fetchUserMetrics();
 
         // Fetch history data if historical mode is enabled
         const config = useRuntimeConfig();

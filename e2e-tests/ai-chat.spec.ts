@@ -25,6 +25,57 @@ test('named assistant controls open, send, clear and close by keyboard', async (
   await expect(card).not.toBeVisible()
 })
 
+for (const status of [200, 500]) {
+  test(`clearing a pending conversation ignores its late ${status} response`, async ({ page }) => {
+    let release!: () => void
+    let requested!: () => void
+    const gate = new Promise<void>(resolve => { release = resolve })
+    const received = new Promise<void>(resolve => { requested = resolve })
+    await page.route('**/api/ai/chat', async route => {
+      requested()
+      await gate
+      await route.fulfill({
+        status,
+        json: status === 200
+          ? { answer: 'Discarded synthetic answer' }
+          : { statusCode: 500, statusMessage: 'Discarded synthetic error' },
+      })
+    })
+    try {
+      await page.goto('/orgs/octo-demo-org?mock=true')
+      await new DashboardPage(page).expectMetricLabelsVisible()
+      await page.getByRole('button', { name: 'Open AI metrics assistant', exact: true }).click()
+      const card = page.locator('.ai-chat-card')
+      await card.getByRole('textbox').fill('Synthetic pending question')
+      await card.getByRole('button', { name: 'Send message', exact: true }).click()
+      await received
+      await expect(card.locator('.ai-chat-loading')).toBeVisible()
+      await card.getByRole('button', { name: 'Clear conversation', exact: true }).focus()
+      await page.keyboard.press('Enter')
+      await expect(card.locator('.ai-chat-message-user')).toHaveCount(0)
+      await expect(card.locator('.ai-chat-suggestions')).toBeVisible()
+      const response = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/ai/chat' && response.status() === status)
+      release()
+      await response
+      await expect(card.locator('.ai-chat-loading')).toBeHidden()
+      await expect(card.getByRole('textbox')).toBeEnabled()
+      await expect(card.locator('.ai-chat-message')).toHaveCount(0)
+      await expect(card.getByRole('alert')).toBeHidden()
+      await expect(card.locator('.ai-chat-suggestions')).toBeVisible()
+
+      await page.route('**/api/ai/chat', route => route.fulfill({ json: { answer: 'Fresh synthetic answer' } }))
+      await card.getByRole('textbox').fill('New synthetic question')
+      await card.getByRole('button', { name: 'Send message', exact: true }).click()
+      await expect(card.locator('.ai-chat-message-assistant .ai-chat-bubble-content')).toHaveText('Fresh synthetic answer')
+      await expect(card.locator('.ai-chat-message-user')).toHaveText('New synthetic question')
+      await expect(card.locator('.ai-chat-loading')).toBeHidden()
+    } finally {
+      release()
+    }
+  })
+}
+
 test.describe('AI Chat Panel', () => {
   test.describe.configure({ mode: 'serial' })
 
