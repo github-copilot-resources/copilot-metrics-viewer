@@ -64,7 +64,7 @@ export interface BillingCreditsResponse {
   organization?: string;
   enterprise?: string;
   user?: string;
-  unmatchedBillingUsernames?: string[];
+  identityReconciliation?: 'unknown';
   usageItems: BillingUsageItem[];
 }
 

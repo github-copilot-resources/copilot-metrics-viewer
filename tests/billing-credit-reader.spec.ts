@@ -344,7 +344,7 @@ describe('aggregateForBillingByUser', () => {
     expect(resp.usageItems[0]!.user).toBe('opaquehash_emu');
   });
 
-  it('surfaces billing usernames with spend that are not matched by requested metrics logins or aliases', async () => {
+  it('leaves reconciliation unknown and never queries off-page billing identities', async () => {
     process.env.NUXT_BILLING_USER_ALIASES = JSON.stringify({
       readable_emu: 'opaquehash_emu',
     });
@@ -356,8 +356,9 @@ describe('aggregateForBillingByUser', () => {
       startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
     }, ['opaquehash_emu']);
 
-    expect(resp.unmatchedBillingUsernames).toEqual(['unmapped_emu']);
-    expect(mockQuery.mock.calls[1]![0]).toMatch(/LOWER\(username\) <> ALL/);
+    expect(resp).not.toHaveProperty('unmatchedBillingUsernames');
+    expect(resp.identityReconciliation).toBe('unknown');
+    expect(mockQuery).toHaveBeenCalledTimes(1);
   });
 
   it('groups by username and tags each item with the user field (case-insensitive match)', async () => {

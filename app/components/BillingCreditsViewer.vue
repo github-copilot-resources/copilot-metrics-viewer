@@ -56,6 +56,7 @@
                 size="x-small"
                 variant="text"
                 prepend-icon="mdi-chevron-left"
+                aria-label="Previous month"
                 @click="shiftMonth(-1)"
               >Prev</v-btn>
               <v-btn
@@ -263,6 +264,29 @@
             </v-card>
           </div>
 
+          <v-alert
+            type="info"
+            variant="tonal"
+            class="ma-3"
+            data-testid="billing-identity-note"
+          >
+            Billing identities are not reconciled against a complete Metrics API roster.
+            Only requested logins and explicitly configured billing aliases are checked.
+            An absent billing row is not evidence of an identity mismatch; other pages are not checked.
+            GitHub may supply opaque EMU handles. Deployment administrators can configure
+            <code>NUXT_BILLING_USER_ALIASES</code> (billing username → metrics login).
+          </v-alert>
+          <v-alert
+            v-if="failedLogins.size > 0"
+            type="warning"
+            variant="tonal"
+            class="ma-3"
+            data-testid="billing-per-user-error"
+          >
+            Per-user billing is unavailable for some requested users, not zero.
+            Check the billing service and administrator alias configuration.
+            <v-btn size="small" variant="text" @click="retryBilling">Retry per-user billing</v-btn>
+          </v-alert>
           <!-- Per-user breakdown — sourced from /api/user-metrics for the
                full user list, billing $ lazy-loaded per visible v-data-table
                page from /api/billing-credits-by-user. -->
@@ -358,6 +382,7 @@
               :items-per-page="25"
               :sort-by="[{ key: 'user', order: 'asc' }]"
               @update:options="onTableOptions"
+              @update:current-items="onCurrentItems"
             >
               <template #[`item.user`]="{ item }">
                 <v-chip
@@ -370,13 +395,16 @@
                 >{{ (item as PerUserRow).user }}</v-chip>
               </template>
               <template #[`item.netAmount`]="{ item }">
-                ${{ (item as PerUserRow).netAmount.toFixed(2) }}
+                {{ (item as PerUserRow).billingState === 'loaded' ? `$${(item as PerUserRow).netAmount.toFixed(2)}` : (item as PerUserRow).billingState }}
               </template>
               <template #[`item.grossAmount`]="{ item }">
-                ${{ (item as PerUserRow).grossAmount.toFixed(2) }}
+                {{ (item as PerUserRow).billingState === 'loaded' ? `$${(item as PerUserRow).grossAmount.toFixed(2)}` : (item as PerUserRow).billingState }}
               </template>
               <template #[`item.credits`]="{ item }">
-                {{ (item as PerUserRow).credits.toLocaleString(undefined, { maximumFractionDigits: 2 }) }}
+                {{ (item as PerUserRow).billingState === 'loaded' ? (item as PerUserRow).credits.toLocaleString(undefined, { maximumFractionDigits: 2 }) : (item as PerUserRow).billingState }}
+              </template>
+              <template #[`item.models`]="{ item }">
+                {{ (item as PerUserRow).billingState === 'loaded' ? (item as PerUserRow).models : (item as PerUserRow).billingState }}
               </template>
               <template #[`item.tokens`]="{ item }">
                 {{ (item as PerUserRow).tokens > 0
@@ -477,6 +505,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 interface PerUserRow {
   user: string;
+  billingState: 'loaded' | 'Unavailable' | 'Loading' | 'Not loaded';
   credits: number;
   grossAmount: number;
   netAmount: number;
@@ -602,51 +631,56 @@ export default defineComponent({
 
     // ── Lazy per-user billing state ────────────────────────────────────────
     // Map login (lowercase) → aggregated billing roll-up. Pages we haven't
-    // visited yet are simply absent from the map; perUserRows renders them
-    // with $0 / 0 credits / 0 models until the fetch completes.
+    // visited yet are absent; only a successful empty response is a zero.
     interface BillingAgg { credits: number; grossAmount: number; netAmount: number; models: Set<string>; display: string }
     const billingByLogin = reactive(new Map<string, BillingAgg>());
     const loadedLogins = reactive(new Set<string>());
+    const failedLogins = reactive(new Set<string>());
+    const inFlightLogins = reactive(new Set<string>());
     const perUserLoading = ref(false);
+    const visibleLogins = ref<string[]>([]);
+    let billingGeneration = 0;
 
     // When the user switches month or toggles month view, drop cached
     // per-user roll-ups so the visible page re-fetches against the new window.
-    watch([selectedMonth, monthView, () => props.queryParams.since, () => props.queryParams.until], () => {
+    watch(billingQuery, (query, previous) => {
+      billingGeneration++;
       billingByLogin.clear();
       loadedLogins.clear();
-    });
+      failedLogins.clear();
+      inFlightLogins.clear();
+      perUserLoading.value = false;
+      if (['scope', 'githubEnt', 'githubOrg', 'githubTeam', 'isDataMocked', 'users']
+        .some(key => query[key] !== previous[key])) {
+        visibleLogins.value = [];
+        userMetricsData.value = null;
+        userDetailLogin.value = null;
+        return;
+      }
+      void loadBillingForLogins(visibleLogins.value);
+    }, { deep: true });
 
     async function loadBillingForLogins(logins: string[]): Promise<void> {
-      const needed = logins.filter(l => l && !loadedLogins.has(l.toLowerCase()));
+      const needed = [...new Set(logins.map(l => l.trim().toLowerCase()))]
+        .filter(l => l && !loadedLogins.has(l) && !inFlightLogins.has(l) && !failedLogins.has(l));
       if (needed.length === 0) return;
-      // Mark as "in-flight" up front so concurrent page changes don't double-fetch.
-      for (const l of needed) loadedLogins.add(l.toLowerCase());
+      const generation = billingGeneration;
+      const query = { ...billingQuery.value };
+      for (const l of needed) inFlightLogins.add(l);
       perUserLoading.value = true;
       try {
         // Chunk to the endpoint's per-call cap (50).
         for (let i = 0; i < needed.length; i += 50) {
           const chunk = needed.slice(i, i + 50);
-          const parent = { ...(props.queryParams || {}) };
-          if (monthView.value) {
-            delete parent.since;
-            delete parent.until;
-            const [y, m] = selectedMonth.value.split('-');
-            if (y && m) {
-              parent.year = y;
-              parent.month = String(Number(m));
-            }
-          } else {
-            delete parent.year;
-            delete parent.month;
-            delete parent.day;
-          }
-          const qp: Record<string, string> = { ...parent, logins: chunk.join(',') };
+          const qp: Record<string, string> = { ...query, logins: chunk.join(',') };
           try {
             const resp = await $fetch<BillingCreditsResponse>('/api/billing-credits-by-user', { query: qp });
+            if (generation !== billingGeneration) return;
             for (const it of resp.usageItems ?? []) {
               const u = (it.user || '').trim();
               if (!u) continue;
               const key = u.toLowerCase();
+              if (!chunk.includes(key)) continue;
               const prev = billingByLogin.get(key) || { credits: 0, grossAmount: 0, netAmount: 0, models: new Set<string>(), display: u };
               prev.credits += billingCreditsUsed(it);
               prev.grossAmount += Number.isFinite(it.grossAmount) ? it.grossAmount : 0;
@@ -654,26 +688,50 @@ export default defineComponent({
               if (it.model) prev.models.add(it.model);
               billingByLogin.set(key, prev);
             }
-          } catch (err) {
-            // Don't unmark — failed fetches stay "loaded" so we don't retry
-            // forever; the rows just remain at $0. A page refresh re-tries.
-            console.warn('billing-credits-by-user chunk failed', err);
+            for (const login of chunk) loadedLogins.add(login);
+          } catch {
+            if (generation !== billingGeneration) return;
+            for (const login of chunk) failedLogins.add(login);
+          } finally {
+            if (generation === billingGeneration) {
+              for (const login of chunk) inFlightLogins.delete(login);
+            }
           }
         }
       } finally {
-        perUserLoading.value = false;
+        if (generation === billingGeneration) perUserLoading.value = inFlightLogins.size > 0;
       }
+    }
+
+    function retryBilling(): void {
+      const failed = [...failedLogins];
+      failedLogins.clear();
+      void loadBillingForLogins(failed);
+    }
+
+    function onCurrentItems(items: { raw: PerUserRow }[]): void {
+      visibleLogins.value = items.map(item => item.raw.user);
+      void loadBillingForLogins(visibleLogins.value);
     }
 
     // Called by v-data-table @update:options on initial mount, page change,
     // and sort change. We use page + itemsPerPage + the currently-sorted
     // `perUserRows` view to know which logins are visible.
-    function onTableOptions(opts: { page: number; itemsPerPage: number }): void {
-      const allRows = perUserRows.value;
+    function onTableOptions(opts: { page: number; itemsPerPage: number; sortBy?: { key: string; order?: boolean | 'asc' | 'desc' }[] }): void {
+      const allRows = [...perUserRows.value];
       if (allRows.length === 0) return;
+      for (const sort of [...(opts.sortBy ?? [])].reverse()) {
+        allRows.sort((a, b) => {
+          const av = a[sort.key as keyof PerUserRow];
+          const bv = b[sort.key as keyof PerUserRow];
+          const comparison = typeof av === 'number' && typeof bv === 'number'
+            ? av - bv : String(av).localeCompare(String(bv));
+          return sort.order === 'desc' ? -comparison : comparison;
+        });
+      }
       const start = (opts.page - 1) * opts.itemsPerPage;
-      const visible = allRows.slice(start, start + opts.itemsPerPage).map(r => r.user);
-      void loadBillingForLogins(visible);
+      visibleLogins.value = (opts.itemsPerPage < 0 ? allRows : allRows.slice(start, start + opts.itemsPerPage)).map(r => r.user);
+      void loadBillingForLogins(visibleLogins.value);
     }
 
     const items = computed<BillingUsageItem[]>(() => data.value?.usageItems ?? []);
@@ -713,8 +771,7 @@ export default defineComponent({
 
     // Per-user rows are projected from /api/user-metrics (canonical user list
     // + CLI token totals) and joined with the lazy-loaded billing map. Users
-    // we haven't fetched billing for yet appear with $0 / 0 credits and will
-    // populate as the v-data-table pages over them.
+    // we haven't fetched billing for yet are explicitly marked as not loaded.
     const perUserRows = computed<PerUserRow[]>(() => {
       const um = (userMetricsData?.value ?? []) as { login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[];
       if (um.length === 0) return [];
@@ -725,6 +782,9 @@ export default defineComponent({
         const tokens = tu ? (tu.prompt_tokens_sum || 0) + (tu.output_tokens_sum || 0) : 0;
         return {
           user: billing?.display || u.login,
+          billingState: loadedLogins.has(key) ? 'loaded'
+            : failedLogins.has(key) ? 'Unavailable'
+            : inFlightLogins.has(key) ? 'Loading' : 'Not loaded',
           credits: billing?.credits || 0,
           grossAmount: billing?.grossAmount || 0,
           netAmount: billing?.netAmount || 0,
@@ -743,7 +803,7 @@ export default defineComponent({
     // explanation of why. When true we suppress the per-user table + charts
     // and surface an explanatory alert instead.
     const noPerUserAttribution = computed(() => {
-      if (loadedLogins.size === 0) return false;
+      if (loadedLogins.size === 0 || failedLogins.size > 0 || inFlightLogins.size > 0) return false;
       if (totalGrossAmount.value <= 0) return false;
       for (const agg of billingByLogin.values()) {
         if (agg.grossAmount > 0 || agg.netAmount > 0 || agg.credits > 0) return false;
@@ -907,7 +967,8 @@ export default defineComponent({
       totalCredits, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserHeaders,
-      perUserLoading, loadedLoginsCount, onTableOptions, noPerUserAttribution,
+      perUserLoading, loadedLoginsCount, onTableOptions, onCurrentItems, noPerUserAttribution,
+      failedLogins, retryBilling,
       topSpendersData, topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount, topSpendersMetric,
       topTokensChartData, topTokensChartOptions,
       dataSourceBadge, billingSourceLabel,

@@ -357,27 +357,11 @@ export async function aggregateForBillingByUser(
     user: r.username ? normalizeBillingUsername(r.username, aliases) : undefined,
   }));
 
-  const unmatchedConds = [...conds];
-  const unmatchedParams = [...params];
-  unmatchedConds[2] = 'LOWER(username) <> ALL($4::text[])';
-  unmatchedConds.push('(quantity <> 0 OR gross_amount <> 0 OR net_amount <> 0)');
-  const unmatchedSql = `
-    SELECT DISTINCT username
-    FROM billing_credit_usage
-    WHERE ${unmatchedConds.join(' AND ')}
-      AND username IS NOT NULL
-      AND username <> ''
-    ORDER BY username
-  `;
-  const unmatchedResult = await pool.query(unmatchedSql, unmatchedParams);
-  const unmatchedBillingUsernames = (unmatchedResult?.rows ?? [])
-    .map((r: { username?: string }) => (r.username || '').trim())
-    .filter(Boolean);
-
   return {
     timePeriod: window.timePeriod,
     enterprise,
-    ...(unmatchedBillingUsernames.length ? { unmatchedBillingUsernames } : {}),
+    // A requested page is not an authoritative metrics roster.
+    identityReconciliation: 'unknown',
     usageItems,
   };
 }

@@ -38,6 +38,7 @@ import {
 import {
   billingUsernamesForMetricsLogins,
   parseBillingUserAliases,
+  type BillingUserAliases,
 } from '../../shared/utils/billing-user-identity';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockBilling from '../../public/mock-data/billing-credits-synthetic-attribution-demo.json';
@@ -79,6 +80,16 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     throw createError({
       statusCode: 400,
       statusMessage: `Too many logins (${requestedLogins.length}); cap is ${MAX_LOGINS_PER_CALL} per call. Split the request into multiple pages.`,
+    });
+  }
+
+  let aliases: BillingUserAliases;
+  try {
+    aliases = parseBillingUserAliases(process.env.NUXT_BILLING_USER_ALIASES);
+  } catch {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'Invalid NUXT_BILLING_USER_ALIASES configuration. Ask the deployment administrator to correct the billing identity mapping.',
     });
   }
 
@@ -193,7 +204,6 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   });
 
   const tagged: BillingUsageItem[] = [];
-  const aliases = parseBillingUserAliases(process.env.NUXT_BILLING_USER_ALIASES);
   let timePeriod: BillingCreditsResponse['timePeriod'] = { year: 0, month: 0 };
   let orgSlug: string | undefined;
   let entSlug: string | undefined;
@@ -210,15 +220,16 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       for (const it of resp.usageItems ?? []) {
         tagged.push({ ...it, user: metricsLogin });
       }
-    } catch (err) {
+    } catch {
       failures++;
-      logger.warn(`billing-credits-by-user: ${billingUsername} fan-out failed`, err);
+      logger.warn('billing-credits-by-user: a fan-out request failed');
     }
   }
 
-  const fetchTargets = requestedLogins.flatMap(login =>
-    billingUsernamesForMetricsLogins([login], aliases).map(billingUsername => ({ login, billingUsername }))
-  );
+  const fetchTargets = billingUsernamesForMetricsLogins(requestedLogins, aliases).map(billingUsername => ({
+    login: Object.hasOwn(aliases, billingUsername) ? aliases[billingUsername]! : billingUsername,
+    billingUsername,
+  }));
 
   let cursor = 0;
   async function worker(): Promise<void> {
@@ -230,10 +241,10 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   }
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, fetchTargets.length) }, () => worker()));
 
-  if (failures > 0 && tagged.length === 0) {
+  if (failures > 0) {
     throw createError({
       statusCode: 502,
-      statusMessage: `All ${failures} per-user billing fan-out requests failed. Check the billing PAT scopes and SSO authorization.`,
+      statusMessage: 'Per-user billing is incomplete because an upstream request failed. Retry or ask the administrator to check the billing credential.',
     });
   }
 
@@ -241,6 +252,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     timePeriod,
     organization: orgSlug,
     enterprise: entSlug,
+    identityReconciliation: 'unknown',
     usageItems: tagged,
   } as BillingCreditsResponse;
 });
@@ -249,6 +261,6 @@ function parseLogins(raw: unknown): string[] {
   if (!raw) return [];
   const str = Array.isArray(raw) ? raw.join(',') : String(raw);
   return Array.from(new Set(
-    str.split(',').map(s => s.trim()).filter(Boolean)
+    str.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
   ));
 }

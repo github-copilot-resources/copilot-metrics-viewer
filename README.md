@@ -127,7 +127,13 @@ Aggregate AI credit billing breakdown by model, SKU, cost center, and repository
 
 Not sure which one applies to you? Call `GET /orgs/<your-org>` and look at the `enterprise` field — `null` means standalone, an object with a `slug` means enterprise-owned (use that slug).
 
-**Per-user attribution caveat:** the per-user breakdown depends on GitHub tagging each billing item with a `user`. Some enterprise plans (typically fully-pooled / centrally-billed) return only enterprise-level aggregates, in which case every user appears at $0 in the per-user table; the Billing tab surfaces an explanatory alert in that state. The My Usage tab and the User Metrics `ai_credits_used` column are independent of this and still work.
+**Per-user attribution caveat:** per-user billing depends on attributable billing rows. Some enterprise plans return only enterprise-level aggregates. If successfully loaded users have no attributed spend while the aggregate has spend, the Billing tab surfaces an explanatory alert; this is not proof of an identity mismatch or of a particular billing plan. The My Usage tab and the User Metrics `ai_credits_used` column are independent of this and still work.
+
+**EMU identity aliases:** GitHub-supplied opaque billing usernames can differ from Metrics API logins. Operators may set the server-only `NUXT_BILLING_USER_ALIASES` to a JSON object mapping **billing username → metrics login**, for example `{"opaque_fake":"fake-user"}`. Use only independently verified mappings; no handle guessing or client-provided mapping is supported. Keys and values are trimmed and case-insensitive; multiple billing keys may resolve to one login. Direct and aliased billing lines are counted once each. Chains, cycles, conflicting case-normalized keys, and malformed/non-string entries fail explicitly with a service error rather than showing zero. The mapping is deployment-wide, so all configured billing scopes must use the same verified identities; do not share a mapping across scopes where a handle has different owners.
+
+Per-user responses check only requested logins and aliases, **not** an authoritative enterprise roster. `identityReconciliation: "unknown"` does not assert that absent rows or off-page users are unmatched. No global unmatched usernames/count is returned. The UI distinguishes failed/not-yet-loaded billing from a successful zero; upstream partial failures are errors, not partial totals. Existing admin-only billing access, team membership checks, and self-row restrictions on metrics are unchanged. A future bounded authoritative-roster contract is needed for complete reconciliation.
+
+The isolated identity SQL/HTTP suite uses an owned disposable Postgres container: `npm test -- --run --config tests/billing-identity.config.ts` (Docker required; never uses the application database).
 
 #### Admin drill-down — inline User insights per user
 
