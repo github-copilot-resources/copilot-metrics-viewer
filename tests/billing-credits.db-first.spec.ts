@@ -13,6 +13,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import attributionStress from '../public/mock-data/billing-credits-synthetic-attribution-stress.json';
 
 vi.hoisted(() => {
   (globalThis as any).defineEventHandler = (h: any) => h;
@@ -80,6 +81,44 @@ beforeEach(() => {
 });
 
 describe('GET /api/billing-credits — DB-first branch', () => {
+  it('serves an unattributed AI-credit aggregate with consistent native-unit arithmetic in mock mode', async () => {
+    setQuery({ scope: 'enterprise', githubEnt: 'octo-demo-ent', isDataMocked: 'true' });
+    const response = await billingHandler({} as Parameters<typeof billingHandler>[0]);
+
+    expect(response.usageItems.length).toBeGreaterThan(2);
+    for (const item of response.usageItems) {
+      expect(item).not.toHaveProperty('user');
+      expect(item).not.toHaveProperty('organization');
+      expect(item.unitType).toBe('ai-credits');
+      for (const kind of ['gross', 'discount', 'net'] as const) {
+        expect(item[`${kind}Amount`]).toBeCloseTo(item[`${kind}Quantity`] * item.pricePerUnit, 8);
+      }
+      expect(item.grossQuantity).toBeCloseTo(item.discountQuantity + item.netQuantity, 8);
+      expect(item.grossAmount).toBeCloseTo(item.discountAmount + item.netAmount, 8);
+    }
+    expect(response.usageItems.some(item => item.grossQuantity > 0 && item.netQuantity === 0)).toBe(true);
+    expect(response.usageItems.some(item => item.grossQuantity === 0)).toBe(true);
+    expect(mockDecide).not.toHaveBeenCalled();
+    expect(requireUsageAdmin).not.toHaveBeenCalled();
+  });
+
+  it('keeps the synthetic per-user demo consistent with the aggregate while retaining mixed-unit stress coverage separately', async () => {
+    setQuery({ scope: 'enterprise', githubEnt: 'octo-demo-ent', isDataMocked: 'true' });
+    const response = await byUserHandler({} as Parameters<typeof byUserHandler>[0]);
+    const aggregate = await billingHandler({} as Parameters<typeof billingHandler>[0]);
+
+    expect(response.usageItems.every(item => typeof item.user === 'string')).toBe(true);
+    for (const kind of ['gross', 'discount', 'net'] as const) {
+      for (const unit of ['Quantity', 'Amount'] as const) {
+        const key = `${kind}${unit}` as const;
+        const sum = (items: typeof response.usageItems) => items.reduce((total, item) => total + item[key], 0);
+        expect(sum(response.usageItems)).toBeCloseTo(sum(aggregate.usageItems), 8);
+      }
+    }
+    expect(attributionStress.usageItems.length).toBeGreaterThanOrEqual(100);
+    expect(new Set(attributionStress.usageItems.map(item => item.unitType))).toEqual(new Set(['ai-credits', 'requests']));
+  });
+
   it('serves from DB and sets X-Data-Source headers when decideSource returns db', async () => {
     setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6' });
     mockDecide.mockResolvedValueOnce({

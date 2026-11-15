@@ -2,10 +2,10 @@
  * Tests for GitHub Copilot Usage Metrics API client
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { parseNDJSON, normalizeReportResponse, getGitHubApiBaseUrl } from '../server/services/github-copilot-usage-api';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { parseNDJSON, normalizeReportResponse, getGitHubApiBaseUrl, fetchLatestReport } from '../server/services/github-copilot-usage-api';
 import type { ReportDayTotals, OrgReport } from '../server/services/github-copilot-usage-api';
-import { generateMockReport, mockRequestDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
+import { generateMockReport, mockRequestDownloadLinks, mockRequestUserDownloadLinks } from '../server/services/github-copilot-usage-api-mock';
 import { transformReportToMetrics, transformDayToMetrics } from '../server/services/report-transformer';
 
 describe('GitHub Copilot Usage API', () => {
@@ -48,6 +48,25 @@ describe('GitHub Copilot Usage API', () => {
   });
 
   describe('Mock API', () => {
+    it('uses the same completed UTC-day window for mock links and generated reports across a month boundary', async () => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-03-01T00:15:00Z'));
+      try {
+        const request = { scope: 'organization' as const, identifier: 'synthetic-org', isMocked: true };
+        const window = { report_start_day: '2026-02-01', report_end_day: '2026-02-28' };
+        expect(mockRequestDownloadLinks(request, '28-day')).toMatchObject(window);
+        expect(mockRequestUserDownloadLinks(request, '28-day')).toMatchObject(window);
+        const report = await fetchLatestReport(request, {});
+        expect(report).toMatchObject(window);
+        expect(report.day_totals).toHaveLength(28);
+        expect(report.day_totals.at(-1)?.day).toBe(window.report_end_day);
+        expect(mockRequestDownloadLinks(request, '1-day').report_day).toBe(window.report_end_day);
+        expect(mockRequestUserDownloadLinks(request, '1-day').report_day).toBe(window.report_end_day);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('should generate valid mock report', () => {
       const report = generateMockReport('2026-02-20', '2026-02-22');
 

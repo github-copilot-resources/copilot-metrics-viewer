@@ -16,9 +16,9 @@
  *   - max 50 logins per request (HTTP query length + rate-limit safety)
  *   - 8 concurrent fan-out fetches inside one request
  *
- * Mock mode: returns the same billing-credits.json fixture as
- * /api/billing-credits — the mock already has user-tagged items, so the
- * frontend can render the per-user table without round-tripping logins.
+ * Mock mode: uses a separate synthetic attribution demo fixture,
+ * not the live-shaped aggregate baseline. Its per-user attribution has not
+ * been verified against a real billing export.
  *
  * Auth: same admin gate as /api/billing-credits.
  *
@@ -36,7 +36,7 @@ import {
   aggregateForBillingByUser,
 } from '../services/billing-credit-reader';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import mockBilling from '../../public/mock-data/billing-credits.json';
+import mockBilling from '../../public/mock-data/billing-credits-synthetic-attribution-demo.json';
 
 const CONCURRENCY = 8;
 const MAX_LOGINS_PER_CALL = 50;

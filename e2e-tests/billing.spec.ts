@@ -147,8 +147,9 @@ test.describe('Billing credit semantics with synthetic inputs', () => {
  * /api/billing-credits endpoint both bypass the NUXT_USAGE_ADMINS allowlist so
  * the tab can be exercised end-to-end without configuring OAuth.
  *
- * Mock fixture: public/mock-data/billing-credits.json (18 anonymised AI-credit
- * usage items captured from a live GitHub enterprise billing response).
+ * Aggregate mock: public/mock-data/billing-credits.json (synthetic AI-credit
+ * arithmetic and an unattributed live-shaped envelope). Per-user views use
+ * billing-credits-synthetic-attribution-demo.json, not verified live records.
  */
 test.describe('Billing tab', () => {
     test.describe.configure({ mode: 'serial' });
@@ -242,8 +243,7 @@ test.describe('Billing tab', () => {
     });
 
     test('billing tab renders per-user breakdown table and top spenders chart', tag, async () => {
-        // Mock billing fixture includes `user` attribution on >half of usage items
-        // so the per-user section should render. See public/mock-data/billing-credits.json.
+        // Per-user attribution comes from the separate, unverified synthetic demo.
         await dashboard.gotoBillingTab();
         const perUserTitle = dashboard.page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }).first();
         await expect(perUserTitle).toBeVisible();
