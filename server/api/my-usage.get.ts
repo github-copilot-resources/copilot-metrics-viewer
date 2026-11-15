@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * GET /api/my-usage
  *
@@ -122,7 +124,7 @@ function matchesLogin(login: string, candidate: string | undefined): boolean {
 }
 
 export default defineEventHandler(async (event): Promise<MyUsageResponse> => {
-  const logger = console;
+  const logger = createLogger('my-usage', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 

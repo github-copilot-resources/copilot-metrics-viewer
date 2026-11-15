@@ -90,7 +90,7 @@ export async function fetchSamlIdentities(
       const json = await resp.json() as GraphQLResponse
 
       if (json.errors?.length) {
-        logger.warn(`GraphQL errors for org "${org}":`, { errors: json.errors.map(e => e.message) })
+        logger.warn('SAML GraphQL request failed', { errorCount: json.errors.length })
         break
       }
 

@@ -1,3 +1,5 @@
+import { createLogger } from '../../utils/logger';
+
 /**
  * Admin endpoint to manually trigger data sync
  * POST /api/admin/sync
@@ -17,7 +19,7 @@ import {
 import { runBillingCsvIngester } from '../../services/billing-csv-ingester';
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
+  const logger = createLogger('admin-sync', event.context);
   const query = getQuery(event);
   let rawBody = await readBody(event).catch(() => ({}));
   // If body wasn't parsed as an object (e.g. missing Content-Type header), try JSON.parse

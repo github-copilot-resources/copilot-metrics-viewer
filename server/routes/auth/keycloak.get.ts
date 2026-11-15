@@ -22,7 +22,7 @@ export default defineOAuthKeycloakEventHandler({
     return sendRedirect(event, defaultOrg ? getAppBaseURL(event) : appURL('/select-org', event))
   },
   onError(event, error) {
-    logger.error('Keycloak OAuth error:', error)
+    logger.error('Keycloak OAuth error:', { requestId: event.context.requestId }, error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })

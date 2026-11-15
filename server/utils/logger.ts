@@ -19,14 +19,20 @@ const LEVELS: Record<SupportedLogLevel, number> = {
   debug: LogLevels.debug,
 }
 
-export function getRuntimeLoggingConfig(): { logLevel?: string; logFormat?: string; logRequests?: string } {
+interface LoggingConfig {
+  logLevel?: string
+  logFormat?: string
+  logRequests?: string | boolean
+}
+
+export function getRuntimeLoggingConfig(): LoggingConfig {
   try {
     const runtimeConfig = (globalThis as unknown as { useRuntimeConfig?: () => unknown }).useRuntimeConfig
     if (typeof runtimeConfig === 'function') {
-      return runtimeConfig() as { logLevel?: string; logFormat?: string; logRequests?: string }
+      return runtimeConfig() as LoggingConfig
     }
     if (typeof useRuntimeConfig === 'function') {
-      return useRuntimeConfig() as { logLevel?: string; logFormat?: string; logRequests?: string }
+      return useRuntimeConfig() as LoggingConfig
     }
   } catch {
     // useRuntimeConfig is unavailable in standalone scripts and some tests.
@@ -39,7 +45,7 @@ export function getRuntimeLoggingConfig(): { logLevel?: string; logFormat?: stri
 }
 
 export function normalizeLogLevel(level: unknown): SupportedLogLevel {
-  return typeof level === 'string' && level in LEVELS ? level as SupportedLogLevel : DEFAULT_LEVEL
+  return typeof level === 'string' && Object.hasOwn(LEVELS, level) ? level as SupportedLogLevel : DEFAULT_LEVEL
 }
 
 export function isLogLevelAtLeast(level: unknown, minimum: SupportedLogLevel): boolean {
@@ -52,16 +58,38 @@ function shouldUseJsonFormat(format: unknown): boolean {
   return format === 'json' || (format !== 'pretty' && process.env.NODE_ENV === 'production')
 }
 
-function serializeArg(arg: unknown): unknown {
+export function isValidRequestId(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Za-z0-9._:-]{1,128}$/.test(value)
+}
+
+// Error messages, stacks, causes and upstream payloads can contain OAuth codes,
+// signed URLs or personal data. Only explicitly operational metadata is emitted.
+function serializeArg(arg: unknown): Record<string, unknown> {
+  if (!arg || typeof arg !== 'object') return {}
+  const source = arg as Record<string, unknown>
+  const fields: Record<string, unknown> = {}
   if (arg instanceof Error) {
-    return {
-      name: arg.name,
-      message: arg.message,
-      stack: arg.stack,
-      cause: arg.cause,
-    }
+    fields.name = ['Error', 'TypeError', 'RangeError', 'SyntaxError', 'FetchError', 'H3Error'].includes(arg.name)
+      ? arg.name : 'Error'
   }
-  return arg
+  for (const key of ['status', 'statusCode', 'durationMs', 'count', 'errorCount', 'keyCount']) {
+    const value = source[key]
+    if (typeof value === 'number' && Number.isFinite(value)) fields[key] = value
+  }
+  if (isValidRequestId(source.requestId)) fields.requestId = source.requestId
+  if (typeof source.method === 'string' && /^(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS|CONNECT|TRACE)$/.test(source.method)) {
+    fields.method = source.method
+  }
+  if (typeof source.path === 'string' && source.path.startsWith('/')) {
+    fields.path = source.path.split(/[?#]/, 1)[0]
+  }
+  if (typeof source.responseType === 'string' && ['string', 'object', 'number', 'undefined', 'boolean'].includes(source.responseType)) {
+    fields.responseType = source.responseType
+  }
+  if (typeof source.code === 'string' && /^(ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|ENOENT)$/.test(source.code)) {
+    fields.code = source.code
+  }
+  return fields
 }
 
 function consoleMethodFor(type: LogType): 'error' | 'warn' | 'info' | 'debug' {
@@ -78,7 +106,7 @@ function createReporter(json: boolean): ConsolaReporter {
       const method = consoleMethodFor(logObj.type)
 
       if (json) {
-        const fields = args.length === 1 && args[0] && typeof args[0] === 'object' && !(args[0] instanceof Error)
+        const fields = args[0] && typeof args[0] === 'object'
           ? args[0] as Record<string, unknown>
           : undefined
         const extra = fields ? args.slice(1) : args
@@ -86,9 +114,9 @@ function createReporter(json: boolean): ConsolaReporter {
           timestamp: logObj.date.toISOString(),
           level: logObj.type,
           tag: logObj.tag,
-          message: typeof message === 'string' ? message : serializeArg(message),
+          message,
           ...fields,
-          ...(extra.length > 0 ? { args: extra.map(serializeArg) } : {}),
+          ...(extra.length > 0 ? { args: extra } : {}),
         }))
         return
       }
@@ -99,7 +127,7 @@ function createReporter(json: boolean): ConsolaReporter {
   }
 }
 
-export function createLogger(tag: string): TaggedLogger {
+export function createLogger(tag: string, context?: Record<string, unknown>): TaggedLogger {
   const log = (type: 'error' | 'warn' | 'info' | 'debug', message: string, ...args: unknown[]) => {
     const config = getRuntimeLoggingConfig()
     const level = normalizeLogLevel(config.logLevel)
@@ -110,7 +138,13 @@ export function createLogger(tag: string): TaggedLogger {
       reporters: [createReporter(shouldUseJsonFormat(config.logFormat))],
     }).withTag(tag)
 
-    logger[type](message, ...args)
+    const safeArgs = args.map(serializeArg)
+    if (context && isValidRequestId(context.requestId)) {
+      const fields = safeArgs[0] || {}
+      fields.requestId = context.requestId
+      safeArgs[0] = fields
+    }
+    logger[type](message, ...safeArgs)
   }
 
   return {

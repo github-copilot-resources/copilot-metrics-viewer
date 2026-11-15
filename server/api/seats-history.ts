@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * GET /api/seats-history
  *
@@ -14,7 +16,7 @@ import { getSeatsHistorySummary } from '../storage/seats-storage';
 import { isDbConfigured } from '../storage/db';
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
+  const logger = createLogger('seats-history', event.context);
 
   if (!isDbConfigured()) {
     throw createError({

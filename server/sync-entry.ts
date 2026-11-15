@@ -21,6 +21,7 @@
 
 // Initialize proxy agent before any fetch calls
 import { initializeProxyAgent } from './utils/proxy-agent';
+import { createLogger, type TaggedLogger } from './utils/logger';
 initializeProxyAgent(true /* exitOnError */);
 
 import { syncBulk } from './services/sync-service';
@@ -31,7 +32,7 @@ import { runForegroundIngest } from './services/billing-csv-ingester';
 import { BillingCsvJobInFlightError } from './storage/billing-csv-sync-status-storage';
 
 export async function runSync() {
-  const logger = console;
+  const logger = createLogger('sync-entry');
 
   // Get configuration from environment
   const rawScope = process.env.NUXT_PUBLIC_SCOPE || 'organization';
@@ -54,7 +55,7 @@ export async function runSync() {
   try {
     headers = await getSyncAuthHeaders(logger, identifier);
   } catch (error) {
-    logger.error(error instanceof Error ? error.message : String(error));
+    logger.error('Sync authentication failed:', error);
     process.exit(1);
     return; // guard: allows tests to mock process.exit without continuing
   }
@@ -79,8 +80,7 @@ export async function runSync() {
     logger.info(`Sync completed: ${result.savedDays} saved, ${result.skippedDays} skipped`);
 
     if (result.errors.length > 0) {
-      logger.error('Some days failed:');
-      result.errors.forEach(e => logger.error(`  ${e.date}: ${e.error}`));
+      logger.error('Some days failed:', { errorCount: result.errors.length });
     }
 
     logger.info('Sync job completed successfully');
@@ -106,7 +106,7 @@ export async function runSync() {
  * missing, and logs+exits 0 if another job is already in flight (next cron
  * tick picks up).
  */
-async function runBillingCsvIfConfigured(logger: Console): Promise<void> {
+async function runBillingCsvIfConfigured(logger: TaggedLogger): Promise<void> {
   const token = (process.env.NUXT_GITHUB_BILLING_TOKEN || '').trim();
   const enterprise = (process.env.NUXT_BILLING_ENTERPRISE || '').trim();
   if (!token || !enterprise) {
@@ -125,15 +125,15 @@ async function runBillingCsvIfConfigured(logger: Console): Promise<void> {
     if (result.status === 'completed') {
       logger.info(`Billing CSV ingest completed: ${result.rowsIngested} row(s) from ${result.downloadUrlCount} file(s)`);
     } else {
-      logger.error(`Billing CSV ingest finished with status=${result.status}: ${result.errorMessage}`);
+      logger.error(`Billing CSV ingest finished with status=${result.status}`);
       process.exitCode = 1;
     }
   } catch (e) {
     if (e instanceof BillingCsvJobInFlightError) {
-      logger.warn(`Billing CSV ingest skipped: ${e.message}. Next sync will retry.`);
+      logger.warn('Billing CSV ingest already in flight. Next sync will retry.');
       return;
     }
-    logger.error('Billing CSV ingest crashed:', e instanceof Error ? e.message : String(e));
+    logger.error('Billing CSV ingest crashed:', e);
     process.exitCode = 1;
   }
 }

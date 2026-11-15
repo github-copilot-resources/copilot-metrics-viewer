@@ -26,7 +26,7 @@ export default defineOAuthGoogleEventHandler({
     return sendRedirect(event, getAppBaseURL(event))
   },
   onError(event, error) {
-    logger.error('Google OAuth error:', error)
+    logger.error('Google OAuth error:', { requestId: event.context.requestId }, error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })

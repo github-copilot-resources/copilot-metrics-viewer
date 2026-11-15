@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { createLogger, getRuntimeLoggingConfig, isLogLevelAtLeast } from '../utils/logger'
+import type { H3Event } from 'h3'
+import { createLogger, getRuntimeLoggingConfig, isLogLevelAtLeast, isValidRequestId } from '../utils/logger'
 
 const logger = createLogger('request')
 const HEALTH_PATHS = new Set(['/api/health', '/api/live', '/api/ready'])
@@ -14,10 +15,9 @@ function getPath(url?: string): string {
   }
 }
 
-function getRequestId(event: any): string {
+function getRequestId(event: H3Event): string {
   const header = event.node.req.headers?.['x-request-id']
-  if (Array.isArray(header)) return header[0] || randomUUID()
-  return header || randomUUID()
+  return isValidRequestId(header) ? header : randomUUID()
 }
 
 function shouldSkipPath(path: string): boolean {
@@ -35,7 +35,7 @@ export default defineEventHandler((event) => {
   if (shouldSkipPath(path)) return
 
   const config = getRuntimeLoggingConfig()
-  const forceRequestLogs = config.logRequests === 'true'
+  const forceRequestLogs = config.logRequests === true || config.logRequests === 'true'
   if (!forceRequestLogs && !isLogLevelAtLeast(config.logLevel, 'debug')) return
 
   const startedAt = Date.now()

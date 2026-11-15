@@ -20,6 +20,7 @@
     "@azure/msal-browser": "^5.9.0",
     "@nuxt/eslint": "^0.7.4",
     "chart.js": "^4.4.7",
+    "consola": "^3.4.2",
     "date-holidays": "^3.24.4",
     "eslint": "^9.32.0",
     "nuxt": "^3.21.10",

@@ -169,7 +169,7 @@ export default defineEventHandler(async (event) => {
       lastResponse = await callGitHubModels(githubToken, model, messages, aiTools);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      logger.error(`GitHub Models API error (round ${round}):`, error);
+      logger.error(`GitHub Models API error (round ${round}):`, { requestId: event.context.requestId }, error);
 
       if (message.includes('401') || message.includes('403') || message.includes('no_access')) {
         throw createError({

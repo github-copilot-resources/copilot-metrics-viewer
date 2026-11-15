@@ -67,7 +67,7 @@ export default defineOAuthGitHubEventHandler({
           return sendRedirect(event, appURL(`/orgs/${organizations[0]!.login}`, event))
         }
       } catch (err) {
-        logger.warn('Error fetching installations:', err)
+        logger.warn('Error fetching installations:', { requestId: event.context.requestId }, err)
         // Fall through to /select-org which shows a text input fallback.
       }
     }
@@ -76,7 +76,7 @@ export default defineOAuthGitHubEventHandler({
   },
   // Optional, will return a json error and 401 status code by default
   onError(event, error) {
-    logger.error('GitHub OAuth error:', error)
+    logger.error('GitHub OAuth error:', { requestId: event.context.requestId }, error)
     return sendRedirect(event, getAppBaseURL(event))
   },
 })

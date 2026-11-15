@@ -22,7 +22,7 @@ export default defineOAuthMicrosoftEventHandler({
     return sendRedirect(event, defaultOrg ? getAppBaseURL(event) : appURL('/select-org', event))
   },
   onError(event, error) {
-    logger.error('Microsoft OAuth error:', error)
+    logger.error('Microsoft OAuth error:', { requestId: event.context.requestId }, error)
     return sendRedirect(event, getAppBaseURL(event))
   }
 })

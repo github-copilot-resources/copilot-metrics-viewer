@@ -45,7 +45,7 @@ export function initializeProxyAgent(exitOnError = false): ProxyAgent | null {
     });
 
     setGlobalDispatcher(proxyAgent);
-    logger.info(`Proxy initialized: ${process.env.HTTP_PROXY}`);
+    logger.info('Proxy initialized');
 
     return proxyAgent;
   } catch (error) {

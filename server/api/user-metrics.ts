@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * Per-user Copilot usage metrics API endpoint
  * GET /api/user-metrics
@@ -95,7 +97,7 @@ function filterDaysByDateRange(records: UserDayRecord[], since?: string, until?:
 }
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
+  const logger = createLogger('user-metrics', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 

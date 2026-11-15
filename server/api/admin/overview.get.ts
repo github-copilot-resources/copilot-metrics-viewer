@@ -162,7 +162,7 @@ export default defineEventHandler(async (event): Promise<OverviewResponse> => {
       lastAttemptAt: f.lastAttemptAt,
     }));
   } catch (err) {
-    logger.warn('Enrichment failed:', err);
+    logger.warn('Enrichment failed:', { requestId: event.context.requestId }, err);
   }
 
   return response;

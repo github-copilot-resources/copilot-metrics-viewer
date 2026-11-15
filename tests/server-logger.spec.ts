@@ -57,6 +57,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
   process.env = { ...originalEnv }
 })
 
@@ -81,6 +82,21 @@ describe('server logger', () => {
 })
 
 describe('request log middleware', () => {
+  it.each([true, 'true'])('honors Nitro request logging flag %s at info level', async (logRequests) => {
+    vi.stubGlobal('useRuntimeConfig', () => ({
+      logLevel: 'info', logFormat: 'json', logRequests,
+    }))
+    const captured = captureConsole()
+    const middleware = await importFresh<typeof import('../server/middleware/00.log')>('../server/middleware/00.log')
+    const event = createEvent('/auth/github?code=SYNTHETIC_FLAG_CODE')
+    await middleware.default(event)
+    event.node.res.emit('finish')
+    expect(captured.calls).toHaveLength(1)
+    expect(JSON.parse(captured.calls[0]!)).toMatchObject({ level: 'info', path: '/auth/github' })
+    expect(captured.calls[0]).not.toContain('SYNTHETIC_FLAG_CODE')
+    captured.restore()
+  })
+
   it('skips health endpoints', async () => {
     ;(globalThis as any).useRuntimeConfig = () => ({
       logLevel: 'debug',
@@ -88,7 +104,7 @@ describe('request log middleware', () => {
       logRequests: 'true'
     })
     const captured = captureConsole()
-    const middleware = await importFresh<typeof import('../server/middleware/log')>('../server/middleware/log')
+    const middleware = await importFresh<typeof import('../server/middleware/00.log')>('../server/middleware/00.log')
     const event = createEvent('/api/health')
 
     await middleware.default(event)
@@ -105,7 +121,7 @@ describe('request log middleware', () => {
       logRequests: 'true'
     })
     const captured = captureConsole()
-    const middleware = await importFresh<typeof import('../server/middleware/log')>('../server/middleware/log')
+    const middleware = await importFresh<typeof import('../server/middleware/00.log')>('../server/middleware/00.log')
     const event = createEvent('/auth/github?code=secret-code&state=secret-state')
 
     await middleware.default(event)
@@ -120,7 +136,7 @@ describe('request log middleware', () => {
   })
 
   it('generates a request id when absent', async () => {
-    const middleware = await importFresh<typeof import('../server/middleware/log')>('../server/middleware/log')
+    const middleware = await importFresh<typeof import('../server/middleware/00.log')>('../server/middleware/00.log')
     const event = createEvent('/api/metrics')
 
     await middleware.default(event)
@@ -130,7 +146,7 @@ describe('request log middleware', () => {
   })
 
   it('echoes an existing request id', async () => {
-    const middleware = await importFresh<typeof import('../server/middleware/log')>('../server/middleware/log')
+    const middleware = await importFresh<typeof import('../server/middleware/00.log')>('../server/middleware/00.log')
     const event = createEvent('/api/metrics', 'req-123')
 
     await middleware.default(event)

@@ -662,9 +662,8 @@ export async function requestDownloadLinks(
     const response = await _fetch<DownloadLinksResponse>(url, { headers: rawHeaders });
     return response;
   } catch (error: unknown) {
-    // Log the response body for better debugging
     if (error && typeof error === 'object' && 'data' in error) {
-      newApiLogger.error('GitHub error response:', { data: (error as { data: unknown }).data });
+      newApiLogger.error('GitHub error response:', error);
     }
     throw error;
   }
@@ -899,7 +898,7 @@ export async function requestUserDownloadLinks(
     return response;
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'data' in error) {
-      userMetricsLogger.error('GitHub error response:', { data: (error as { data: unknown }).data });
+      userMetricsLogger.error('GitHub error response:', error);
     }
     throw error;
   }
@@ -973,7 +972,7 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
     return { report_start_day: '', report_end_day: '', user_totals: records as UserTotals[] };
   }
 
-  userMetricsLogger.warn('Unknown record format. Keys:', { keys: Object.keys(first) });
+  userMetricsLogger.warn('Unknown record format', { keyCount: Object.keys(first).length });
   return { report_start_day: '', report_end_day: '', user_totals: [] };
 }
 
