@@ -81,12 +81,15 @@ export function parseUsagePart(raw: string, since: string, until: string): UserD
       || !record.user_login.trim() || typeof record.day !== 'string') throw new Error('User report is not raw per-day usage');
     validateUsageWindow(record.day, record.day);
     if (record.day < since || record.day > until) throw new Error('User row is outside report coverage');
+    if (since !== until || record.report_start_day !== undefined || record.report_end_day !== undefined) {
+      if (record.report_start_day !== since || record.report_end_day !== until) throw new Error('User row has inconsistent report window');
+    }
     if (record.user_id !== undefined && (!Number.isSafeInteger(record.user_id) || record.user_id <= 0)) throw new Error('Invalid user identifier');
     if (record.totals_by_cli !== undefined) {
       if (!record.totals_by_cli || typeof record.totals_by_cli !== 'object' || Array.isArray(record.totals_by_cli)) throw new Error('Invalid CLI usage');
       const tokens = record.totals_by_cli.token_usage;
-      if (tokens !== undefined && (!tokens || typeof tokens !== 'object'
-        || ![tokens.prompt_tokens_sum, tokens.output_tokens_sum].every(value => Number.isSafeInteger(value) && value >= 0))) throw new Error('Invalid CLI tokens');
+      if (!tokens || typeof tokens !== 'object' || Array.isArray(tokens)
+        || ![tokens.prompt_tokens_sum, tokens.output_tokens_sum].every(value => Number.isSafeInteger(value) && value >= 0)) throw new Error('Invalid CLI tokens');
     }
   }
   return records as UserDayRecord[];

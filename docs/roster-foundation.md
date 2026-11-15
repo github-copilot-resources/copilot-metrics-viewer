@@ -48,6 +48,13 @@ The source response must supply `report_day` or a valid
 metadata, malformed/truncated records, preaggregated-only reports, unsafe token
 numbers, out-of-window rows and failed downloads are **not coverage**. Record
 minima/maxima and aggregate report success cannot establish complete coverage.
+Multi-day records must declare the same start/end window as the report links.
+Single-day records may omit both fields; if either is supplied, both must match
+the link window. Contradictory parts cannot replace existing date publications.
+An omitted `totals_by_cli` means no CLI activity and contributes zero tokens.
+A present CLI object must contain `token_usage` with both nonnegative safe
+integer sums (`prompt_tokens_sum` and `output_tokens_sum`); missing/null token
+payloads or sums are not verified zero. Explicit numeric zeros are valid.
 
 The stream parser bounds each line to 1 MiB and storage batches to 1,000 user-day
 rows. It does not collect every part or the complete report in an application

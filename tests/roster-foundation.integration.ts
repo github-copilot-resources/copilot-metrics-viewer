@@ -23,6 +23,15 @@ const key = { scope: 'organization', identifier: 'synthetic-org', teamKind: 'git
 const request = { scope: 'organization', identifier: 'synthetic-org' } as const;
 const day = '2026-11-13';
 const record = (login = 'Synthetic-User') => ({ day, user_login: login, user_id: 1, totals_by_cli: { token_usage: { prompt_tokens_sum: 20, output_tokens_sum: 3 } } });
+const windowEnd = '2026-11-14';
+const windowRecord = () => ({ ...record(), report_start_day: day, report_end_day: windowEnd });
+const publishedUsage = async (identifier: string) => (await getPool().query(`
+  SELECT to_char(p.metrics_date, 'YYYY-MM-DD') AS day, p.version,
+    r.normalized_login, r.prompt_tokens::text, r.output_tokens::text
+  FROM user_usage_publications p LEFT JOIN user_usage_rows r
+    ON r.version = p.version AND r.metrics_date = p.metrics_date
+  WHERE p.scope = $1 AND p.identifier = $2 ORDER BY p.metrics_date, r.normalized_login`,
+[request.scope, identifier])).rows;
 
 beforeAll(async () => {
   container = execFileSync('docker', [
@@ -222,7 +231,7 @@ describe('authoritative publication in isolated PostgreSQL', () => {
     mocks.links.mockResolvedValue({ download_links: ['synthetic:part-1', 'synthetic:part-2'], report_start_day: day, report_end_day: '2026-11-14' });
     mocks.fetch.mockImplementation(async url => {
       expect(await storage.getUsageCoverage(request.scope, request.identifier, day, '2026-11-14')).toEqual({ available: false, reason: 'roster-coverage-missing' });
-      return url === 'synthetic:part-1' ? JSON.stringify(record()) : '';
+      return url === 'synthetic:part-1' ? JSON.stringify(windowRecord()) : '';
     });
 
     await syncUserUsage(request, new Headers(), undefined, () => now);
@@ -240,6 +249,119 @@ describe('authoritative publication in isolated PostgreSQL', () => {
     mocks.fetch.mockRejectedValue(new Error('synthetic retry failure'));
     await expect(syncUserUsage(request, new Headers(), undefined, () => new Date('2027-01-01'))).rejects.toThrow('synthetic retry failure');
     expect(await storage.getUsageCoverage(request.scope, request.identifier, day, '2026-11-14')).toEqual(complete);
+  });
+
+  it.each([
+    ['missing token payload', { request_count: 1, session_count: 1, prompt_count: 1 }],
+    ['missing both sums', { token_usage: {} }],
+    ['missing output sum', { token_usage: { prompt_tokens_sum: 1 } }],
+    ['missing prompt sum', { token_usage: { output_tokens_sum: 1 } }],
+    ['null token payload', { token_usage: null }],
+    ['null CLI object', null],
+    ['null sum', { token_usage: { prompt_tokens_sum: null, output_tokens_sum: 0 } }],
+    ['noninteger sum', { token_usage: { prompt_tokens_sum: '1', output_tokens_sum: 0 } }],
+  ])('retains exact prior publication after present CLI activity has %s', async (label, cli) => {
+    const { syncUserUsage } = await import('../server/services/roster-foundation-sync');
+    const storage = await import('../server/storage/roster-foundation-storage');
+    const identifier = `synthetic-cli-${label}`;
+    mocks.links.mockResolvedValue({ download_links: ['synthetic:part'], report_day: day });
+    mocks.fetch.mockResolvedValue(JSON.stringify(record()));
+    await syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now);
+    const before = await publishedUsage(identifier);
+    const coverage = await storage.getUsageCoverage(request.scope, identifier, day, day);
+    expect(before).toMatchObject([{ day, prompt_tokens: '20', output_tokens: '3' }]);
+
+    mocks.fetch.mockResolvedValue(JSON.stringify({ ...record(), totals_by_cli: cli }));
+    await expect(syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now)).rejects.toThrow('Invalid CLI');
+    expect(await publishedUsage(identifier)).toEqual(before);
+    expect(await storage.getUsageCoverage(request.scope, identifier, day, day)).toEqual(coverage);
+
+    mocks.fetch.mockResolvedValue(JSON.stringify(record()));
+    await syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now);
+    const retry = await publishedUsage(identifier);
+    expect(retry).toMatchObject([{ day, prompt_tokens: '20', output_tokens: '3' }]);
+    expect(retry[0].version).not.toBe(before[0].version);
+  });
+
+  it('publishes genuine absent CLI and explicit numeric zero in the one-day shape', async () => {
+    const { syncUserUsage } = await import('../server/services/roster-foundation-sync');
+    mocks.links.mockResolvedValue({ download_links: ['synthetic:part'], report_day: day });
+    mocks.fetch.mockResolvedValue([
+      { day, user_login: 'synthetic-no-cli', user_id: 2 },
+      { ...record('synthetic-zero-cli'), totals_by_cli: { token_usage: { prompt_tokens_sum: 0, output_tokens_sum: 0 } } },
+    ].map(row => JSON.stringify(row)).join('\n'));
+    const identifier = 'synthetic-legitimate-zero';
+    await syncUserUsage({ ...request, identifier }, new Headers(), day, () => now);
+    expect(await publishedUsage(identifier)).toMatchObject([
+      { day, normalized_login: 'synthetic-no-cli', prompt_tokens: '0', output_tokens: '0' },
+      { day, normalized_login: 'synthetic-zero-cli', prompt_tokens: '0', output_tokens: '0' },
+    ]);
+  });
+
+  it.each([
+    ['missing window', {}],
+    ['partial start', { report_start_day: day }],
+    ['partial end', { report_end_day: '2026-11-15' }],
+    ['shorter window', { report_start_day: day, report_end_day: day }],
+    ['reversed window', { report_start_day: '2026-11-15', report_end_day: day }],
+    ['outside window', { report_start_day: '2026-11-12', report_end_day: '2026-11-15' }],
+    ['invalid date', { report_start_day: day, report_end_day: '2026-02-30' }],
+  ])('rejects multipart %s without replacing old dates or certifying new ones', async (label, metadata) => {
+    const { syncUserUsage } = await import('../server/services/roster-foundation-sync');
+    const storage = await import('../server/storage/roster-foundation-storage');
+    const identifier = `synthetic-window-${label}`;
+    mocks.links.mockResolvedValue({ download_links: ['synthetic:old'], report_start_day: day, report_end_day: windowEnd });
+    mocks.fetch.mockResolvedValue(JSON.stringify(windowRecord()));
+    await syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now);
+    const before = await publishedUsage(identifier);
+    const coverage = await storage.getUsageCoverage(request.scope, identifier, day, windowEnd);
+    expect(before).toMatchObject([
+      { day, prompt_tokens: '20', output_tokens: '3' },
+      { day: windowEnd, prompt_tokens: null, output_tokens: null },
+    ]);
+    const extended = '2026-11-15';
+    const replacement = { ...windowRecord(), report_end_day: extended,
+      totals_by_cli: { token_usage: { prompt_tokens_sum: 999, output_tokens_sum: 888 } } };
+    mocks.links.mockResolvedValue({ download_links: ['synthetic:first', 'synthetic:last'], report_start_day: day, report_end_day: extended });
+    mocks.fetch.mockImplementation(async url => JSON.stringify(url === 'synthetic:first'
+      ? replacement : { ...record(), ...metadata }));
+    await expect(syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now)).rejects.toThrow('report window');
+    expect(await publishedUsage(identifier)).toEqual(before);
+    expect(await storage.getUsageCoverage(request.scope, identifier, day, windowEnd)).toEqual(coverage);
+    expect((await storage.getUsageCoverage(request.scope, identifier, extended, extended)).available).toBe(false);
+
+    mocks.fetch.mockResolvedValue(JSON.stringify(replacement));
+    await syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now);
+    expect(await publishedUsage(identifier)).toMatchObject([
+      { day, prompt_tokens: '999', output_tokens: '888' },
+      { day: windowEnd, prompt_tokens: null, output_tokens: null },
+      { day: extended, prompt_tokens: null, output_tokens: null },
+    ]);
+    expect((await storage.getUsageCoverage(request.scope, identifier, day, extended)).available).toBe(true);
+  });
+
+  it('retains old usage tokens and version after a real deferred replacement COMMIT failure', async () => {
+    const { syncUserUsage } = await import('../server/services/roster-foundation-sync');
+    const storage = await import('../server/storage/roster-foundation-storage');
+    const identifier = 'synthetic-old-commit';
+    mocks.links.mockResolvedValue({ download_links: ['synthetic:part'], report_day: day });
+    mocks.fetch.mockResolvedValue(JSON.stringify(record()));
+    await syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now);
+    const before = await publishedUsage(identifier);
+    const coverage = await storage.getUsageCoverage(request.scope, identifier, day, day);
+    mocks.fetch.mockResolvedValue(JSON.stringify({ ...record(),
+      totals_by_cli: { token_usage: { prompt_tokens_sum: 999, output_tokens_sum: 888 } } }));
+    await getPool().query(`CREATE FUNCTION reject_synthetic_replacement_commit() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'synthetic replacement commit failure'; END $$;
+      CREATE CONSTRAINT TRIGGER reject_replacement_commit AFTER UPDATE ON user_usage_publications
+      DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION reject_synthetic_replacement_commit()`);
+    try {
+      await expect(syncUserUsage({ ...request, identifier }, new Headers(), undefined, () => now)).rejects.toThrow('synthetic replacement commit failure');
+    } finally {
+      await getPool().query('DROP TRIGGER reject_replacement_commit ON user_usage_publications; DROP FUNCTION reject_synthetic_replacement_commit()');
+    }
+    expect(await publishedUsage(identifier)).toEqual(before);
+    expect(await storage.getUsageCoverage(request.scope, identifier, day, day)).toEqual(coverage);
   });
 
   it('does not publish an interrupted body stream or an oversized line', async () => {

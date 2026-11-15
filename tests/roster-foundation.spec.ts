@@ -31,6 +31,15 @@ describe('complete usage source validation', () => {
     expect(() => parseUsagePart('synthetic-malformed-private-payload', day, day)).toThrow('Malformed user report record');
   });
 
+  it('accepts omitted or matching one-day windows but rejects partial and contradictory metadata', () => {
+    expect(parseUsagePart(JSON.stringify({ ...row, report_start_day: day, report_end_day: day }), day, day)).toHaveLength(1);
+    for (const metadata of [
+      { report_start_day: day }, { report_end_day: day },
+      { report_start_day: null, report_end_day: null },
+      { report_start_day: day, report_end_day: '2026-11-14' },
+    ]) expect(() => parseUsagePart(JSON.stringify({ ...row, ...metadata }), day, day)).toThrow('report window');
+  });
+
   it('rejects virtual client lists before any data access', async () => {
     const key = {
       scope: 'organization', identifier: 'synthetic', teamKind: 'reports-to', teamKey: 'reports-to:synthetic',
