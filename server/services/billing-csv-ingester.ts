@@ -21,6 +21,7 @@
  */
 
 import { $fetch as _ofetch } from 'ofetch';
+import type { PoolClient } from 'pg';
 // Look up $fetch lazily so tests that reassign globalThis.$fetch after this
 // module is imported are respected. Capturing at module-load would freeze
 // the reference before vitest's test-file overrides run.
@@ -269,10 +270,10 @@ async function runChunk(input: ChunkInput): Promise<ChunkResult> {
     cache_write: r.cache_write,
   }));
 
-  await transactional(async () => {
-    await deleteBillingCreditRowsForRange(input.enterprise, input.startDate, input.endDate);
+  await transactional(async client => {
+    await deleteBillingCreditRowsForRange(input.enterprise, input.startDate, input.endDate, client);
     if (rowsForDb.length > 0) {
-      await upsertBillingCreditRows(rowsForDb);
+      await upsertBillingCreditRows(rowsForDb, client);
     }
   });
 
@@ -346,27 +347,15 @@ async function downloadCsv(url: string): Promise<string> {
 }
 
 /**
- * Run `fn` inside a Postgres transaction. Rolls back on throw. Uses the
- * shared pool's BEGIN/COMMIT — for now we don't expose the client to `fn`
- * because both delete and upsert helpers use the pool directly. The window
- * for partial writes is the time between DELETE and UPSERT; both are on
- * the same connection inside a BEGIN, so a crash leaves the table
- * unchanged.
+ * Run all chunk replacement writes on the same checked-out client.
+ * Pool queries use other connections and cannot participate in this transaction.
  */
-async function transactional(fn: () => Promise<void>): Promise<void> {
+async function transactional(fn: (client: PoolClient) => Promise<void>): Promise<void> {
   const pool = getPool();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    // Make pool.query temporarily route through `client` — easiest way is to
-    // let storage helpers continue to use pool.query but rely on Postgres
-    // single-connection semantics. To keep things truly atomic we run BOTH
-    // statements explicitly on this client connection rather than via the
-    // helpers.
-    // For now we accept that storage helpers fan out to pool.query() and the
-    // window between DELETE and UPSERT is < ms; transactional() is reserved
-    // for future hardening.
-    await fn();
+    await fn(client);
     await client.query('COMMIT');
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
