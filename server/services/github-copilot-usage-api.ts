@@ -4,7 +4,7 @@
  * See: https://docs.github.com/en/enterprise-cloud@latest/rest/copilot/copilot-usage-metrics
  */
 
-import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, generateMockReport } from './github-copilot-usage-api-mock';
+import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, generateMockReport, getMockReportWindow } from './github-copilot-usage-api-mock';
 import { createLogger } from '../utils/logger'
 
 const newApiLogger = createLogger('new-api')
@@ -756,12 +756,9 @@ export async function fetchLatestReport(
   request: MetricsReportRequest,
   headers: HeadersInit
 ): Promise<OrgReport> {
-  // In mock mode, generate a report with dates anchored to today's 28-day window
-  // so that seeded DB data always aligns with the dashboard's default date picker.
+  // Simulate a completed-day report without changing live report availability.
   if (isMockMode() || request.isMocked) {
-    const toDate = (d: Date) => d.toISOString().split('T')[0]!;
-    const endDay = toDate(new Date());
-    const startDay = toDate(new Date(Date.now() - 27 * 24 * 60 * 60 * 1000));
+    const { startDay, endDay } = getMockReportWindow();
     return generateMockReport(startDay, endDay);
   }
 

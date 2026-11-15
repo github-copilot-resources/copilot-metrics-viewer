@@ -20,11 +20,26 @@ const user = {
 
 function payload(endpoint: string, empty: boolean) {
     return endpoint === 'seats'
-        ? { seats: empty ? [] : [seat], total_seats: empty ? 0 : 1, page: 1, per_page: 300, total_pages: 1 }
+        ? {
+            seats: empty ? [] : [seat], total_seats: empty ? 0 : 1, page: 1, per_page: 300, total_pages: 1,
+            summary: empty
+                ? { assigned: 0, never_used: 0, inactive_7: 0, inactive_30: 0 }
+                : { assigned: 1, never_used: 0, inactive_7: 1, inactive_30: 1 },
+        }
         : empty ? [] : [user];
 }
 
-async function holdResponse(page: Page, endpoint: string, body: unknown, status = 200) {
+function summaryHeaders(endpoint: string, empty = false): Record<string, string> {
+    return endpoint === 'user-metrics'
+        ? {
+            'x-copilot-user-summary': JSON.stringify(empty
+                ? { total_users: 0, active_users: 0, generated: 0, accepted: 0 }
+                : { total_users: 1, active_users: 1, generated: 20, accepted: 10 }),
+        }
+        : {};
+}
+
+async function holdResponse(page: Page, endpoint: string, body: unknown, status = 200, headers: Record<string, string> = {}) {
     let release!: () => void;
     let requested!: () => void;
     const gate = new Promise<void>(resolve => { release = resolve; });
@@ -32,7 +47,7 @@ async function holdResponse(page: Page, endpoint: string, body: unknown, status 
     await page.route(`**/api/${endpoint}?*`, async route => {
         requested();
         await gate;
-        await route.fulfill({ status, json: body });
+        await route.fulfill({ status, json: body, headers });
     });
     return { release, received };
 }
@@ -44,7 +59,8 @@ function sharedLoading(page: Page) {
 for (const scenario of scenarios) {
     for (const empty of [false, true]) {
         test(`${scenario.tab}: pending, tab switch and ${empty ? 'empty' : 'success'}`, async ({ page }, testInfo) => {
-            const held = await holdResponse(page, scenario.endpoint, payload(scenario.endpoint, empty));
+            const held = await holdResponse(page, scenario.endpoint, payload(scenario.endpoint, empty),
+                200, summaryHeaders(scenario.endpoint, empty));
             try {
                 await page.goto('/orgs/octo-demo-org?mock=true', { waitUntil: 'domcontentloaded' });
                 await held.received;
@@ -118,7 +134,9 @@ for (const scenario of scenarios) {
 }
 
 test('user metrics: date reload failure and successful retry clear the error', async ({ page }, testInfo) => {
-    await page.route('**/api/user-metrics?*', route => route.fulfill({ json: [user] }));
+    await page.route('**/api/user-metrics?*', route => route.fulfill({
+        json: [user], headers: summaryHeaders('user-metrics'),
+    }));
     await page.goto('/orgs/octo-demo-org?mock=true', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Total IDE Code Completions', { exact: true })).toBeVisible();
     await page.getByRole('tab', { name: 'user metrics', exact: true }).click();
@@ -152,7 +170,7 @@ test('user metrics: date reload failure and successful retry clear the error', a
         await expect(page.getByRole('alert').filter({ hasText: 'No data available to display' })).toBeHidden();
         await page.screenshot({ path: testInfo.outputPath('reload-error.png'), fullPage: true });
 
-        const retry = await holdResponse(page, 'user-metrics', [user]);
+        const retry = await holdResponse(page, 'user-metrics', [user], 200, summaryHeaders('user-metrics'));
         try {
             await page.getByRole('button', { name: 'Apply', exact: true }).click();
             await retry.received;
