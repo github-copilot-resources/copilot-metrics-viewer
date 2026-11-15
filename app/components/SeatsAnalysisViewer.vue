@@ -136,6 +136,22 @@
             </v-card-subtitle>
             <v-card-text class="pa-0">
               <v-data-table :headers="headers" :items="sortedSeats" :items-per-page="-1" hide-default-footer class="elevation-0">
+                <template #top="{ items }">
+                  <div class="px-4 py-2">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      prepend-icon="mdi-download"
+                      :disabled="items.length === 0"
+                      @click="exportCurrentPage(items)"
+                    >
+                      Export current page (CSV)
+                    </v-btn>
+                    <p class="text-caption text-medium-emphasis mt-2">
+                      {{ items.length ? 'Only the permitted rows and columns displayed on this page are exported.' : 'No permitted seats on this page to export.' }}
+                    </p>
+                  </div>
+                </template>
                 <template #item="{ item, index }">
                   <tr>
                     <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
@@ -171,6 +187,7 @@ import { defineComponent, computed, type PropType } from 'vue';
 import type { SeatsSummary } from '#shared/utils/anonymous-kpis';
 import type { Seat } from '@/model/Seat';
 import type { SeatHistoryEntry } from '../../server/storage/seats-storage';
+import { convertSeatPageToCSV, downloadCSV } from '@/utils/csvExport';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -235,6 +252,11 @@ export default defineComponent({
   },
   emits: ['page-change'],
   setup(props) {
+    const exportCurrentPage = (items: readonly Seat[]) => {
+      const csv = convertSeatPageToCSV(items, (props.currentPage - 1) * props.perPage + 1);
+      if (csv) downloadCSV(csv, `seats-page-${props.currentPage}.csv`);
+    };
+
     const noshowSeats = computed(() => props.summary?.never_used ?? 'Unavailable');
     const unusedSeatsInSevenDays = computed(() => props.summary?.inactive_7 ?? 'Unavailable');
     const unusedSeatsInThirtyDays = computed(() => props.summary?.inactive_30 ?? 'Unavailable');
@@ -291,6 +313,7 @@ export default defineComponent({
     };
 
     return {
+      exportCurrentPage,
       noshowSeats,
       unusedSeatsInSevenDays,
       unusedSeatsInThirtyDays,

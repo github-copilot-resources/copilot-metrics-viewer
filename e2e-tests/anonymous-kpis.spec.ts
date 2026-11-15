@@ -15,45 +15,51 @@ const summary = { total_users: 2, active_users: 1, generated: 100, accepted: 18 
 const tile = (page: Page, name: string) => page.locator('.v-card-item')
   .filter({ has: page.getByText(name, { exact: true }) }).locator('.kpi-value');
 
+async function openSyntheticDashboard(page: Page, admin: boolean) {
+  const fixture: { header: string | null; userRequests: number; requestedPages: string[] } = {
+    header: JSON.stringify(summary), userRequests: 0, requestedPages: [],
+  };
+  await page.route(/\/api\/user-metrics(?:\?|$)/, route => {
+    fixture.userRequests++;
+    return route.fulfill({
+      json: admin ? users : [users[0]],
+      headers: fixture.header === null ? {} : { 'x-copilot-user-summary': fixture.header },
+    });
+  });
+  await page.route(/\/api\/seats(?:\?|$)/, route => {
+    const current = new URL(route.request().url()).searchParams.get('page') ?? '1';
+    fixture.requestedPages.push(current);
+    return route.fulfill({
+      json: {
+        seats: (admin ? users : [users[0]]).map(user => ({
+          login: user.login, id: user.user_id, team: 'synthetic-team',
+          created_at: '2026-01-01', last_activity_at: null, last_activity_editor: '', plan_type: '',
+        })),
+        total_seats: admin ? 901 : 1, page: Number(current), per_page: 300, total_pages: admin ? 4 : 1,
+        summary: { assigned: 901, never_used: admin ? null : 11, inactive_7: admin ? null : 21, inactive_30: admin ? null : 8 },
+      },
+    });
+  });
+  await page.goto('/orgs/octo-demo-org?mock=true');
+  const dashboard = new DashboardPage(page);
+  await dashboard.expectMetricLabelsVisible();
+  await expect.poll(() => fixture.userRequests).toBeGreaterThan(0);
+  return { dashboard, fixture };
+}
+
 // These are consumer fixtures, not a bypass used to claim live role authorization.
 // The HTTP route/session tests exercise the real server-side privacy boundary.
 for (const admin of [false, true]) {
-  test(`anonymous totals with ${admin ? 'admin partial-page' : 'non-admin self-only'} synthetic details`, async ({ page }, testInfo) => {
-    let header: string | null = JSON.stringify(summary);
-    let userRequests = 0;
-    const requestedPages: string[] = [];
-    await page.route(/\/api\/user-metrics(?:\?|$)/, route => {
-      userRequests++;
-      return route.fulfill({
-        json: admin ? users : [users[0]],
-        headers: header === null ? {} : { 'x-copilot-user-summary': header },
-      });
-    });
-    await page.route(/\/api\/seats(?:\?|$)/, route => {
-      const current = new URL(route.request().url()).searchParams.get('page') ?? '1';
-      requestedPages.push(current);
-      return route.fulfill({
-        json: {
-          seats: (admin ? users : [users[0]]).map(user => ({
-            login: user.login, id: user.user_id, team: 'synthetic-team',
-            created_at: '2026-01-01', last_activity_at: null, last_activity_editor: '', plan_type: '',
-          })),
-          total_seats: admin ? 901 : 1, page: Number(current), per_page: 300, total_pages: admin ? 4 : 1,
-          summary: { assigned: 901, never_used: admin ? null : 11, inactive_7: admin ? null : 21, inactive_30: admin ? null : 8 },
-        },
-      });
-    });
-    await page.goto('/orgs/octo-demo-org?mock=true');
-    const dashboard = new DashboardPage(page);
-    await dashboard.expectMetricLabelsVisible();
-    await expect.poll(() => userRequests).toBeGreaterThan(0);
+  const role = admin ? 'admin partial-page' : 'non-admin self-only';
+  test(`anonymous seat totals with ${role} synthetic details`, async ({ page }, testInfo) => {
+    const { dashboard, fixture } = await openSyntheticDashboard(page, admin);
     await dashboard.seatAnalysisTabLink.click();
     await expect(tile(page, 'Total Assigned')).toHaveText('901');
     await expect(tile(page, 'Never Used')).toHaveText(admin ? 'Unavailable' : '11');
     await expect(page.getByText('Permitted seat details', { exact: true })).toBeVisible();
     if (admin) {
       await page.getByRole('button', { name: 'Go to page 2', exact: true }).click();
-      await expect.poll(() => requestedPages.includes('2')).toBe(true);
+      await expect.poll(() => fixture.requestedPages.includes('2')).toBe(true);
       await expect(tile(page, 'Total Assigned')).toHaveText('901');
       await expect(page.getByText(/901 permitted seats/)).toBeVisible();
     } else {
@@ -63,6 +69,10 @@ for (const admin of [false, true]) {
     await page.locator('.v-window-item--active').screenshot({
       path: testInfo.outputPath(`seats-${admin ? 'admin-partial' : 'self-only'}.png`), animations: 'disabled',
     });
+  });
+
+  test(`anonymous user totals with ${role} synthetic details`, async ({ page }, testInfo) => {
+    const { dashboard } = await openSyntheticDashboard(page, admin);
     await dashboard.userMetricsTabLink.click();
     const metrics = new UserMetricsTab(page);
     const userTableBody = page.locator('.v-window-item--active .v-data-table').first().locator('tbody');
@@ -80,21 +90,31 @@ for (const admin of [false, true]) {
     await page.locator('.v-window-item--active').screenshot({
       path: testInfo.outputPath(`users-${admin ? 'admin' : 'self-only'}.png`), animations: 'disabled',
     });
-    header = null;
-    const beforeReload = userRequests;
+  });
+
+  // Keep the valid → missing → malformed reload chain together to catch stale summaries.
+  test(`missing and invalid user summaries after reload with ${role} synthetic details`, async ({ page }) => {
+    const { dashboard, fixture } = await openSyntheticDashboard(page, admin);
+    await dashboard.userMetricsTabLink.click();
+    const metrics = new UserMetricsTab(page);
+    const userTableBody = page.locator('.v-window-item--active .v-data-table').first().locator('tbody');
+    await expect(metrics.totalUsersValue).toHaveText('2');
+    await expect(metrics.avgAcceptanceRateValue).toHaveText('18.0%');
+    fixture.header = null;
+    const beforeReload = fixture.userRequests;
     await page.reload();
     await dashboard.expectMetricLabelsVisible();
-    await expect.poll(() => userRequests).toBeGreaterThan(beforeReload);
+    await expect.poll(() => fixture.userRequests).toBeGreaterThan(beforeReload);
     await dashboard.userMetricsTabLink.click();
     await expect(metrics.totalUsersValue).toHaveText('Unavailable');
     await expect(metrics.avgAcceptanceRateValue).toHaveText('Unavailable');
     await expect(page.getByText(/Scope-wide user summary unavailable/)).toBeVisible();
     await expect(userTableBody).toContainText('synthetic-self');
-    header = '{"total_users":999,"login":"must-not-be-rendered"}';
-    const beforeInvalid = userRequests;
+    fixture.header = '{"total_users":999,"login":"must-not-be-rendered"}';
+    const beforeInvalid = fixture.userRequests;
     await page.reload();
     await dashboard.expectMetricLabelsVisible();
-    await expect.poll(() => userRequests).toBeGreaterThan(beforeInvalid);
+    await expect.poll(() => fixture.userRequests).toBeGreaterThan(beforeInvalid);
     await dashboard.userMetricsTabLink.click();
     await expect(metrics.totalUsersValue).toHaveText('Unavailable');
     await expect(page.getByText('must-not-be-rendered')).toHaveCount(0);
