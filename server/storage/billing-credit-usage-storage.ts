@@ -7,6 +7,7 @@
  * 14th decimal is sub-penny and acceptable).
  */
 
+import type { PoolClient } from 'pg';
 import { getPool } from './db';
 
 export interface BillingCreditRow {
@@ -63,14 +64,15 @@ const UPSERT_COLUMNS = [
  *     the rolled-up PK row should still have a sensible label)
  *
  * Returns the number of rows actually written (Postgres counts inserts+updates
- * the same way through `rowCount`).
+ * the same way through `rowCount`). Pass the transaction's client when this
+ * write must be atomic with a range deletion; standalone calls use the pool.
  */
-export async function upsertBillingCreditRows(rows: BillingCreditRow[]): Promise<number> {
+export async function upsertBillingCreditRows(rows: BillingCreditRow[], client?: PoolClient): Promise<number> {
   if (rows.length === 0) return 0;
 
   rows = collapseByPrimaryKey(rows);
 
-  const pool = getPool();
+  const db = client ?? getPool();
 
   // Build a flat parameter list.
   const valuesSql: string[] = [];
@@ -102,7 +104,7 @@ export async function upsertBillingCreditRows(rows: BillingCreditRow[]): Promise
     DO UPDATE SET ${updateSet}
   `;
 
-  const result = await pool.query(sql, params);
+  const result = await db.query(sql, params);
   return result.rowCount ?? rows.length;
 }
 
@@ -165,9 +167,10 @@ export async function deleteBillingCreditRowsForRange(
   enterprise: string,
   startDate: string,
   endDate: string,
+  client?: PoolClient,
 ): Promise<number> {
-  const pool = getPool();
-  const result = await pool.query(
+  const db = client ?? getPool();
+  const result = await db.query(
     `DELETE FROM billing_credit_usage
      WHERE enterprise = $1 AND date >= $2 AND date <= $3`,
     [enterprise, startDate, endDate],

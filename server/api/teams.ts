@@ -1,3 +1,4 @@
+import { createLogger } from '../utils/logger';
 import { Options, type Scope } from '@/model/Options'
 import type { H3Event, EventHandlerRequest } from 'h3'
 
@@ -28,7 +29,7 @@ function parseLinkHeader(linkHeader: string | null): Record<string, string> {
 }
 
 export default defineEventHandler(async (event) => {
-    const logger = console
+    const logger = createLogger('teams', event.context)
 
     try {
         const teamsData = await getTeams(event)
@@ -44,7 +45,7 @@ export default defineEventHandler(async (event) => {
 })
 
 export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Team[]> {
-    const logger = console
+    const logger = createLogger('teams', event.context)
     const query = getQuery(event)
     const options = Options.fromQuery(query)
     const config = useRuntimeConfig()
@@ -97,7 +98,7 @@ export async function getTeams(event: H3Event<EventHandlerRequest>): Promise<Tea
     let page = 1
 
     while (nextUrl) {
-        logger.info(`Fetching teams page ${page} from ${nextUrl}`)
+        logger.info(`Fetching teams page ${page}`)
         const res = await $fetch.raw(nextUrl, {
             headers: fetchHeaders
         })

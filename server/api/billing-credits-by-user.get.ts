@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * GET /api/billing-credits-by-user — admin only
  *
@@ -47,7 +49,7 @@ const CONCURRENCY = 8;
 const MAX_LOGINS_PER_CALL = 50;
 
 export default defineEventHandler(async (event): Promise<BillingCreditsResponse> => {
-  const logger = console;
+  const logger = createLogger('billing-credits-by-user', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
   const config = useRuntimeConfig(event);
@@ -220,9 +222,9 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       for (const it of resp.usageItems ?? []) {
         tagged.push({ ...it, user: metricsLogin });
       }
-    } catch {
+    } catch (err) {
       failures++;
-      logger.warn('billing-credits-by-user: a fan-out request failed');
+      logger.warn('User billing credits fan-out failed', err);
     }
   }
 

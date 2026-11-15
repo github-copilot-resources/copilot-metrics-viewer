@@ -108,12 +108,29 @@ describe('per-user alias failure and privacy contracts', () => {
     it('does not turn a failed alias request into a successful partial zero/undercharge', async () => {
       process.env.NUXT_BILLING_USER_ALIASES = '{"opaque":"fake-user"}';
       setQuery({ scope: 'enterprise', githubEnt: 'ent-x', isDataMocked: 'false', logins: 'fake-user' });
+      setConfig({ billingEnterprise: 'ent-x', githubBillingToken: 'tok', logLevel: 'warn', logFormat: 'json' });
       mockDecide.mockResolvedValueOnce({ source: 'live', reason: 'synthetic' });
       fetchMock
         .mockResolvedValueOnce({ timePeriod: {}, usageItems: [{ netAmount: 1 }] })
-        .mockRejectedValueOnce(new Error('synthetic upstream failure'));
-      await expect(byUserHandler({} as Parameters<typeof byUserHandler>[0]))
-        .rejects.toMatchObject({ statusCode: 502 });
+        .mockRejectedValueOnce(Object.assign(new Error('SYNTHETIC_PRIVATE_ALIAS_AND_UPSTREAM_PAYLOAD'), {
+          statusCode: 503, code: 'ECONNRESET', data: { user: 'opaque', body: 'SYNTHETIC_PRIVATE_BODY' },
+        }));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      try {
+        await expect(byUserHandler({ context: { requestId: 'req-alias-reconcile' } } as unknown as Parameters<typeof byUserHandler>[0]))
+          .rejects.toMatchObject({ statusCode: 502 });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(warn).toHaveBeenCalledTimes(1);
+        const output = String(warn.mock.calls[0]![0]);
+        expect(JSON.parse(output)).toMatchObject({
+          level: 'warn', tag: 'billing-credits-by-user', message: 'User billing credits fan-out failed',
+          requestId: 'req-alias-reconcile', name: 'Error', statusCode: 503, code: 'ECONNRESET',
+        });
+        expect(output).not.toContain('SYNTHETIC_PRIVATE');
+        expect(output).not.toContain('opaque');
+      } finally {
+        warn.mockRestore();
+      }
     });
 
     it('does not use caller-supplied logins or aliases to bypass the existing admin gate', async () => {
