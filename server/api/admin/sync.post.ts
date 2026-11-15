@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
           throw createError({ statusCode: 400, statusMessage: 'date parameter required for sync-date action' });
         }
 
-        logger.info(`Syncing metrics for ${date}`);
+        logger.info('Syncing metrics for requested date');
         const result = await syncMetricsForDate({
           scope: options.scope!,
           identifier: options.githubOrg || options.githubEnt || 'unknown',
@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
           throw createError({ statusCode: 400, statusMessage: 'since and until parameters required for sync-range action' });
         }
 
-        logger.info(`Syncing metrics from ${options.since} to ${options.until}`);
+        logger.info('Syncing metrics for requested range');
         const results = await syncMetricsForDateRange(
           options.scope!,
           options.githubOrg || options.githubEnt || 'unknown',
@@ -111,7 +111,7 @@ export default defineEventHandler(async (event) => {
           throw createError({ statusCode: 400, statusMessage: 'since and until parameters required for sync-gaps action' });
         }
 
-        logger.info(`Syncing gaps from ${options.since} to ${options.until}`);
+        logger.info('Syncing gaps for requested range');
         const { results, gapsDetected, outsideWindow } = await syncGaps(
           options.scope!,
           options.githubOrg || options.githubEnt || 'unknown',
@@ -137,7 +137,7 @@ export default defineEventHandler(async (event) => {
       case 'sync-last-28':
       case 'sync-bulk': {  // backward-compatible alias
         // Bulk download latest 28-day report and store all new days
-        logger.info(`Running bulk sync for ${options.scope}:${options.githubOrg || options.githubEnt}`);
+        logger.info('Running bulk sync');
         const bulkResult = await syncBulk(
           options.scope!,
           options.githubOrg || options.githubEnt || 'unknown',
@@ -160,7 +160,7 @@ export default defineEventHandler(async (event) => {
           return { action: 'retry-failed', retried: 0, successCount: 0, failureCount: 0, results: [] };
         }
 
-        logger.info(`Retrying ${failed.length} failed sync(s) for ${options.scope}:${identifier}`);
+        logger.info('Retrying failed syncs', { count: failed.length });
         const results = [];
         for (const entry of failed) {
           const r = await syncMetricsForDate({
@@ -190,7 +190,7 @@ export default defineEventHandler(async (event) => {
           throw createError({ statusCode: 400, statusMessage: 'organization or enterprise identifier required' });
         }
         const removed = await clearFailedSyncsForScope(scope, identifier, options.githubTeam);
-        logger.info(`Cleared ${removed} failed sync row(s) for ${scope}:${identifier}`);
+        logger.info('Cleared failed sync rows', { count: removed });
         return { action: 'clear-failed', removed };
       }
 

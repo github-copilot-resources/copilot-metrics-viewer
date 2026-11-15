@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     const history = await getSeatsHistorySummary(scope, identifier);
-    logger.info(`Returning ${history.length} seat history entries for ${scope}:${identifier}`);
+    logger.info('Returning seat history entries', { count: history.length });
     return history;
   } catch (error: unknown) {
     logger.error('Error fetching seats history:', error);

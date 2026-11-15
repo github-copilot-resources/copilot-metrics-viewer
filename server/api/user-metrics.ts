@@ -150,7 +150,7 @@ export default defineEventHandler(async (event) => {
       const stored = await getUserMetricsByDateRange(scope, identifier, options.since, options.until);
       if (stored) {
         const filtered = await filterByTeamIfNeeded(stored.userTotals, options, event.context.headers);
-        logger.info(`Returning ${filtered.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay})`);
+        logger.info('Returning user metrics entries from storage', { count: filtered.length });
         return restrictUserRowsToSelf(event, filtered);
       }
       logger.info('No user metrics in storage yet, attempting live fetch');
@@ -182,7 +182,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'GitHub organization or enterprise must be configured' });
     }
 
-    logger.info(`Fetching user metrics for ${scope}:${identifier}`);
+    logger.info('Fetching user metrics');
 
     let userTotals: UserTotals[];
 
@@ -222,7 +222,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const filtered = await filterByTeamIfNeeded(userTotals, options, event.context.headers);
-    logger.info(`Returned ${filtered.length} user records for ${scope}:${identifier} (${userTotals.length} before team filter)`);
+    logger.info(`Returned user records (${userTotals.length} before team filter)`, { count: filtered.length });
     return restrictUserRowsToSelf(event, filtered);
 
   } catch (error: unknown) {

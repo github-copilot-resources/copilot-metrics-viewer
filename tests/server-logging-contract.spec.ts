@@ -2,11 +2,21 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
-import { createApp, createError, defineEventHandler, sendRedirect, toNodeListener, type H3Event } from 'h3'
+import { createApp, createError, defineEventHandler, getQuery, readBody, sendRedirect, toNodeListener, type H3Event } from 'h3'
 import { getGlobalDispatcher, setGlobalDispatcher } from 'undici'
 
 vi.mock('#app/nuxt', () => ({
   useRuntimeConfig: () => (globalThis as unknown as { useRuntimeConfig: () => unknown }).useRuntimeConfig(),
+}))
+
+// Keep application storage/service modules real without opening database connections.
+vi.mock('pg', () => ({
+  default: {
+    Pool: class {
+      query = vi.fn()
+      end = vi.fn().mockResolvedValue(undefined)
+    },
+  },
 }))
 
 const sentinel = 'SYNTHETIC_DO_NOT_LOG'
@@ -29,6 +39,87 @@ afterEach(() => {
 })
 
 describe('logging contracts with real modules', () => {
+  it.each(['body', 'query'])('keeps accepted and failing admin-sync %s values out of real module logs', async (source) => {
+    vi.stubGlobal('defineEventHandler', defineEventHandler)
+    vi.stubGlobal('createError', createError)
+    vi.stubGlobal('getQuery', getQuery)
+    vi.stubGlobal('readBody', readBody)
+    vi.stubGlobal('useRuntimeConfig', () => ({
+      logLevel: 'info', logFormat: 'json', logRequests: true, public: { isDataMocked: true },
+    }))
+    const input = `SYNTHETIC_${source.toUpperCase()}_SENTINEL`
+    const failure = Object.assign(new Error(input), { code: 'ECONNREFUSED', statusCode: 503 })
+    // Fail at transport boundaries, never connecting to a database or upstream.
+    const transport = vi.fn().mockRejectedValue(failure)
+    vi.stubGlobal('$fetch', transport)
+    const { getPool, closePool } = await import('../server/storage/db')
+    vi.spyOn(getPool(), 'query').mockImplementation(transport)
+    const lines = capture()
+    const { default: logRequest } = await import('../server/middleware/00.log')
+    const { default: sync } = await import('../server/api/admin/sync.post')
+    const app = createApp()
+    app.use(logRequest)
+    app.use('/api/admin/sync', sync)
+    const server = createServer(toNodeListener(app))
+    server.listen(0, '127.0.0.1')
+    await once(server, 'listening')
+    const address = server.address()
+    if (!address || typeof address === 'string') throw new Error('Expected TCP address')
+    const base = `http://127.0.0.1:${address.port}`
+    const httpFetch = globalThis.fetch
+    const external = vi.fn()
+    vi.stubGlobal('fetch', (url: string, init?: RequestInit) => {
+      if (!String(url).startsWith(`${base}/`)) {
+        external()
+        return Promise.reject(new Error('External requests forbidden'))
+      }
+      return httpFetch(url, init)
+    })
+    try {
+      const cases: Record<string, string>[] = [
+        { action: 'sync-date', date: `z${input}` },
+        { action: 'sync-range', since: `z${input}`, until: `z${input}` },
+        { action: 'sync-gaps', since: `z${input}`, until: `z${input}` },
+        { action: 'sync-date', date: `0${input}` },
+        { action: 'sync-bulk' },
+        { action: `unknown-${input}` },
+      ]
+      const responses = []
+      for (const [index, params] of cases.entries()) {
+        const values = { scope: 'organization', githubOrg: input, githubTeam: input, ...params }
+        const requestId = `req-sync-${source}-${index}`
+        const query = source === 'query' ? `?${new URLSearchParams(values)}` : ''
+        const response = await fetch(`${base}/api/admin/sync${query}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-request-id': requestId },
+          ...(source === 'body' ? { body: JSON.stringify(values) } : {}),
+        })
+        expect(response.headers.get('x-request-id')).toBe(requestId)
+        const payload = await response.json()
+        responses.push(payload)
+        expect(response.status).toBe(index === cases.length - 1 ? 500 : 200)
+      }
+      expect(responses[0]).toMatchObject({ result: { success: true, date: `z${input}`, metricsCount: 0 } })
+      expect(responses[1]).toMatchObject({ results: [], totalDays: 0 })
+      expect(responses[2]).toMatchObject({ results: [], gapsDetected: 0 })
+      expect(responses[3]).toMatchObject({ result: { success: false, date: `0${input}` } })
+      expect(responses[4]).toMatchObject({ success: false })
+      expect(external).not.toHaveBeenCalled()
+      const records = lines.map(line => JSON.parse(line))
+      expect(records).toEqual(expect.arrayContaining([
+        expect.objectContaining({ tag: 'admin-sync', level: 'info', requestId: `req-sync-${source}-0` }),
+        expect.objectContaining({ tag: 'sync-service', level: 'info' }),
+        expect.objectContaining({ tag: 'sync-service', level: 'error', name: 'Error', code: 'ECONNREFUSED', statusCode: 503 }),
+        expect.objectContaining({ tag: 'request', status: 500, requestId: `req-sync-${source}-5` }),
+      ]))
+      expect(records.filter(record => record.tag === 'request')).toHaveLength(cases.length)
+      expect(lines.join('\n')).not.toContain(input)
+    } finally {
+      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+      await closePool()
+    }
+  })
+
   it.each(['json', 'pretty'])('keeps only safe metadata and never serializes raw errors in %s', async (format) => {
     vi.stubGlobal('useRuntimeConfig', () => ({ logLevel: 'debug', logFormat: format }))
     const lines = capture()

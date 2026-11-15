@@ -65,7 +65,7 @@ export async function runSync() {
     logger.info('Initializing database schema...');
     await initSchema();
 
-    logger.info(`Starting sync for ${scope}:${identifier}`);
+    logger.info('Starting metrics sync');
     logger.info(`Syncing last ${daysBack} day(s) via bulk download`);
 
     // Use bulk download — one API call for up to 28 days
@@ -119,7 +119,7 @@ async function runBillingCsvIfConfigured(logger: TaggedLogger): Promise<void> {
   const startDate = start.toISOString().slice(0, 10);
   const endDate = end.toISOString().slice(0, 10);
 
-  logger.info(`Starting billing CSV ingest for ${enterprise}: ${startDate} → ${endDate}`);
+  logger.info('Starting billing CSV ingest');
   try {
     const result = await runForegroundIngest(token, enterprise, startDate, endDate, 'sync-container');
     if (result.status === 'completed') {

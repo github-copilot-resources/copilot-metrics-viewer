@@ -58,7 +58,10 @@ and error messages/stacks/causes. Error events retain their operation, error typ
 and available numeric status or supported system error code. Additional fields
 are allowlisted operational metadata, not arbitrary objects. Use aggregate
 counts rather than personal identifiers. Callers must keep message text
-developer-controlled: never interpolate tokens, upstream errors or user data.
+developer-controlled: never interpolate tokens, upstream errors or user data,
+including requested dates, ranges, and organization/enterprise/team identifiers.
+Sync logs identify the operation and retain aggregate counts and safe error
+classification; request-scoped logs also retain the request ID.
 `silent` suppresses all application logs, even with request logging enabled.
 
 ## Authentication

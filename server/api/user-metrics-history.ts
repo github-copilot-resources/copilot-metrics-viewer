@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
 
     // Aggregate snapshot history
     const history = await getUserMetricsHistory(scope, identifier);
-    logger.info(`Returning ${history.length} user-metrics history entries for ${scope}:${identifier}`);
+    logger.info('Returning user-metrics history entries', { count: history.length });
     return history;
   } catch (error: unknown) {
     // Re-throw H3 errors (createError) — e.g. the 403 above MUST surface.

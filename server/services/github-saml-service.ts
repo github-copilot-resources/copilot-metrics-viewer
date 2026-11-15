@@ -106,7 +106,7 @@ export async function fetchSamlIdentities(
       after = ext.pageInfo.hasNextPage ? ext.pageInfo.endCursor : null
     } while (after)
   } catch (err) {
-    logger.warn(`Failed to fetch SAML identities for org "${org}":`, err)
+    logger.warn('Failed to fetch SAML identities:', err)
   }
 
   samlCache.set(cacheKey, { map: nameIdToLogin, expiry: Date.now() + TTL_MS })
