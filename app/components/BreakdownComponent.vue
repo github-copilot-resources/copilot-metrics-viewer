@@ -47,6 +47,10 @@
       </v-card>
     </div>
 
+    <p v-if="breakdownKey === 'language'" class="mx-4 text-caption text-medium-emphasis">
+      Display groups csharp with c# and cpp with c++. Source data is unchanged.
+    </p>
+
     <!-- ── Enhanced view from new API reportData ────────────────────── -->
     <template v-if="useEnhancedView">
       <v-container :fluid="chartColumns === 'full'" :class="[chartColumns === 'full' ? 'px-0' : 'px-4']">
@@ -402,6 +406,12 @@ interface CliSummary {
   avg_tokens_per_request?: number;
 }
 
+function displayLanguage(language: string): string {
+  if (language === 'csharp') return 'c#';
+  if (language === 'cpp') return 'c++';
+  return language;
+}
+
 export default defineComponent({
   name: 'BreakdownComponent',
   components: {
@@ -526,7 +536,7 @@ export default defineComponent({
       const langMap = new Map<string, EnhancedLanguageRow>();
       data.forEach(day => {
         (day.totals_by_language_feature || []).forEach(entry => {
-          const key = entry.language;
+          const key = displayLanguage(entry.language);
           if (!langMap.has(key)) {
             langMap.set(key, { language: key, codeGenerations: 0, codeAcceptances: 0, linesGenerated: 0, linesAdded: 0, features: [] });
           }
@@ -561,7 +571,7 @@ export default defineComponent({
       const langDayTotals = data.map(() => 0);
       data.forEach((d, idx) => {
         (d.totals_by_language_feature || []).forEach(lf => {
-          const lang = lf.language ?? 'Unknown';
+          const lang = displayLanguage(lf.language ?? 'Unknown');
           if (!langActByDay[lang]) langActByDay[lang] = data.map(() => 0);
           const cnt = lf.code_generation_activity_count ?? 0;
           langActByDay[lang]![idx] = (langActByDay[lang]![idx] ?? 0) + cnt;
@@ -612,7 +622,7 @@ export default defineComponent({
       const langModelMatrix: Record<string, Record<string, number>> = {};
       data.forEach(d => {
         (d.totals_by_language_model || []).forEach(lm => {
-          const lang = lm.language ?? 'Unknown';
+          const lang = displayLanguage(lm.language ?? 'Unknown');
           const model = lm.model ?? 'Unknown';
           if (!langModelMatrix[lang]) langModelMatrix[lang] = {};
           langModelMatrix[lang][model] = (langModelMatrix[lang][model] ?? 0) + (lm.code_generation_activity_count ?? 0);
@@ -750,7 +760,8 @@ export default defineComponent({
       // Process the breakdown separately
       data.forEach((m: Metrics) => m.breakdown.forEach(breakdownData => 
       {
-        const breakdownName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
+        const rawName = breakdownData[props.breakdownKey as keyof typeof breakdownData] as string;
+        const breakdownName = props.breakdownKey === 'language' ? displayLanguage(rawName) : rawName;
         let breakdown = breakdownList.value.find(b => b.name === breakdownName);
 
         if (!breakdown) {
@@ -840,8 +851,9 @@ export default defineComponent({
         (user.totals_by_language_feature || []).forEach(lf => {
           const gen = lf.code_generation_activity_count || 0;
           if (gen <= 0) return;
-          if (!result.has(lf.language)) result.set(lf.language, []);
-          const arr = result.get(lf.language)!;
+          const language = displayLanguage(lf.language);
+          if (!result.has(language)) result.set(language, []);
+          const arr = result.get(language)!;
           const existing = arr.find(u => u.login === user.login);
           if (existing) {
             existing.gen += gen;
