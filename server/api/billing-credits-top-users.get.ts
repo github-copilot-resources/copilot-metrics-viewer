@@ -18,7 +18,7 @@ import {
   type TopBillingUsersResponse,
 } from '../services/billing-credit-reader';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import mockBilling from '../../public/mock-data/billing-credits.json';
+import mockBilling from '../../public/mock-data/billing-credits-synthetic-attribution-demo.json';
 import type { BillingCreditsResponse } from './billing-credits.get';
 
 const DEFAULT_LIMIT = 10;

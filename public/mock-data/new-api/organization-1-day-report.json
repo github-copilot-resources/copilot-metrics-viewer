@@ -2,6 +2,45 @@
   "day_totals": [
     {
       "day": "2026-04-25",
+      "daily_active_copilot_app_users": 1,
+      "weekly_active_copilot_app_users": 2,
+      "monthly_active_copilot_app_users": 3,
+      "daily_active_local_byok_users": 1,
+      "weekly_active_local_byok_users": 1,
+      "monthly_active_local_byok_users": 2,
+      "below_usage_metrics_minimum_user_count": 0,
+      "missing_client_telemetry_user_count": 1,
+      "distinct_custom_agent_use_count": 1,
+      "distinct_mcp_use_count": 1,
+      "totals_by_mcp": [
+        { "mcp": "synthetic-docs-server", "interaction_count": 3 }
+      ],
+      "totals_by_custom_agent": [
+        { "custom_agent": "synthetic-reviewer", "interaction_count": 2 }
+      ],
+      "totals_by_client": [
+        {
+          "client": "copilot_cli",
+          "session_count": 1,
+          "request_count": 2,
+          "token_usage": { "prompt_tokens_sum": 300, "output_tokens_sum": 100, "avg_tokens_per_request": 200 },
+          "totals_by_model": [
+            {
+              "model": "synthetic-model",
+              "model_selection_mode": "user_selected",
+              "is_custom_enterprise_model": false,
+              "request_count": 2,
+              "token_usage": { "prompt_tokens_sum": 300, "output_tokens_sum": 100, "avg_tokens_per_request": 200 }
+            }
+          ]
+        }
+      ],
+      "totals_by_copilot_app": {
+        "prompt_count": 1,
+        "request_count": 2,
+        "session_count": 1,
+        "token_usage": { "prompt_tokens_sum": 240, "output_tokens_sum": 80, "avg_tokens_per_request": 160 }
+      },
       "organization_id": "100000001",
       "enterprise_id": "200001",
       "daily_active_users": 2,
