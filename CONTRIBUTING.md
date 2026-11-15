@@ -2,12 +2,12 @@
 
 [fork]: https://github.com/github-copilot-resources/copilot-metrics-viewer/fork
 [pr]: https://github.com/github-copilot-resources/copilot-metrics-viewer/compare
-[style]: https://github.com/github-copilot-resources/copilot-metrics-viewer/blob/main/.eslintrc.js
+[style]: https://github.com/github-copilot-resources/copilot-metrics-viewer/blob/main/eslint.config.mjs
 [code-of-conduct]: CODE_OF_CONDUCT.md
 
 Hi there! We're thrilled that you'd like to contribute to this project. Your help is essential for keeping it great.
 
-Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) to the public under the [project's open source license](LICENSE.md).
+Contributions to this project are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) to the public under the [project's open source license](LICENSE.txt).
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project you agree to abide by its terms.
 
@@ -28,6 +28,23 @@ Here are a few things you can do that will increase the likelihood of your pull 
 - Write tests.
 - Keep your change as focused as possible. If there are multiple changes you would like to make that are not dependent upon each other, consider submitting them as separate pull requests.
 - Write a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
+
+## Billing CSV PostgreSQL integration tests
+
+After installing dependencies and running `npx nuxt prepare`, run:
+
+```bash
+npm test -- --run --config tests/billing-token-storage.config.ts
+```
+
+Requires Docker and `postgres:16-alpine`. The suite owns a disposable PostgreSQL
+container on a random loopback port and does not use your configured database.
+It covers token storage/migrations and real ingester rollback on statement and
+commit failures, followed by replacement/retry and duplicate-key token arithmetic.
+
+Each CSV chunk (up to 31 days) replaces its range atomically on one transaction
+client. Earlier committed chunks remain committed if a later chunk fails; the
+job-status audit updates are outside the chunk's data transaction.
 
 ## Resources
 

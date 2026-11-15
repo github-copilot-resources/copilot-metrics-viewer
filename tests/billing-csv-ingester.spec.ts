@@ -6,6 +6,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // ---- mock storage modules -------------------------------------------------
 
@@ -117,6 +119,34 @@ describe('chunkDateRange', () => {
 });
 
 describe('runBillingCsvIngester — happy path', () => {
+  it.each([false, true])('preserves tokens or persists standard parse failure (malformed=%s)', async malformed => {
+    mockGetJob.mockResolvedValue(defaultJob());
+    const synthetic = readFileSync(resolve(__dirname, 'fixtures', 'billing-token-usage.synthetic.csv'), 'utf8');
+    fetchImpl = async (url, opts) => {
+      if (opts?.method === 'POST') return { id: 'synthetic-report', status: 'processing' };
+      if (url.endsWith('/reports/synthetic-report')) {
+        return { status: 'completed', download_urls: ['https://sas/synthetic'] };
+      }
+      if (url === 'https://sas/synthetic') return malformed ? synthetic.replace(',789', ',invalid') : synthetic;
+      throw new Error('unexpected synthetic URL');
+    };
+    const result = await runBillingCsvIngester({ token: 'synthetic-test-token', jobId: 42, sleep: async () => {} });
+    if (malformed) {
+      expect(result.status).toBe('failed');
+      expect(result.errorMessage).toContain('Column "cache_write": cannot parse "invalid" as number');
+      expect(mockUpdateJob).toHaveBeenCalledWith(42, expect.objectContaining({
+        status: 'failed', errorMessage: expect.stringContaining('Column "cache_write"'),
+      }));
+      expect(mockUpsert).not.toHaveBeenCalled();
+      expect(mockDeleteRange).not.toHaveBeenCalled();
+    } else {
+      expect(result.status).toBe('completed');
+      expect(mockUpsert.mock.calls[0]![0][0]).toMatchObject({
+        input: 9007199254740991, output: 123.4567891, cache_read: 0, cache_write: 789,
+        unit_type: 'synthetic-unit', quantity: 2, aic_quantity: 2, gross_amount: 0.08,
+      });
+    }
+  });
   it('POSTs, polls, downloads, upserts and marks completed', async () => {
     mockGetJob.mockResolvedValue(defaultJob());
     fetchImpl = async (url, opts) => {
@@ -137,8 +167,9 @@ describe('runBillingCsvIngester — happy path', () => {
     expect(result.status).toBe('completed');
     expect(result.rowsIngested).toBe(1);
     expect(result.downloadUrlCount).toBe(1);
-    expect(mockDeleteRange).toHaveBeenCalledWith('acme-ent', '2026-05-27', '2026-06-26');
+    expect(mockDeleteRange).toHaveBeenCalledWith('acme-ent', '2026-05-27', '2026-06-26', fakeClient);
     expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpsert.mock.calls[0]![1]).toBe(fakeClient);
     expect(mockUpsert.mock.calls[0]![0]).toHaveLength(1);
     expect(mockUpsert.mock.calls[0]![0][0]).toMatchObject({
       enterprise: 'acme-ent',

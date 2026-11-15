@@ -9,7 +9,11 @@
  * without needing a real Postgres in CI.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { newDb, DataType } from 'pg-mem';
+import type { Pool } from 'pg';
+import { createRequire } from 'node:module';
+import { parseBillingCsv } from '../server/services/billing-csv-parser';
 
 const mockQuery = vi.fn();
 vi.mock('../server/storage/db', () => ({
@@ -22,12 +26,14 @@ import {
   decideSource,
   aggregateForBilling,
   aggregateForBillingByUser,
+  aggregateTopBillingUsers,
   subtractRanges,
   findBillingCsvGaps,
 } from '../server/services/billing-credit-reader';
 
 beforeEach(() => {
   mockQuery.mockReset();
+  delete process.env.NUXT_BILLING_USER_ALIASES;
 });
 
 describe('resolveWindow', () => {
@@ -157,6 +163,56 @@ describe('decideSource', () => {
 });
 
 describe('aggregateForBilling', () => {
+  it('keeps CSV native units and month boundaries, without adding repeated monthly allowance', async () => {
+    const header = 'date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,total_monthly_quota,organization,repository,cost_center_name,aic_quantity,aic_gross_amount';
+    const csv = [
+      header,
+      '2026-06-01,synthetic-a,copilot,copilot_premium_request,model-a,3,requests,0.04,0.12,0.12,0,10000,synthetic-org,,,125.5,1.255',
+      '2026-06-02,synthetic-b,copilot,copilot_ai_credit,model-b,10,credits,0.01,0.1,0.025,0.075,10000,synthetic-org,,,10,0.1',
+      '2026-06-03,synthetic-zero,copilot,copilot_ai_credit,model-b,0,credits,0.01,0,0,0,10000,synthetic-org,,,0,0',
+      '2026-05-01,synthetic-a,copilot,copilot_ai_credit,model-b,500,credits,0.01,5,0,5,10000,synthetic-org,,,500,5',
+    ].join('\n');
+    const parsed = parseBillingCsv(csv);
+    expect(parsed[0]!.aic_quantity).toBe(125.5);
+    const db = newDb();
+    db.public.registerEquivalentType({
+      name: 'float8', equivalentTo: DataType.float, isValid: () => true,
+    });
+    const pool = new (db.adapters.createPg().Pool)();
+    await pool.query(`CREATE TABLE billing_credit_usage (
+      enterprise text, date date, username text, product text, sku text, model text,
+      unit_type text, applied_cost_per_quantity float, quantity float,
+      gross_amount float, discount_amount float, net_amount float,
+      aic_quantity float, total_monthly_quota float
+    )`);
+    for (const row of parsed) {
+      await pool.query('INSERT INTO billing_credit_usage VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)', [
+        'synthetic-ent', row.date, row.username, row.product, row.sku, row.model, row.unit_type,
+        row.applied_cost_per_quantity, row.quantity, row.gross_amount, row.discount_amount,
+        row.net_amount, row.aic_quantity, row.total_monthly_quota,
+      ]);
+    }
+    mockQuery.mockImplementation((sql: string, params: unknown[]) => pool.query(sql, params));
+    try {
+      const window = resolveWindow({ year: 2026, month: 6 });
+      const response = await aggregateForBilling('synthetic-ent', window);
+      const credits = response.usageItems.find(item => item.unitType === 'credits')!;
+      const requests = response.usageItems.find(item => item.unitType === 'requests')!;
+      expect(credits.grossQuantity).toBe(10);
+      expect(credits.netQuantity).toBeCloseTo(7.5);
+      expect(credits.discountQuantity).toBeCloseTo(2.5);
+      expect(requests.grossQuantity).toBe(3);
+      expect(requests.netQuantity).toBe(0);
+      expect(requests.discountQuantity).toBe(3);
+      // The reader exposes native requests, not the separate aic_quantity.
+      // A presentation layer must not assume every returned unit is credits.
+      expect(requests.unitType).toBe('requests');
+      expect(response.timePeriod).toEqual({ year: 2026, month: 6 });
+    } finally {
+      await pool.end();
+    }
+  });
+
   it('emits a single grouped row mapped to the BillingUsageItem shape', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{
@@ -259,6 +315,52 @@ describe('aggregateForBillingByUser', () => {
     expect(mockQuery).not.toHaveBeenCalled();
   });
 
+  it('includes configured EMU billing aliases in the DB username filter and normalizes returned users', async () => {
+    process.env.NUXT_BILLING_USER_ALIASES = JSON.stringify({
+      readable_emu: 'opaquehash_emu',
+    });
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{
+          username: 'readable_emu',
+          product: 'copilot',
+          sku: 'copilot_ai_credit',
+          model: 'gpt-4o',
+          unit_type: 'credits',
+          price_per_unit: 0.01,
+          gross_quantity: 100,
+          gross_amount: 1,
+          discount_amount: 0,
+          net_amount: 1,
+        }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['opaquehash_emu']);
+
+    expect(mockQuery.mock.calls[0]![1][3]).toEqual(['opaquehash_emu', 'readable_emu']);
+    expect(resp.usageItems[0]!.user).toBe('opaquehash_emu');
+  });
+
+  it('leaves reconciliation unknown and never queries off-page billing identities', async () => {
+    process.env.NUXT_BILLING_USER_ALIASES = JSON.stringify({
+      readable_emu: 'opaquehash_emu',
+    });
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [{ username: 'unmapped_emu' }] });
+
+    const resp = await aggregateForBillingByUser('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, ['opaquehash_emu']);
+
+    expect(resp).not.toHaveProperty('unmatchedBillingUsernames');
+    expect(resp.identityReconciliation).toBe('unknown');
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
   it('groups by username and tags each item with the user field (case-insensitive match)', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -317,25 +419,165 @@ describe('aggregateForBillingByUser', () => {
     expect(sql).not.toContain(evilModel);
     expect(params).toContain(evilModel);
   });
+});
 
-  it('can order and page per-user aggregates by net spend descending', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] });
-    await aggregateForBillingByUser('ent', {
-      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
-    }, ['alice', 'bob', 'carol'], {}, {
-      sortKey: 'netAmount',
-      sortOrder: 'desc',
-      offset: 0,
-      limit: 2,
+describe('aggregateTopBillingUsers', () => {
+  it('ranks the top users across the full enterprise dataset without a login filter', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        { username: 'zoe', credits: 70, gross_amount: 7, net_amount: 7, models: 2 },
+        { username: 'alice', credits: 50, gross_amount: 5, net_amount: 5, models: 1 },
+      ],
     });
 
+    const resp = await aggregateTopBillingUsers('ent', {
+      startDate: '2026-06-01', endDate: '2026-06-30', timePeriod: { year: 2026, month: 6 },
+    }, { limit: 2 });
+
+    expect(resp.users.map(u => u.user)).toEqual(['zoe', 'alice']);
+    expect(resp.users[0]).toMatchObject({ credits: 70, grossAmount: 7, netAmount: 7, models: 2 });
+
     const [sql, params] = mockQuery.mock.calls[0]!;
-    expect(sql).toMatch(/ORDER BY[\s\S]*SUM\(net_amount\)[\s\S]*DESC/i);
-    expect(sql).toMatch(/LIMIT \$\d+/);
-    expect(sql).toMatch(/OFFSET \$\d+/);
-    expect(params[3]).toEqual(['alice', 'bob', 'carol']);
-    expect(params).toContain(2);
-    expect(params).toContain(0);
+    expect(sql).toMatch(/GROUP BY username/);
+    expect(sql).toMatch(/ORDER BY SUM\(net_amount\) DESC/);
+    expect(sql).toMatch(/LIMIT \$4/);
+    expect(sql).not.toMatch(/LOWER\(username\) = ANY/);
+    expect(params).toEqual(['ent', '2026-06-01', '2026-06-30', 2]);
+  });
+});
+
+describe('aggregateTopBillingUsers — executed SQL', () => {
+  let pool: Pick<Pool, 'query' | 'end'>;
+  const window = resolveWindow({ year: 2026, month: 6 });
+
+  beforeEach(async () => {
+    if (process.env.PR429_POSTGRES_TEST === '1') {
+      const PostgresClient = createRequire(import.meta.url)('pg/lib/client') as typeof import('pg').Client;
+      const client = new PostgresClient({
+        host: '127.0.0.1', port: 55429, user: 'pr429', password: 'synthetic-only',
+        database: 'pr429',
+      });
+      await client.connect();
+      pool = client;
+      await pool.query('DROP TABLE IF EXISTS billing_credit_usage');
+    } else {
+      const db = newDb();
+      db.public.registerEquivalentType({
+        name: 'float8', equivalentTo: DataType.float, isValid: () => true,
+      });
+      db.public.registerFunction({
+        name: 'nullif', args: [DataType.text, DataType.text], returns: DataType.text,
+        implementation: (a: string, b: string) => a === b ? null : a,
+      });
+      pool = new (db.adapters.createPg().Pool)() as Pool;
+    }
+    await pool.query(`
+      CREATE TABLE billing_credit_usage (
+        enterprise TEXT NOT NULL, date DATE NOT NULL, username TEXT NOT NULL,
+        organization TEXT NOT NULL DEFAULT '', repository TEXT NOT NULL DEFAULT '',
+        sku TEXT NOT NULL DEFAULT 'sku-a', model TEXT NOT NULL DEFAULT 'model-a',
+        quantity NUMERIC(20,6) NOT NULL, gross_amount NUMERIC(20,6) NOT NULL,
+        net_amount NUMERIC(20,6) NOT NULL
+      )
+    `);
+    mockQuery.mockImplementation((sql: string, params: unknown[]) => pool.query(sql, params));
+    const values: unknown[] = [];
+    const rows = Array.from({ length: 600 }, (_, i) => {
+      const net = i === 599 ? 9000 : i;
+      values.push('ent', '2026-06-15', `user-${String(i).padStart(4, '0')}`, net * 10, net * 2, net);
+      return `(${Array.from({ length: 6 }, (_v, j) => `$${i * 6 + j + 1}`).join(',')})`;
+    });
+    await pool.query(`
+      INSERT INTO billing_credit_usage (enterprise, date, username, quantity, gross_amount, net_amount)
+      VALUES ${rows.join(',')}
+    `, values);
+    await pool.query(`
+      INSERT INTO billing_credit_usage (enterprise, date, username, quantity, gross_amount, net_amount)
+      VALUES ('other-ent', '2026-06-15', 'wrong-enterprise', 999999, 999999, 999999),
+             ('ent', '2026-05-31', 'outside-before', 999999, 999999, 999999),
+             ('ent', '2026-07-01', 'outside-after', 999999, 999999, 999999),
+             ('ent', '2026-06-15', '', 999999, 999999, 999999),
+             ('ent', '2026-06-01', 'boundary-user', 5, 1, 0.5),
+             ('ent', '2026-06-30', 'boundary-user', 5, 1, 0.5)
+    `);
+  });
+
+  afterEach(async () => { await pool?.end(); });
+
+  it('ranks the full 600-user roster before limiting, including an outlier beyond the first 500', async () => {
+    const result = await aggregateTopBillingUsers('ent', window);
+    expect(result.users.map(u => u.user)).toEqual([
+      'user-0599', 'user-0598', 'user-0597', 'user-0596', 'user-0595',
+      'user-0594', 'user-0593', 'user-0592', 'user-0591', 'user-0590',
+    ]);
+    expect(result.users[0]).toEqual({
+      user: 'user-0599', credits: 90000, grossAmount: 18000, netAmount: 9000, models: 1,
+    });
+    expect(result.enterprise).toBe('ent');
+  });
+
+  it('applies inclusive dates and model/SKU filters before aggregating and ranking', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET model = 'boundary-model' WHERE username = 'boundary-user'`);
+    const result = await aggregateTopBillingUsers('ent', window, { model: 'boundary-model', sku: 'sku-a' });
+    expect(result.users).toEqual([
+      { user: 'boundary-user', credits: 10, grossAmount: 2, netAmount: 1, models: 1 },
+    ]);
+    expect((await aggregateTopBillingUsers('ent', window, { sku: 'missing' })).users).toEqual([]);
+  });
+
+  it('preserves zero-net results without silently substituting gross ranking', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 0`);
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 999999 WHERE username = 'user-0599'`);
+    const net = await aggregateTopBillingUsers('ent', window);
+    expect(net.users).toHaveLength(10);
+    expect(net.users.every(u => u.netAmount === 0)).toBe(true);
+    expect(net.users.map(u => u.user)).not.toContain('user-0599');
+    const gross = await aggregateTopBillingUsers('ent', window, { metric: 'grossAmount', limit: 1 });
+    expect(gross.users[0]?.user).toBe('user-0599');
+  });
+  it('auto selects GLOBAL gross before top-K, not the zero-net top ten or first 500', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 0`);
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 999999 WHERE username = 'user-0599'`);
+    const result = await aggregateTopBillingUsers('ent', window, { metric: 'auto' });
+    expect(result.users[0]).toMatchObject({ user: 'user-0599', grossAmount: 999999, netAmount: 0 });
+    expect(result.metric).toBe('grossAmount');
+    expect(result.users).toHaveLength(10);
+    expect(result.users.map(u => u.user)).not.toContain('wrong-enterprise');
+    expect(result.users.map(u => u.user)).not.toContain('outside-before');
+  });
+
+  it('auto keeps positive net ranking even when gross is much larger elsewhere', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 0`);
+    await pool.query(`UPDATE billing_credit_usage SET net_amount = 1 WHERE username = 'user-0599'`);
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 999999 WHERE username = 'user-0000'`);
+    const result = await aggregateTopBillingUsers('ent', window, { metric: 'auto' });
+    expect(result.metric).toBe('netAmount');
+    expect(result.users[0]?.user).toBe('user-0599');
+    expect(result.users[0]?.netAmount).toBe(1);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it('auto uses the same period/account/model/SKU scope and does not double count', async () => {
+    await pool.query(`UPDATE billing_credit_usage SET model = 'boundary-model', net_amount = 0 WHERE username = 'boundary-user'`);
+    const result = await aggregateTopBillingUsers('ent', window, {
+      metric: 'auto', model: 'boundary-model', sku: 'sku-a',
+    });
+    expect(result.metric).toBe('grossAmount');
+    expect(result.users).toEqual([
+      { user: 'boundary-user', credits: 10, grossAmount: 2, netAmount: 0, models: 1 },
+    ]);
+  });
+
+  it('auto keeps empty results neutral and uses deterministic ties with a ten-user limit', async () => {
+    expect((await aggregateTopBillingUsers('ent', window, { metric: 'auto', sku: 'missing' }))).toMatchObject({
+      metric: 'netAmount', users: [],
+    });
+    await pool.query(`UPDATE billing_credit_usage SET gross_amount = 0, net_amount = 0`);
+    const result = await aggregateTopBillingUsers('ent', window, { metric: 'auto' });
+    expect(result.users).toHaveLength(10);
+    expect(result.users.map(u => u.user)).toEqual([
+      'boundary-user', ...Array.from({ length: 9 }, (_, i) => `user-${String(i).padStart(4, '0')}`),
+    ]);
   });
 });
 

@@ -6,6 +6,7 @@
  */
 
 import pg from 'pg';
+import { initRosterFoundationSchema } from './roster-foundation-schema';
 export { isDbConfigured } from './db-config';
 const { Pool } = pg;
 
@@ -54,6 +55,7 @@ export async function closePool(): Promise<void> {
  */
 export async function initSchema(): Promise<void> {
   const pool = getPool();
+  await initRosterFoundationSchema(pool);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS metrics (
@@ -156,9 +158,22 @@ export async function initSchema(): Promise<void> {
       aic_quantity              NUMERIC(20,6) NOT NULL DEFAULT 0,
       aic_gross_amount          NUMERIC(20,6) NOT NULL DEFAULT 0,
       total_monthly_quota       NUMERIC(20,6) NOT NULL DEFAULT 0,
+      input                     NUMERIC NOT NULL DEFAULT 0,
+      output                    NUMERIC NOT NULL DEFAULT 0,
+      cache_read                NUMERIC NOT NULL DEFAULT 0,
+      cache_write               NUMERIC NOT NULL DEFAULT 0,
       ingested_at               TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       PRIMARY KEY (enterprise, date, sku, username, organization, repository, model)
     );
+  `);
+
+  // No fixed scale: token counts must not inherit currency rounding or range.
+  await pool.query(`
+    ALTER TABLE billing_credit_usage
+    ADD COLUMN IF NOT EXISTS input NUMERIC NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS output NUMERIC NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS cache_read NUMERIC NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS cache_write NUMERIC NOT NULL DEFAULT 0;
   `);
 
   await pool.query(`

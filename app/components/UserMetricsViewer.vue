@@ -10,6 +10,7 @@
           <div class="text-medium-emphasis">
             Per-user Copilot activity breakdown for the reporting period. Shows interactions, code
             completions, acceptance rates, and AI-generated lines of code per developer.
+            KPI tiles are scope-wide; tables and detail charts include only permitted user details.
           </div>
         </div>
         <v-divider vertical class="mx-2 hidden-sm-and-down" />
@@ -83,12 +84,12 @@
             <template #activator="{ props }">
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Total Users</div>
-                <div class="text-caption text-medium-emphasis">Users with Copilot activity</div>
-                <p class="kpi-value text-primary mt-1">{{ totalUsers }}</p>
+                <div class="text-caption text-medium-emphasis">Scope-wide users in reporting period</div>
+                <p class="kpi-value text-primary mt-1">{{ totalUsers ?? 'Unavailable' }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Total number of users who had any Copilot activity (code completions, chat, or agent) during the reporting period.</span>
+              <span class="tooltip-text">Users in the authorized reporting data for this period. Team views also include inactive team members with no reported usage.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
@@ -101,12 +102,12 @@
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Active Users</div>
                 <div class="text-caption text-medium-emphasis">Active ≥ 7 days</div>
-                <p class="kpi-value text-success mt-1">{{ activeUsers }}</p>
-                <v-progress-linear :model-value="totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0" color="success" bg-color="#C8E6C9" rounded height="6" class="mt-2 mx-2" />
+                <p class="kpi-value text-success mt-1">{{ activeUsers ?? 'Unavailable' }}</p>
+                <v-progress-linear v-if="totalUsers !== null && activeUsers !== null" :model-value="totalUsers > 0 ? (activeUsers / totalUsers) * 100 : 0" color="success" bg-color="#C8E6C9" rounded height="6" class="mt-2 mx-2" />
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Users who were active in the last 7 days of the reporting window.</span>
+              <span class="tooltip-text">Users with at least 7 active days during the reporting window.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
@@ -119,24 +120,28 @@
               <div v-bind="props" class="tiles-text">
                 <div class="text-h6 mb-1">Avg Acceptance Rate</div>
                 <div class="text-caption text-medium-emphasis">Inline completions only</div>
-                <p class="kpi-value text-info mt-1">{{ avgAcceptanceRate }}%</p>
+                <p class="kpi-value text-info mt-1">{{ avgAcceptanceRate === null ? 'Unavailable' : `${avgAcceptanceRate}%` }}</p>
               </div>
             </template>
             <v-card class="pa-3 metric-tooltip">
-              <span class="tooltip-text">Average ratio of accepted inline code completions across all users. Does not include Chat, Agent, or CLI interactions.</span>
+              <span class="tooltip-text">Total accepted divided by total generated inline code completions across the scope. Does not include Chat, Agent, or CLI interactions.</span>
             </v-card>
           </v-tooltip>
         </v-card-item>
       </v-card>
     </div>
 
+    <v-alert v-if="!summary" type="info" variant="tonal" class="mx-4 my-2">
+      Scope-wide user summary unavailable. Permitted detail rows are not scope-wide totals.
+    </v-alert>
+    <div class="text-subtitle-1 font-weight-medium mx-4 mt-4">Permitted user details — tables and detail charts</div>
     <!-- Charts -->
     <v-container v-if="userMetrics.length > 0" :fluid="chartColumns === 'full'" :class="['elevation-2 mt-2 mb-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
       <div class="d-flex justify-end mb-2">
         <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-          <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-          <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-          <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+          <v-btn value="1" size="small" title="Single column" aria-label="Single column layout" :aria-pressed="chartColumns === '1'"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+          <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout" :aria-pressed="chartColumns === '2'"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+          <v-btn value="full" size="small" title="Full width" aria-label="Full width layout" :aria-pressed="chartColumns === 'full'"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
         </v-btn-toggle>
       </div>
       <v-row class="mt-0 mb-2">
@@ -260,14 +265,19 @@
             <tr>
               <td>
                 <v-chip
+                  tag="button"
+                  type="button"
+                  :aria-pressed="selectedUserLogin === item.login"
                   :color="selectedUserLogin === item.login ? 'indigo' : getActivityColor(item.total_active_days)"
                   :variant="selectedUserLogin === item.login ? 'elevated' : 'flat'"
                   size="small"
                   style="cursor: pointer;"
-                  :title="selectedUserLogin === item.login ? 'Click to clear filter' : 'Click to filter charts'"
+                  :title="`Activity: ${getActivityLabel(item.total_active_days)} — ${item.total_active_days} active days. ${selectedUserLogin === item.login ? 'Click to clear filter' : 'Click to filter charts'}`"
+                  :aria-label="`Activity: ${getActivityLabel(item.total_active_days)} for ${item.login}, ${item.total_active_days} active days. ${selectedUserLogin === item.login ? 'Click to clear filter' : 'Click to filter charts'}`"
                   @click="toggleUserSelection(item.login)"
                 >
                   {{ item.login }}
+                  <span class="activity-band-label ml-1 text-caption">({{ getActivityLabel(item.total_active_days) }})</span>
                 </v-chip>
               </td>
               <td class="text-center">{{ item.total_active_days }}</td>
@@ -337,6 +347,7 @@
                   size="x-small"
                   variant="text"
                   :title="`View trend for ${item.login}`"
+                  :aria-label="`View trend for ${item.login}`"
                   @click="openUserTrend(item.login)"
                 >
                   <v-icon>mdi-chart-line</v-icon>
@@ -464,7 +475,7 @@
       <v-card>
         <v-card-title class="d-flex justify-space-between align-center">
           <span>Activity Trend — {{ trendLogin }}</span>
-          <v-btn icon variant="text" @click="trendDialog = false"><v-icon>mdi-close</v-icon></v-btn>
+          <v-btn icon variant="text" aria-label="Close activity trend dialog" @click="trendDialog = false"><v-icon>mdi-close</v-icon></v-btn>
         </v-card-title>
         <v-card-text>
           <div v-if="trendLoading" class="d-flex justify-center py-8">
@@ -518,6 +529,7 @@
 <script lang="ts">
 import { defineComponent, ref, computed, watch, onMounted, type PropType } from 'vue';
 import type { UserTotals } from '../../server/services/github-copilot-usage-api';
+import type { UserSummary } from '#shared/utils/anonymous-kpis';
 import type { UserMetricsHistoryEntry, UserTimeSeriesEntry } from '../../server/storage/user-metrics-storage';
 import { CHAT_FEATURES, AGENT_FEATURES, COMPLETION_FEATURES, FEATURE_LABELS } from '../../shared/utils/feature-classification';
 import { Line, Bar, Doughnut } from 'vue-chartjs';
@@ -540,6 +552,10 @@ export default defineComponent({
   name: 'UserMetricsViewer',
   components: { Line, Bar, Doughnut },
   props: {
+    summary: {
+      type: Object as PropType<UserSummary | null>,
+      default: null
+    },
     userMetrics: {
       type: Array as PropType<UserTotals[]>,
       required: true,
@@ -676,15 +692,12 @@ export default defineComponent({
       { title: 'Inactive (0 days)', value: 'inactive' }
     ];
 
-    const totalUsers = computed(() => props.userMetrics.length);
-
-    const activeUsers = computed(() =>
-      props.userMetrics.filter(u => u.total_active_days >= 7).length
-    );
+    const totalUsers = computed(() => props.summary?.total_users ?? null);
+    const activeUsers = computed(() => props.summary?.active_users ?? null);
 
     const avgAcceptanceRate = computed(() => {
-      const totalGenerated = props.userMetrics.reduce((sum, u) => sum + u.code_generation_activity_count, 0);
-      const totalAccepted = props.userMetrics.reduce((sum, u) => sum + u.code_acceptance_activity_count, 0);
+      if (!props.summary) return null;
+      const { generated: totalGenerated, accepted: totalAccepted } = props.summary;
       if (totalGenerated === 0) return '0.0';
       return ((totalAccepted / totalGenerated) * 100).toFixed(1);
     });
@@ -859,6 +872,13 @@ export default defineComponent({
       if (activeDays >= 7) return 'info';
       if (activeDays >= 1) return 'warning';
       return 'error';
+    }
+
+    function getActivityLabel(activeDays: number): string {
+      if (activeDays >= 14) return 'High';
+      if (activeDays >= 7) return 'Medium';
+      if (activeDays >= 1) return 'Low';
+      return 'Inactive';
     }
 
     function adoptionPhaseColor(phaseNumber: number): string {
@@ -1263,6 +1283,7 @@ export default defineComponent({
       tableHeaders,
       getAcceptanceRate,
       getActivityColor,
+      getActivityLabel,
       getTopIde,
       getTopLanguage,
       adoptionPhaseColor,
@@ -1324,4 +1345,3 @@ export default defineComponent({
   },
 });
 </script>
-

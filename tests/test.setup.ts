@@ -1,4 +1,8 @@
 import * as urlLib from 'url';
+import { vi } from 'vitest';
+
+// Font polling belongs to browser tests; its timers outlive Nuxt's unit-test windows.
+vi.mock('webfontloader', () => ({ load: vi.fn() }));
 
 // Global test setup
 // Force mock mode so server-side handlers use local mock data instead of hitting GitHub APIs.
