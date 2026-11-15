@@ -202,8 +202,33 @@ describe('sync-entry: happy path', () => {
     await runSync();
     expect(mockGetSyncAuthHeaders).toHaveBeenCalledOnce();
     const [logger, identifier] = mockGetSyncAuthHeaders.mock.calls[0]!;
-    expect(logger).toBe(console);
+    expect(logger).toEqual(expect.objectContaining({
+      info: expect.any(Function), warn: expect.any(Function), error: expect.any(Function), debug: expect.any(Function),
+    }));
+    expect(logger).not.toBe(console);
     expect(identifier).toBe('test-org');
+  }));
+
+  it('uses the leveled logger for sync failures without dumping upstream data', withEnv(BASE_ENV, async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ logLevel: 'error', logFormat: 'json' }));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const previousExitCode = process.exitCode;
+    mockSyncBulk.mockRejectedValueOnce(Object.assign(new Error('SYNTHETIC_SYNC_TOKEN'), { statusCode: 503 }));
+    try {
+      await runSync();
+      expect(mockClosePool).toHaveBeenCalledOnce();
+      expect(process.exitCode).toBe(1);
+      expect(infoSpy).not.toHaveBeenCalled();
+      const output = errorSpy.mock.calls.map(args => args.join(' ')).join('\n');
+      expect(output).not.toContain('SYNTHETIC_SYNC_TOKEN');
+      expect(JSON.parse(output)).toMatchObject({
+        tag: 'sync-entry', level: 'error', message: 'Sync job failed:', name: 'Error', statusCode: 503,
+      });
+    } finally {
+      process.exitCode = previousExitCode;
+      vi.unstubAllGlobals();
+    }
   }));
 
   it('always calls closePool in the finally block', withEnv(BASE_ENV, async () => {

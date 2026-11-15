@@ -5,6 +5,7 @@
 
 import { createPrivateKey, createSign } from 'node:crypto';
 import { listAppInstallations } from '../modules/github-app-auth';
+import type { TaggedLogger } from './logger';
 
 // ofetch fallback for standalone (non-Nitro) environments.
 // In Nitro the global `$fetch` is provided automatically, but this module is
@@ -91,7 +92,7 @@ async function getGitHubAppTokenForSync(appId: string, privateKey: string, targe
  * @param identifier - GitHub org or enterprise slug
  * @returns GitHub API headers with authentication
  */
-export async function getSyncAuthHeaders(logger: Console, identifier: string): Promise<Headers> {
+export async function getSyncAuthHeaders(logger: Pick<TaggedLogger, 'info'>, identifier: string): Promise<Headers> {
   const githubToken = process.env.NUXT_GITHUB_TOKEN;
   const githubAppId = process.env.NUXT_GITHUB_APP_ID;
   const githubAppPrivateKey = process.env.NUXT_GITHUB_APP_PRIVATE_KEY;

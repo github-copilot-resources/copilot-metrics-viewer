@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * Enterprise Organizations API endpoint
  * GET /api/enterprise-orgs
@@ -38,7 +40,7 @@ interface GraphQLResponse {
 }
 
 export default defineEventHandler(async (event): Promise<EnterpriseOrgsResponse> => {
-    const logger = console
+    const logger = createLogger('enterprise-orgs', event.context)
     const query = getQuery(event)
     const options = Options.fromQuery(query)
     const config = useRuntimeConfig()
@@ -112,7 +114,7 @@ export default defineEventHandler(async (event): Promise<EnterpriseOrgsResponse>
             })
 
             if (result?.errors?.length) {
-                logger.warn('GraphQL errors when fetching enterprise orgs:', result.errors)
+                logger.warn('GraphQL errors when fetching enterprise orgs:', { errorCount: result.errors.length })
                 return { isFullGhec: false, orgs: [] }
             }
 

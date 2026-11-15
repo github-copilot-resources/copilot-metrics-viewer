@@ -24,6 +24,9 @@ import {
   markSyncFailed,
   getSyncStatus
 } from '../storage/sync-storage';
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('sync-service')
 
 export interface SyncRequest {
   scope: 'organization' | 'enterprise';
@@ -93,7 +96,6 @@ export async function syncBulk(
   teamSlug?: string,
   daysBack?: number
 ): Promise<BulkSyncResult> {
-  const logger = console;
   const result: BulkSyncResult = {
     success: true,
     totalDays: 0,
@@ -104,11 +106,11 @@ export async function syncBulk(
 
   try {
     const request: MetricsReportRequest = { scope, identifier, teamSlug };
-    logger.info(`Starting bulk sync for ${scope}:${identifier}`);
+    logger.info('Starting bulk sync');
 
     const report = await fetchLatestReport(request, headers);
     result.totalDays = report.day_totals.length;
-    logger.info(`Downloaded report with ${result.totalDays} days (${report.report_start_day} to ${report.report_end_day})`);
+    logger.info('Downloaded metrics report', { count: result.totalDays });
 
     // Filter to the most recent N days if daysBack is specified
     const limitDays = daysBack && daysBack > 0;
@@ -129,11 +131,11 @@ export async function syncBulk(
 
         await saveDayData(scope, identifier, dayData, teamSlug);
         result.savedDays++;
-        logger.info(`Saved metrics for ${dayData.day}`);
+        logger.info('Saved daily metrics');
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         result.errors.push({ date: dayData.day, error: msg });
-        logger.error(`Failed to save ${dayData.day}: ${msg}`);
+        logger.error('Failed to save daily metrics:', error);
       }
     }
 
@@ -142,7 +144,7 @@ export async function syncBulk(
     const isBaseScope = scope === 'organization' || scope === 'enterprise';
     if (isBaseScope) {
       try {
-        logger.info(`Fetching per-user day records for ${scope}:${identifier}`);
+        logger.info('Fetching per-user day records');
         const userDayRecords = await fetchRawUserDayRecords({ scope, identifier }, headers);
 
         // Group by day so we check existence once per day before saving
@@ -157,13 +159,12 @@ export async function syncBulk(
           const alreadyStored = await hasUserDayMetricsForDate(scope, identifier, day);
           if (!alreadyStored) {
             await saveUserDayMetricsBatch(scope, identifier, records);
-            logger.info(`Saved per-user day records for ${day} (${records.length} users)`);
+            logger.info('Saved per-user day records', { count: records.length });
           }
         }
       } catch (error) {
         // Per-user sync failure is non-fatal — aggregate metrics are already saved.
-        const msg = error instanceof Error ? error.message : String(error);
-        logger.warn(`Per-user day sync failed (non-fatal): ${msg}`);
+        logger.warn('Per-user day sync failed (non-fatal):', error);
       }
     }
 
@@ -173,7 +174,7 @@ export async function syncBulk(
 
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Bulk sync failed: ${msg}`);
+    logger.error('Bulk sync failed:', error);
     return { ...result, success: false, errors: [{ date: 'bulk', error: msg }] };
   }
 }
@@ -184,7 +185,6 @@ export async function syncBulk(
  */
 export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResult> {
   const { scope, identifier, date, teamSlug, headers } = request;
-  const logger = console;
 
   // Skip dates the API doesn't cover yet (today/future). Surfacing this as a
   // skipped success avoids polluting the failure queue with the cryptic
@@ -192,7 +192,7 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
   // error that the GH endpoint returns for not-yet-available days.
   const latestAvailable = getLatestAvailableMetricsDate();
   if (date > latestAvailable) {
-    logger.info(`Skipping ${date} — not yet available from GitHub (latest available: ${latestAvailable})`);
+    logger.info('Skipping metrics date not yet available from GitHub');
     return { success: true, date, metricsCount: 0 };
   }
 
@@ -208,11 +208,10 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
         const dayRecords = (userReport.day_totals ?? []).filter(r => r.day === date);
         if (dayRecords.length > 0) {
           await saveUserDayMetricsBatch(scope, identifier, dayRecords);
-          logger.info(`Saved per-user day records for ${date} (${dayRecords.length} users)`);
+          logger.info('Saved per-user day records', { count: dayRecords.length });
         }
       } catch (userErr) {
-        const msg = userErr instanceof Error ? userErr.message : String(userErr);
-        logger.warn(`Per-user day sync for ${date} failed (non-fatal): ${msg}`);
+        logger.warn('Per-user day sync failed (non-fatal):', userErr);
       }
     };
 
@@ -221,7 +220,7 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
     // fetch added later without having to wipe the metrics table first.
     const exists = await hasMetrics(scope, identifier, date, teamSlug);
     if (exists) {
-      logger.info(`Metrics for ${date} already synced, attempting per-user backfill`);
+      logger.info('Daily metrics already synced, attempting per-user backfill');
       await backfillPerUser();
       return { success: true, date, metricsCount: 1 };
     }
@@ -234,7 +233,7 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
     await markSyncInProgress(scope, identifier, date, teamSlug);
 
     // Fetch from new API (1-day endpoint)
-    logger.info(`Fetching metrics for ${scope}:${identifier} on ${date}`);
+    logger.info('Fetching daily metrics');
     const apiRequest: MetricsReportRequest = { scope, identifier, teamSlug };
     const report = await fetchReportForDate(apiRequest, headers, date);
 
@@ -243,7 +242,7 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
       if (dayData.day === date) {
         await saveDayData(scope, identifier, dayData, teamSlug);
         syncedCount++;
-        logger.info(`Saved metrics for ${date}`);
+        logger.info('Saved daily metrics');
       }
     }
 
@@ -254,7 +253,7 @@ export async function syncMetricsForDate(request: SyncRequest): Promise<SyncResu
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`Failed to sync metrics for ${date}:`, errorMessage);
+    logger.error('Failed to sync daily metrics:', error);
 
     try {
       await markSyncFailed(scope, identifier, date, errorMessage, teamSlug);
@@ -278,13 +277,12 @@ export async function syncMetricsForDateRange(
   headers: HeadersInit,
   teamSlug?: string
 ): Promise<SyncResult[]> {
-  const logger = console;
 
   // Cap end at the latest available date — GH metrics has a 1-day lag.
   const latestAvailable = getLatestAvailableMetricsDate();
   const effectiveEnd = endDate > latestAvailable ? latestAvailable : endDate;
   if (startDate > effectiveEnd) {
-    logger.info(`No syncable dates in range ${startDate}..${endDate} (latest available: ${latestAvailable})`);
+    logger.info('No syncable dates in requested range');
     return [];
   }
 
@@ -315,7 +313,7 @@ export async function syncMetricsForDateRange(
       }
       await saveDayData(scope, identifier, dayData, teamSlug);
       results.push({ success: true, date: dayData.day, metricsCount: 1 });
-      logger.info(`Saved metrics for ${dayData.day} (bulk)`);
+      logger.info('Saved daily metrics from bulk report');
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       results.push({ success: false, date: dayData.day, error: msg, metricsCount: 0 });
@@ -378,11 +376,11 @@ export async function syncGaps(
   const missingDates = await detectGaps(scope, identifier, startDate, endDate, teamSlug);
   
   if (missingDates.length === 0) {
-    console.log('No gaps detected, all dates already synced');
+    logger.info('No gaps detected, all dates already synced');
     return { results: [], gapsDetected: 0, outsideWindow: 0 };
   }
 
-  console.log(`Found ${missingDates.length} missing dates, attempting to fill...`);
+  logger.info(`Found ${missingDates.length} missing dates, attempting to fill...`);
 
   // First try bulk 28-day download (efficient for recent gaps)
   const bulkRequest: MetricsReportRequest = { scope, identifier, teamSlug };
@@ -407,7 +405,7 @@ export async function syncGaps(
 
   // Fill out-of-window gaps using the 1-day endpoint (one call per date)
   if (outOfWindowDates.length > 0) {
-    console.log(`${outOfWindowDates.length} gap(s) outside 28-day window — fetching via 1-day endpoint...`);
+    logger.info(`${outOfWindowDates.length} gap(s) outside 28-day window — fetching via 1-day endpoint...`);
     for (const date of outOfWindowDates) {
       const dayResult = await syncMetricsForDate({ scope, identifier, date, teamSlug, headers });
       results.push(dayResult);
@@ -471,7 +469,6 @@ export async function syncSeats(
   identifier: string,
   headers: HeadersInit
 ): Promise<SeatsSyncResult> {
-  const logger = console;
   const today = new Date().toISOString().split('T')[0]!;
 
   try {
@@ -491,7 +488,7 @@ export async function syncSeats(
     let page = 1;
     const allSeats: Seat[] = [];
 
-    logger.info(`Syncing seats for ${scope}:${identifier}`);
+    logger.info('Syncing seats');
 
     const first = await _fetch(apiUrl, {
       headers,
@@ -516,7 +513,7 @@ export async function syncSeats(
 
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Seats sync failed: ${msg}`);
+    logger.error('Seats sync failed:', error);
     return { success: false, snapshotDate: today, seatCount: 0, error: msg };
   }
 }

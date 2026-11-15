@@ -1,3 +1,4 @@
+import { createLogger } from '../utils/logger';
 import { Seat } from "@/model/Seat";
 import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
@@ -170,7 +171,7 @@ async function restrictSeatsAndPaginate(
 
 export default defineEventHandler(async (event) => {
 
-  const logger = console;
+  const logger = createLogger('seats', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 
@@ -327,7 +328,7 @@ export default defineEventHandler(async (event) => {
 
   // ── Enterprise / team scopes: fetch all pages, then paginate in memory ────
   let firstResponse: { seats: unknown[]; total_seats: number };
-  logger.info(`Fetching 1st page of seats data from ${apiUrl}`);
+  logger.info('Fetching 1st page of seats data');
   try {
     firstResponse = await ($fetch as any)(apiUrl, {
       headers: event.context.headers,

@@ -5,6 +5,10 @@
  */
 
 import { isMockMode, mockRequestDownloadLinks, mockRequestUserDownloadLinks, generateMockReport, getMockReportWindow } from './github-copilot-usage-api-mock';
+import { createLogger } from '../utils/logger'
+
+const newApiLogger = createLogger('new-api')
+const userMetricsLogger = createLogger('user-metrics-api')
 
 // Import $fetch for standalone (non-Nitro) environments
 // In Nitro context, $fetch is auto-imported; this is a no-op there
@@ -658,9 +662,8 @@ export async function requestDownloadLinks(
     const response = await _fetch<DownloadLinksResponse>(url, { headers: rawHeaders });
     return response;
   } catch (error: unknown) {
-    // Log the response body for better debugging
     if (error && typeof error === 'object' && 'data' in error) {
-      console.error('[new-api] GitHub error response:', JSON.stringify((error as { data: unknown }).data));
+      newApiLogger.error('GitHub error response:', error);
     }
     throw error;
   }
@@ -892,7 +895,7 @@ export async function requestUserDownloadLinks(
     return response;
   } catch (error: unknown) {
     if (error && typeof error === 'object' && 'data' in error) {
-      console.error('[user-metrics-api] GitHub error response:', JSON.stringify((error as { data: unknown }).data));
+      userMetricsLogger.error('GitHub error response:', error);
     }
     throw error;
   }
@@ -918,7 +921,7 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
         records = parsed;
       } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.user_totals)) {
         // Already in UserReport shape (mock data format)
-        console.info('[user-metrics-api] Download is pre-aggregated UserReport');
+        userMetricsLogger.info('Download is pre-aggregated UserReport');
         return parsed as UserReport;
       } else {
         records = [parsed];
@@ -933,7 +936,7 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
   } else if (raw && typeof raw === 'object' && 'user_totals' in (raw as Record<string, unknown>)) {
     return raw as UserReport;
   } else {
-    console.error('[user-metrics-api] Unexpected download response type:', typeof raw);
+    userMetricsLogger.error('Unexpected download response type:', { responseType: typeof raw });
     return { report_start_day: '', report_end_day: '', user_totals: [] };
   }
 
@@ -948,7 +951,7 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
     // Also surface the raw per-day per-user rows as `day_totals` so callers
     // can render a day-by-day chart without making 28 follow-up 1-day calls.
     const dayRecords = records as UserDayRecord[];
-    console.info(`[user-metrics-api] Aggregating ${dayRecords.length} daily user records`);
+    userMetricsLogger.info(`Aggregating ${dayRecords.length} daily user records`);
     const userTotals = aggregateUserDayRecords(dayRecords);
     return {
       report_start_day: first.report_start_day as string || '',
@@ -962,11 +965,11 @@ export async function downloadUserReport(downloadUrl: string): Promise<UserRepor
 
   // Pre-aggregated format (mock data / already-aggregated) — array of UserTotals
   if ('login' in first) {
-    console.info(`[user-metrics-api] Download has ${records.length} pre-aggregated user records`);
+    userMetricsLogger.info(`Download has ${records.length} pre-aggregated user records`);
     return { report_start_day: '', report_end_day: '', user_totals: records as UserTotals[] };
   }
 
-  console.warn('[user-metrics-api] Unknown record format. Keys:', Object.keys(first));
+  userMetricsLogger.warn('Unknown record format', { keyCount: Object.keys(first).length });
   return { report_start_day: '', report_end_day: '', user_totals: [] };
 }
 
