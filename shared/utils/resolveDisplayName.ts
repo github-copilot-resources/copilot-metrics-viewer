@@ -31,7 +31,8 @@ export function resolveDisplayName(opts: ResolveDisplayNameOpts): string {
     effectiveOrg = '';
     effectiveEnt = opts.urlEnt;
   } else {
-    const isEnterprise = opts.configScope === 'enterprise' || (!opts.configOrg && !!opts.configEnt);
+    const isEnterprise = opts.configScope === 'enterprise' || opts.configScope === 'team-enterprise'
+      || (!opts.configOrg && !!opts.configEnt);
     effectiveOrg = opts.isMockMode ? 'octodemo' : (isEnterprise ? '' : (opts.configOrg || ''));
     effectiveEnt = opts.isMockMode ? '' : (isEnterprise ? (opts.configEnt || '') : '');
   }

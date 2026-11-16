@@ -269,6 +269,9 @@ describe('sync-entry: missing env vars', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetSyncAuthHeaders.mockReset().mockResolvedValue(new Headers({
+      'Authorization': 'Bearer synthetic-token',
+    }));
     // Replace process.exit with a no-op spy so the test process doesn't actually exit.
     // The spy records that exit was called; we check the exit code via the argument.
     exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as typeof process.exit);
@@ -304,6 +307,7 @@ describe('sync-entry: missing env vars', () => {
     NUXT_PUBLIC_GITHUB_ORG: 'test-org',
   }, async () => {
     await runSync();
+    expect(mockGetSyncAuthHeaders).not.toHaveBeenCalled();
     expect(exitSpy).toHaveBeenCalledWith(1);
     expect(mockSyncBulk).not.toHaveBeenCalled();
   }));
