@@ -8,6 +8,11 @@ import BillingCreditsViewer from '../app/components/BillingCreditsViewer.vue';
 const { useFetchMock } = vi.hoisted(() => ({ useFetchMock: vi.fn() }));
 mockNuxtImport('useFetch', () => useFetchMock);
 
+function stubLiveBilling(fetch: (url: string, options: unknown) => unknown) {
+  vi.stubGlobal('$fetch', (url: string, options: unknown) => url === '/api/billing-user-page'
+    ? Promise.resolve({ available: false, reason: 'Import billing to enable billing sorting.' }) : fetch(url, options));
+}
+
 describe('billing cache scope isolation', () => {
   let wrapper: VueWrapper;
   afterEach(() => {
@@ -16,7 +21,7 @@ describe('billing cache scope isolation', () => {
     vi.clearAllMocks();
   });
 
-  it('sorts billing only within a requested page without loading other pages', async () => {
+  it('disables billing sorts without stored data, retaining bounded alphabetical pages', async () => {
     const users = Array.from({ length: 60 }, (_, i) => ({ login: `fake-user-${String(i).padStart(3, '0')}` }));
     useFetchMock.mockImplementation(async (url: string) => ({
       data: ref(url === '/api/user-metrics' ? [...users].reverse() : { usageItems: [] }),
@@ -27,22 +32,33 @@ describe('billing cache scope isolation', () => {
         user, netQuantity: 100 - users.findIndex(u => u.login === user), grossAmount: 1, netAmount: 1,
       })),
     }));
-    vi.stubGlobal('$fetch', fetch);
+    stubLiveBilling(fetch);
     wrapper = await mountSuspended(BillingCreditsViewer, {
+      props: { dateRangeDescription: 'June 1–15, 2026' },
       global: { stubs: { VMain: { template: '<main><slot /></main>' }, VDataTable: true, VDataTableServer: true, Bar: true } },
     });
     const vm = wrapper.vm as unknown as {
       onTableOptions: (options: { page: number; itemsPerPage: number; sortBy: { key: string; order: 'asc' | 'desc' }[] }) => void;
       perUserPageRows: { user: string; credits: number | null }[];
       perUserRows: { user: string; credits: number | null }[];
+      perUserHeaders: { key: string; sortable: boolean }[];
     };
     vm.onTableOptions({ page: 1, itemsPerPage: 25, sortBy: [{ key: 'user', order: 'asc' }] });
     await flushPromises();
     vm.onTableOptions({ page: 1, itemsPerPage: 25, sortBy: [{ key: 'credits', order: 'asc' }] });
     await flushPromises();
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(vm.perUserPageRows[0]).toMatchObject({ user: users[24]!.login, credits: 76 });
+    expect(vm.perUserPageRows[0]).toMatchObject({ user: users[0]!.login, credits: 100 });
     expect(vm.perUserRows.find(row => row.user === users[59]!.login)?.credits).toBeNull();
+    expect(vm.perUserHeaders.find(header => header.key === 'credits')?.sortable).toBe(false);
+    const note = wrapper.get('[data-testid="billing-page-sort-note"]');
+    expect(note.text()).toContain('Billing sorting is disabled.');
+    expect(note.text()).toContain('Import billing data in the');
+    expect(wrapper.text()).toContain('Usage: June 1–15, 2026.');
+    expect(wrapper.text()).not.toContain('Mixed sources:');
+    expect(wrapper.text()).not.toContain('User and Tokens sorts use the full Metrics API user list');
+    await note.get('[data-testid="billing-import-action"]').trigger('click');
+    expect(wrapper.emitted('open-admin')).toHaveLength(1);
     vm.onTableOptions({ page: 2, itemsPerPage: 25, sortBy: [{ key: 'credits', order: 'desc' }] });
     await flushPromises();
     expect(fetch).toHaveBeenCalledTimes(2);
@@ -63,7 +79,7 @@ describe('billing cache scope isolation', () => {
       .mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve; }))
       .mockRejectedValueOnce(new Error('synthetic unavailable'))
       .mockResolvedValueOnce({ usageItems: [{ user: users[59]!.login, netQuantity: 17 }] });
-    vi.stubGlobal('$fetch', fetch);
+    stubLiveBilling(fetch);
     wrapper = await mountSuspended(BillingCreditsViewer, {
       global: { stubs: { VMain: { template: '<main><slot /></main>' }, VDataTable: true, VDataTableServer: true, Bar: true } },
     });
@@ -105,7 +121,7 @@ describe('billing cache scope isolation', () => {
       pending: ref(false), error: ref(null),
     }));
     const fetch = vi.fn().mockResolvedValue({ usageItems: [] });
-    vi.stubGlobal('$fetch', fetch);
+    stubLiveBilling(fetch);
     wrapper = await mountSuspended(BillingCreditsViewer, {
       props: { queryParams: { scope: 'enterprise', githubEnt: 'fake-old-ent' } },
       global: { stubs: { VMain: { template: '<main><slot /></main>' }, VDataTable: true, Bar: true } },
@@ -128,7 +144,7 @@ describe('billing cache scope isolation', () => {
     const fetch = vi.fn()
       .mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
       .mockResolvedValueOnce({ usageItems: [{ user: 'fake-user', grossQuantity: 3, netQuantity: 3, grossAmount: 0.3, netAmount: 0.3 }] });
-    vi.stubGlobal('$fetch', fetch);
+    stubLiveBilling(fetch);
     wrapper = await mountSuspended(BillingCreditsViewer, {
       props: { queryParams: { scope: 'enterprise', githubEnt: 'fake-ent' } },
       global: { stubs: { VMain: { template: '<main><slot /></main>' }, VDataTable: true, Bar: true } },
@@ -145,5 +161,63 @@ describe('billing cache scope isolation', () => {
     await flushPromises();
     expect(fetch).toHaveBeenCalledTimes(2);
     expect(vm.perUserRows).toMatchObject([{ user: 'fake-user', credits: 3 }]);
+  });
+
+  it('uses the database page as-is with its count and sort intent, without loading the complete roster or billing fanout', async () => {
+    const execute = vi.fn();
+    useFetchMock.mockImplementation(async (url: string) => ({
+      data: ref(url === '/api/user-metrics' ? null : { usageItems: [] }),
+      execute, pending: ref(false), error: ref(null),
+    }));
+    const fetch = vi.fn().mockImplementation((_url, { query }) => Promise.resolve({
+      available: true, total: 57, window: { startDate: '2026-06-01', endDate: '2026-06-30' },
+      lastImportAt: '2026-07-01T10:00:00Z', topTokenUsers: [],
+      rows: [{ user: query.page === '2' ? 'later-big-spender' : 'alpha', credits: query.page === '2' ? 16 : null, grossAmount: 16, netAmount: 16, models: 2, tokens: 9 }],
+    }));
+    vi.stubGlobal('$fetch', fetch);
+    wrapper = await mountSuspended(BillingCreditsViewer, {
+      global: { stubs: { VMain: { template: '<main><slot /></main>' }, VDataTable: true, VDataTableServer: true, Bar: true } },
+    });
+    await flushPromises();
+    const vm = wrapper.vm as unknown as {
+      onTableOptions: (options: { page: number; itemsPerPage: number; sortBy: { key: string; order: 'desc' }[] }) => void;
+      perUserPageRows: { user: string; credits: number | null; billingState: string }[];
+      perUserTotal: number;
+      tableOptions: { page: number; sortBy: { key: string }[] };
+    };
+    expect(vm.perUserPageRows[0]).toMatchObject({ credits: null, billingState: 'No stored billing data' });
+    vm.onTableOptions({ page: 2, itemsPerPage: 25, sortBy: [{ key: 'netAmount', order: 'desc' }] });
+    await flushPromises();
+    expect(vm.perUserPageRows.map(row => row.user)).toEqual(['later-big-spender']);
+    expect(vm.perUserTotal).toBe(57);
+    expect(vm.tableOptions).toMatchObject({ page: 2, sortBy: [{ key: 'netAmount' }] });
+    expect(execute).not.toHaveBeenCalled();
+    expect(fetch.mock.calls.every(([url]) => url === '/api/billing-user-page')).toBe(true);
+    expect(fetch.mock.lastCall?.[1].query).toMatchObject({ page: '2', sort: 'netAmount', order: 'desc', limit: '25' });
+    expect(useFetchMock.mock.calls.find(([url]) => url === '/api/user-metrics')?.[1]).toMatchObject({ immediate: false });
+    expect(wrapper.text()).toContain('Billing: 2026-06-01 → 2026-06-30.');
+    expect(wrapper.text()).toContain('Last imported:');
+    expect(wrapper.text()).toContain('Imported data may be incomplete or out of date.');
+  });
+
+  it.each([
+    'Sync team membership to enable safely scoped stored billing sorting.',
+    'Stored billing sorting is not available for reports-to groups. User and Tokens sorting still works.',
+    'Stored billing could not be loaded. Please retry.',
+  ])('retains the specific unavailable reason without suggesting billing import: %s', async reason => {
+    useFetchMock.mockImplementation(async (url: string) => ({
+      data: ref(url === '/api/user-metrics' ? [{ login: 'synthetic-user' }] : { usageItems: [] }),
+      pending: ref(false), error: ref(null),
+    }));
+    vi.stubGlobal('$fetch', vi.fn().mockImplementation((url: string) => Promise.resolve(
+      url === '/api/billing-user-page' ? { available: false, reason } : { usageItems: [] },
+    )));
+    wrapper = await mountSuspended(BillingCreditsViewer, {
+      global: { stubs: { VMain: { template: '<main><slot /></main>' }, VDataTable: true, VDataTableServer: true, Bar: true } },
+    });
+    await flushPromises();
+    const note = wrapper.get('[data-testid="billing-page-sort-note"]');
+    expect(note.text()).toContain(reason);
+    expect(note.find('[data-testid="billing-import-action"]').exists()).toBe(false);
   });
 });

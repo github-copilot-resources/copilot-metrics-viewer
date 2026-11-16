@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { isDbConfigured } from '../server/storage/db-config'
+
+vi.mock('../server/storage/db-config', () => ({ isDbConfigured: vi.fn(() => false) }))
 
 // Stub Nuxt/h3 helper used at module import time so defineEventHandler calls in
 // the middleware file don't throw during tests.
@@ -17,6 +20,7 @@ let middlewareHandler: any
 
 beforeEach(async () => {
   vi.clearAllMocks()
+  vi.mocked(isDbConfigured).mockReturnValue(false)
 
   // Minimal runtime config used by the middleware
   ;(globalThis as any).useRuntimeConfig = (_event?: unknown) => ({
@@ -36,6 +40,15 @@ beforeEach(async () => {
 })
 
 describe('GitHub middleware authentication guard', () => {
+  it('lets stored billing pages reach the admin-gated handler without a live GitHub credential', async () => {
+    vi.mocked(isDbConfigured).mockReturnValue(true)
+    authenticateAndGetGitHubHeaders.mockRejectedValue(new Error('No live GitHub credential'))
+    const event = { node: { req: { url: '/api/billing-user-page?page=2' } }, context: {} as { headers?: Headers } }
+    await middlewareHandler(event)
+    expect(event.context.headers).toBeInstanceOf(Headers)
+    expect(event.context.headers?.has('Authorization')).toBe(false)
+  })
+
   it('skips authentication for health endpoints', async () => {
     // If the auth function is called during this test, fail the test
     ;(authenticateAndGetGitHubHeaders as any).mockImplementation(() => { throw new Error('authenticate called unexpectedly') })

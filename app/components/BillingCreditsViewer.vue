@@ -10,8 +10,8 @@
             the <code>NUXT_USAGE_ADMINS</code> allowlist.
           </div>
           <div class="text-caption text-medium-emphasis mt-1">
-            Per-user attribution below comes from the <code>user</code> field on the
-            enterprise billing endpoint when available.
+            Per-user attribution uses imported billing usernames or user-filtered live billing requests,
+            with deployment-configured aliases when needed.
           </div>
         </div>
         <div style="min-width: 260px;">
@@ -359,33 +359,63 @@
             </v-col>
           </v-row>
 
-          <v-card v-if="perUserRows.length > 0" variant="outlined" class="ma-3">
+        </template>
+
+          <v-card v-if="perUserRows.length > 0 || storedAvailable || storedPending" variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">
               Per-user breakdown
               <span class="text-caption text-medium-emphasis ml-2">
-                ({{ loadedLoginsCount }} of {{ perUserRows.length }} loaded)
+                ({{ storedAvailable ? perUserPageRows.length : loadedLoginsCount }} of {{ perUserTotal }} loaded)
                 <v-progress-circular
-                  v-if="perUserLoading" indeterminate size="14" width="2" class="ml-2"
+                  v-if="perUserLoading || storedPending" indeterminate size="14" width="2" class="ml-2"
                 />
               </span>
             </v-card-title>
-            <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
-              Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API for {{ dateRangeDescription || 'the last 28 days' }}.
-              <strong>Credits</strong>, <strong>Gross $</strong>, <strong>Net $</strong>, and <strong>Models</strong> come from the Billing API for {{ rangeLabel }}.
+            <v-card-subtitle class="text-caption text-medium-emphasis pb-2 text-wrap">
+              Usage: {{ dateRangeDescription || (storedAvailable ? 'latest 28 stored days' : 'last 28 days') }}.
+              Billing: {{ storedAvailable ? storedPeriodLabel || rangeLabel : monthView ? selectedMonth : rangeLabel }}.
+              <template v-if="storedAvailable">
+                Last imported: {{ storedImportLabel }}. Imported data may be incomplete or out of date.
+              </template>
             </v-card-subtitle>
             <div class="text-caption px-4 pb-2" data-testid="billing-page-sort-note">
-              Billing columns sort only the current page (users grouped alphabetically), not enterprise spend.
-              User and Tokens sorts use the full Metrics API user list.
+              <template v-if="storedAvailable">
+                Billing columns sort totals across this stored user list before choosing a page.
+                Users without stored billing are unknown, not zero.
+              </template>
+              <template v-else-if="storedPending">
+                Checking billing sorting…
+              </template>
+              <template v-else-if="!storedReason || /^Import billing\b/.test(storedReason)">
+                Billing sorting is disabled. Import billing data in the
+                <v-btn
+                  variant="text"
+                  size="small"
+                  density="compact"
+                  class="pa-0 text-none"
+                  data-testid="billing-import-action"
+                  @click="$emit('open-admin')"
+                >Admin Panel</v-btn>
+                to enable it for this period.
+              </template>
+              <template v-else>
+                Billing sorting is disabled. {{ storedReason }}
+              </template>
             </div>
+            <v-alert v-if="storedAvailable && storedReason" type="warning" density="compact">
+              {{ storedReason }}
+              <v-btn size="small" variant="text" @click="retryStoredPage">Retry stored billing</v-btn>
+            </v-alert>
             <v-data-table-server
               :items="perUserPageRows"
-              :items-length="perUserRows.length"
+              :items-length="perUserTotal"
               :headers="perUserHeaders"
               density="compact"
               :page="tableOptions.page"
               :items-per-page="tableOptions.itemsPerPage"
               :items-per-page-options="[10, 25, 50]"
               :sort-by="tableOptions.sortBy"
+              :loading="storedPending"
               @update:options="onTableOptions"
             >
               <template #[`item.user`]="{ item }">
@@ -467,7 +497,7 @@
             </v-card-text>
           </v-card>
 
-          <v-card variant="outlined" class="ma-3">
+          <v-card v-if="!pending && !error && items.length" variant="outlined" class="ma-3">
             <v-card-title class="text-subtitle-1">Raw billing line items</v-card-title>
             <v-card-subtitle class="text-caption text-medium-emphasis pb-2">
               Source: Billing API (<code>ai_credit/usage</code>) · {{ rangeLabel }} · one aggregate row per product × SKU × model × user
@@ -479,14 +509,13 @@
               items-per-page="25"
             />
           </v-card>
-        </template>
       </v-container>
     </v-main>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, reactive, ref, watch, onMounted } from 'vue';
+import { defineComponent, computed, reactive, ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import { Bar } from 'vue-chartjs';
 import MyUsageViewer from './MyUsageViewer.vue';
 import {
@@ -504,12 +533,13 @@ import { billingCreditsUsed, sumBillingCreditsUsed } from '@/utils/billingCredit
 import type { BillingCreditsResponse, BillingUsageItem } from '../../server/api/billing-credits.get';
 import type { TopBillingUsersResponse } from '../../server/services/billing-credit-reader';
 import { buildDataSourceBadge } from '#shared/utils/data-source-badge';
+import { useBillingUserPage } from '../composables/useBillingUserPage';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface PerUserRow {
   user: string;
-  billingState: 'loaded' | 'Unavailable' | 'Loading' | 'Not loaded';
+  billingState: 'loaded' | 'Unavailable' | 'Loading' | 'Not loaded' | 'No stored billing data';
   credits: number | null;
   grossAmount: number | null;
   netAmount: number | null;
@@ -530,6 +560,7 @@ export default defineComponent({
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
     dateRangeDescription: { type: String, default: '' },
   },
+  emits: ['open-admin'],
   async setup(props) {
     // ── Billing month selector ─────────────────────────────────────────────
     // GitHub's /settings/billing/ai_credit/usage endpoint defaults to the
@@ -587,6 +618,38 @@ export default defineComponent({
       return parent;
     });
 
+    const tableOptions = ref<TableOptions>({
+      page: 1, itemsPerPage: 25, sortBy: [{ key: 'user', order: 'asc' }],
+    });
+    const stored = useBillingUserPage();
+    const {
+      available: storedAvailable, pending: storedPending, reason: storedReason,
+    } = stored;
+    const storedQuery = computed(() => ({
+      ...billingQuery.value,
+      ...(props.queryParams.since ? { usageSince: props.queryParams.since } : {}),
+      ...(props.queryParams.until ? { usageUntil: props.queryParams.until } : {}),
+    }));
+    const storedPeriodLabel = computed(() => stored.result.value
+      ? `${stored.result.value.window.startDate} → ${stored.result.value.window.endDate}` : '');
+    const storedImportLabel = computed(() => stored.result.value?.lastImportAt
+      ? new Date(stored.result.value.lastImportAt).toLocaleString() : 'Not recorded');
+    const retryStoredPage = () => stored.load(storedQuery.value, tableOptions.value);
+    onMounted(() => { void stored.load(storedQuery.value, tableOptions.value); });
+    onBeforeUnmount(() => stored.invalidate());
+    watch(storedAvailable, available => {
+      if (available === false) {
+        tableOptions.value = {
+          ...tableOptions.value,
+          sortBy: tableOptions.value.sortBy.filter(sort => sort.key === 'user' || sort.key === 'tokens'),
+        };
+        void loadUserMetrics?.();
+        loadVisibleBillingPage();
+      } else if (available) {
+        userMetricsData.value = null;
+      }
+    });
+
     const dataSource = ref<{ source: 'db' | 'live' | null; syncedAt: string | null; reason: string | null }>({
       source: null,
       syncedAt: null,
@@ -631,13 +694,15 @@ export default defineComponent({
     // the per-user table emits @update:options with explicit paging/sort intent
     // and we batch-fetch billing on demand. Failures are non-fatal (table
     // still renders with token data; $ columns show "—").
-    const { data: userMetricsData } = await useFetch<{ login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[]>(
+    const { data: userMetricsData, execute: loadUserMetrics } = await useFetch<{ login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[]>(
       '/api/user-metrics',
       {
         query: computed(() => props.queryParams),
         server: false,
+        immediate: false,
+        watch: false,
       }
-    ).catch(() => ({ data: { value: null } }));
+    ).catch(() => ({ data: ref(null), execute: undefined }));
 
     // ── Lazy per-user billing state ────────────────────────────────────────
     // Map login (lowercase) → aggregated billing roll-up. Pages we haven't
@@ -646,13 +711,12 @@ export default defineComponent({
     const billingByLogin = reactive(new Map<string, BillingAgg>());
     const loadedLogins = reactive(new Set<string>());
     const failedLogins = reactive(new Set<string>());
+    const missingStoredLogins = reactive(new Set<string>());
     const inFlightLogins = reactive(new Set<string>());
     const perUserLoading = ref(false);
     const visibleLogins = ref<string[]>([]);
-    const tableOptions = ref<TableOptions>({
-      page: 1, itemsPerPage: 25, sortBy: [{ key: 'user', order: 'asc' }],
-    });
     let billingGeneration = 0;
+    let metricsDatasetKey = JSON.stringify(props.queryParams);
 
     // When the user switches month or toggles month view, drop cached
     // per-user roll-ups so the visible page re-fetches against the new window.
@@ -665,17 +729,19 @@ export default defineComponent({
       billingByLogin.clear();
       loadedLogins.clear();
       failedLogins.clear();
+      missingStoredLogins.clear();
       inFlightLogins.clear();
       perUserLoading.value = false;
-      tableOptions.value = { ...tableOptions.value, page: 1 };
-      if (['scope', 'githubEnt', 'githubOrg', 'githubTeam', 'isDataMocked', 'users']
-        .some(key => query[key] !== previous[key])) {
+      void stored.load(storedQuery.value, tableOptions.value);
+      const nextMetricsDatasetKey = JSON.stringify(props.queryParams);
+      if (metricsDatasetKey !== nextMetricsDatasetKey) {
+        metricsDatasetKey = nextMetricsDatasetKey;
         visibleLogins.value = [];
         userMetricsData.value = null;
         userDetailLogin.value = null;
         return;
       }
-      loadVisibleBillingPage();
+      if (storedAvailable.value === false) loadVisibleBillingPage();
     }, { deep: true });
 
     async function loadBillingForLogins(logins: string[]): Promise<void> {
@@ -694,6 +760,9 @@ export default defineComponent({
           try {
             const resp = await $fetch<BillingCreditsResponse>('/api/billing-credits-by-user', { query: qp });
             if (generation !== billingGeneration) return;
+            for (const login of resp.missingStoredLogins ?? []) {
+              if (chunk.includes(login.toLowerCase())) missingStoredLogins.add(login.toLowerCase());
+            }
             for (const it of resp.usageItems ?? []) {
               const u = (it.user || '').trim();
               if (!u) continue;
@@ -745,19 +814,23 @@ export default defineComponent({
     }
 
     function loadVisibleBillingPage(): void {
+      if (storedAvailable.value !== false) return;
       visibleLogins.value = perUserPageRows.value.map(row => row.user);
       void loadBillingForLogins(visibleLogins.value);
     }
 
-    // Billing responses may reorder a page, but cannot select another batch.
-    // Only table intent, roster changes, retry, or window invalidation loads billing.
+    // Stored sorting selects pages on the server. Live billing never changes
+    // which users are selected for the visible page.
     function onTableOptions(opts: Omit<TableOptions, 'sortBy'> & { sortBy?: TableOptions['sortBy'] }): void {
       tableOptions.value = {
         page: opts.page,
         itemsPerPage: [10, 25, 50].includes(opts.itemsPerPage) ? opts.itemsPerPage : 25,
-        sortBy: opts.sortBy ?? [],
+        sortBy: storedAvailable.value === false
+          ? (opts.sortBy ?? []).filter(sort => sort.key === 'user' || sort.key === 'tokens')
+          : opts.sortBy ?? [],
       };
-      loadVisibleBillingPage();
+      if (storedAvailable.value !== false) void stored.load(storedQuery.value, tableOptions.value);
+      else loadVisibleBillingPage();
     }
 
     const items = computed<BillingUsageItem[]>(() => data.value?.usageItems ?? []);
@@ -795,10 +868,13 @@ export default defineComponent({
       items.value.reduce((s, i) => s + (i.netAmount || 0), 0)
     );
 
-    // Per-user rows are projected from /api/user-metrics (canonical user list
-    // + CLI token totals) and joined with the lazy-loaded billing map. Users
-    // we haven't fetched billing for yet are explicitly marked as not loaded.
+    // Stored rows are already sorted and paginated. Live rows join the
+    // metrics user list with lazy billing, keeping unknown amounts explicit.
     const perUserRows = computed<PerUserRow[]>(() => {
+      if (storedAvailable.value === null) return [];
+      if (storedAvailable.value) return (stored.result.value?.rows ?? []).map(row => ({
+        ...row, billingState: row.credits === null ? 'No stored billing data' : 'loaded',
+      }));
       const um = (userMetricsData?.value ?? []) as { login: string; totals_by_cli?: { token_usage?: { prompt_tokens_sum: number; output_tokens_sum: number } } }[];
       if (um.length === 0) return [];
       return um.map(u => {
@@ -808,27 +884,31 @@ export default defineComponent({
         const tokens = tu ? (tu.prompt_tokens_sum || 0) + (tu.output_tokens_sum || 0) : 0;
         return {
           user: billing?.display || u.login,
-          billingState: loadedLogins.has(key) ? 'loaded'
+          billingState: missingStoredLogins.has(key) ? 'No stored billing data'
+            : loadedLogins.has(key) ? 'loaded'
             : failedLogins.has(key) ? 'Unavailable'
             : inFlightLogins.has(key) ? 'Loading' : 'Not loaded',
-          credits: loadedLogins.has(key) ? billing?.credits ?? 0 : null,
-          grossAmount: loadedLogins.has(key) ? billing?.grossAmount ?? 0 : null,
-          netAmount: loadedLogins.has(key) ? billing?.netAmount ?? 0 : null,
+          credits: loadedLogins.has(key) && !missingStoredLogins.has(key) ? billing?.credits ?? 0 : null,
+          grossAmount: loadedLogins.has(key) && !missingStoredLogins.has(key) ? billing?.grossAmount ?? 0 : null,
+          netAmount: loadedLogins.has(key) && !missingStoredLogins.has(key) ? billing?.netAmount ?? 0 : null,
           tokens,
-          models: loadedLogins.has(key) ? billing?.models.size ?? 0 : null,
+          models: loadedLogins.has(key) && !missingStoredLogins.has(key) ? billing?.models.size ?? 0 : null,
         };
       });
     });
     const perUserPageRows = computed(() => {
+      if (storedAvailable.value) return perUserRows.value;
       const { page, itemsPerPage, sortBy } = tableOptions.value;
       const metricsSort = sortBy.filter(sort => sort.key === 'user' || sort.key === 'tokens');
       const allRows = [...perUserRows.value].sort((a, b) => compareRows(a, b, metricsSort));
       const start = (page - 1) * itemsPerPage;
       return allRows.slice(start, start + itemsPerPage).sort((a, b) => compareRows(a, b, sortBy));
     });
+    const perUserTotal = computed(() => storedAvailable.value ? stored.total.value : perUserRows.value.length);
     const loadedLoginsCount = computed(() => loadedLogins.size);
 
     const checkedUsersHaveNoSpend = computed(() => {
+      if (storedAvailable.value || missingStoredLogins.size > 0) return false;
       if (loadedLogins.size === 0 || failedLogins.size > 0 || inFlightLogins.size > 0) return false;
       if (totalGrossAmount.value <= 0) return false;
       for (const agg of billingByLogin.values()) {
@@ -882,14 +962,14 @@ export default defineComponent({
       { title: 'Net $', key: 'netAmount', sortable: true },
     ];
 
-    const perUserHeaders = [
+    const perUserHeaders = computed(() => [
       { title: 'User', key: 'user', sortable: true },
-      { title: 'Credits', key: 'credits', sortable: true, align: 'end' as const },
+      { title: 'Credits', key: 'credits', sortable: storedAvailable.value === true, align: 'end' as const },
       { title: 'Tokens (CLI)', key: 'tokens', sortable: true, align: 'end' as const },
-      { title: 'Gross $', key: 'grossAmount', sortable: true, align: 'end' as const },
-      { title: 'Net $', key: 'netAmount', sortable: true, align: 'end' as const },
-      { title: 'Models', key: 'models', sortable: true, align: 'end' as const },
-    ];
+      { title: 'Gross $', key: 'grossAmount', sortable: storedAvailable.value === true, align: 'end' as const },
+      { title: 'Net $', key: 'netAmount', sortable: storedAvailable.value === true, align: 'end' as const },
+      { title: 'Models', key: 'models', sortable: storedAvailable.value === true, align: 'end' as const },
+    ]);
 
     const topSpendersMetric = computed(() => topSpendersData.value?.metric === 'grossAmount' ? 'grossAmount' : 'netAmount');
     const topSpendersChartData = computed(() => buildTopSpendersChartData(
@@ -916,7 +996,8 @@ export default defineComponent({
     };
 
     const topTokensChartData = computed(() => {
-      const withTokens = perUserRows.value.filter(r => r.tokens > 0);
+      const withTokens = (storedAvailable.value
+        ? stored.result.value?.topTokenUsers ?? [] : perUserRows.value).filter(r => r.tokens > 0);
       if (withTokens.length === 0) return null;
       const top = [...withTokens].sort((a, b) => b.tokens - a.tokens).slice(0, 10);
       return {
@@ -993,6 +1074,7 @@ export default defineComponent({
       totalCredits, totalGrossAmount, totalNetAmount,
       errorReason, headers,
       perUserRows, perUserPageRows, perUserHeaders, tableOptions,
+      perUserTotal, storedAvailable, storedPending, storedReason, storedPeriodLabel, storedImportLabel, retryStoredPage,
       perUserLoading, loadedLoginsCount, onTableOptions, checkedUsersHaveNoSpend,
       failedLogins, retryBilling,
       topSpendersData, topSpendersChartData, topSpendersChartOptions, topSpendersPending, topSpendersCount, topSpendersMetric,

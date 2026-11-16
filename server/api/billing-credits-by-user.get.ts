@@ -123,10 +123,12 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
           setResponseHeader(event, 'X-Data-Source-Synced-At', decision.lastIngestAt);
         }
         setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
-        return await aggregateForBillingByUser(dbEnterprise, window, requestedLogins, {
+        const result = await aggregateForBillingByUser(dbEnterprise, window, requestedLogins, {
           model: query.model ? String(query.model) : undefined,
           sku: query.sku ? String(query.sku) : undefined,
         });
+        const storedLogins = new Set(result.usageItems.map(item => item.user?.toLowerCase()));
+        return { ...result, missingStoredLogins: requestedLogins.filter(login => !storedLogins.has(login.toLowerCase())) };
       }
       setResponseHeader(event, 'X-Data-Source', 'live');
       setResponseHeader(event, 'X-Data-Source-Reason', decision.reason);
