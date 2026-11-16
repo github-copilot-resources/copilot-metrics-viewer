@@ -30,6 +30,11 @@
 
 import { getPool } from '../storage/db';
 import type { BillingCreditsResponse, BillingUsageItem } from '../api/billing-credits.get';
+import {
+  billingUsernamesForMetricsLogins,
+  normalizeBillingUsername,
+  parseBillingUserAliases,
+} from '../../shared/utils/billing-user-identity';
 
 export interface CoverageDecision {
   source: 'db' | 'live';
@@ -63,6 +68,26 @@ export interface AggregateFilters {
   repository?: string;
   sku?: string;
   model?: string;
+}
+
+export interface TopBillingUser {
+  user: string;
+  credits: number;
+  grossAmount: number;
+  netAmount: number;
+  models: number;
+}
+
+export interface TopBillingUsersResponse {
+  timePeriod: { year?: number; month?: number; day?: number };
+  enterprise: string;
+  metric: 'netAmount' | 'grossAmount' | 'credits';
+  users: TopBillingUser[];
+}
+
+export interface TopBillingUsersOptions extends AggregateFilters {
+  limit?: number;
+  metric?: TopBillingUsersResponse['metric'] | 'auto';
 }
 
 /**
@@ -284,6 +309,8 @@ export async function aggregateForBillingByUser(
   }
 
   const pool = getPool();
+  const aliases = parseBillingUserAliases(process.env.NUXT_BILLING_USER_ALIASES);
+  const matchedBillingUsernames = billingUsernamesForMetricsLogins(logins, aliases);
 
   const conds: string[] = [
     'enterprise = $1',
@@ -294,7 +321,7 @@ export async function aggregateForBillingByUser(
     enterprise,
     window.startDate,
     window.endDate,
-    logins.map(l => l.toLowerCase()),
+    matchedBillingUsernames,
   ];
   const push = (col: string, val: string | undefined) => {
     if (val === undefined || val === '') return;
@@ -327,13 +354,87 @@ export async function aggregateForBillingByUser(
   const { rows } = await pool.query(sql, params);
   const usageItems: BillingUsageItem[] = rows.map(r => ({
     ...mapAggregateRowToItem(r),
-    user: r.username || undefined,
+    user: r.username ? normalizeBillingUsername(r.username, aliases) : undefined,
   }));
 
   return {
     timePeriod: window.timePeriod,
     enterprise,
+    // A requested page is not an authoritative metrics roster.
+    identityReconciliation: 'unknown',
     usageItems,
+  };
+}
+
+/**
+ * Global top-N billing users for the requested window. Unlike
+ * `aggregateForBillingByUser`, this intentionally has no login filter so the
+ * database can rank every attributed user in one grouped query.
+ */
+export async function aggregateTopBillingUsers(
+  enterprise: string,
+  window: BillingWindow,
+  options: TopBillingUsersOptions = {},
+): Promise<TopBillingUsersResponse> {
+  if (options.metric === 'auto') {
+    const net = await aggregateTopBillingUsers(enterprise, window, { ...options, metric: 'netAmount' });
+    // This is the globally ordered net ranking, never a page of the user table:
+    // any positive net spend in the permitted window must appear here.
+    if (net.users.length === 0 || net.users.some(user => user.netAmount !== 0)) return net;
+    return aggregateTopBillingUsers(enterprise, window, { ...options, metric: 'grossAmount' });
+  }
+  const pool = getPool();
+  const limit = Math.max(1, Math.min(Math.trunc(options.limit ?? 10), 50));
+  const metric = options.metric ?? 'netAmount';
+  const orderExpr = metric === 'grossAmount'
+    ? 'SUM(gross_amount)'
+    : metric === 'credits'
+      ? 'SUM(quantity)'
+      : 'SUM(net_amount)';
+
+  const conds: string[] = [
+    'enterprise = $1',
+    'date BETWEEN $2::date AND $3::date',
+    "COALESCE(username, '') <> ''",
+  ];
+  const params: unknown[] = [enterprise, window.startDate, window.endDate];
+  const push = (col: string, val: string | undefined) => {
+    if (val === undefined || val === '') return;
+    params.push(val);
+    conds.push(`${col} = $${params.length}`);
+  };
+  push('organization', options.organization);
+  push('repository', options.repository);
+  push('sku', options.sku);
+  push('model', options.model);
+  params.push(limit);
+
+  const sql = `
+    SELECT
+      username,
+      SUM(quantity)::float8        AS credits,
+      SUM(gross_amount)::float8    AS gross_amount,
+      SUM(net_amount)::float8      AS net_amount,
+      COUNT(DISTINCT NULLIF(model, ''))::int AS models
+    FROM billing_credit_usage
+    WHERE ${conds.join(' AND ')}
+    GROUP BY username
+    ORDER BY ${orderExpr} DESC, username ASC
+    LIMIT $${params.length}
+  `;
+
+  const { rows } = await pool.query(sql, params);
+  return {
+    timePeriod: window.timePeriod,
+    enterprise,
+    metric,
+    users: rows.map(r => ({
+      user: String(r.username),
+      credits: Number(r.credits || 0),
+      grossAmount: Number(r.gross_amount || 0),
+      netAmount: Number(r.net_amount || 0),
+      models: Number(r.models || 0),
+    })),
   };
 }
 

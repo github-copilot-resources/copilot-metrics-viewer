@@ -1,0 +1,2 @@
+date,username,product,sku,model,quantity,unit_type,applied_cost_per_quantity,gross_amount,discount_amount,net_amount,total_monthly_quota,organization,repository,cost_center_name,aic_quantity,aic_gross_amount,input,output,cache_read,cache_write
+2026-11-01,,copilot,synthetic-sku,synthetic-model,2,synthetic-unit,0.04,0.08,0,0.08,100,,,,2,0.08,9007199254740991,123.4567891,0,789

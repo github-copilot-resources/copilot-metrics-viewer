@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * Per-user Copilot usage metrics API endpoint
  * GET /api/user-metrics
@@ -24,10 +26,20 @@ import { isDbConfigured } from '../storage/db';
 import { fetchAllTeamMembers } from './seats';
 import { restrictUserRowsToSelf } from '../utils/restrict-user-rows';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
+import { summarizeUsers } from '../utils/anonymous-kpis';
+import { USER_SUMMARY_HEADER } from '#shared/utils/anonymous-kpis';
+import type { H3Event } from 'h3';
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersOrg28Day from '../../public/mock-data/new-api/organization-users-28-day-report.json';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import mockUsersEnt28Day from '../../public/mock-data/new-api/enterprise-users-28-day-report.json';
+
+async function summarizeAndRestrict(event: H3Event, users: UserTotals[], isMocked = false) {
+  const rows = await restrictUserRowsToSelf(event, users, { isMocked });
+  setHeader(event, USER_SUMMARY_HEADER, JSON.stringify(summarizeUsers(users)));
+  return rows;
+}
 
 /**
  * If the request is for a team scope, resolve team members and filter
@@ -95,7 +107,7 @@ function filterDaysByDateRange(records: UserDayRecord[], since?: string, until?:
 }
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
+  const logger = createLogger('user-metrics', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 
@@ -127,7 +139,7 @@ export default defineEventHandler(async (event) => {
       const members = await filterByTeamIfNeeded(userTotals, options, new Headers());
       userTotals = members;
     }
-    return restrictUserRowsToSelf(event, userTotals, { isMocked: true });
+    return summarizeAndRestrict(event, userTotals, true);
   }
 
   // ── Storage / historical mode ───────────────────────────────────────────────
@@ -148,8 +160,8 @@ export default defineEventHandler(async (event) => {
       const stored = await getUserMetricsByDateRange(scope, identifier, options.since, options.until);
       if (stored) {
         const filtered = await filterByTeamIfNeeded(stored.userTotals, options, event.context.headers);
-        logger.info(`Returning ${filtered.length} user metrics entries from storage (${stored.reportStartDay}–${stored.reportEndDay})`);
-        return restrictUserRowsToSelf(event, filtered);
+        logger.info('Returning user metrics entries from storage', { count: filtered.length });
+        return summarizeAndRestrict(event, filtered);
       }
       logger.info('No user metrics in storage yet, attempting live fetch');
     } catch (err) {
@@ -180,7 +192,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, statusMessage: 'GitHub organization or enterprise must be configured' });
     }
 
-    logger.info(`Fetching user metrics for ${scope}:${identifier}`);
+    logger.info('Fetching user metrics');
 
     let userTotals: UserTotals[];
 
@@ -220,8 +232,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const filtered = await filterByTeamIfNeeded(userTotals, options, event.context.headers);
-    logger.info(`Returned ${filtered.length} user records for ${scope}:${identifier} (${userTotals.length} before team filter)`);
-    return restrictUserRowsToSelf(event, filtered);
+    logger.info(`Returned user records (${userTotals.length} before team filter)`, { count: filtered.length });
+    return summarizeAndRestrict(event, filtered);
 
   } catch (error: unknown) {
     logger.error('Error fetching user metrics:', error);

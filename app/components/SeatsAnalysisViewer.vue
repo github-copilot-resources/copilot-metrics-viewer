@@ -6,9 +6,8 @@
         <div class="mr-3" style="flex: 1; min-width: 250px;">
           <div class="font-weight-bold text-body-1 mb-1">💺 Seat Analysis</div>
           <div class="text-medium-emphasis">
-            Shows all Copilot seats assigned in your organization — who has a seat, when it was created,
-            and when each developer last used Copilot. Identify inactive seats to right-size your Copilot
-            subscription. "No show" seats were assigned but never activated.
+            Scope-wide seat totals are anonymous. Permitted seat details below follow your access
+            permissions and may contain only your own seat. "No show" seats were assigned but never activated.
           </div>
         </div>
         <v-divider vertical class="mx-2 hidden-sm-and-down" />
@@ -27,6 +26,9 @@
         </div>
       </div>
     </v-card>
+    <v-alert v-if="!summary || summary.never_used === null" type="info" variant="tonal" class="mx-4 my-2">
+      Scope-wide seat activity summary unavailable. A partial page cannot determine never-used or inactive counts.
+    </v-alert>
 
     <!-- Summary tiles -->
     <div class="tiles-container">
@@ -43,7 +45,7 @@
               </v-card>
             </v-tooltip>
             <div class="text-caption text-medium-emphasis">{{ isTeamView ? `Seats in team "${currentTeam}"` : 'Currently assigned seats' }}</div>
-            <p class="kpi-value text-primary mt-1">{{ totalSeatsCount }}</p>
+            <p class="kpi-value text-primary mt-1">{{ summary?.assigned ?? 'Unavailable' }}</p>
           </div>
         </v-card-item>
       </v-card>
@@ -60,7 +62,7 @@
                 <span class="tooltip-text">Seats that were assigned but never used {{ isTeamView ? `within team "${currentTeam}"` : 'within the current organization/enterprise' }}.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption text-medium-emphasis">No show seats{{ totalPages > 1 ? ' (this page)' : '' }}</div>
+            <div class="text-caption text-medium-emphasis">Scope-wide no show seats</div>
             <p class="kpi-value text-warning mt-1">{{ noshowSeats }}</p>
           </div>
         </v-card-item>
@@ -78,7 +80,7 @@
                 <span class="tooltip-text">Seats with no Copilot activity in the past 7 days.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption text-medium-emphasis">No use in last 7 days{{ totalPages > 1 ? ' (this page)' : '' }}</div>
+            <div class="text-caption text-medium-emphasis">Scope-wide, no use in last 7 days</div>
             <p class="kpi-value text-error mt-1">{{ unusedSeatsInSevenDays }}</p>
           </div>
         </v-card-item>
@@ -93,10 +95,10 @@
                 <div v-bind="props" class="text-h6 mb-1">Inactive 30 Days</div>
               </template>
               <v-card class="pa-3 metric-tooltip">
-                <span class="tooltip-text">Seats with no Copilot activity in the last 30 days, including those never used.</span>
+                <span class="tooltip-text">Previously used seats with no Copilot activity in the last 30 days. Never-used seats are counted separately.</span>
               </v-card>
             </v-tooltip>
-            <div class="text-caption text-medium-emphasis">No use in last 30 days{{ totalPages > 1 ? ' (this page)' : '' }}</div>
+            <div class="text-caption text-medium-emphasis">Scope-wide, no use in last 30 days</div>
             <p class="kpi-value text-error mt-1">{{ unusedSeatsInThirtyDays }}</p>
           </div>
         </v-card-item>
@@ -107,9 +109,9 @@
     <v-container :fluid="chartColumns === 'full'" :class="['elevation-2', chartColumns === 'full' ? 'px-0' : 'px-4']">
       <div class="d-flex justify-end mb-2">
         <v-btn-toggle v-model="chartColumns" density="compact" variant="outlined" mandatory>
-          <v-btn value="1" size="small" title="Single column"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
-          <v-btn value="2" size="small" title="Two columns"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
-          <v-btn value="full" size="small" title="Full width"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
+          <v-btn value="1" size="small" title="Single column" aria-label="Single column layout" :aria-pressed="chartColumns === '1'"><v-icon size="18">mdi-view-agenda</v-icon></v-btn>
+          <v-btn value="2" size="small" title="Two columns" aria-label="Two column layout" :aria-pressed="chartColumns === '2'"><v-icon size="18">mdi-view-grid</v-icon></v-btn>
+          <v-btn value="full" size="small" title="Full width" aria-label="Full width layout" :aria-pressed="chartColumns === 'full'"><v-icon size="18">mdi-fullscreen</v-icon></v-btn>
         </v-btn-toggle>
       </div>
       <v-row v-if="seatsHistory.length > 0" class="mb-4">
@@ -128,12 +130,28 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <v-card variant="elevated" elevation="2">
-            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">All Assigned Seats</v-card-title>
+            <v-card-title class="text-subtitle-1 font-weight-medium pt-3 px-4">Permitted seat details</v-card-title>
             <v-card-subtitle v-if="totalPages > 1" class="px-4 pb-2">
-              Showing page {{ currentPage }} of {{ totalPages }} ({{ totalSeatsCount }} total seats, {{ seats.length }} on this page)
+              Showing page {{ currentPage }} of {{ totalPages }} ({{ totalSeatsCount }} permitted seats, {{ seats.length }} on this page)
             </v-card-subtitle>
             <v-card-text class="pa-0">
               <v-data-table :headers="headers" :items="sortedSeats" :items-per-page="-1" hide-default-footer class="elevation-0">
+                <template #top="{ items }">
+                  <div class="px-4 py-2">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      prepend-icon="mdi-download"
+                      :disabled="items.length === 0"
+                      @click="exportCurrentPage(items)"
+                    >
+                      Export current page (CSV)
+                    </v-btn>
+                    <p class="text-caption text-medium-emphasis mt-2">
+                      {{ items.length ? 'Only the permitted rows and columns displayed on this page are exported.' : 'No permitted seats on this page to export.' }}
+                    </p>
+                  </div>
+                </template>
                 <template #item="{ item, index }">
                   <tr>
                     <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
@@ -165,9 +183,11 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watchEffect, computed, type PropType } from 'vue';
+import { defineComponent, computed, type PropType } from 'vue';
+import type { SeatsSummary } from '#shared/utils/anonymous-kpis';
 import type { Seat } from '@/model/Seat';
 import type { SeatHistoryEntry } from '../../server/storage/seats-storage';
+import { convertSeatPageToCSV, downloadCSV } from '@/utils/csvExport';
 import { Line } from 'vue-chartjs';
 import {
   Chart as ChartJS,
@@ -198,6 +218,10 @@ export default defineComponent({
   name: 'SeatsAnalysisViewer',
   components: { Line },
   props: {
+    summary: {
+      type: Object as PropType<SeatsSummary | null>,
+      default: null
+    },
     seats: {
       type: Array as PropType<Seat[]>,
       required: true,
@@ -228,36 +252,14 @@ export default defineComponent({
   },
   emits: ['page-change'],
   setup(props) {
-    const noshowSeats            = ref<number>(0);
-    const unusedSeatsInSevenDays  = ref<number>(0);
-    const unusedSeatsInThirtyDays = ref<number>(0);
+    const exportCurrentPage = (items: readonly Seat[]) => {
+      const csv = convertSeatPageToCSV(items, (props.currentPage - 1) * props.perPage + 1);
+      if (csv) downloadCSV(csv, `seats-page-${props.currentPage}.csv`);
+    };
 
-    watchEffect(() => {
-      if (!props.seats || !Array.isArray(props.seats)) return;
-
-      const oneWeekAgo    = new Date();
-      const thirtyDaysAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-      let noshowCount = 0;
-      let unusedIn7   = 0;
-      let unusedIn30  = 0;
-
-      for (const seat of props.seats) {
-        if (!seat.last_activity_at) {
-          noshowCount++;
-        } else {
-          const lastActivity = new Date(seat.last_activity_at);
-          if (lastActivity < oneWeekAgo)    unusedIn7++;
-          if (lastActivity < thirtyDaysAgo) unusedIn30++;
-        }
-      }
-
-      noshowSeats.value            = noshowCount;
-      unusedSeatsInSevenDays.value  = unusedIn7;
-      unusedSeatsInThirtyDays.value = unusedIn30;
-    });
+    const noshowSeats = computed(() => props.summary?.never_used ?? 'Unavailable');
+    const unusedSeatsInSevenDays = computed(() => props.summary?.inactive_7 ?? 'Unavailable');
+    const unusedSeatsInThirtyDays = computed(() => props.summary?.inactive_30 ?? 'Unavailable');
 
     // Sort seats: null activity first, then ascending by date
     const sortedSeats = computed(() =>
@@ -311,6 +313,7 @@ export default defineComponent({
     };
 
     return {
+      exportCurrentPage,
       noshowSeats,
       unusedSeatsInSevenDays,
       unusedSeatsInThirtyDays,

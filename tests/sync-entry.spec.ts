@@ -177,7 +177,9 @@ describe('sync-entry: happy path', () => {
     const [scope, identifier] = mockSyncBulk.mock.calls[0]!;
     expect(scope).toBe('enterprise');
     expect(identifier).toBe('test-ent');
-    expect(mockGetSyncAuthHeaders).toHaveBeenCalledWith(console, 'test-ent', 'enterprise');
+    expect(mockGetSyncAuthHeaders).toHaveBeenCalledWith(
+      expect.objectContaining({ info: expect.any(Function) }), 'test-ent', 'enterprise',
+    );
   }));
 
   it('uses the enterprise identifier when an organization variable is also set', withEnv({
@@ -215,9 +217,34 @@ describe('sync-entry: happy path', () => {
     await runSync();
     expect(mockGetSyncAuthHeaders).toHaveBeenCalledOnce();
     const [logger, identifier, scope] = mockGetSyncAuthHeaders.mock.calls[0]!;
-    expect(logger).toBe(console);
+    expect(logger).toEqual(expect.objectContaining({
+      info: expect.any(Function), warn: expect.any(Function), error: expect.any(Function), debug: expect.any(Function),
+    }));
+    expect(logger).not.toBe(console);
     expect(identifier).toBe('test-org');
     expect(scope).toBe('organization');
+  }));
+
+  it('uses the leveled logger for sync failures without dumping upstream data', withEnv(BASE_ENV, async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ logLevel: 'error', logFormat: 'json' }));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const previousExitCode = process.exitCode;
+    mockSyncBulk.mockRejectedValueOnce(Object.assign(new Error('SYNTHETIC_SYNC_TOKEN'), { statusCode: 503 }));
+    try {
+      await runSync();
+      expect(mockClosePool).toHaveBeenCalledOnce();
+      expect(process.exitCode).toBe(1);
+      expect(infoSpy).not.toHaveBeenCalled();
+      const output = errorSpy.mock.calls.map(args => args.join(' ')).join('\n');
+      expect(output).not.toContain('SYNTHETIC_SYNC_TOKEN');
+      expect(JSON.parse(output)).toMatchObject({
+        tag: 'sync-entry', level: 'error', message: 'Sync job failed:', name: 'Error', statusCode: 503,
+      });
+    } finally {
+      process.exitCode = previousExitCode;
+      vi.unstubAllGlobals();
+    }
   }));
 
   it('always calls closePool in the finally block', withEnv(BASE_ENV, async () => {

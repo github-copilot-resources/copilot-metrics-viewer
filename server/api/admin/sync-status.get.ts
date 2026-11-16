@@ -1,3 +1,5 @@
+import { createLogger } from '../../utils/logger';
+
 /**
  * Admin endpoint to check sync status
  * GET /api/admin/sync-status
@@ -12,7 +14,7 @@ import {
 } from '../../storage/billing-csv-sync-status-storage';
 
 export default defineEventHandler(async (event) => {
-  const logger = console;
+  const logger = createLogger('sync-status', event.context);
   const query = getQuery(event);
 
   try {
@@ -35,7 +37,7 @@ export default defineEventHandler(async (event) => {
       } catch (e) {
         // DB may not be configured (JSON mode). Surface a clear shape.
         billingCsv = { inFlight: null, recent: [] };
-        logger.warn('Billing CSV status query failed:', e instanceof Error ? e.message : String(e));
+        logger.warn('Billing CSV status query failed:', e);
       }
     }
 

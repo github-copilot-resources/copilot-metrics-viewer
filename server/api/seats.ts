@@ -1,3 +1,4 @@
+import { createLogger } from '../utils/logger';
 import { Seat } from "@/model/Seat";
 import { readFileSync } from 'fs';
 import { Options } from '@/model/Options';
@@ -12,6 +13,8 @@ import { isUsageAdminForEvent } from '../utils/usage-admin';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
 import { deduplicateSeats, paginateSeats, normalizeTeamMember } from '../utils/seats-dedup';
 import type { H3Event, EventHandlerRequest } from 'h3';
+import { summarizeSeats } from '../utils/anonymous-kpis';
+import { parseSeatsSummary, type SeatsSummary } from '#shared/utils/anonymous-kpis';
 
 /** UI page size cap — GitHub API max is 100, so 300 = 3 GitHub calls per page. */
 const UI_MAX_PER_PAGE = 300;
@@ -28,6 +31,8 @@ export interface SeatsApiResponse {
   page: number;
   per_page: number;
   total_pages: number;
+  /** Scope-wide KPIs, separate from the permitted detail pagination count. */
+  summary?: SeatsSummary;
 }
 
 // Minimal shape of a GitHub team member object we care about
@@ -159,13 +164,14 @@ async function restrictSeatsAndPaginate(
   perPage: number,
   opts: { isMocked?: boolean } = {}
 ): Promise<SeatsApiResponse> {
+  const summary = summarizeSeats(allSeats);
   const restricted = await restrictUserRowsToSelf(event, allSeats, opts);
-  return paginateSeats(restricted, page, perPage);
+  return { ...paginateSeats(restricted, page, perPage), summary };
 }
 
 export default defineEventHandler(async (event) => {
 
-  const logger = console;
+  const logger = createLogger('seats', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
 
@@ -313,12 +319,16 @@ export default defineEventHandler(async (event) => {
       page: uiPage,
       per_page: uiPerPage,
       total_pages: totalPages,
+      // Only a page was resolved. Do not fetch a roster to populate activity tiles.
+      summary: parseSeatsSummary({
+        assigned: totalSeats, never_used: null, inactive_7: null, inactive_30: null,
+      })!,
     } satisfies SeatsApiResponse;
   }
 
   // ── Enterprise / team scopes: fetch all pages, then paginate in memory ────
   let firstResponse: { seats: unknown[]; total_seats: number };
-  logger.info(`Fetching 1st page of seats data from ${apiUrl}`);
+  logger.info('Fetching 1st page of seats data');
   try {
     firstResponse = await ($fetch as any)(apiUrl, {
       headers: event.context.headers,

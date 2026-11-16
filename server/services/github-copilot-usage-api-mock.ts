@@ -5,8 +5,9 @@
  *   1. requestDownloadLinks() → returns URLs pointing to local mock JSON files
  *   2. downloadReport() → actually fetches those files via HTTP from localhost
  * 
- * Mock data files live in public/mock-data/new-api/ and are based on
- * anonymized real API responses. Nuxt serves them as static assets.
+ * Mock data files live in public/mock-data/new-api/. They combine legacy
+ * samples with documented, synthetic schema extensions; see mock-data/README.md
+ * for provenance and limits. Nuxt serves them as static assets.
  */
 
 import { createRequire } from 'node:module';
@@ -40,6 +41,16 @@ function getMockBaseUrl(): string {
   return `http://localhost:${port}`;
 }
 
+/** A deterministic simulated processing lag, not a GitHub availability SLA. */
+export function getMockReportWindow(): { startDay: string; endDay: string } {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const end = Math.floor(Date.now() / dayMs) * dayMs - dayMs;
+  return {
+    startDay: new Date(end - 27 * dayMs).toISOString().split('T')[0]!,
+    endDay: new Date(end).toISOString().split('T')[0]!,
+  };
+}
+
 /**
  * Mock implementation of requestDownloadLinks.
  * Returns download URLs pointing to local static JSON files,
@@ -52,18 +63,14 @@ export function mockRequestDownloadLinks(
 ): DownloadLinksResponse {
   const isOrg = request.scope === 'organization';
   const scopePrefix = isOrg ? 'organization' : 'enterprise';
+  const { startDay, endDay } = getMockReportWindow();
 
   if (reportType === '1-day') {
     return {
       download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-1-day-report.json`],
-      report_day: day || new Date().toISOString().split('T')[0],
+      report_day: day || endDay,
     };
   }
-
-  // Use a rolling 28-day window ending today so charts always show recent dates
-  const today = new Date();
-  const endDay = today.toISOString().split('T')[0];
-  const startDay = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   return {
     download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-28-day-report.json`],
@@ -83,18 +90,14 @@ export function mockRequestUserDownloadLinks(
 ): DownloadLinksResponse {
   const isOrg = request.scope === 'organization';
   const scopePrefix = isOrg ? 'organization' : 'enterprise';
+  const { startDay, endDay } = getMockReportWindow();
 
   if (reportType === '1-day') {
     return {
       download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-users-1-day-report.json`],
-      report_day: day || new Date().toISOString().split('T')[0],
+      report_day: day || endDay,
     };
   }
-
-  // Use a rolling 28-day window ending today so charts always show recent dates
-  const today = new Date();
-  const endDay = today.toISOString().split('T')[0];
-  const startDay = new Date(today.getTime() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   return {
     download_links: [`${getMockBaseUrl()}/mock-data/new-api/${scopePrefix}-users-28-day-report.json`],

@@ -1,3 +1,5 @@
+import { createLogger } from '../utils/logger';
+
 /**
  * GET /api/billing-credits-by-user — admin only
  *
@@ -16,9 +18,9 @@
  *   - max 50 logins per request (HTTP query length + rate-limit safety)
  *   - 8 concurrent fan-out fetches inside one request
  *
- * Mock mode: returns the same billing-credits.json fixture as
- * /api/billing-credits — the mock already has user-tagged items, so the
- * frontend can render the per-user table without round-tripping logins.
+ * Mock mode: uses a separate synthetic attribution demo fixture,
+ * not the live-shaped aggregate baseline. Its per-user attribution has not
+ * been verified against a real billing export.
  *
  * Auth: same admin gate as /api/billing-credits.
  *
@@ -35,14 +37,19 @@ import {
   resolveWindow,
   aggregateForBillingByUser,
 } from '../services/billing-credit-reader';
+import {
+  billingUsernamesForMetricsLogins,
+  parseBillingUserAliases,
+  type BillingUserAliases,
+} from '../../shared/utils/billing-user-identity';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import mockBilling from '../../public/mock-data/billing-credits.json';
+import mockBilling from '../../public/mock-data/billing-credits-synthetic-attribution-demo.json';
 
 const CONCURRENCY = 8;
 const MAX_LOGINS_PER_CALL = 50;
 
 export default defineEventHandler(async (event): Promise<BillingCreditsResponse> => {
-  const logger = console;
+  const logger = createLogger('billing-credits-by-user', event.context);
   const query = getQuery(event);
   const options = Options.fromQuery(query);
   const config = useRuntimeConfig(event);
@@ -75,6 +82,16 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     throw createError({
       statusCode: 400,
       statusMessage: `Too many logins (${requestedLogins.length}); cap is ${MAX_LOGINS_PER_CALL} per call. Split the request into multiple pages.`,
+    });
+  }
+
+  let aliases: BillingUserAliases;
+  try {
+    aliases = parseBillingUserAliases(process.env.NUXT_BILLING_USER_ALIASES);
+  } catch {
+    throw createError({
+      statusCode: 503,
+      statusMessage: 'Invalid NUXT_BILLING_USER_ALIASES configuration. Ask the deployment administrator to correct the billing identity mapping.',
     });
   }
 
@@ -194,8 +211,8 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
   let entSlug: string | undefined;
   let failures = 0;
 
-  async function fetchOne(login: string): Promise<void> {
-    const params = new URLSearchParams({ ...forwardParams, user: login });
+  async function fetchOne(metricsLogin: string, billingUsername: string): Promise<void> {
+    const params = new URLSearchParams({ ...forwardParams, user: billingUsername });
     const url = `${apiUrl}?${params.toString()}`;
     try {
       const resp = await $fetch<BillingCreditsResponse>(url, { headers: billingHeaders });
@@ -203,28 +220,33 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
       orgSlug = resp.organization || orgSlug;
       entSlug = resp.enterprise || entSlug;
       for (const it of resp.usageItems ?? []) {
-        tagged.push({ ...it, user: login });
+        tagged.push({ ...it, user: metricsLogin });
       }
     } catch (err) {
       failures++;
-      logger.warn(`billing-credits-by-user: ${login} fan-out failed`, err);
+      logger.warn('User billing credits fan-out failed', err);
     }
   }
+
+  const fetchTargets = billingUsernamesForMetricsLogins(requestedLogins, aliases).map(billingUsername => ({
+    login: Object.hasOwn(aliases, billingUsername) ? aliases[billingUsername]! : billingUsername,
+    billingUsername,
+  }));
 
   let cursor = 0;
   async function worker(): Promise<void> {
-    while (cursor < requestedLogins.length) {
+    while (cursor < fetchTargets.length) {
       const i = cursor++;
-      const login = requestedLogins[i];
-      if (login) await fetchOne(login);
+      const target = fetchTargets[i];
+      if (target) await fetchOne(target.login, target.billingUsername);
     }
   }
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, requestedLogins.length) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, fetchTargets.length) }, () => worker()));
 
-  if (failures > 0 && tagged.length === 0) {
+  if (failures > 0) {
     throw createError({
       statusCode: 502,
-      statusMessage: `All ${failures} per-user billing fan-out requests failed. Check the billing PAT scopes and SSO authorization.`,
+      statusMessage: 'Per-user billing is incomplete because an upstream request failed. Retry or ask the administrator to check the billing credential.',
     });
   }
 
@@ -232,6 +254,7 @@ export default defineEventHandler(async (event): Promise<BillingCreditsResponse>
     timePeriod,
     organization: orgSlug,
     enterprise: entSlug,
+    identityReconciliation: 'unknown',
     usageItems: tagged,
   } as BillingCreditsResponse;
 });
@@ -240,6 +263,6 @@ function parseLogins(raw: unknown): string[] {
   if (!raw) return [];
   const str = Array.isArray(raw) ? raw.join(',') : String(raw);
   return Array.from(new Set(
-    str.split(',').map(s => s.trim()).filter(Boolean)
+    str.split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
   ));
 }

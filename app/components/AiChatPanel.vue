@@ -7,6 +7,7 @@
         class="ai-chat-fab"
         color="indigo"
         icon
+        aria-label="Open AI metrics assistant"
         size="large"
         elevation="6"
         style="position: fixed; bottom: 24px; right: 24px; z-index: 2147483647;"
@@ -31,15 +32,15 @@
           AI Metrics Assistant
         </v-toolbar-title>
         <v-spacer />
-        <v-btn v-if="userToken" icon size="small" variant="text" @click="clearUserToken" title="Disconnect token">
+        <v-btn v-if="userToken" icon size="small" variant="text" aria-label="Disconnect personal token" @click="clearUserToken" title="Disconnect token">
           <v-icon size="small">mdi-key-remove</v-icon>
           <v-tooltip activator="parent" :z-index="2147483647" location="bottom">Disconnect personal token</v-tooltip>
         </v-btn>
-        <v-btn icon size="small" variant="text" @click="clearConversation">
+        <v-btn icon size="small" variant="text" aria-label="Clear conversation" @click="clearConversation">
           <v-icon size="small">mdi-delete-outline</v-icon>
           <v-tooltip activator="parent" :z-index="2147483647" location="bottom">Clear conversation</v-tooltip>
         </v-btn>
-        <v-btn icon size="small" variant="text" @click="isOpen = false">
+        <v-btn icon size="small" variant="text" aria-label="Close AI metrics assistant" @click="isOpen = false">
           <v-icon size="small">mdi-close</v-icon>
         </v-btn>
       </v-toolbar>
@@ -185,6 +186,7 @@
           <template #append-inner>
             <v-btn
               icon
+              aria-label="Send message"
               size="small"
               variant="text"
               color="indigo"
@@ -241,6 +243,7 @@ const tokenSetupNeeded = ref(false);
 const tokenErrorMessage = ref('');
 const userTokenInput = ref('');
 const userToken = ref('');
+let conversationVersion = 0;
 
 // Restore user token from sessionStorage
 if (import.meta.client) {
@@ -251,7 +254,9 @@ if (import.meta.client) {
 const suggestedQuestions = computed(() => getSuggestedQuestions(props.currentTab));
 
 function clearConversation() {
+  conversationVersion++;
   messages.value = [];
+  isLoading.value = false;
   errorMessage.value = '';
   tokenSetupNeeded.value = false;
 }
@@ -283,15 +288,17 @@ function askQuestion(question: string) {
 async function sendMessage() {
   const question = inputText.value.trim();
   if (!question || isLoading.value) return;
+  const version = conversationVersion;
 
   inputText.value = '';
   errorMessage.value = '';
+  isLoading.value = true;
 
   // Add user message
   messages.value.push({ role: 'user', content: question });
   await scrollToBottom();
+  if (version !== conversationVersion) return;
 
-  isLoading.value = true;
   loadingText.value = 'Analyzing metrics...';
 
   try {
@@ -318,6 +325,7 @@ async function sendMessage() {
         },
       },
     });
+    if (version !== conversationVersion) return;
 
     const result = response as { answer: string; toolsUsed?: string[]; rounds?: number };
 
@@ -326,6 +334,7 @@ async function sendMessage() {
       content: result.answer,
     });
   } catch (error: unknown) {
+    if (version !== conversationVersion) return;
     const err = error as { statusCode?: number; statusMessage?: string; data?: { statusMessage?: string; data?: { code?: string; message?: string } }; message?: string };
     const errorCode = err.data?.data?.code || err.statusMessage;
     const errorMsg = err.data?.data?.message || err.data?.statusMessage || err.message || 'An error occurred';
@@ -339,8 +348,10 @@ async function sendMessage() {
       errorMessage.value = errorMsg;
     }
   } finally {
-    isLoading.value = false;
-    await scrollToBottom();
+    if (version === conversationVersion) {
+      isLoading.value = false;
+      await scrollToBottom();
+    }
   }
 }
 
