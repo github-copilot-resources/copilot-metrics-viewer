@@ -124,6 +124,20 @@ describe('getSyncAuthHeaders: auth mode selection', () => {
     const headers = await getSyncAuthHeaders(console, 'TEST-ORG');
     expect(headers.get('authorization')).toBe('Bearer ghs_case_match');
   });
+
+  it('ignores installation entries that do not include an account login', async () => {
+    process.env.NUXT_GITHUB_APP_ID = '12345';
+    process.env.NUXT_GITHUB_APP_PRIVATE_KEY = TEST_RSA_PRIVATE_KEY;
+
+    mockListAppInstallations.mockResolvedValue([
+      { id: 1, type: 'Organization' },
+      { id: 42, login: 'test-org', type: 'Organization' },
+    ]);
+    mockOfetch.mockResolvedValue({ token: 'ghs_app_install_token', expires_at: '2099-01-01T00:00:00Z' });
+
+    const headers = await getSyncAuthHeaders(console, 'test-org');
+    expect(headers.get('authorization')).toBe('Bearer ghs_app_install_token');
+  });
 });
 
 describe('getSyncAuthHeaders: GitHub App error paths', () => {
