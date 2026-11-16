@@ -272,6 +272,7 @@ v-if="item === 'copilot chat'" :metrics="metrics"
               v-if="item === 'billing' && billingEnabled"
               :query-params="myUsageQueryParams"
               :date-range-description="dateRangeDescription"
+              @open-admin="!signInRequired && isUsageAdmin && (showAdminPanel = true)"
             />
             <BillingNotConfigured v-else-if="item === 'billing'" />
             <ApiResponse

@@ -37,6 +37,10 @@ for (const [column, key] of [['Credits', 'netQuantity'], ['Gross $', 'grossAmoun
     expect(batches.map(batch => batch.length)).toEqual([25]);
     await expect(page.getByTestId('billing-page-sort-note')).toBeVisible();
     await expect(page.getByTestId('billing-page-sort-note')).toContainText('Import billing');
+    await table.getByRole('button', { name: 'Admin Panel', exact: true }).click();
+    const adminPanel = page.getByRole('dialog');
+    await expect(adminPanel).toContainText('Admin Panel');
+    await adminPanel.getByRole('button', { name: 'Close admin panel', exact: true }).click();
     await header.click();
     await expect(table.locator('tbody tr').first()).toContainText(users[0]!);
     expect(batches.map(batch => batch.length)).toEqual([25]);
@@ -94,8 +98,8 @@ test('renders globally sorted stored pages without table roster downloads, fanou
     const table = page.locator('.v-card').filter({
       has: page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }),
     }).last();
-    await expect(table).toContainText('Last successful billing import:');
-    await expect(table).toContainText('does not guarantee complete or live GitHub data');
+    await expect(table).toContainText('Last imported:');
+    await expect(table).toContainText('Imported data may be incomplete or out of date.');
     const net = table.getByRole('columnheader', { name: 'Net $', exact: true });
     await net.click();
     await net.click();

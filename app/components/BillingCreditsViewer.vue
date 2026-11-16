@@ -372,14 +372,10 @@
               </span>
             </v-card-title>
             <v-card-subtitle class="text-caption text-medium-emphasis pb-2 text-wrap">
+              Usage: {{ dateRangeDescription || (storedAvailable ? 'latest 28 stored days' : 'last 28 days') }}.
+              Billing: {{ storedAvailable ? storedPeriodLabel || rangeLabel : monthView ? selectedMonth : rangeLabel }}.
               <template v-if="storedAvailable">
-                Users and CLI tokens from imported metrics for {{ dateRangeDescription || 'the latest 28 stored days' }}.
-                Stored billing for {{ storedPeriodLabel || rangeLabel }}.
-                Last successful billing import: {{ storedImportLabel }}. This does not guarantee complete or live GitHub data.
-              </template>
-              <template v-else>
-                Mixed sources: <strong>User</strong> list + <strong>Tokens (CLI)</strong> come from the Copilot Metrics API for {{ dateRangeDescription || 'the last 28 days' }}.
-                <strong>Credits</strong>, <strong>Gross $</strong>, <strong>Net $</strong>, and <strong>Models</strong> come from the Billing API for {{ rangeLabel }}.
+                Last imported: {{ storedImportLabel }}. Imported data may be incomplete or out of date.
               </template>
             </v-card-subtitle>
             <div class="text-caption px-4 pb-2" data-testid="billing-page-sort-note">
@@ -387,9 +383,23 @@
                 Billing columns sort totals across this stored user list before choosing a page.
                 Users without stored billing are unknown, not zero.
               </template>
+              <template v-else-if="storedPending">
+                Checking billing sorting…
+              </template>
+              <template v-else-if="!storedReason || /^Import billing\b/.test(storedReason)">
+                Billing sorting is disabled. Import billing data in the
+                <v-btn
+                  variant="text"
+                  size="small"
+                  density="compact"
+                  class="pa-0 text-none"
+                  data-testid="billing-import-action"
+                  @click="$emit('open-admin')"
+                >Admin Panel</v-btn>
+                to enable it for this period.
+              </template>
               <template v-else>
-                {{ storedReason || 'Import billing for this scope and period to enable Credits, Gross, Net and Models sorting.' }}
-                User and Tokens sorts use the full Metrics API user list; billing loads only for the visible page.
+                Billing sorting is disabled. {{ storedReason }}
               </template>
             </div>
             <v-alert v-if="storedAvailable && storedReason" type="warning" density="compact">
@@ -550,6 +560,7 @@ export default defineComponent({
     queryParams: { type: Object as () => Record<string, string>, default: () => ({}) },
     dateRangeDescription: { type: String, default: '' },
   },
+  emits: ['open-admin'],
   async setup(props) {
     // ── Billing month selector ─────────────────────────────────────────────
     // GitHub's /settings/billing/ai_credit/usage endpoint defaults to the
