@@ -12,6 +12,6 @@ type MockRouteScenario = Readonly<{
 export const mockRouteScenarios = [
   { id: 'organization', scope: 'organization', owner: 'matrix-synthetic-org' },
   { id: 'enterprise', scope: 'enterprise', owner: 'matrix-synthetic-ent' },
-  { id: 'organization-team', scope: 'organization-team', owner: 'matrix-synthetic-org', team: 'matrix-org-team' },
-  { id: 'enterprise-team', scope: 'enterprise-team', owner: 'matrix-synthetic-ent', team: 'matrix-ent-team' },
+  { id: 'organization-team', scope: 'organization-team', owner: 'matrix-synthetic-org', team: 'the-a-team' },
+  { id: 'enterprise-team', scope: 'enterprise-team', owner: 'matrix-synthetic-ent', team: 'dev-team' },
 ] as const satisfies readonly MockRouteScenario[]

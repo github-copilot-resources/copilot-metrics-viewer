@@ -188,6 +188,23 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     });
   });
 
+  it('syncs when DB contains only lookback rows and retains them for adoption', async () => {
+    mockGetUserDayMetrics.mockResolvedValue([makeDayRecord('octocat', '2026-02-28')]);
+    const api = await import('../server/services/github-copilot-usage-api');
+    const live = [makeDayRecord('octokitten', '2026-03-01')];
+    const download = vi.spyOn(api, 'fetchRawUserDayRecords').mockResolvedValue(live);
+    try {
+      const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+      const result = await getMetricsDataV2(makeEvent());
+      expect(download).toHaveBeenCalledOnce();
+      expect(mockSaveUserDayBatch).toHaveBeenCalledWith('organization', 'test-org', live);
+      expect(result.reportData.map(row => row.day)).toEqual(['2026-03-01']);
+      expect(result.reportData[0]?.monthly_active_users).toBe(2);
+    } finally {
+      download.mockRestore();
+    }
+  });
+
   it('returns empty result when team has no members', async () => {
     mockFetchAllTeamMembers.mockResolvedValue([]);
 

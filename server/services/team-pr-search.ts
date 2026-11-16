@@ -37,6 +37,9 @@ export const ORG_PR_PROBE_ALIAS = 'orgPullRequests';
  */
 const MAX_AUTHOR_CHUNKS = 12;
 
+/** GitHub search exposes at most 1,000 results per query. */
+const MAX_AGENT_PAGES = 10;
+
 /** Login of the Copilot coding agent as it appears as a PR author. */
 export const COPILOT_AGENT_AUTHOR = 'Copilot';
 
@@ -72,7 +75,7 @@ export interface TeamPrMetrics {
   /** `totalMerged` divided by team size; null when the team size is unknown. */
   avgMergedPerPerson: number | null;
   memberCount: number;
-  /** True when team members were dropped to respect {@link MAX_AUTHOR_CHUNKS}. */
+  /** True when members or agent search results were capped; counts are lower bounds. */
   truncated: boolean;
   /**
    * False when no org could be determined, meaning results are not restricted
@@ -241,7 +244,10 @@ export function baseQueryLength(bucket: WeekBucket, org: string | undefined): nu
   return buildBucketQueries(bucket, [], org).reviewed.length;
 }
 
-function searchField(alias: string, query: string): string {
+function searchField(alias: string, query: string, after?: string): string {
+  if (alias.endsWith('agent')) {
+    return `${alias}: search(query: ${JSON.stringify(query)}, type: ISSUE, first: 100${after ? `, after: ${JSON.stringify(after)}` : ''}) { issueCount nodes { ... on PullRequest { id } } pageInfo { hasNextPage endCursor } }`;
+  }
   return `${alias}: search(query: ${JSON.stringify(query)}, type: ISSUE, first: 1) { issueCount }`;
 }
 
@@ -283,8 +289,8 @@ interface GraphQLSearchResponse {
 /**
  * Fold the aliased GraphQL response back into per-week counts.
  *
- * A PR assigned to two members in different chunks is counted once per chunk;
- * this is rare and documented rather than paid for with an extra query.
+ * Authors belong to disjoint chunks, but assignees do not: deduplicate agent
+ * PR node IDs across every chunk (and page) within each week.
  */
 export function collectCounts(
   data: Record<string, unknown>,
@@ -299,13 +305,21 @@ export function collectCounts(
   return buckets.map((bucket, b) => {
     let merged = 0;
     let aiTouched = 0;
+    const agents = new Set<string>();
     for (let c = 0; c < chunkCount; c++) {
-      const agent = countAt(b, c, 'agent');
-      merged += countAt(b, c, 'merged') + agent;
-      aiTouched += countAt(b, c, 'reviewed') + agent;
+      const node = data[aliasFor(b, c, 'agent')] as AgentSearchResult | undefined;
+      for (const pr of node?.nodes ?? []) agents.add(pr.id);
+      merged += countAt(b, c, 'merged');
+      aiTouched += countAt(b, c, 'reviewed');
     }
-    return { ...bucket, merged, aiTouched };
+    return { ...bucket, merged: merged + agents.size, aiTouched: aiTouched + agents.size };
   });
+}
+
+interface AgentSearchResult {
+  issueCount: number;
+  nodes?: { id: string }[];
+  pageInfo?: { hasNextPage: boolean; endCursor: string | null };
 }
 
 /**
@@ -381,7 +395,7 @@ export async function fetchTeamPrMetrics(request: TeamPrSearchRequest): Promise<
   }
 
   const allChunks = chunkLogins(logins, baseQueryLength(buckets[0]!, org));
-  const truncated = allChunks.length > MAX_AUTHOR_CHUNKS;
+  let truncated = allChunks.length > MAX_AUTHOR_CHUNKS;
   const chunks = truncated ? allChunks.slice(0, MAX_AUTHOR_CHUNKS) : allChunks;
 
   const data: Record<string, unknown> = {};
@@ -389,6 +403,41 @@ export async function fetchTeamPrMetrics(request: TeamPrSearchRequest): Promise<
     Object.assign(data, await runSearch(query, githubToken, apiBaseUrl));
     const probe = data[ORG_PR_PROBE_ALIAS] as { issueCount?: number } | undefined;
     if (org && probe?.issueCount === 0) throw new SearchAccessError(org);
+  }
+
+  for (const [b, bucket] of buckets.entries()) {
+    for (const [c, chunk] of chunks.entries()) {
+      const alias = aliasFor(b, c, 'agent');
+      let page = data[alias] as AgentSearchResult | undefined;
+      const nodes = new Map<string, { id: string }>();
+      const cursors = new Set<string>();
+      const expected = page?.issueCount ?? 0;
+      for (let pageNumber = 1; page; pageNumber++) {
+        if (page.issueCount > 0 && (!Array.isArray(page.nodes) || !page.pageInfo)) {
+          throw new Error('GitHub agent PR search returned incomplete result data');
+        }
+        for (const node of page.nodes ?? []) {
+          if (!node?.id) throw new Error('GitHub agent PR search returned a missing PR identity');
+          nodes.set(node.id, node);
+        }
+        if (!page.pageInfo?.hasNextPage) break;
+        if (pageNumber >= MAX_AGENT_PAGES) {
+          truncated = true;
+          break;
+        }
+        const cursor = page.pageInfo.endCursor;
+        if (!cursor || cursors.has(cursor)) {
+          throw new Error('GitHub agent PR search returned an invalid pagination cursor');
+        }
+        cursors.add(cursor);
+        const query = buildBucketQueries(bucket, chunk, org).agent;
+        const next = await runSearch(`query { ${searchField(alias, query, cursor)} }`, githubToken, apiBaseUrl);
+        page = next[alias] as AgentSearchResult | undefined;
+        if (!page) throw new Error('GitHub agent PR search returned a missing page');
+      }
+      if (nodes.size < expected) truncated = true;
+      data[alias] = { issueCount: expected, nodes: [...nodes.values()] };
+    }
   }
 
   const weeks = collectCounts(data, buckets, chunks.length);

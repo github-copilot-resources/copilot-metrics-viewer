@@ -26,6 +26,18 @@ import type { ReportDayTotals } from '../../server/services/github-copilot-usage
 /** Ranges longer than this use the 28-day rolling window for adoption. */
 const WEEKLY_WINDOW_MAX_DAYS = 7;
 
+export interface ReportingRange {
+  since?: string;
+  until?: string;
+}
+
+function calendarDays(days: ReportDayTotals[], range?: ReportingRange): number {
+  const sorted = days.map(day => day.day).sort();
+  const since = range?.since || sorted[0];
+  const until = range?.until || sorted.at(-1);
+  return since && until ? (Date.parse(until) - Date.parse(since)) / 86400000 + 1 : 0;
+}
+
 export interface TeamMetricSummary {
   /** Lines of code added by Copilot over the range. */
   aiLoc: number;
@@ -91,11 +103,12 @@ function lastDay(days: ReportDayTotals[]): ReportDayTotals | undefined {
 function rollingUsers(
   days: ReportDayTotals[],
   weeklyKey: keyof ReportDayTotals,
-  monthlyKey: keyof ReportDayTotals
+  monthlyKey: keyof ReportDayTotals,
+  range?: ReportingRange
 ): number {
   const last = lastDay(days);
   if (!last) return 0;
-  const key = days.length <= WEEKLY_WINDOW_MAX_DAYS ? weeklyKey : monthlyKey;
+  const key = calendarDays(days, range) <= WEEKLY_WINDOW_MAX_DAYS ? weeklyKey : monthlyKey;
   return (last[key] as number | undefined) ?? (last[monthlyKey] as number | undefined) ?? 0;
 }
 
@@ -111,17 +124,17 @@ export function agentLocSharePct(days: ReportDayTotals[]): number | null {
   return safePct(agentLoc(days), sumBy(days, day => day.loc_added_sum));
 }
 
-export function summarizeTeam(days: ReportDayTotals[], memberCount: number): TeamMetricSummary {
+export function summarizeTeam(days: ReportDayTotals[], memberCount: number, range?: ReportingRange): TeamMetricSummary {
   const aiLoc = sumBy(days, d => d.loc_added_sum);
   const generations = sumBy(days, d => d.code_generation_activity_count);
   const acceptances = sumBy(days, d => d.code_acceptance_activity_count);
   const activeUsers = lastDay(days)?.daily_active_users ?? 0;
 
-  const copilotUsers = rollingUsers(days, 'weekly_active_users', 'monthly_active_users');
-  const agentUsers = rollingUsers(days, 'weekly_active_agent_users', 'monthly_active_agent_users');
-  const cliUsers = rollingUsers(days, 'weekly_active_cli_users', 'monthly_active_cli_users');
+  const copilotUsers = rollingUsers(days, 'weekly_active_users', 'monthly_active_users', range);
+  const agentUsers = rollingUsers(days, 'weekly_active_agent_users', 'monthly_active_agent_users', range);
+  const cliUsers = rollingUsers(days, 'weekly_active_cli_users', 'monthly_active_cli_users', range);
   const vscodeAgentUsers = rollingUsers(
-    days, 'weekly_active_vscode_agent_users', 'monthly_active_vscode_agent_users'
+    days, 'weekly_active_vscode_agent_users', 'monthly_active_vscode_agent_users', range
   );
 
   return {

@@ -67,12 +67,13 @@
 import { defineComponent, computed, ref, type PropType } from 'vue';
 import type { ReportDayTotals } from '../../server/services/github-copilot-usage-api';
 import type { TeamPrMetrics } from '../../server/services/team-pr-search';
-import { summarizeTeam, trendWithinRange, type TeamMetricSummary, type Trend, type TrendDirection } from '@/utils/teamMetrics';
+import { summarizeTeam, trendWithinRange, type ReportingRange, type TeamMetricSummary, type Trend, type TrendDirection } from '@/utils/teamMetrics';
 
 export interface LeaderboardTeam {
   slug: string;
   teamName: string;
   reportData: ReportDayTotals[];
+  reportingRange?: ReportingRange;
   memberCount: number;
   color: string;
   prMetrics?: TeamPrMetrics | null;
@@ -133,7 +134,7 @@ export default defineComponent({
       const rows = props.teams.map(team => {
         const value = isPrMetric.value
           ? selectedMetric.value === 'prsMerged' ? team.prMetrics?.totalMerged ?? null : team.prMetrics?.avgMergedPerPerson ?? null
-          : pick(summarizeTeam(team.reportData, team.memberCount));
+          : pick(summarizeTeam(team.reportData, team.memberCount, team.reportingRange));
         return {
           slug: team.slug,
           teamName: team.teamName,

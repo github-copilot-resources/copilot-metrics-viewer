@@ -27,12 +27,13 @@
 <script lang="ts">
 import { defineComponent, computed, type PropType } from 'vue';
 import type { ReportDayTotals } from '../../server/services/github-copilot-usage-api';
-import { summarizeTeam } from '@/utils/teamMetrics';
+import { summarizeTeam, type ReportingRange } from '@/utils/teamMetrics';
 
 export interface ScorecardTeam {
   slug: string;
   teamName: string;
   reportData: ReportDayTotals[];
+  reportingRange?: ReportingRange;
   memberCount: number;
   color: string;
 }
@@ -49,7 +50,7 @@ export default defineComponent({
 
     const cards = computed(() =>
       props.teams.map(team => {
-        const summary = summarizeTeam(team.reportData, team.memberCount);
+        const summary = summarizeTeam(team.reportData, team.memberCount, team.reportingRange);
         return {
           slug: team.slug,
           teamName: team.teamName,

@@ -126,13 +126,14 @@ export default defineComponent({
       const data = metrics.value;
       if (!data) return [];
       const aiSharePct = data.totalMerged > 0 ? (data.totalAiTouched / data.totalMerged) * 100 : 0;
+      const lowerBound = data.truncated ? '≥ ' : '';
       return [
-        { label: 'Merged PRs', value: `${data.truncated ? '≥ ' : ''}${data.totalMerged.toLocaleString()}` },
-        { label: 'With AI contribution', value: `${data.totalAiTouched.toLocaleString()} (${aiSharePct.toFixed(0)}%)` },
-        { label: 'Weekly average', value: data.rollingAverage.toFixed(1) },
+        { label: 'Merged PRs', value: `${lowerBound}${data.totalMerged.toLocaleString()}` },
+        { label: 'With AI contribution', value: `${lowerBound}${data.totalAiTouched.toLocaleString()}${data.truncated ? '' : ` (${aiSharePct.toFixed(0)}%)`}` },
+        { label: 'Weekly average', value: `${lowerBound}${data.rollingAverage.toFixed(1)}` },
         {
           label: 'Merged per person',
-          value: data.avgMergedPerPerson === null ? '—' : data.avgMergedPerPerson.toFixed(1),
+          value: data.avgMergedPerPerson === null ? '—' : `${lowerBound}${data.avgMergedPerPerson.toFixed(1)}`,
         },
       ];
     });
@@ -142,7 +143,7 @@ export default defineComponent({
       if (!data) return [];
       const notes: string[] = [];
       if (data.truncated) {
-        notes.push('This team is large enough that only some members could be queried; counts are a lower bound.');
+        notes.push('Member or agent PR search limits were reached; counts are a lower bound.');
       }
       if (!data.orgScoped) {
         notes.push('No organization could be determined, so results are not limited to this organization\'s repositories.');

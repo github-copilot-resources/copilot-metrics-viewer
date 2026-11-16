@@ -1320,7 +1320,7 @@ export default defineComponent({
     const comparisonSummaryCards = computed(() => {
       return perTeamData.value.map((td, idx) => {
         const teamName = availableTeams.value.find(t => t.slug === td.slug)?.name || td.slug
-        const summary = summarizeTeam(td.reportData, td.memberCount)
+        const summary = summarizeTeam(td.reportData, td.memberCount, props.dateRange)
 
         // Older metrics payloads are the only source when the report API is
         // unavailable, so fall back to them for the two legacy figures.
@@ -1365,6 +1365,7 @@ export default defineComponent({
         slug: td.slug,
         teamName: availableTeams.value.find(t => t.slug === td.slug)?.name || td.slug,
         reportData: td.reportData,
+        reportingRange: props.dateRange,
         memberCount: td.memberCount,
         prMetrics: getTeamPrMetrics(td.slug),
         color: CHART_COLORS[idx % CHART_COLORS.length]!.border

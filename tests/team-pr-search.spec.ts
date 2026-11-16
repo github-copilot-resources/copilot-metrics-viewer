@@ -222,7 +222,7 @@ describe('collectCounts', () => {
     const data = {
       [aliasFor(0, 0, 'merged')]: { issueCount: 5 },
       [aliasFor(0, 0, 'reviewed')]: { issueCount: 2 },
-      [aliasFor(0, 0, 'agent')]: { issueCount: 3 },
+      [aliasFor(0, 0, 'agent')]: { issueCount: 3, nodes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] },
       [aliasFor(0, 1, 'merged')]: { issueCount: 4 },
       [aliasFor(0, 1, 'reviewed')]: { issueCount: 1 },
       [aliasFor(0, 1, 'agent')]: { issueCount: 0 },
@@ -248,7 +248,7 @@ describe('collectCounts', () => {
     const data = {
       [aliasFor(0, 0, 'merged')]: { issueCount: 3 },
       [aliasFor(0, 0, 'reviewed')]: { issueCount: 3 },
-      [aliasFor(0, 0, 'agent')]: { issueCount: 2 },
+      [aliasFor(0, 0, 'agent')]: { issueCount: 2, nodes: [{ id: 'a' }, { id: 'b' }] },
     };
 
     const weeks = collectCounts(data, buckets, 1);
@@ -321,6 +321,74 @@ describe('retryAfterMinutes', () => {
 // ---------------------------------------------------------------------------
 
 describe('fetchTeamPrMetrics', () => {
+  it('propagates a later agent page rate limit instead of caching partial counts', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(mockResponse({ data: {
+        [aliasFor(0, 0, 'agent')]: {
+          issueCount: 2, nodes: [{ id: 'first' }],
+          pageInfo: { hasNextPage: true, endCursor: 'next' },
+        },
+      } }))
+      .mockResolvedValueOnce(mockResponse({}, { status: 429, headers: { 'retry-after': '120' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(fetchTeamPrMetrics({ ...baseRequest, until: baseRequest.since })).rejects.toMatchObject({
+      name: 'SearchRateLimitError', retryAfterMinutes: 2,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    { issueCount: 2 },
+    { issueCount: 2, nodes: [null], pageInfo: { hasNextPage: false, endCursor: null } },
+    { issueCount: 2, nodes: [{ id: 'first' }], pageInfo: { hasNextPage: true, endCursor: null } },
+  ])('rejects malformed agent results instead of presenting exact zero counts: %j', async agent => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ data: { [aliasFor(0, 0, 'agent')]: agent } })));
+    await expect(fetchTeamPrMetrics({ ...baseRequest, until: baseRequest.since })).rejects.toThrow(/GitHub agent PR search/);
+  });
+
+  it('deduplicates agent PR identities across assignee chunks and pages', async () => {
+    const logins = Array.from({ length: 10 }, (_, i) => `developer-with-long-login-${i}`);
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+      const { query } = JSON.parse(String(init.body)) as { query: string };
+      const data: Record<string, unknown> = {};
+      for (const match of query.matchAll(/(\w+): search\(/g)) {
+        const alias = match[1]!;
+        data[alias] = alias.endsWith('agent')
+          ? {
+              issueCount: 3,
+              nodes: [{ id: 'shared-pr' }, { id: query.includes('after:') ? 'last-pr' : 'first-pr' }],
+              pageInfo: { hasNextPage: !query.includes('after:'), endCursor: 'next-page' },
+            }
+          : { issueCount: alias === ORG_PR_PROBE_ALIAS ? 1 : 0 };
+      }
+      return mockResponse({ data });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await fetchTeamPrMetrics({ ...baseRequest, logins, until: baseRequest.since });
+    expect(result.totalMerged).toBe(3);
+    expect(result.totalAiTouched).toBe(3);
+    expect(result.avgMergedPerPerson).toBe(0.3);
+    expect(result.truncated).toBe(false);
+    expect(fetchMock.mock.calls.some(([, init]) => String(init.body).includes('after:'))).toBe(true);
+  });
+
+  it('bounds agent pagination and labels incomplete counts as lower bounds', async () => {
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, init: RequestInit) => {
+      const { query } = JSON.parse(String(init.body)) as { query: string };
+      return mockResponse({ data: Object.fromEntries([...query.matchAll(/(\w+): search\(/g)].map(([, alias]) => [
+        alias!, alias!.endsWith('agent')
+          ? { issueCount: 1500, nodes: [{ id: `pr-${fetchMock.mock.calls.length}` }], pageInfo: { hasNextPage: true, endCursor: `page-${fetchMock.mock.calls.length}` } }
+          : { issueCount: alias === ORG_PR_PROBE_ALIAS ? 1 : 0 },
+      ])) });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await fetchTeamPrMetrics({ ...baseRequest, until: baseRequest.since });
+    expect(result.truncated).toBe(true);
+    expect(result.totalMerged).toBeGreaterThan(0);
+    expect(result.totalMerged).toBeLessThan(1500);
+    expect(fetchMock.mock.calls.length).toBeLessThanOrEqual(10);
+  });
+
   const baseRequest = {
     logins: ['alice', 'bob'],
     since: '2026-02-02',
@@ -413,7 +481,9 @@ describe('fetchTeamPrMetrics', () => {
       inFlight--;
       const { query } = JSON.parse(String(init.body)) as { query: string };
       const aliases = [...query.matchAll(/(\w+): search\(/g)].map(match => match[1]!);
-      return mockResponse({ data: Object.fromEntries(aliases.map(alias => [alias, { issueCount: 1 }])) });
+      return mockResponse({ data: Object.fromEntries(aliases.map(alias => [alias, alias.endsWith('agent')
+        ? { issueCount: 1, nodes: [{ id: alias }], pageInfo: { hasNextPage: false, endCursor: null } }
+        : { issueCount: 1 }])) });
     });
     vi.stubGlobal('fetch', fetchMock);
 

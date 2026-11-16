@@ -26,7 +26,27 @@ for (const scenario of mockRouteScenarios) {
         : route.abort()
     })
 
+    const metricsResponse = page.waitForResponse(response => {
+      const url = new URL(response.url())
+      return url.origin === origin && url.pathname === '/api/metrics'
+        && (!team || url.searchParams.get('githubTeam') === team)
+    })
     const response = await page.goto(routePath)
+    const scopedResponse = await metricsResponse
+    expect(scopedResponse.ok()).toBe(true)
+    const requestUrl = new URL(scopedResponse.url())
+    expect(requestUrl.searchParams.get('isDataMocked')).toBe('true')
+    if (team) {
+      expect(requestUrl.searchParams.get(enterprise ? 'githubEnt' : 'githubOrg')).toBe(scenario.owner)
+      const data = await scopedResponse.json()
+      // These real fixture rosters differ in size and exclude non-team activity.
+      expect(data.teamMemberCount).toBe(team === 'the-a-team' ? 5 : 8)
+      expect(data.reportData.length).toBeGreaterThan(0)
+      expect(Math.max(...data.reportData.map((day: { daily_active_users: number }) => day.daily_active_users)))
+        .toBeLessThanOrEqual(data.teamMemberCount)
+      expect(data.reportData.reduce((total: number, day: { code_generation_activity_count: number }) =>
+        total + day.code_generation_activity_count, 0)).toBeGreaterThan(0)
+    }
     expect(response?.ok(), 'document navigation succeeds').toBe(true)
     await expect(page).toHaveURL(new URL(routePath, testInfo.project.use.baseURL).href)
     await expect(page).toHaveTitle(title)

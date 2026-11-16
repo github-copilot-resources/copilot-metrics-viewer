@@ -6,6 +6,7 @@ import TeamAiLocTrend from '../app/components/TeamAiLocTrend.vue';
 import TeamPrWeekly from '../app/components/TeamPrWeekly.vue';
 import AgentActivityViewer from '../app/components/AgentActivityViewer.vue';
 import TeamLeaderboard from '../app/components/TeamLeaderboard.vue';
+import TeamAiScorecards from '../app/components/TeamAiScorecards.vue';
 import type { ReportDayTotals } from '../server/services/github-copilot-usage-api';
 import type { TeamPrMetrics } from '../server/services/team-pr-search';
 
@@ -39,6 +40,36 @@ const metrics: TeamPrMetrics = {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('team AI UI', () => {
+  it('marks every incomplete PR count as a lower bound and omits the incomplete AI share', async () => {
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue({ ...metrics, truncated: true }));
+    const wrapper = await mountSuspended(TeamPrWeekly, { props: { params: { githubTeam: 'qa' } } });
+    await wrapper.get('button').trigger('click');
+    await flushPromises();
+    expect(wrapper.text()).toContain('≥ 10');
+    expect(wrapper.text()).toContain('≥ 2');
+    expect(wrapper.text()).toContain('≥ 5.0');
+    expect(wrapper.text()).toContain('≥ 2.0');
+    expect(wrapper.text()).not.toContain('(20%)');
+    expect(wrapper.text()).toContain('counts are a lower bound');
+    wrapper.unmount();
+  });
+  it('uses the requested calendar range in scorecard and leaderboard adoption', async () => {
+    const record = day('2026-03-28', 10, 5);
+    Object.assign(record, { weekly_active_users: 1, monthly_active_users: 2 });
+    const team = {
+      slug: 'qa', teamName: 'QA', color: '#123456', memberCount: 2, reportData: [record],
+      reportingRange: { since: '2026-03-01', until: '2026-03-28' },
+    };
+    const scorecards = await mountSuspended(TeamAiScorecards, { props: { teams: [team] } });
+    const adoption = scorecards.findAll('.py-1').find(row => row.text().includes('Copilot adoption'));
+    expect(adoption?.get('.text-body-2').text()).toBe('100.0%');
+    const leaderboard = await mountSuspended(TeamLeaderboard, { props: { teams: [team] } });
+    leaderboard.findComponent({ name: 'VSelect' }).vm.$emit('update:modelValue', 'copilotAdoptionPct');
+    await flushPromises();
+    expect(leaderboard.get('tbody').text()).toContain('100.0%');
+    scorecards.unmount();
+    leaderboard.unmount();
+  });
   it('uses direct added LOC, not added plus deleted LOC or agent-chat blocks, in Agent Activity', async () => {
     const record = day('2026-10-04', 100, 25);
     record.loc_deleted_sum = 50;

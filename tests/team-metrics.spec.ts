@@ -42,6 +42,24 @@ describe('adoptionPct', () => {
 });
 
 describe('summarizeTeam', () => {
+  it('chooses adoption windows from calendar range, not sparse activity row count', () => {
+    const sparse = [
+      day('2026-03-01', { daily_active_users: 1 }),
+      day('2026-03-28', {
+        daily_active_users: 1, weekly_active_users: 1, monthly_active_users: 2,
+        weekly_active_agent_users: 1, monthly_active_agent_users: 2,
+        weekly_active_cli_users: 1, monthly_active_cli_users: 2,
+        weekly_active_vscode_agent_users: 1, monthly_active_vscode_agent_users: 2,
+      }),
+    ];
+    expect(summarizeTeam(sparse, 2).copilotAdoptionPct).toBe(100);
+    const range = { since: '2026-03-01', until: '2026-03-28' };
+    const summary = summarizeTeam(sparse.slice(1), 2, range);
+    expect([summary.copilotAdoptionPct, summary.agentAdoptionPct, summary.cliAdoptionPct, summary.vscodeAgentAdoptionPct])
+      .toEqual([100, 100, 100, 100]);
+    expect(summarizeTeam(sparse.slice(1), 2, { since: '2026-03-22', until: '2026-03-28' }).copilotAdoptionPct).toBe(50);
+    expect(summarizeTeam([], 0, range).copilotAdoptionPct).toBeNull();
+  });
   const days = [
     day('2024-05-01', {
       daily_active_users: 3,
