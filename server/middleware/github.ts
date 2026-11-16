@@ -70,7 +70,8 @@ export default defineEventHandler(async (event) => {
     // When historical mode is enabled, metrics come from DB — auth is optional
     // (the handler will request auth only if it needs to sync from the API)
     const historicalMode = isDbConfigured();
-    if (historicalMode && (url.startsWith('/api/metrics') || url.startsWith('/api/seats') || url.startsWith('/api/user-metrics'))) {
+    const storedBillingPage = url === '/api/billing-user-page' || url.startsWith('/api/billing-user-page?');
+    if (historicalMode && (storedBillingPage || url.startsWith('/api/metrics') || url.startsWith('/api/seats') || url.startsWith('/api/user-metrics'))) {
         try {
             event.context.headers = await authenticateAndGetGitHubHeaders(event);
         } catch {

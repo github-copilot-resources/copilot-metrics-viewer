@@ -1,6 +1,6 @@
 // @vitest-environment nuxt
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime';
-import type { VueWrapper } from '@vue/test-utils';
+import { flushPromises, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { ref } from 'vue';
 import BillingCreditsViewer from '../app/components/BillingCreditsViewer.vue';
@@ -15,9 +15,11 @@ describe('BillingCreditsViewer Top token users empty state', () => {
   afterEach(() => {
     wrapper?.unmount();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   async function renderUsers(users: object[]) {
+    vi.stubGlobal('$fetch', vi.fn().mockResolvedValue({ available: false, reason: 'Import billing' }));
     useFetchMock.mockImplementation(async (url: string) => ({
       data: ref(url === '/api/user-metrics' ? users : billing),
       pending: ref(false),
@@ -33,6 +35,7 @@ describe('BillingCreditsViewer Top token users empty state', () => {
         },
       },
     });
+    await flushPromises();
     return wrapper.findAll('.v-card').find(card => card.text().includes('Top token users (CLI)'))!;
   }
 

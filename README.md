@@ -279,6 +279,16 @@ The export uses the already-loaded, permission-filtered page without additional 
 
 This is a partial export feature, not a resolution of [#448](https://github.com/github-copilot-resources/copilot-metrics-viewer/issues/448): other table exports and authoritative filtering of departed enterprise members remain outstanding. Exporting a page does not independently verify current enterprise membership.
 
+## Billing table sorting
+
+When billing and user metrics have been imported, the per-user billing table sorts **stored per-user totals before pagination** in PostgreSQL. Credits, Gross $, Net $, and Models include all stored items/models for each canonical login, including configured `NUXT_BILLING_USER_ALIASES`. Pages contain 10, 25, or 50 users; users without a stored billing row show **No stored billing data**, not zero.
+
+The sorted dataset is the **stored usage roster**, not every enterprise identity or the global top-spenders chart. User/CLI token dates follow the dashboard's usage window (or the latest 28 stored days); billing dates follow the selected billing month or date range. Organization queries restrict billing to that organization. Team queries use the existing published membership snapshot, including inactive members; unavailable/stale membership disables stored sorting rather than broadening the scope. Reports-to groups retain the existing User/Token sorting and lazy billing loading.
+
+The table displays the selected billing dates and **Last successful billing import** (the latest successful import overlapping those dates). That timestamp is informational: it does not certify complete imports, matched identities, current membership, or live GitHub freshness. No complete daily usage coverage or identity-match guarantee is required. Database-configured deployments can open the same admin-gated table without a live billing token.
+
+Without stored billing for the selected scope/period, billing-column sorting is disabled with an import hint. User and Tokens sorting remains available, and live billing is loaded only for the visible page. Failed or pending requests are never shown as zero. The stored page endpoint (`/api/billing-user-page`) uses the existing billing admin gate and does not call GitHub or download a full roster.
+
 ## Advanced Features
 
 ### Flexible Date Range Selection

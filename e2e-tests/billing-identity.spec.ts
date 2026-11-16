@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 for (const [column, key] of [['Credits', 'netQuantity'], ['Gross $', 'grossAmount'], ['Net $', 'netAmount']] as const) {
-  test(`bounds ${column} sorting to the current page in both directions`, async ({ page }) => {
+  test(`disables ${column} sorting without storage and keeps live loading page-bounded`, async ({ page }) => {
     const users = Array.from({ length: 60 }, (_, i) => `fake-user-${String(i).padStart(3, '0')}`);
     const batches: string[][] = [];
     await page.route('https://api.github.com/**', route => route.abort());
@@ -30,12 +30,13 @@ for (const [column, key] of [['Credits', 'netQuantity'], ['Gross $', 'grossAmoun
     }).last();
     await expect(table).toContainText('25 of 60 loaded');
     const header = table.getByRole('columnheader', { name: column, exact: true });
+    await expect(header).not.toHaveClass(/v-data-table__th--sortable/);
     await header.click();
-    await expect(table.locator('tbody tr').first()).toContainText(users[24]!);
+    await expect(table.locator('tbody tr').first()).toContainText(users[0]!);
     await expect(table.locator('.v-data-table-footer__info')).toHaveText('1-25 of 60');
     expect(batches.map(batch => batch.length)).toEqual([25]);
     await expect(page.getByTestId('billing-page-sort-note')).toBeVisible();
-    await expect(page.getByTestId('billing-page-sort-note')).toContainText('Billing columns sort only the current page');
+    await expect(page.getByTestId('billing-page-sort-note')).toContainText('Import billing');
     await header.click();
     await expect(table.locator('tbody tr').first()).toContainText(users[0]!);
     expect(batches.map(batch => batch.length)).toEqual([25]);
@@ -51,7 +52,60 @@ for (const [column, key] of [['Credits', 'netQuantity'], ['Gross $', 'grossAmoun
     }
     console.log(JSON.stringify({ column, actions: ['ascending', 'descending', 'next page'], batchSizes: batches.map(batch => batch.length) }));
   });
+
 }
+
+test('renders globally sorted stored pages without table roster downloads, fanout, or a covering aggregate import', async ({ page }) => {
+    let rosterRequests = 0;
+    let fanoutRequests = 0;
+    const users = Array.from({ length: 60 }, (_, i) => ({
+      user: `synthetic-${String(i).padStart(3, '0')}`,
+      credits: i, grossAmount: i, netAmount: i, models: 1, tokens: i,
+    }));
+    await page.route('https://api.github.com/**', route => route.abort());
+    await page.route('**/api/user-metrics?**', route => {
+      rosterRequests++;
+      return route.fulfill({ json: [] });
+    });
+    await page.route('**/api/billing-credits-by-user?**', route => {
+      fanoutRequests++;
+      return route.fulfill({ json: { usageItems: [] } });
+    });
+    await page.route(/\/api\/billing-credits\?/, route => route.fulfill({
+      status: 409, json: { statusMessage: 'No covering aggregate import' },
+    }));
+    await page.route('**/api/billing-credits-top-users?**', route => route.fulfill({ json: { users: [] } }));
+    await page.route('**/api/billing-user-page?**', route => {
+      const query = new URL(route.request().url()).searchParams;
+      const rows = [...users];
+      if (query.get('sort') === 'netAmount') rows.sort((a, b) => query.get('order') === 'desc' ? b.netAmount - a.netAmount : a.netAmount - b.netAmount);
+      const start = (Number(query.get('page')) - 1) * Number(query.get('limit'));
+      return route.fulfill({ json: {
+        available: true, rows: rows.slice(start, start + Number(query.get('limit'))), total: users.length,
+        topTokenUsers: [], lastImportAt: '2026-07-01T10:00:00Z',
+        window: { startDate: '2026-06-01', endDate: '2026-06-30' },
+      } });
+    });
+    await page.goto('/orgs/fake-org?mock=true', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => rosterRequests).toBeGreaterThan(0);
+    await page.waitForLoadState('networkidle');
+    rosterRequests = 0;
+    await page.getByRole('tab', { name: 'billing', exact: true }).click();
+    const table = page.locator('.v-card').filter({
+      has: page.locator('.v-card-title').filter({ hasText: 'Per-user breakdown' }),
+    }).last();
+    await expect(table).toContainText('Last successful billing import:');
+    await expect(table).toContainText('does not guarantee complete or live GitHub data');
+    const net = table.getByRole('columnheader', { name: 'Net $', exact: true });
+    await net.click();
+    await net.click();
+    await expect(table.locator('tbody tr').first()).toContainText('synthetic-059');
+    await table.getByRole('button', { name: 'Next page' }).click();
+    await expect(table.locator('tbody tr').first()).toContainText('synthetic-034');
+    await expect(table.locator('.v-data-table-footer__info')).toHaveText('26-50 of 60');
+    expect(rosterRequests).toBe(0);
+    expect(fanoutRequests).toBe(0);
+});
 
 test('keeps checked zeros scoped to the batch and an off-page spender reachable', async ({ page }) => {
   const users = Array.from({ length: 60 }, (_, i) => `fake-user-${String(i).padStart(3, '0')}`);

@@ -317,7 +317,7 @@ describe('GET /api/billing-credits — DB-first branch', () => {
 
 describe('GET /api/billing-credits-by-user — DB-first branch', () => {
   it('serves the per-user aggregate from DB in a single query, no fan-out', async () => {
-    setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6', logins: 'alice,bob' });
+    setQuery({ scope: 'enterprise', githubEnt: 'ent-x', year: '2026', month: '6', logins: 'alice,bob,unknown' });
     mockDecide.mockResolvedValueOnce({ source: 'db', reason: 'covered', lastIngestAt: null, jobId: 9 });
     mockAggregateByUser.mockResolvedValueOnce({
       timePeriod: { year: 2026, month: 6 },
@@ -337,9 +337,10 @@ describe('GET /api/billing-credits-by-user — DB-first branch', () => {
     expect(mockDecide).toHaveBeenCalledWith('ent-x', '2026-06-01', '2026-06-30');
     expect(mockAggregateByUser).toHaveBeenCalled();
     const args = mockAggregateByUser.mock.calls[0]!;
-    expect(args[2]).toEqual(['alice', 'bob']);
+    expect(args[2]).toEqual(['alice', 'bob', 'unknown']);
     expect(((globalThis as any).$fetch as any).mock.calls).toHaveLength(0);
     expect(result.usageItems).toHaveLength(2);
+    expect(result.missingStoredLogins).toEqual(['unknown']);
     expect(getHeader('X-Data-Source')).toBe('db');
   });
 
