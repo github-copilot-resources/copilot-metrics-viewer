@@ -127,6 +127,8 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
     if (ORIGINAL_DBURL === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = ORIGINAL_DBURL;
     if (ORIGINAL_MOCKED === undefined) delete process.env.NUXT_PUBLIC_IS_DATA_MOCKED;
@@ -154,9 +156,44 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     expect(mockGetUserDayMetrics).toHaveBeenCalledWith(
       'organization',
       'test-org',
-      '2026-03-01',
+      '2026-02-02',
       '2026-03-28',
     );
+  });
+
+  it('includes historical lookback users but returns only the selected day', async () => {
+    _mockQuery.since = '2026-03-28';
+    _mockQuery.until = '2026-03-28';
+    mockGetUserDayMetrics.mockImplementation(async (_scope, _identifier, start, end) => [
+      { ...makeDayRecord('octocat', '2026-03-27'), used_cli: true, used_agent: true },
+      makeDayRecord('octokitten', '2026-03-28'),
+    ].filter(record => record.day >= start && record.day <= end));
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    const result = await getMetricsDataV2(makeEvent());
+
+    expect(mockGetUserDayMetrics).toHaveBeenCalledWith('organization', 'test-org', '2026-03-01', '2026-03-28');
+    expect(result.reportData.map(day => day.day)).toEqual(['2026-03-28']);
+    expect(result.metrics.map(day => day.date)).toEqual(['2026-03-28']);
+    expect(result.reportData[0]?.weekly_active_cli_users).toBe(1);
+    expect(result.reportData[0]?.monthly_active_agent_users).toBe(1);
+  });
+
+  it('syncs when lookback data exists but the requested range is empty', async () => {
+    mockGetUserDayMetrics.mockResolvedValue([makeDayRecord('octocat', '2026-02-28')]);
+    const api = await import('../server/services/github-copilot-usage-api');
+    const fetchRecords = vi.spyOn(api, 'fetchRawUserDayRecords').mockResolvedValue([
+      makeDayRecord('octocat', '2026-03-15'),
+    ]);
+
+    try {
+      const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+      const result = await getMetricsDataV2(makeEvent());
+
+      expect(fetchRecords).toHaveBeenCalled();
+      expect(result.reportData.map(day => day.day)).toEqual(['2026-03-15']);
+    } finally {
+      fetchRecords.mockRestore();
+    }
   });
 
   it('throws 401 (not 500/ReferenceError) when DB is empty and no auth token', async () => {
@@ -178,6 +215,54 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     expect(result.metrics).toEqual([]);
     expect(result.reportData).toEqual([]);
     // DB should NOT be queried when team is empty
+    expect(mockGetUserDayMetrics).not.toHaveBeenCalled();
+  });
+
+  it('filters mock reports to team members instead of returning org-wide active users', async () => {
+    process.env.NUXT_PUBLIC_IS_DATA_MOCKED = 'true';
+    _mockQuery.isDataMocked = 'true';
+    const records = [
+      makeDayRecord('octocat', '2026-03-15'),
+      makeDayRecord('octokitten', '2026-03-15'),
+      makeDayRecord('non-member', '2026-03-15'),
+    ];
+    const api = await import('../server/services/github-copilot-usage-api');
+    const { aggregateTeamMetrics } = await import('../server/services/user-metrics-aggregator');
+    const rawRecords = vi.spyOn(api, 'fetchRawUserDayRecords').mockResolvedValue(records);
+    const orgReport = vi.spyOn(api, 'fetchLatestReport').mockResolvedValue(
+      aggregateTeamMetrics(records, new Set(records.map(record => record.user_login)))
+    );
+    try {
+      const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+      const result = await getMetricsDataV2(makeEvent(false));
+      expect(result.reportData[0]?.daily_active_users).toBe(2);
+      expect(result.reportData[0]?.loc_added_sum).toBe(300);
+      expect(rawRecords).toHaveBeenCalled();
+    } finally {
+      rawRecords.mockRestore();
+      orgReport.mockRestore();
+    }
+  });
+
+  it('returns enterprise team mock activity in the selected range without auth', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-07T12:00:00Z'));
+    _mockQuery = {
+      ..._mockQuery, scope: 'enterprise', githubEnt: 'test-ent',
+      isDataMocked: 'true', since: '2026-09-29', until: '2026-09-30',
+    };
+    const fetchMock = vi.fn().mockResolvedValue(JSON.stringify({ day_totals: [
+      makeDayRecord('octocat', '2026-04-24'),
+      makeDayRecord('octokitten', '2026-04-25'),
+      makeDayRecord('non-member', '2026-04-25'),
+    ] }));
+    vi.stubGlobal('$fetch', fetchMock);
+    const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+    const result = await getMetricsDataV2(makeEvent(false));
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/organization-users-28-day-report.json');
+    expect(result.reportData.map(day => day.day)).toEqual(['2026-09-29', '2026-09-30']);
+    expect(result.reportData.map(day => day.daily_active_users)).toEqual([1, 1]);
     expect(mockGetUserDayMetrics).not.toHaveBeenCalled();
   });
 });

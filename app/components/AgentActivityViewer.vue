@@ -7,8 +7,9 @@
           <div class="font-weight-bold text-body-1 mb-1">🤖 Agent Activity</div>
           <div class="text-medium-emphasis">
             Tracks AI-generated code changes via Copilot's agent and edit features. Shows lines added and deleted
-            by agents vs user-initiated edits, broken down by mode, model, and language. Agent contribution %
-            measures how much of AI code output came from agentic (autonomous) operations vs user-guided edits.
+            by direct Agent/Edit-mode file edits vs user-applied Copilot suggestions, broken down by mode, model, and language.
+            Agent share of Copilot-added LOC uses only agent_edit additions, not deletions or chat-panel copy/apply actions.
+            It does not measure AI's share of all code written or code shipped in merged PRs.
           </div>
         </div>
         <v-divider vertical class="mx-2 hidden-sm-and-down" />
@@ -40,13 +41,13 @@
         </v-card>
       </v-col>
       <v-col cols="12" sm="4">
-        <v-card variant="elevated" class="pa-4 text-center" height="160">
+        <v-card variant="elevated" class="pa-4 text-center" height="160" data-testid="agent-loc-share">
           <v-card-item>
-            <div class="text-caption text-medium-emphasis">Agent contribution</div>
-            <div class="text-caption text-medium-emphasis mb-2">% of all AI code changes</div>
-            <div class="kpi-value text-success">{{ agentContributionPct.toFixed(0) }}%</div>
+            <div class="text-caption text-medium-emphasis">Agent share of Copilot-added LOC</div>
+            <div class="text-caption text-medium-emphasis mb-2">Direct file additions from Agent/Edit mode</div>
+            <div class="kpi-value text-success">{{ agentContributionPct === null ? '—' : `${agentContributionPct.toFixed(1)}%` }}</div>
             <div class="text-caption text-medium-emphasis mt-1">
-              {{ formatCompact(agentLocChanged) }} of {{ formatCompact(totalLocChanged) }} lines
+              {{ formatCompact(agentLocAdded) }} of {{ formatCompact(totalLocAdded) }} added lines
             </div>
           </v-card-item>
         </v-card>
@@ -99,7 +100,7 @@
         <v-col cols="12" :md="chartColumns === '2' ? 6 : 12">
           <v-card variant="outlined" class="pa-4" height="300">
             <div class="text-subtitle-1 font-weight-medium mb-1">Agent-initiated code changes</div>
-            <div class="text-caption text-medium-emphasis mb-3">Lines added/deleted by agent over time</div>
+            <div class="text-caption text-medium-emphasis mb-3">Direct Agent/Edit-mode file additions and deletions (agent_edit)</div>
             <div style="height:210px">
               <Bar :data="agentInitiatedChartData" :options="sideBarOptions" />
             </div>
@@ -179,6 +180,7 @@
 <script lang="ts">
 import { defineComponent, ref, toRef, watchEffect, type PropType } from 'vue';
 import type { ReportDayTotals } from '../../server/services/github-copilot-usage-api';
+import { agentLoc, agentLocSharePct } from '@/utils/teamMetrics';
 import { Bar } from 'vue-chartjs';
 import {
   Chart as ChartJS, CategoryScale, LinearScale,
@@ -196,7 +198,7 @@ const DELETED_COLOR = '#D32F2F';
 
 const FEATURE_DISPLAY: Record<string, string> = {
   code_completion: 'Completions',
-  agent_edit: 'Edit (Agent)',
+  agent_edit: 'Agent/Edit file edits',
   chat_panel_ask_mode: 'Ask',
   chat_panel_agent_mode: 'Agent',
   chat_panel_custom_mode: 'Custom',
@@ -205,9 +207,6 @@ const FEATURE_DISPLAY: Record<string, string> = {
   chat_inline: 'Inline',
   plan_mode: 'Plan',
 };
-
-const USER_FEATURES = ['code_completion', 'chat_panel_ask_mode', 'chat_panel_agent_mode',
-  'chat_inline', 'chat_panel_custom_mode', 'plan_mode'];
 
 function formatCompact(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -224,8 +223,9 @@ export default defineComponent({
   },
   setup(props) {
     const totalLocChanged      = ref(0);
-    const agentLocChanged      = ref(0);
-    const agentContributionPct = ref(0);
+    const totalLocAdded        = ref(0);
+    const agentLocAdded        = ref(0);
+    const agentContributionPct = ref<number | null>(null);
     const avgAgentLinesDeleted = ref(0);
 
     const dailyLocChartData      = ref<{ labels: string[]; datasets: any[] }>({ labels: [], datasets: [] });
@@ -266,24 +266,24 @@ export default defineComponent({
 
     watchEffect(() => {
       const data = toRef(props, 'reportData').value;
-      if (!data || data.length === 0) return;
 
       const labels = data.map(d => d.day);
 
       // ── KPI totals ────────────────────────────────────────────
-      let totalAdded = 0, totalDeleted = 0, agentAdded = 0, agentDeleted = 0;
+      let totalAdded = 0, totalDeleted = 0, agentDeleted = 0;
       data.forEach(day => {
         totalAdded   += day.loc_added_sum   ?? 0;
         totalDeleted += day.loc_deleted_sum ?? 0;
-        const ae = (day.totals_by_feature ?? []).find(f => f.feature === 'agent_edit');
-        if (ae) { agentAdded += ae.loc_added_sum ?? 0; agentDeleted += ae.loc_deleted_sum ?? 0; }
+        for (const feature of day.totals_by_feature ?? []) {
+          if (feature.feature === 'agent_edit') agentDeleted += feature.loc_deleted_sum ?? 0;
+        }
       });
       totalLocChanged.value  = totalAdded + totalDeleted;
-      agentLocChanged.value  = agentAdded + agentDeleted;
-      agentContributionPct.value = totalLocChanged.value === 0 ? 0
-        : (agentLocChanged.value / totalLocChanged.value) * 100;
-      const latestDay = data[data.length - 1]!;
-      const mau = latestDay.monthly_active_users ?? 1;
+      totalLocAdded.value = totalAdded;
+      agentLocAdded.value = agentLoc(data);
+      agentContributionPct.value = agentLocSharePct(data);
+      const latestDay = data[data.length - 1];
+      const mau = latestDay?.monthly_active_users ?? 0;
       avgAgentLinesDeleted.value = mau > 0 ? Math.round(agentDeleted / mau) : 0;
 
       // ── Daily LOC (added + deleted by day) ────────────────────
@@ -298,7 +298,7 @@ export default defineComponent({
       // ── User-initiated features (lines added per day stacked) ──
       const presentUserFeatures = [...new Set(
         data.flatMap(d => (d.totals_by_feature ?? []).map(f => f.feature))
-      )].filter(f => USER_FEATURES.includes(f));
+      )].filter(f => f !== 'agent_edit');
 
       userInitiatedChartData.value = {
         labels,
@@ -331,10 +331,6 @@ export default defineComponent({
       };
 
       // ── Per-model aggregation ─────────────────────────────────
-      // IMPORTANT: filter user-feature buckets with USER_FEATURES, matching
-      // the aggregate chart at line ~408. Without this filter, features like
-      // chat_panel_edit_mode contribute to loc_added_sum but never to
-      // loc_suggested_to_add_sum, inflating "Added" beyond "Suggested".
       const userModelSuggestedMap = new Map<string, number>();
       const userModelAddedMap     = new Map<string, number>();
       const agentModelAddedMap    = new Map<string, number>();
@@ -344,7 +340,7 @@ export default defineComponent({
           if (mf.feature === 'agent_edit') {
             agentModelAddedMap.set(mf.model, (agentModelAddedMap.get(mf.model) ?? 0) + (mf.loc_added_sum ?? 0));
             agentModelDeletedMap.set(mf.model, (agentModelDeletedMap.get(mf.model) ?? 0) + (mf.loc_deleted_sum ?? 0));
-          } else if (USER_FEATURES.includes(mf.feature)) {
+          } else {
             userModelSuggestedMap.set(mf.model, (userModelSuggestedMap.get(mf.model) ?? 0) + (mf.loc_suggested_to_add_sum ?? 0));
             userModelAddedMap.set(mf.model, (userModelAddedMap.get(mf.model) ?? 0) + (mf.loc_added_sum ?? 0));
           }
@@ -369,7 +365,6 @@ export default defineComponent({
       };
 
       // ── Per-language aggregation ──────────────────────────────
-      // Same USER_FEATURES filter as the per-model section above.
       const userLangSuggestedMap = new Map<string, number>();
       const userLangAddedMap     = new Map<string, number>();
       const agentLangAddedMap    = new Map<string, number>();
@@ -379,7 +374,7 @@ export default defineComponent({
           if (lf.feature === 'agent_edit') {
             agentLangAddedMap.set(lf.language, (agentLangAddedMap.get(lf.language) ?? 0) + (lf.loc_added_sum ?? 0));
             agentLangDeletedMap.set(lf.language, (agentLangDeletedMap.get(lf.language) ?? 0) + (lf.loc_deleted_sum ?? 0));
-          } else if (USER_FEATURES.includes(lf.feature)) {
+          } else {
             userLangSuggestedMap.set(lf.language, (userLangSuggestedMap.get(lf.language) ?? 0) + (lf.loc_suggested_to_add_sum ?? 0));
             userLangAddedMap.set(lf.language, (userLangAddedMap.get(lf.language) ?? 0) + (lf.loc_added_sum ?? 0));
           }
@@ -413,7 +408,7 @@ export default defineComponent({
           if (f.feature === 'agent_edit') {
             agentModeAddedMap.set(f.feature, (agentModeAddedMap.get(f.feature) ?? 0) + (f.loc_added_sum ?? 0));
             agentModeDeletedMap.set(f.feature, (agentModeDeletedMap.get(f.feature) ?? 0) + (f.loc_deleted_sum ?? 0));
-          } else if (USER_FEATURES.includes(f.feature)) {
+          } else {
             userModeSuggestedMap.set(f.feature, (userModeSuggestedMap.get(f.feature) ?? 0) + (f.loc_suggested_to_add_sum ?? 0));
             userModeAddedMap.set(f.feature, (userModeAddedMap.get(f.feature) ?? 0) + (f.loc_added_sum ?? 0));
           }
@@ -439,7 +434,7 @@ export default defineComponent({
     });
 
     return {
-      totalLocChanged, agentLocChanged, agentContributionPct, avgAgentLinesDeleted,
+      totalLocChanged, totalLocAdded, agentLocAdded, agentContributionPct, avgAgentLinesDeleted,
       dailyLocChartData, userInitiatedChartData, agentInitiatedChartData,
       userModeSummaryChartData, agentModeSummaryChartData,
       userModelChartData, agentModelChartData, userLanguageChartData, agentLanguageChartData,

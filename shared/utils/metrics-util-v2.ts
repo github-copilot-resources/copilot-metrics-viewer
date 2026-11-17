@@ -129,6 +129,13 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
     logger.info('Using mocked data mode (new API format via HTTP download)');
     const identifier = options.githubOrg || options.githubEnt || 'mock-org';
     const scope = (options.scope || 'organization') as MetricsReportRequest['scope'];
+    if (options.githubTeam) {
+      options.isDataMocked = true;
+      const members = await fetchAllTeamMembers(options, new Headers());
+      if (!members.length) return { metrics: [], reportData: [] };
+      const records = await fetchRawUserDayRecords({ scope, identifier, isMocked: true }, new Headers(), options.until);
+      return buildFilteredResult(aggregateTeamMetrics(records, new Set(members.map(member => member.login))), options);
+    }
     const report = await fetchLatestReport({ scope, identifier, isMocked: true }, new Headers());
     const metrics = transformReportToMetrics(report);
     return sortMetricsDataResult({ metrics, reportData: report.day_totals });
@@ -161,8 +168,9 @@ export async function getMetricsDataV2(event: H3Event<EventHandlerRequest>): Pro
         const teamLogins = new Set(teamMembers.map(m => m.login));
 
         const request: MetricsReportRequest = { scope: options.scope!, identifier, isMocked: options.isDataMocked };
-        const userDayRecords = await getUserDayMetricsByDateRange(options.scope!, identifier, startDate, endDate);
-        if (userDayRecords.length > 0) {
+        const lookbackStart = new Date(new Date(startDate).getTime() - 27 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+        const userDayRecords = await getUserDayMetricsByDateRange(options.scope!, identifier, lookbackStart, endDate);
+        if (userDayRecords.some(record => record.day >= startDate && record.day <= endDate)) {
           logger.info(`Aggregating team metrics from ${userDayRecords.length} per-day user DB records`);
           const report = aggregateTeamMetrics(userDayRecords, teamLogins);
           return buildFilteredResult(report, options);

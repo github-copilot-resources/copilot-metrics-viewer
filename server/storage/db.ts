@@ -132,6 +132,24 @@ export async function initSchema(): Promise<void> {
     ON user_day_metrics (scope, identifier, metrics_date);
   `);
 
+  // Cache for team pull request metrics derived from the GitHub search API.
+  // Search is rate limited and these results are only fetched on explicit user
+  // action, so completed lookups are persisted and reused.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS team_pr_metrics (
+      id            SERIAL PRIMARY KEY,
+      scope         TEXT NOT NULL,
+      identifier    TEXT NOT NULL,
+      team_slug     TEXT NOT NULL,
+      since_date    DATE NOT NULL,
+      until_date    DATE NOT NULL,
+      data          JSONB NOT NULL,
+      created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE (scope, identifier, team_slug, since_date, until_date)
+    );
+  `);
+
   // ── Billing CSV ingest (Phase A) ───────────────────────────────────────────
   // Stores line-level rows downloaded from GitHub's async billing CSV export
   // (POST /enterprises/{ent}/settings/billing/reports). One row per CSV line:

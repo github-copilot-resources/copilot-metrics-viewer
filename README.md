@@ -59,7 +59,11 @@ Users can now filter metrics for custom date ranges up to 100 days, with an intu
 Select **one team** for a full deep-dive view with KPI tiles, time-series charts (acceptance rate, active users, feature usage, model usage), language and editor breakdowns, and a per-user activity table. Select **two or more teams** to compare them side by side.
 
 > [!NOTE]
-> GitHub's Copilot Usage Metrics API does not provide team-level endpoints. Team metrics are **derived** by fetching per-user daily metrics from the organization/enterprise endpoint, resolving team membership via the GitHub Teams API, and aggregating per-user data in-memory. This works in both Direct API mode (28-day window) and Historical mode (full history).
+> GitHub does not provide a pre-aggregated team usage report. This application's team metrics are a **current-membership view**: per-user daily activity is filtered to members returned by the GitHub Teams API at request time. This works in Direct API mode and Historical mode, but it is not a membership-at-the-time historical report.
+>
+> [GitHub's historical team recipe](https://docs.github.com/en/copilot/reference/copilot-usage-metrics/team-level-metrics) joins each day's user-teams and per-user activity reports on `(user_id, day, organization_id/enterprise_id)` before rolling up. We do not currently fetch or persist those daily membership reports, so membership changes can misattribute earlier activity in this dashboard. The official user-teams reports omit teams with fewer than 5 seated Copilot users; our current-membership view can include those smaller teams and must not be mistaken for that official join.
+>
+> Users on multiple teams contribute to each team. Team totals must not be summed to derive organization totals. Distinct-user windows are computed from per-user records, not by adding daily active-user counts.
 
 **Single team deep dive:**
 <p align="center">
@@ -71,8 +75,64 @@ Select **one team** for a full deep-dive view with KPI tiles, time-series charts
   <img width="800" alt="Teams Comparison" src="./images/teams-comparison.png">
 </p>
 
-#### Team-Scoped Direct URLs
+#### Team AI Contribution & Adoption Metrics
 
+Both the deep-dive and comparison views include team-level AI contribution and adoption reporting.
+
+**AI contribution scorecards** — per team: Agent share of Copilot-added LOC, Copilot / agent / CLI adoption, and VS Code agent users. Raw LOC counts and LOC-per-person metrics are intentionally omitted.
+
+**Agent share of Copilot-added LOC trend chart** — direct Agent/Edit-mode file additions as a percentage of all Copilot-added lines, with one line per selected team. Days without tracked LOC are gaps rather than zeroes.
+
+**Team leaderboard** — ranks the selected teams by Agent share of Copilot-added LOC by default, with a trend arrow comparing the later half of the selected range against the earlier half.
+
+**Adoption heatmap** — weekly adoption percentage per team, with a summary naming the highest- and lowest-adoption teams.
+
+**Weekly merged pull requests** — on-demand panels in both single-team and comparison views show weekly merged PR counts, AI-touched PRs, a rolling weekly average and merged PRs per person. Each comparison panel is labelled by team. Changing teams or the date range clears loaded PR data so stale results are never shown for a new selection.
+
+GitHub search only counts pull requests in repositories the server's GitHub
+credential can read, so this report needs read access to the organization's
+repositories: the `repo` scope for a classic PAT or OAuth token, or
+**Pull requests: Read-only** on all repositories for a fine-grained PAT or
+GitHub App. Without it, the card shows an access error instead of empty weeks.
+
+**PRs Merged comparison cards** — one KPI tile per selected team displays its merged count for the selected range, populated by the same on-demand request as the weekly panel. Choose **PRs Merged** or **PRs Merged per person** in the team leaderboard to rank loaded teams. Unloaded teams show "Not loaded" and are not ranked; incomplete member searches show a lower-bound marker (`≥`). PR trends compare average counts in the later versus earlier half of complete weeks, excluding partial weeks; fewer than two complete weeks or truncated results have no trend.
+
+Adoption and usage comparisons use percentages or per-person figures. PR counts are also available as absolute totals for executive reporting; use the per-person leaderboard option when comparing differently sized teams.
+
+##### Data sources, calculations and assumptions
+
+| Metric | Source | Calculation |
+| --- | --- | --- |
+| Agent share of Copilot-added LOC | `totals_by_feature` for `agent_edit` only | Sum of direct-file `loc_added_sum` ÷ sum of top-level Copilot `loc_added_sum`, multiplied by 100 |
+| Acceptance rate | `code_acceptance_activity_count` ÷ `code_generation_activity_count` | Weighted across the range, not a mean of daily rates |
+| Copilot / agent / CLI / VS Code agent adoption | Rolling distinct-user windows computed server-side | Distinct users ÷ team member count |
+| Editor & model usage | `totals_by_ide` / `totals_by_model_feature` | Share of each team's own interactions |
+| Merged & AI-touched PRs | GitHub **search** API (on demand) | See below |
+
+Assumptions worth knowing:
+
+- **Agent share is not "% of all code written by AI."** The Copilot API reports no human-authored line counts. The numerator is `agent_edit` additions, including direct file edits from both Agent and Edit mode; the denominator includes all Copilot additions (accepted completions, chat-panel copy/apply actions, inline chat and direct file edits). `chat_panel_agent_mode` copy/apply additions remain in the denominator, not the numerator. Deletions and suggestions are excluded. These are editor events, not retained or merged code, and IDE telemetry/version coverage affects them. See [LoC definitions](https://docs.github.com/en/copilot/reference/copilot-usage-metrics/lines-of-code-metrics).
+- **Both Teams and Agent Activity use the same added-lines share.** Agent Activity previously showed a changed-lines share including deletions; its other added/deleted volume charts remain unchanged in purpose. Missing added LOC produces an em dash or a chart gap, not 0% contribution.
+- **Adoption denominators are current team members**, not licensed seats. A team whose member count cannot be resolved shows an em dash rather than a misleading zero.
+- **Adoption percentages saturate at 100% as a display guard**, not a fix for membership attribution. The team aggregation filters historical activity to current members; it cannot tell which teams a user belonged to on an earlier day.
+- **Adoption numerators come from rolling windows** (7-day for ranges up to a week, 28-day otherwise), read from the last day in range. Per-day report rows expose active-user *counts*, never identities, so distinct users across an arbitrary range cannot be recomputed on the client — and exposing identities would conflict with the per-user privacy gate.
+- **Trends compare the later half of the selected range against the earlier half**, not a separately fetched preceding period. This avoids doubling every team's API cost and is labelled as such in the UI.
+- **VS Code agents-window usage is an approximation.** The API exposes `totals_by_ide` and `totals_by_feature` separately with no IDE × feature cross-product, so a user counts when they have a VS Code entry *and* agent usage on the same day.
+- **Weeks start on Monday.** Partial weeks at either end of the range are flagged in the PR chart and excluded from the rolling average.
+
+##### Pull request data and rate limits
+
+GitHub's Copilot metrics API reports pull request totals only for whole organizations and enterprises, never for teams. Upstream approaches that copy org-wide totals into a team's rows mislabel org numbers as team numbers, so this dashboard instead queries the GitHub **search** API for the team's members.
+
+- A PR counts as **AI-touched** when it was authored by the Copilot coding agent or reviewed by Copilot code review.
+- Member logins are chunked to stay under the search API's 256-character query limit, and all weeks and chunks are batched into a single GraphQL request using aliases.
+- Because search is rate limited, the panel loads **only when you click "Load PR data"**, and results are cached per team and date range (in PostgreSQL when `DATABASE_URL` is set, otherwise in memory for an hour).
+- If GitHub rate limits the request, the panel reports how many minutes to wait before retrying rather than failing silently.
+
+> [!NOTE]
+> Mock team requests use the same member-filtered per-user aggregation as live team requests. Organization and enterprise teams share the bundled per-day organization user fixture, with all fixture dates shifted together to end on the selected end date (or today). Real report dates are unchanged. Historical team queries read the preceding 27 days before filtering output to the selected range, so rolling adoption counts include earlier activity. Active-user percentages use the shared capped adoption calculation for both cards and charts.
+
+#### Team-Scoped Direct URLs
 You can link directly to a fully team-scoped dashboard — every tab (IDE metrics, chat, agents, languages, etc.) will automatically filter to that team's members only. A blue banner at the top of the page confirms the active scope and provides a quick link back to the organization view.
 
 ```
@@ -364,6 +424,8 @@ NUXT_PUBLIC_IS_DATA_MOCKED=false
 #### NUXT_GITHUB_TOKEN
 
 Specifies the GitHub Personal Access Token utilized for **metrics** API requests. Generate this token with the following permissions: _Read access to members_, _organization copilot metrics_, and _organization copilot seat management_.
+
+The Teams tab's weekly merged-PR report also needs read access to the organization's repositories (classic PAT: `repo`; fine-grained PAT: _Pull requests: Read-only_ on all repositories). Without it, that report shows an access error; the rest of the dashboard is unaffected.
 
 This token does **not** need billing scopes — billing has its own dedicated token (see `NUXT_GITHUB_BILLING_TOKEN` below). Keeping the two separate means metrics can keep using a fine-grained PAT or GitHub App, while only billing requires a classic PAT.
 

@@ -62,6 +62,21 @@ export interface ReportDayTotals {
   pull_requests?: ReportPullRequests;
   daily_active_cli_users?: number;
   totals_by_cli?: ReportCliTotals;
+  /**
+   * Rolling distinct-user windows computed for team-scoped reports by
+   * {@link ../services/user-metrics-aggregator.aggregateTeamMetrics}. GitHub's
+   * org/enterprise reports do not supply these, so they are optional and
+   * absent outside team scope.
+   *
+   * A "vscode agent" user is an approximation: the API exposes `totals_by_ide`
+   * and `totals_by_feature` separately with no IDE x feature cross-product, so
+   * it means a user with a `vscode` IDE entry who also used an agent that day.
+   */
+  weekly_active_agent_users?: number;
+  weekly_active_cli_users?: number;
+  monthly_active_cli_users?: number;
+  weekly_active_vscode_agent_users?: number;
+  monthly_active_vscode_agent_users?: number;
 }
 
 export interface ReportPullRequests {
@@ -1057,6 +1072,8 @@ export async function downloadUserDayRecords(downloadUrl: string): Promise<UserD
       const parsed = JSON.parse(trimmed);
       if (Array.isArray(parsed)) {
         records = parsed;
+      } else if (parsed && typeof parsed === 'object' && Array.isArray(parsed.day_totals)) {
+        records = parsed.day_totals;
       } else if (parsed && typeof parsed === 'object' && Array.isArray((parsed as Record<string, unknown>).user_totals)) {
         // Pre-aggregated mock format — no per-day records available
         return [];
@@ -1089,14 +1106,32 @@ export async function downloadUserDayRecords(downloadUrl: string): Promise<UserD
  */
 export async function fetchRawUserDayRecords(
   request: MetricsReportRequest,
-  headers: HeadersInit
+  headers: HeadersInit,
+  mockEndDay = toDateString(new Date())
 ): Promise<UserDayRecord[]> {
-  const { download_links } = await requestUserDownloadLinks(request, headers, '28-day');
+  const mocked = isMockMode() || request.isMocked;
+  // The enterprise fixture contains only user_totals; share the per-day organization fixture.
+  const { download_links } = await requestUserDownloadLinks(
+    mocked ? { ...request, scope: 'organization', isMocked: true } : request,
+    headers,
+    '28-day'
+  );
 
   if (!download_links || download_links.length === 0) {
     return [];
   }
 
   const batches = await Promise.all(download_links.map(url => downloadUserDayRecords(url)));
-  return batches.flat();
+  const records = batches.flat();
+  if (!mocked || !records.length) return records;
+
+  const latestDay = records.reduce((latest, record) => record.day > latest ? record.day : latest, records[0]!.day);
+  const offset = new Date(mockEndDay).getTime() - new Date(latestDay).getTime();
+  const shift = (day: string) => toDateString(new Date(new Date(day).getTime() + offset));
+  return records.map(record => ({
+    ...record,
+    day: shift(record.day),
+    report_start_day: shift(record.report_start_day),
+    report_end_day: shift(record.report_end_day),
+  }));
 }

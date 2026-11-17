@@ -478,6 +478,7 @@ The PAT must have the following scopes:
 - `read:org` — read organization membership
 - `copilot` — read Copilot usage
 - `manage_billing:copilot` — read seat management (optional)
+- `repo` — count merged pull requests for the Teams tab weekly report (optional; a fine-grained PAT needs **Pull requests: Read-only** on all repositories instead)
 
 For the **Billing tab** and **per-user AI credit spend on My Usage**, set a *separate* classic PAT:
 
@@ -510,7 +511,7 @@ A GitHub App installation token lets the backend fetch Copilot data **without an
 1. Go to your org → Settings → Developer Settings → GitHub Apps → **New GitHub App**
 2. Give it a name (e.g. `copilot-metrics-viewer`)
 3. Disable Webhook (uncheck "Active")
-4. Under **Repository permissions**: none required
+4. Under **Repository permissions**: `Pull requests` → Read-only (only needed for the Teams tab weekly merged-PR report; install the app on all repositories so every merged PR is counted)
 5. Under **Organization permissions**:
    - `Copilot` → Read-only
    - `Members` → Read-only (for seat analysis)
@@ -566,8 +567,10 @@ Requires a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/abo
 1. Go to your org → Settings → Developer Settings → GitHub Apps → New GitHub App
 2. Set **Callback URL**: `https://<your-app>/auth/github`
 3. Uncheck **Active** under Webhooks
-4. Set permissions: Organization → Members (Read), Copilot Metrics (Read), Copilot Seat Management (Read)
+4. Set permissions: Organization → Members (Read), Copilot Metrics (Read), Copilot Seat Management (Read); Repository → Pull requests (Read) for the Teams tab weekly merged-PR report
 5. Generate a Client Secret
+
+With an OAuth App, signed-in users' tokens carry only the requested scopes (default `read:user`). Set `NUXT_OAUTH_GITHUB_CLIENT_SCOPE` (comma-separated) to request more, e.g. `repo` for the weekly merged-PR report.
 
 **Environment variables:**
 

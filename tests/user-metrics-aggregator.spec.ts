@@ -508,3 +508,149 @@ describe('aggregateTeamMetrics', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// CLI / agent / VS Code team rollups
+// ---------------------------------------------------------------------------
+
+describe('aggregateTeamMetrics — CLI totals', () => {
+  const cli = (sessions: number, requests: number, out: number, prompt: number) => ({
+    session_count: sessions,
+    request_count: requests,
+    prompt_count: requests,
+    token_usage: {
+      output_tokens_sum: out,
+      prompt_tokens_sum: prompt,
+      // Deliberately wrong per-user average — the aggregator must recompute,
+      // not average these.
+      avg_tokens_per_request: 999,
+    },
+  });
+
+  it('counts only users who actually used the CLI', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-10', { used_cli: true }),
+      makeUser('bob', 2, '2026-02-10', { used_cli: false }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob'])).day_totals[0]!;
+
+    expect(day.daily_active_cli_users).toBe(1);
+  });
+
+  it('sums session and request counts across users', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-10', { used_cli: true, totals_by_cli: cli(2, 10, 100, 50) }),
+      makeUser('bob', 2, '2026-02-10', { used_cli: true, totals_by_cli: cli(3, 30, 200, 50) }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob'])).day_totals[0]!;
+
+    expect(day.totals_by_cli!.session_count).toBe(5);
+    expect(day.totals_by_cli!.request_count).toBe(40);
+    expect(day.totals_by_cli!.token_usage!.output_tokens_sum).toBe(300);
+    expect(day.totals_by_cli!.token_usage!.prompt_tokens_sum).toBe(100);
+  });
+
+  it('recomputes avg tokens per request from summed totals', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-10', { used_cli: true, totals_by_cli: cli(1, 10, 100, 50) }),
+      makeUser('bob', 2, '2026-02-10', { used_cli: true, totals_by_cli: cli(1, 30, 200, 50) }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob'])).day_totals[0]!;
+
+    // (300 + 100) / 40 — not the per-user average of 999
+    expect(day.totals_by_cli!.token_usage!.avg_tokens_per_request).toBe(10);
+  });
+
+  it('omits totals_by_cli entirely when nobody used the CLI', () => {
+    const records = [makeUser('alice', 1, '2026-02-10')];
+    const day = aggregateTeamMetrics(records, new Set(['alice'])).day_totals[0]!;
+
+    expect(day.totals_by_cli).toBeUndefined();
+    expect(day.daily_active_cli_users).toBe(0);
+  });
+
+  it('does not divide by zero when CLI totals carry no requests', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-10', { used_cli: true, totals_by_cli: cli(1, 0, 0, 0) }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice'])).day_totals[0]!;
+
+    expect(day.totals_by_cli!.token_usage!.avg_tokens_per_request).toBe(0);
+  });
+});
+
+describe('aggregateTeamMetrics — agent / CLI / VS Code rolling windows', () => {
+  const vsCodeIde = (ide: string) => [{
+    ide,
+    user_initiated_interaction_count: 1,
+    code_generation_activity_count: 1,
+    code_acceptance_activity_count: 1,
+    loc_suggested_to_add_sum: 1,
+    loc_suggested_to_delete_sum: 0,
+    loc_added_sum: 1,
+    loc_deleted_sum: 0,
+  }];
+
+  it('counts distinct agent users over the trailing 7-day window', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-01', { used_agent: true }),
+      makeUser('bob', 2, '2026-02-03', { used_agent: true }),
+      makeUser('carol', 3, '2026-02-03', { used_agent: false }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob', 'carol']))
+      .day_totals.find(d => d.day === '2026-02-03')!;
+
+    expect(day.weekly_active_agent_users).toBe(2);
+  });
+
+  it('drops agent users that fall outside the 7-day window but keeps them monthly', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-01', { used_agent: true }),
+      makeUser('bob', 2, '2026-02-20', { used_agent: true }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob']))
+      .day_totals.find(d => d.day === '2026-02-20')!;
+
+    // alice is 19 days back: inside the 28-day window, outside the 7-day one
+    expect(day.weekly_active_agent_users).toBe(1);
+    expect(day.monthly_active_agent_users).toBe(2);
+  });
+
+  it('counts distinct CLI users over both rolling windows', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-01', { used_cli: true }),
+      makeUser('alice', 1, '2026-02-20', { used_cli: true }),
+      makeUser('bob', 2, '2026-02-20', { used_cli: true }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob']))
+      .day_totals.find(d => d.day === '2026-02-20')!;
+
+    expect(day.weekly_active_cli_users).toBe(2);
+    expect(day.monthly_active_cli_users).toBe(2);
+  });
+
+  it('counts a VS Code agent user only when agent use and VS Code coincide', () => {
+    const records = [
+      // agent + vscode → counts
+      makeUser('alice', 1, '2026-02-10', { used_agent: true, totals_by_ide: vsCodeIde('vscode') }),
+      // agent but JetBrains → does not count
+      makeUser('bob', 2, '2026-02-10', { used_agent: true, totals_by_ide: vsCodeIde('jetbrains') }),
+      // vscode but no agent → does not count
+      makeUser('carol', 3, '2026-02-10', { used_agent: false, totals_by_ide: vsCodeIde('vscode') }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob', 'carol'])).day_totals[0]!;
+
+    expect(day.weekly_active_vscode_agent_users).toBe(1);
+    expect(day.monthly_active_vscode_agent_users).toBe(1);
+  });
+
+  it('normalizes IDE naming variants when detecting VS Code', () => {
+    const records = [
+      makeUser('alice', 1, '2026-02-10', { used_agent: true, totals_by_ide: vsCodeIde('VS Code') }),
+      makeUser('bob', 2, '2026-02-10', { used_agent: true, totals_by_ide: vsCodeIde('vs_code') }),
+    ];
+    const day = aggregateTeamMetrics(records, new Set(['alice', 'bob'])).day_totals[0]!;
+
+    expect(day.weekly_active_vscode_agent_users).toBe(2);
+  });
+});

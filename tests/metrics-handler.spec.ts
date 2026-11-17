@@ -33,6 +33,14 @@ vi.mock('../server/utils/team-membership', () => ({
   requireTeamMembershipOrAdmin: (...args: any[]) => mockRequireTeamMembershipOrAdmin(...args),
 }))
 
+const mockFetchAllTeamMembers = vi.fn()
+vi.mock('../server/services/github-copilot-usage-api-mock', () => ({
+  isMockMode: () => true,
+}))
+vi.mock('../server/api/seats', () => ({
+  fetchAllTeamMembers: (...args: unknown[]) => mockFetchAllTeamMembers(...args),
+}))
+
 // ── Fixture helpers ───────────────────────────────────────────────────────────
 
 /** Minimal CopilotMetrics item that convertToMetrics() can handle. */
@@ -80,6 +88,20 @@ describe('/api/metrics handler', () => {
     expect(result).toHaveProperty('reportData')
     expect(result.usage).toBe(usage)
     expect(result.reportData).toBe(reportData)
+  })
+
+  it('uses the global mock roster for the team adoption denominator', async () => {
+    setQuery({ scope: 'organization', githubOrg: 'test-org', githubTeam: 'my-team' })
+    mockGetMetricsDataV2.mockResolvedValue({ metrics: [], reportData: [] })
+    mockFetchAllTeamMembers.mockResolvedValue([{ login: 'octocat' }])
+    const { default: handler } = await import('../server/api/metrics')
+    const result = await handler(makeEvent() as any)
+
+    expect(mockFetchAllTeamMembers).toHaveBeenCalledWith(
+      expect.objectContaining({ isDataMocked: true }),
+      expect.any(Headers),
+    )
+    expect(result.teamMemberCount).toBe(1)
   })
 
   it('sortMetricsByDay: returned metrics are sorted ascending by day', async () => {

@@ -3,7 +3,9 @@ import type { MetricsApiResponse } from "@/types/metricsApiResponse";
 import { getMetricsDataV2 } from '../../shared/utils/metrics-util-v2';
 import { Options } from '@/model/Options';
 import { requireTeamMembershipOrAdmin } from '../utils/team-membership';
+import { isMockMode } from '../services/github-copilot-usage-api-mock';
 import { createLogger } from '../utils/logger';
+
 
 function sortMetricsByDay<T extends { day: string }>(metrics: T[]): T[] {
     return [...metrics].sort((left, right) => left.day.localeCompare(right.day));
@@ -30,7 +32,26 @@ export default defineEventHandler(async (event) => {
         // metrics is the old API format
         const metricsData = sortMetricsByDay(convertToMetrics(usageData));
 
-        const result = { metrics: metricsData, usage: usageData, reportData } as MetricsApiResponse;
+        // Team member count is the denominator for the Teams tab's per-person
+        // and adoption-percentage metrics. Resolved here rather than inside
+        // getMetricsDataV2 because that function's mock branch returns before
+        // team membership is ever resolved. Non-fatal: a failure here must not
+        // cost the caller its metrics.
+        let teamMemberCount: number | undefined;
+        if (options.githubTeam) {
+            options.isDataMocked = isMockMode() || options.isDataMocked;
+            try {
+                // Imported lazily so org-level requests never load the seats
+                // module (and its database dependencies).
+                const { fetchAllTeamMembers } = await import('./seats');
+                const members = await fetchAllTeamMembers(options, event.context.headers);
+                teamMemberCount = members.length;
+            } catch (err) {
+                logger.error('Failed to resolve team member count (non-fatal):', err);
+            }
+        }
+
+        const result = { metrics: metricsData, usage: usageData, reportData, teamMemberCount } as MetricsApiResponse;
         return result;
     } catch (error: unknown) {
         logger.error('Error fetching metrics data:', error);

@@ -106,11 +106,85 @@ test.describe('Teams Comparison tests', () => {
         const devTeamCard = dashboard.page.getByText('Development Team', { exact: true }).first();
         await expect(devTeamCard).toBeVisible();
 
-        // Verify that comparison charts are displayed
-        const languageUsageChart = dashboard.page.getByText('Language Usage — by Team');
-        await expect(languageUsageChart).toBeVisible();
+        // Verify the normalized comparison charts and new team-level views.
+        await expect(dashboard.page.getByText('Editor Usage (% of interactions) — by Team')).toBeVisible();
+        await expect(dashboard.page.getByText('Model Usage (% of interactions) — by Team')).toBeVisible();
+        await expect(dashboard.page.getByText('Team leaderboard', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Adoption heatmap', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Agent share of Copilot-added LOC', { exact: true }).first()).toBeVisible();
+        await expect(dashboard.page.getByText('Agent share of Copilot-added LOC — over time', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('Current-membership view:', { exact: true })).toBeVisible();
+        await expect(dashboard.page.getByText('AI lines of code', { exact: true })).toHaveCount(0);
+        await expect(dashboard.page.getByText('AI LOC / person', { exact: true })).toHaveCount(0);
+        await expect(dashboard.page.getByText('Merged PRs — team comparison', { exact: true })).toBeVisible();
 
-        const editorUsageChart = dashboard.page.getByText('Editor Usage — by Team');
-        await expect(editorUsageChart).toBeVisible();
+        const teamPrPanels = dashboard.page.getByTestId('team-pr-weekly');
+        await expect(teamPrPanels).toHaveCount(2);
+        for (const panel of await teamPrPanels.all()) {
+            await panel.getByRole('button', { name: 'Load PR data', exact: true }).click();
+            await expect(panel.getByText('Weekly average', { exact: true })).toBeVisible();
+            await expect(panel.getByText('Merged per person', { exact: true })).toBeVisible();
+            const canvas = panel.locator('canvas');
+            await expect(canvas).toBeVisible();
+            await dashboard.page.waitForTimeout(500);
+            const height = await canvas.evaluate(element => element.getBoundingClientRect().height);
+            expect(height).toBeGreaterThan(100);
+            expect(height).toBeLessThanOrEqual(260);
+        }
+        const tiles = dashboard.page.getByTestId('team-pr-merged-card');
+        await expect(tiles).toHaveCount(2);
+        for (let index = 0; index < 2; index++) {
+            const total = await teamPrPanels.nth(index).getByTestId('team-pr-merged-total').innerText();
+            await expect(tiles.nth(index).getByTestId('team-pr-merged-value')).toHaveText(total);
+        }
+        const leaderboard = dashboard.page.getByTestId('team-leaderboard');
+        await leaderboard.getByRole('combobox').click();
+        await dashboard.page.getByRole('option', { name: 'PRs Merged', exact: true }).click();
+        await expect(leaderboard.locator('thead')).toContainText('PRs Merged');
+        await expect(leaderboard.locator('tbody')).not.toContainText('Not loaded');
+        await dashboard.page.setViewportSize({ width: 420, height: 800 });
+        await dashboard.page.waitForTimeout(500);
+        for (const canvas of await teamPrPanels.locator('canvas').all()) {
+            expect(await canvas.evaluate(element => element.getBoundingClientRect().height)).toBeLessThanOrEqual(260);
+        }
+        await dashboard.page.setViewportSize({ width: 1280, height: 720 });
+    });
+
+    test('PR cards and leaderboard clear on date changes, including returning to a previous range', tag, async () => {
+        await dashboard.page.getByRole('button', { name: 'Show date range', exact: true }).click();
+        const fromDate = dashboard.page.getByLabel('From Date', { exact: true });
+        const originalFrom = await fromDate.inputValue();
+        const nextDay = new Date(`${originalFrom}T00:00:00Z`);
+        nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+        await fromDate.fill(nextDay.toISOString().slice(0, 10));
+        await dashboard.page.getByRole('button', { name: 'Apply', exact: true }).click();
+        const cards = dashboard.page.getByTestId('team-pr-merged-value');
+        await expect(cards).toHaveText(['—', '—']);
+        await expect(dashboard.page.getByTestId('team-pr-weekly').locator('canvas')).toHaveCount(0);
+        await fromDate.fill(originalFrom);
+        await dashboard.page.getByRole('button', { name: 'Apply', exact: true }).click();
+        await expect(cards).toHaveText(['—', '—']);
+        const leaderboard = dashboard.page.getByTestId('team-leaderboard');
+        await expect(leaderboard.locator('tbody')).toContainText('Not loaded');
+        await dashboard.page.getByRole('button', { name: 'Hide date range', exact: true }).click();
+    });
+
+    test('QA team activity is filtered to its members', tag, async () => {
+        await dashboard.page.getByRole('button', { name: /^clear all$/i }).click();
+        const dropdown = dashboard.page.locator('[role="combobox"]').first();
+        await dropdown.click();
+        const responsePromise = dashboard.page.waitForResponse(response =>
+            response.url().includes('/api/metrics?') && new URL(response.url()).searchParams.get('githubTeam') === 'qa-team'
+        );
+        await dashboard.page.locator('[role="listbox"]').getByText('QA Team', { exact: true }).click();
+        const response = await responsePromise;
+        expect(response.ok()).toBe(true);
+        const data = await response.json();
+        expect(data.teamMemberCount).toBe(3);
+        expect(data.reportData.length).toBeGreaterThan(0);
+        expect(data.reportData.some((day: { daily_active_users: number }) => day.daily_active_users > 0)).toBe(true);
+        for (const day of data.reportData) {
+            expect(day.daily_active_users).toBeLessThanOrEqual(data.teamMemberCount);
+        }
     });
 });

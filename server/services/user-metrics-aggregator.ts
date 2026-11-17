@@ -25,6 +25,8 @@ import type {
   UserFeatureTotals,
   UserLanguageFeatureTotals,
   UserModelFeatureTotals,
+  UserCliTotals,
+  ReportCliTotals,
 } from './github-copilot-usage-api';
 import { COMPLETION_FEATURES } from '../../shared/utils/feature-classification';
 
@@ -117,6 +119,56 @@ function aggregateDayRecords(
     totals_by_language_feature: mergeLanguageFeatureTotals(records.flatMap(r => r.totals_by_language_feature ?? [])),
     totals_by_language_model: buildLanguageModelTotals(records),
     totals_by_model_feature: mergeModelFeatureTotals(records.flatMap(r => r.totals_by_model_feature ?? [])),
+    daily_active_cli_users: records.filter(r => r.used_cli).length,
+    totals_by_cli: mergeCliTotals(records),
+    weekly_active_agent_users: rolling.weekly_active_agent_users,
+    weekly_active_cli_users: rolling.weekly_active_cli_users,
+    monthly_active_cli_users: rolling.monthly_active_cli_users,
+    weekly_active_vscode_agent_users: rolling.weekly_active_vscode_agent_users,
+    monthly_active_vscode_agent_users: rolling.monthly_active_vscode_agent_users,
+  };
+}
+
+/**
+ * True when a user-day record shows activity in a VS Code editor.
+ *
+ * IDE identifiers are normalized by stripping non-alphanumerics so
+ * "vscode", "VS Code" and "vs_code" all match.
+ */
+function usedVsCode(record: UserDayRecord): boolean {
+  return (record.totals_by_ide ?? []).some(
+    i => i.ide?.toLowerCase().replace(/[^a-z0-9]/g, '') === 'vscode'
+  );
+}
+
+/**
+ * Sum per-user CLI totals for a single day.
+ *
+ * `avg_tokens_per_request` is recomputed from the summed totals rather than
+ * averaged, because averaging per-user averages would weight a user with one
+ * request the same as a user with a thousand. Returns undefined when no team
+ * member used the CLI, matching the optional field on org reports.
+ */
+function mergeCliTotals(records: UserDayRecord[]): ReportCliTotals | undefined {
+  const cliTotals = records
+    .map(r => r.totals_by_cli)
+    .filter((c): c is UserCliTotals => !!c);
+  if (cliTotals.length === 0) return undefined;
+
+  const outputTokens = sum(cliTotals, c => c.token_usage?.output_tokens_sum ?? 0);
+  const promptTokens = sum(cliTotals, c => c.token_usage?.prompt_tokens_sum ?? 0);
+  const requestCount = sum(cliTotals, c => c.request_count);
+
+  return {
+    session_count: sum(cliTotals, c => c.session_count),
+    request_count: requestCount,
+    token_usage: {
+      output_tokens_sum: outputTokens,
+      prompt_tokens_sum: promptTokens,
+      avg_tokens_per_request: requestCount > 0
+        ? (outputTokens + promptTokens) / requestCount
+        : 0,
+    },
   };
 }
 
@@ -130,6 +182,11 @@ interface RollingWindowCounts {
   monthly_active_users: number;
   monthly_active_chat_users: number;
   monthly_active_agent_users: number;
+  weekly_active_agent_users: number;
+  weekly_active_cli_users: number;
+  monthly_active_cli_users: number;
+  weekly_active_vscode_agent_users: number;
+  monthly_active_vscode_agent_users: number;
 }
 
 /**
@@ -154,6 +211,11 @@ function computeRollingWindowCounts(
     const monthlyUsers = new Set<string>();
     const monthlyChatUsers = new Set<string>();
     const monthlyAgentUsers = new Set<string>();
+    const weeklyAgentUsers = new Set<string>();
+    const weeklyCliUsers = new Set<string>();
+    const monthlyCliUsers = new Set<string>();
+    const weeklyVsCodeAgentUsers = new Set<string>();
+    const monthlyVsCodeAgentUsers = new Set<string>();
 
     for (const otherDay of sortedDays) {
       if (otherDay > day || otherDay < monthlyCutoff) continue;
@@ -163,10 +225,18 @@ function computeRollingWindowCounts(
       for (const r of records) {
         const login = r.user_login?.toLowerCase();
         if (!login) continue;
+        const isVsCodeAgent = !!r.used_agent && usedVsCode(r);
         monthlyUsers.add(login);
         if (r.used_chat) monthlyChatUsers.add(login);
         if (r.used_agent) monthlyAgentUsers.add(login);
-        if (inWeeklyWindow) weeklyUsers.add(login);
+        if (r.used_cli) monthlyCliUsers.add(login);
+        if (isVsCodeAgent) monthlyVsCodeAgentUsers.add(login);
+        if (inWeeklyWindow) {
+          weeklyUsers.add(login);
+          if (r.used_agent) weeklyAgentUsers.add(login);
+          if (r.used_cli) weeklyCliUsers.add(login);
+          if (isVsCodeAgent) weeklyVsCodeAgentUsers.add(login);
+        }
       }
     }
 
@@ -175,6 +245,11 @@ function computeRollingWindowCounts(
       monthly_active_users: monthlyUsers.size,
       monthly_active_chat_users: monthlyChatUsers.size,
       monthly_active_agent_users: monthlyAgentUsers.size,
+      weekly_active_agent_users: weeklyAgentUsers.size,
+      weekly_active_cli_users: weeklyCliUsers.size,
+      monthly_active_cli_users: monthlyCliUsers.size,
+      weekly_active_vscode_agent_users: weeklyVsCodeAgentUsers.size,
+      monthly_active_vscode_agent_users: monthlyVsCodeAgentUsers.size,
     });
   }
 
