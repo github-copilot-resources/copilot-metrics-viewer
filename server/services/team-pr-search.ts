@@ -241,8 +241,14 @@ export function baseQueryLength(bucket: WeekBucket, org: string | undefined): nu
   return buildBucketQueries(bucket, [], org).reviewed.length;
 }
 
-function searchField(alias: string, query: string): string {
-  return `${alias}: search(query: ${JSON.stringify(query)}, type: ISSUE, first: 1) { issueCount }`;
+function searchField(alias: string, query: string, includeNodes = false, cursor?: string): string {
+  const page = includeNodes
+    ? `first: 100${cursor ? `, after: ${JSON.stringify(cursor)}` : ''}`
+    : 'first: 1';
+  const result = includeNodes
+    ? 'issueCount nodes { ... on PullRequest { id } } pageInfo { hasNextPage endCursor }'
+    : 'issueCount';
+  return `${alias}: search(query: ${JSON.stringify(query)}, type: ISSUE, ${page}) { ${result} }`;
 }
 
 /**
@@ -255,7 +261,7 @@ export function buildGraphQLQueries(buckets: WeekBucket[], chunks: string[][], o
     chunks.forEach((chunk, c) => {
       const queries = buildBucketQueries(bucket, chunk, org);
       for (const [kind, query] of Object.entries(queries)) {
-        searches.push(searchField(aliasFor(b, c, kind as QueryKind), query));
+        searches.push(searchField(aliasFor(b, c, kind as QueryKind), query, kind === 'agent'));
       }
     });
   });
@@ -283,8 +289,7 @@ interface GraphQLSearchResponse {
 /**
  * Fold the aliased GraphQL response back into per-week counts.
  *
- * A PR assigned to two members in different chunks is counted once per chunk;
- * this is rare and documented rather than paid for with an extra query.
+ * Agent PR identities are unioned across member chunks, including all pages.
  */
 export function collectCounts(
   data: Record<string, unknown>,
@@ -299,11 +304,22 @@ export function collectCounts(
   return buckets.map((bucket, b) => {
     let merged = 0;
     let aiTouched = 0;
+    const agentPrIds = new Set<string>();
     for (let c = 0; c < chunkCount; c++) {
-      const agent = countAt(b, c, 'agent');
-      merged += countAt(b, c, 'merged') + agent;
-      aiTouched += countAt(b, c, 'reviewed') + agent;
+      const agentResult = data[aliasFor(b, c, 'agent')] as {
+        nodes?: { id?: string }[];
+      } | undefined;
+      if (Array.isArray(agentResult?.nodes)) {
+        agentResult.nodes.forEach(node => {
+          if (node.id) agentPrIds.add(node.id);
+        });
+      }
+      merged += countAt(b, c, 'merged');
+      aiTouched += countAt(b, c, 'reviewed');
     }
+    const agent = agentPrIds.size;
+    merged += agent;
+    aiTouched += agent;
     return { ...bucket, merged, aiTouched };
   });
 }
@@ -389,6 +405,32 @@ export async function fetchTeamPrMetrics(request: TeamPrSearchRequest): Promise<
     Object.assign(data, await runSearch(query, githubToken, apiBaseUrl));
     const probe = data[ORG_PR_PROBE_ALIAS] as { issueCount?: number } | undefined;
     if (org && probe?.issueCount === 0) throw new SearchAccessError(org);
+  }
+
+  for (let b = 0; b < buckets.length; b++) {
+    for (let c = 0; c < chunks.length; c++) {
+      const alias = aliasFor(b, c, 'agent');
+      const result = data[alias] as {
+        nodes?: { id?: string }[];
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+      } | undefined;
+      while (result?.pageInfo?.hasNextPage) {
+        const cursor = result.pageInfo.endCursor;
+        if (!cursor) throw new Error('GitHub PR search returned another page without a cursor');
+        const agentQuery = buildBucketQueries(buckets[b]!, chunks[c]!, org).agent;
+        const next = await runSearch(
+          `query {\n  ${searchField(alias, agentQuery, true, cursor)}\n}`,
+          githubToken,
+          apiBaseUrl
+        );
+        const nextResult = next[alias] as {
+          nodes?: { id?: string }[];
+          pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+        } | undefined;
+        result.nodes = [...(result.nodes ?? []), ...(nextResult?.nodes ?? [])];
+        result.pageInfo = nextResult?.pageInfo;
+      }
+    }
   }
 
   const weeks = collectCounts(data, buckets, chunks.length);

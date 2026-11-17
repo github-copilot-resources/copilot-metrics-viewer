@@ -34,6 +34,8 @@ export interface ScorecardTeam {
   teamName: string;
   reportData: ReportDayTotals[];
   memberCount: number;
+  since?: string;
+  until?: string;
   color: string;
 }
 
@@ -49,7 +51,7 @@ export default defineComponent({
 
     const cards = computed(() =>
       props.teams.map(team => {
-        const summary = summarizeTeam(team.reportData, team.memberCount);
+        const summary = summarizeTeam(team.reportData, team.memberCount, team.since, team.until);
         return {
           slug: team.slug,
           teamName: team.teamName,

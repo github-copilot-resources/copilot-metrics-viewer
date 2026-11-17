@@ -222,10 +222,10 @@ describe('collectCounts', () => {
     const data = {
       [aliasFor(0, 0, 'merged')]: { issueCount: 5 },
       [aliasFor(0, 0, 'reviewed')]: { issueCount: 2 },
-      [aliasFor(0, 0, 'agent')]: { issueCount: 3 },
+      [aliasFor(0, 0, 'agent')]: { issueCount: 3, nodes: [{ id: 'a1' }, { id: 'a2' }, { id: 'a3' }] },
       [aliasFor(0, 1, 'merged')]: { issueCount: 4 },
       [aliasFor(0, 1, 'reviewed')]: { issueCount: 1 },
-      [aliasFor(0, 1, 'agent')]: { issueCount: 0 },
+      [aliasFor(0, 1, 'agent')]: { issueCount: 0, nodes: [] },
     };
 
     const weeks = collectCounts(data, buckets, 2);
@@ -234,6 +234,22 @@ describe('collectCounts', () => {
     expect(weeks[0]!.merged).toBe(12);
     // aiTouched: 2 + 3 (agent) + 1 + 0
     expect(weeks[0]!.aiTouched).toBe(6);
+  });
+
+  it('deduplicates agent PR identities returned by multiple assignee chunks', () => {
+    const data = {
+      [aliasFor(0, 0, 'merged')]: { issueCount: 0 },
+      [aliasFor(0, 0, 'reviewed')]: { issueCount: 0 },
+      [aliasFor(0, 0, 'agent')]: { issueCount: 2, nodes: [{ id: 'pr-1' }, { id: 'pr-2' }] },
+      [aliasFor(0, 1, 'merged')]: { issueCount: 0 },
+      [aliasFor(0, 1, 'reviewed')]: { issueCount: 0 },
+      [aliasFor(0, 1, 'agent')]: { issueCount: 2, nodes: [{ id: 'pr-2' }, { id: 'pr-3' }] },
+    };
+
+    const weeks = collectCounts(data, buckets, 2);
+
+    expect(weeks[0]!.merged).toBe(3);
+    expect(weeks[0]!.aiTouched).toBe(3);
   });
 
   it('treats missing aliases as zero rather than throwing', () => {
@@ -248,7 +264,7 @@ describe('collectCounts', () => {
     const data = {
       [aliasFor(0, 0, 'merged')]: { issueCount: 3 },
       [aliasFor(0, 0, 'reviewed')]: { issueCount: 3 },
-      [aliasFor(0, 0, 'agent')]: { issueCount: 2 },
+      [aliasFor(0, 0, 'agent')]: { issueCount: 2, nodes: [{ id: 'a1' }, { id: 'a2' }] },
     };
 
     const weeks = collectCounts(data, buckets, 1);
@@ -351,10 +367,10 @@ describe('fetchTeamPrMetrics', () => {
     const data = {
       [aliasFor(0, 0, 'merged')]: { issueCount: 8 },
       [aliasFor(0, 0, 'reviewed')]: { issueCount: 2 },
-      [aliasFor(0, 0, 'agent')]: { issueCount: 0 },
+      [aliasFor(0, 0, 'agent')]: { issueCount: 0, nodes: [] },
       [aliasFor(1, 0, 'merged')]: { issueCount: 4 },
       [aliasFor(1, 0, 'reviewed')]: { issueCount: 1 },
-      [aliasFor(1, 0, 'agent')]: { issueCount: 0 },
+      [aliasFor(1, 0, 'agent')]: { issueCount: 0, nodes: [] },
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse({ data })));
 
@@ -365,6 +381,43 @@ describe('fetchTeamPrMetrics', () => {
     expect(result.rollingAverage).toBe(6);
     expect(result.avgMergedPerPerson).toBe(6); // 12 merged / 2 members
     expect(result.orgScoped).toBe(true);
+  });
+
+  it('paginates agent PR identities before deduplicating across chunks', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(mockResponse({ data: {
+        [ORG_PR_PROBE_ALIAS]: { issueCount: 1 },
+        [aliasFor(0, 0, 'merged')]: { issueCount: 1 },
+        [aliasFor(0, 0, 'reviewed')]: { issueCount: 0 },
+        [aliasFor(0, 0, 'agent')]: {
+          issueCount: 2,
+          nodes: [{ id: 'agent-pr-1' }],
+          pageInfo: { hasNextPage: true, endCursor: 'cursor-1' },
+        },
+      } }))
+      .mockResolvedValueOnce(mockResponse({ data: {
+        [aliasFor(0, 0, 'agent')]: {
+          issueCount: 2,
+          nodes: [{ id: 'agent-pr-1' }, { id: 'agent-pr-2' }],
+          pageInfo: { hasNextPage: false, endCursor: 'cursor-2' },
+        },
+      } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchTeamPrMetrics({
+      ...baseRequest,
+      since: '2026-02-02',
+      until: '2026-02-02',
+      logins: ['alice'],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const firstQuery = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { query: string };
+    const nextQuery = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body)) as { query: string };
+    expect(firstQuery.query).toContain('nodes { ... on PullRequest { id } }');
+    expect(nextQuery.query).toContain('after: "cursor-1"');
+    expect(result.weeks[0]?.merged).toBe(3);
+    expect(result.weeks[0]?.aiTouched).toBe(2);
   });
 
   it('throws a rate limit error carrying the retry delay on HTTP 429', async () => {
@@ -413,7 +466,12 @@ describe('fetchTeamPrMetrics', () => {
       inFlight--;
       const { query } = JSON.parse(String(init.body)) as { query: string };
       const aliases = [...query.matchAll(/(\w+): search\(/g)].map(match => match[1]!);
-      return mockResponse({ data: Object.fromEntries(aliases.map(alias => [alias, { issueCount: 1 }])) });
+      return mockResponse({ data: Object.fromEntries(aliases.map(alias => [
+        alias,
+        alias.endsWith('agent')
+          ? { issueCount: 1, nodes: [{ id: alias }], pageInfo: { hasNextPage: false, endCursor: null } }
+          : { issueCount: 1 },
+      ])) });
     });
     vi.stubGlobal('fetch', fetchMock);
 

@@ -84,6 +84,14 @@ function lastDay(days: ReportDayTotals[]): ReportDayTotals | undefined {
   return [...days].sort((a, b) => a.day.localeCompare(b.day)).at(-1);
 }
 
+function dateRangeDays(days: ReportDayTotals[], since?: string, until?: string): number {
+  const firstDay = since ?? days.reduce<string | undefined>((first, day) => first && first < day.day ? first : day.day, undefined);
+  const finalDay = until ?? days.reduce<string | undefined>((last, day) => last && last > day.day ? last : day.day, undefined);
+  if (!firstDay || !finalDay || finalDay < firstDay) return days.length;
+  const span = Date.parse(`${finalDay}T00:00:00Z`) - Date.parse(`${firstDay}T00:00:00Z`);
+  return Number.isFinite(span) ? Math.floor(span / 86400000) + 1 : days.length;
+}
+
 /**
  * Read a rolling distinct-user count from the last day in range, choosing the
  * 7-day or 28-day window based on how long the range actually is.
@@ -91,11 +99,12 @@ function lastDay(days: ReportDayTotals[]): ReportDayTotals | undefined {
 function rollingUsers(
   days: ReportDayTotals[],
   weeklyKey: keyof ReportDayTotals,
-  monthlyKey: keyof ReportDayTotals
+  monthlyKey: keyof ReportDayTotals,
+  rangeDays: number
 ): number {
   const last = lastDay(days);
   if (!last) return 0;
-  const key = days.length <= WEEKLY_WINDOW_MAX_DAYS ? weeklyKey : monthlyKey;
+  const key = rangeDays <= WEEKLY_WINDOW_MAX_DAYS ? weeklyKey : monthlyKey;
   return (last[key] as number | undefined) ?? (last[monthlyKey] as number | undefined) ?? 0;
 }
 
@@ -111,17 +120,23 @@ export function agentLocSharePct(days: ReportDayTotals[]): number | null {
   return safePct(agentLoc(days), sumBy(days, day => day.loc_added_sum));
 }
 
-export function summarizeTeam(days: ReportDayTotals[], memberCount: number): TeamMetricSummary {
+export function summarizeTeam(
+  days: ReportDayTotals[],
+  memberCount: number,
+  since?: string,
+  until?: string
+): TeamMetricSummary {
   const aiLoc = sumBy(days, d => d.loc_added_sum);
   const generations = sumBy(days, d => d.code_generation_activity_count);
   const acceptances = sumBy(days, d => d.code_acceptance_activity_count);
   const activeUsers = lastDay(days)?.daily_active_users ?? 0;
+  const rangeDays = dateRangeDays(days, since, until);
 
-  const copilotUsers = rollingUsers(days, 'weekly_active_users', 'monthly_active_users');
-  const agentUsers = rollingUsers(days, 'weekly_active_agent_users', 'monthly_active_agent_users');
-  const cliUsers = rollingUsers(days, 'weekly_active_cli_users', 'monthly_active_cli_users');
+  const copilotUsers = rollingUsers(days, 'weekly_active_users', 'monthly_active_users', rangeDays);
+  const agentUsers = rollingUsers(days, 'weekly_active_agent_users', 'monthly_active_agent_users', rangeDays);
+  const cliUsers = rollingUsers(days, 'weekly_active_cli_users', 'monthly_active_cli_users', rangeDays);
   const vscodeAgentUsers = rollingUsers(
-    days, 'weekly_active_vscode_agent_users', 'monthly_active_vscode_agent_users'
+    days, 'weekly_active_vscode_agent_users', 'monthly_active_vscode_agent_users', rangeDays
   );
 
   return {

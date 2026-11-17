@@ -95,7 +95,7 @@ export default defineEventHandler(async (event): Promise<TeamPrMetrics> => {
       // member's unrelated open-source PRs would be counted.
       org: options.githubOrg,
       githubToken,
-      apiBaseUrl: config.apiBaseUrl as string | undefined,
+      apiBaseUrl: config.githubApiBaseUrl as string | undefined,
     });
 
     try {

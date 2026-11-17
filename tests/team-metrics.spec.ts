@@ -101,6 +101,15 @@ describe('summarizeTeam', () => {
     expect(summarizeTeam(longRange, 12).agentAdoptionPct).toBe(50);
   });
 
+  it('uses the requested calendar range when activity rows are sparse', () => {
+    const sparseDays = [
+      day('2026-03-01', { weekly_active_users: 1, monthly_active_users: 1 } as Partial<ReportDayTotals>),
+      day('2026-03-28', { weekly_active_users: 1, monthly_active_users: 2 } as Partial<ReportDayTotals>),
+    ];
+
+    expect(summarizeTeam(sparseDays, 4, '2026-03-01', '2026-03-28').copilotAdoptionPct).toBe(50);
+  });
+
   it('caps adoption at 100% when the rolling window includes former members', () => {
     const shrunk = summarizeTeam(days, 4); // 8 weekly active users, only 4 current members
     expect(shrunk.copilotAdoptionPct).toBe(100);

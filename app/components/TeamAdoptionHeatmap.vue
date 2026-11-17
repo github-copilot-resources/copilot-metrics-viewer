@@ -58,6 +58,8 @@ export interface HeatmapTeam {
   teamName: string;
   reportData: ReportDayTotals[];
   memberCount: number;
+  since?: string;
+  until?: string;
 }
 
 type MetricKey = 'copilot' | 'agent' | 'cli' | 'vscodeAgent';
@@ -113,7 +115,7 @@ export default defineComponent({
       const scored = props.teams
         .map(team => ({
           teamName: team.teamName,
-          value: summarizeTeam(team.reportData, team.memberCount)[SUMMARY_METRIC[selectedMetric.value]],
+          value: summarizeTeam(team.reportData, team.memberCount, team.since, team.until)[SUMMARY_METRIC[selectedMetric.value]],
         }))
         .filter((entry): entry is { teamName: string; value: number } => entry.value !== null);
 

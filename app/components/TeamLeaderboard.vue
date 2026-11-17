@@ -74,6 +74,8 @@ export interface LeaderboardTeam {
   teamName: string;
   reportData: ReportDayTotals[];
   memberCount: number;
+  since?: string;
+  until?: string;
   color: string;
   prMetrics?: TeamPrMetrics | null;
 }
@@ -133,7 +135,7 @@ export default defineComponent({
       const rows = props.teams.map(team => {
         const value = isPrMetric.value
           ? selectedMetric.value === 'prsMerged' ? team.prMetrics?.totalMerged ?? null : team.prMetrics?.avgMergedPerPerson ?? null
-          : pick(summarizeTeam(team.reportData, team.memberCount));
+          : pick(summarizeTeam(team.reportData, team.memberCount, team.since, team.until));
         return {
           slug: team.slug,
           teamName: team.teamName,

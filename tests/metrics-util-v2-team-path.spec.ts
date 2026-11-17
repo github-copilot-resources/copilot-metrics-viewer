@@ -178,6 +178,24 @@ describe('getMetricsDataV2 — historical mode team path (regression for 500 bug
     expect(result.reportData[0]?.monthly_active_agent_users).toBe(1);
   });
 
+  it('syncs when lookback data exists but the requested range is empty', async () => {
+    mockGetUserDayMetrics.mockResolvedValue([makeDayRecord('octocat', '2026-02-28')]);
+    const api = await import('../server/services/github-copilot-usage-api');
+    const fetchRecords = vi.spyOn(api, 'fetchRawUserDayRecords').mockResolvedValue([
+      makeDayRecord('octocat', '2026-03-15'),
+    ]);
+
+    try {
+      const { getMetricsDataV2 } = await import('../shared/utils/metrics-util-v2');
+      const result = await getMetricsDataV2(makeEvent());
+
+      expect(fetchRecords).toHaveBeenCalled();
+      expect(result.reportData.map(day => day.day)).toEqual(['2026-03-15']);
+    } finally {
+      fetchRecords.mockRestore();
+    }
+  });
+
   it('throws 401 (not 500/ReferenceError) when DB is empty and no auth token', async () => {
     // DB has no records — falls through to live API fetch path
     mockGetUserDayMetrics.mockResolvedValue([]);
